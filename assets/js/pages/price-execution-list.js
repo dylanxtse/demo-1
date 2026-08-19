@@ -6,6 +6,7 @@
     <div class="page-card price-execution-page" id="priceExecutionPage">
       <div class="price-mode-tabs" role="tablist" aria-label="价格执行清单类型">
         <button class="price-mode-tab active" type="button" role="tab" aria-selected="true" data-price-mode="purchase">采购价执行清单</button>
+        <button class="price-mode-tab" type="button" role="tab" aria-selected="false" data-price-mode="sales">销售价执行清单</button>
       </div>
 
       <section class="price-query-panel" aria-label="价格执行清单查询">
@@ -17,8 +18,15 @@
       </section>
 
       <div class="price-toolbar">
+        <div class="price-toolbar-left">
+          <button class="btn btn-primary btn-sm" id="editPricingBtn" type="button" data-action="edit-pricing">编辑订价</button>
+          <button class="btn btn-primary btn-sm sales-pricing-action sales-only-action" type="button" data-action="purchase-to-sales" disabled hidden>以采定销</button>
+          <button class="btn btn-primary btn-sm sales-pricing-action sales-only-action" type="button" data-action="sync-pricing" disabled hidden>同步订价</button>
+          <button class="btn btn-primary btn-sm" type="button" data-action="open-import">导入订价</button>
+        </div>
         <div class="price-toolbar-right">
-          <button class="btn btn-sm" type="button" data-action="export">${downloadIcon}导出</button>
+          <span class="price-priority-note" id="pricePriorityNote" aria-live="polite"></span>
+          <button class="btn btn-sm price-export-action" type="button" data-action="export">${downloadIcon}导出</button>
         </div>
       </div>
 
@@ -83,6 +91,7 @@
     page: 1,
     pageSize: 20,
     editing: false,
+    selectedSalesIds: new Set(),
     pagination: null
   };
 
@@ -101,9 +110,21 @@
     ]
   };
 
-  const priceTypeOptions = {
-    purchase: ['手动定价', '协议价', '近一次采购价', '供应商报价', '市场价', '中标价'],
-    sales: ['手动定价', '协议价', '近一次销售价', '市场价']
+  const priceSourceColumns = {
+    purchase: [
+      { label: '手动定价', key: 'manualPrice' },
+      { label: '协议价', key: 'agreementPrice' },
+      { label: '近一次采购价', key: 'recentPrice' },
+      { label: '供应商报价', key: 'supplierQuote' },
+      { label: '市场价', key: 'marketPrice' },
+      { label: '中标价', key: 'bidPrice' }
+    ],
+    sales: [
+      { label: '手动定价', key: 'manualPrice' },
+      { label: '协议价', key: 'agreementPrice' },
+      { label: '近一次销售价', key: 'recentPrice' },
+      { label: '市场价', key: 'marketPrice' }
+    ]
   };
 
   function escapeHtml(value) {
@@ -121,7 +142,7 @@
 
   function optionList(field, placeholder) {
     let values;
-    if (field === 'priceType') values = priceTypeOptions[state.mode];
+    if (field === 'priceType') values = visiblePriceColumns().map((column) => column.label);
     else if (field === 'purchaseType') values = ['企业自加工', '供应商送货', '市场自采'];
     else if (field === 'customerType') values = ['学校', '幼儿园', '机关单位'];
     else values = uniqueValues(field);
@@ -141,6 +162,72 @@
 
   function getFilterValue(key) {
     return document.getElementById(`priceFilter-${key}`)?.value.trim() || '';
+  }
+
+  function normalizePriceSource(source) {
+    return String(source || '').replace('订价', '定价').trim();
+  }
+
+  function savedPriceSettings() {
+    if (window.DemoStore?.getSettings) return window.DemoStore.getSettings() || {};
+    try {
+      return JSON.parse(window.localStorage?.getItem('procurement-demo-v3') || '{}').settings || {};
+    } catch {
+      return {};
+    }
+  }
+
+  const purchasePriorityProfiles = {
+    '订价模式': { count: 5, defaults: ['供应商报价', '协议价', '手动定价', '近一次采购价', '市场价'] },
+    '竞价模式': { count: 3, defaults: ['中标价', '近一次采购价', '近一次采购价'] },
+    '订价+竞价模式': { count: 6, defaults: ['中标价', '协议价', '近一次采购价', '供应商报价', '手动定价', '市场价'] }
+  };
+  const purchaseModeAliases = { '询价模式': '订价模式', '协议价模式': '订价模式' };
+  const normalizePurchaseMode = (mode) => {
+    const normalized = purchaseModeAliases[mode] || mode;
+    return purchasePriorityProfiles[normalized] ? normalized : '竞价模式';
+  };
+
+  function priorityKeys() {
+    if (state.mode === 'sales') return ['orderPricePriority1', 'orderPricePriority2', 'orderPricePriority3', 'orderPricePriority4'];
+    const settings = savedPriceSettings();
+    const count = purchasePriorityProfiles[normalizePurchaseMode(settings.purchasePriceMode)].count;
+    return Array.from({ length: count }, (_, index) => `purchasePricePriority${index + 1}`);
+  }
+
+  function configuredPriorityValues() {
+    const settings = savedPriceSettings();
+    const defaults = state.mode === 'purchase'
+      ? purchasePriorityProfiles[normalizePurchaseMode(settings.purchasePriceMode)].defaults
+      : ['协议价', '近一次销售价', '手动定价', '市场价'];
+    const configured = priorityKeys().map((key) => normalizePriceSource(settings[key])).filter(Boolean);
+    return configured.length ? configured : defaults;
+  }
+
+  function visiblePriceColumns() {
+    const columns = priceSourceColumns[state.mode];
+    if (state.mode !== 'purchase') return columns;
+    const purchaseMode = normalizePurchaseMode(savedPriceSettings().purchasePriceMode);
+    return purchaseMode === '订价模式' ? columns.filter((column) => column.key !== 'bidPrice') : columns;
+  }
+
+  function refreshPriorityPresentation() {
+    const order = configuredPriorityValues();
+    const modeLabel = state.mode === 'purchase' ? '采购' : '销售';
+    const summary = `当前${modeLabel}单价取值优先级：${order.length ? order.join('＞') : '未设置'}`;
+    const note = document.getElementById('pricePriorityNote');
+    if (note) {
+      note.textContent = summary;
+      note.title = summary;
+    }
+  }
+
+  function refreshPriceTypeFilter() {
+    const select = document.querySelector('#priceFilter-priceType');
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = optionList('priceType', '全部');
+    select.value = Array.from(select.options).some((option) => option.value === currentValue) ? currentValue : '';
   }
 
   function applyFilters(resetPage = true) {
@@ -215,21 +302,32 @@
     return `<input class="price-inline-input" data-manual-id="${escapeHtml(row.id)}" value="${escapeHtml(value)}" placeholder="请输入单价" inputmode="decimal">`;
   }
 
+  function renderPriceSourceHead() {
+    return visiblePriceColumns().map((column) => `<th>${escapeHtml(column.label)}</th>`).join('');
+  }
+
+  function renderPriceSourceCell(row, column) {
+    if (state.mode === 'sales' && column.key === 'manualPrice') return renderManualCell(row);
+    const value = row[column.key];
+    return value !== undefined && value !== null && value !== '' && value !== '--'
+      ? renderPrice(value)
+      : renderClearedPrice();
+  }
+
   function renderPurchaseHead() {
     return `<tr>
       <th class="price-seq-col">序号</th><th class="price-image-col">图片</th><th class="price-code-col">商品编号</th>
       <th class="price-name-col">商品名称（计量单位/品牌/规格）</th><th class="price-category-col">分类</th><th class="price-unit-col">计量单位</th>
-      <th class="price-partner-col">供应商/采购员</th><th class="price-current-col">当前执行价格</th><th>手动定价</th><th>协议价</th>
-      <th>近一次采购价</th><th>供应商报价</th><th>市场价</th><th>中标价</th>
+      <th class="price-partner-col">供应商/采购员</th><th class="price-current-col">当前执行价格</th>${renderPriceSourceHead()}
     </tr>`;
   }
 
   function renderSalesHead() {
     return `<tr>
+      <th class="price-select-col"><input class="price-select-all" type="checkbox" data-sales-select-all aria-label="全选销售价执行清单"></th>
       <th class="price-seq-col">序号</th><th class="price-image-col">图片</th><th class="price-code-col">商品编号</th>
       <th class="price-partner-col">客户名称</th><th class="price-name-col">商品名称（计量单位/品牌/规格）</th><th class="price-category-col">商品分类</th>
-      <th class="price-unit-col">计量单位</th><th class="price-current-col">当前执行价格</th><th>手动定价</th><th>协议价</th>
-      <th>近一次销售价</th><th>市场价</th>
+      <th class="price-unit-col">计量单位</th><th class="price-current-col">当前执行价格</th>${renderPriceSourceHead()}
     </tr>`;
   }
 
@@ -240,29 +338,49 @@
       <td class="price-code-col">${escapeHtml(row.code)}</td><td class="price-name-col">${renderProductName(row)}</td>
       <td class="price-category-col">${escapeHtml(row.category)}</td><td class="price-unit-col">${escapeHtml(row.unit)}</td>
       <td class="price-partner-col">${escapeHtml(row.supplier)}</td><td class="price-current-col">${renderCurrentPrice(row)}</td>
-      <td>${renderClearedPrice()}</td><td>${renderClearedPrice()}</td><td>${renderClearedPrice()}</td>
-      <td>${renderClearedPrice()}</td><td>${renderClearedPrice()}</td><td>${renderPrice(row.bidPrice)}</td>
+      ${visiblePriceColumns().map((column) => `<td>${renderPriceSourceCell(row, column)}</td>`).join('')}
     </tr>`;
   }
 
   function renderSalesRow(row, index) {
     return `<tr>
+      <td class="price-select-col"><input class="price-row-checkbox" type="checkbox" data-sales-select data-price-id="${escapeHtml(row.id)}" aria-label="选择${escapeHtml(row.name)}" ${state.selectedSalesIds.has(row.id) ? 'checked' : ''}></td>
       <td class="price-seq-col">${index + 1 + (state.page - 1) * state.pageSize}</td>
       <td class="price-image-col"><div class="price-image-placeholder">图片</div></td>
       <td class="price-code-col">${escapeHtml(row.code)}</td><td class="price-partner-col">${escapeHtml(row.customerName)}</td>
       <td class="price-name-col">${renderProductName(row)}</td><td class="price-category-col">${escapeHtml(row.category)}</td>
       <td class="price-unit-col">${escapeHtml(row.unit)}</td><td class="price-current-col">${renderCurrentPrice(row)}</td>
-      <td>${renderManualCell(row)}</td><td>${renderClearedPrice()}</td><td>${renderClearedPrice()}</td><td>${renderClearedPrice()}</td>
+      ${visiblePriceColumns().map((column) => `<td>${renderPriceSourceCell(row, column)}</td>`).join('')}
     </tr>`;
+  }
+
+  function syncSalesSelectionState(visibleRows) {
+    if (state.mode !== 'sales') return;
+    const selectAll = document.querySelector('[data-sales-select-all]');
+    if (!selectAll) return;
+    const selectedCount = visibleRows.filter((row) => state.selectedSalesIds.has(row.id)).length;
+    selectAll.checked = visibleRows.length > 0 && selectedCount === visibleRows.length;
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < visibleRows.length;
+    selectAll.disabled = visibleRows.length === 0;
+  }
+
+  function syncSalesActionState() {
+    const disabled = state.mode !== 'sales' || state.selectedSalesIds.size === 0;
+    document.querySelectorAll('.sales-pricing-action').forEach((button) => {
+      button.disabled = disabled;
+    });
   }
 
   function renderTable() {
     const start = (state.page - 1) * state.pageSize;
     const visibleRows = state.filteredRows.slice(start, start + state.pageSize);
+    const columnCount = (state.mode === 'sales' ? 9 : 8) + visiblePriceColumns().length;
     document.getElementById('priceTableHead').innerHTML = state.mode === 'purchase' ? renderPurchaseHead() : renderSalesHead();
     document.getElementById('priceTableBody').innerHTML = visibleRows.length
       ? visibleRows.map((row, index) => state.mode === 'purchase' ? renderPurchaseRow(row, index) : renderSalesRow(row, index)).join('')
-      : `<tr><td class="price-empty-row" colspan="${state.mode === 'purchase' ? 14 : 12}">暂无符合条件的数据</td></tr>`;
+      : `<tr><td class="price-empty-row" colspan="${columnCount}">暂无符合条件的数据</td></tr>`;
+    syncSalesSelectionState(visibleRows);
+    syncSalesActionState();
     const editButton = document.getElementById('editPricingBtn');
     if (editButton) editButton.textContent = state.editing ? '完成编辑' : '编辑订价';
     if (state.pagination) state.pagination.update({ total: state.filteredRows.length, page: state.page, pageSize: state.pageSize });
@@ -274,6 +392,7 @@
     state.rows = window.PriceExecutionService.getList(state.mode);
     state.filteredRows = [...state.rows];
     renderFilterFields();
+    refreshPriorityPresentation();
     document.querySelectorAll('.price-mode-tab').forEach((tab) => {
       const active = tab.dataset.priceMode === state.mode;
       tab.classList.toggle('active', active);
@@ -356,12 +475,13 @@
   }
 
   function exportRows() {
+    const columns = visiblePriceColumns();
     const headers = state.mode === 'purchase'
-      ? ['序号', '商品编号', '商品名称', '分类', '计量单位', '供应商/采购员', '当前执行价格', '手动定价', '协议价', '近一次采购价', '供应商报价', '市场价', '中标价']
-      : ['序号', '商品编号', '客户名称', '商品名称', '商品分类', '计量单位', '当前执行价格', '手动定价', '协议价', '近一次销售价', '市场价'];
+      ? ['序号', '商品编号', '商品名称', '分类', '计量单位', '供应商/采购员', '当前执行价格', ...columns.map((column) => column.label)]
+      : ['序号', '商品编号', '客户名称', '商品名称', '商品分类', '计量单位', '当前执行价格', ...columns.map((column) => column.label)];
     const rows = state.filteredRows.map((row, index) => state.mode === 'purchase'
-      ? [index + 1, row.code, row.name, row.category, row.unit, row.supplier, row.currentPrice, row.manualPrice, row.agreementPrice, row.recentPrice, row.supplierQuote, row.marketPrice, row.bidPrice]
-      : [index + 1, row.code, row.customerName, row.name, row.category, row.unit, row.currentPrice, row.manualPrice, row.agreementPrice, row.recentPrice, row.marketPrice]);
+      ? [index + 1, row.code, row.name, row.category, row.unit, row.supplier, row.currentPrice, ...columns.map((column) => row[column.key] ?? '')]
+      : [index + 1, row.code, row.customerName, row.name, row.category, row.unit, row.currentPrice, ...columns.map((column) => row[column.key] ?? '')]);
     const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }));
@@ -405,9 +525,40 @@
         return;
       }
       if (action === 'download-template') { toast('订价导入模板下载中'); return; }
-      if (action === 'purchase-to-sales') { toast('已按采购价生成销售价草稿'); return; }
-      if (action === 'sync-pricing') { toast('销售订价同步成功'); return; }
+      if (action === 'purchase-to-sales') {
+        if (!state.selectedSalesIds.size) return;
+        toast(`以采定销已生成${state.selectedSalesIds.size}条销售价草稿`);
+        return;
+      }
+      if (action === 'sync-pricing') {
+        if (!state.selectedSalesIds.size) return;
+        toast(`已同步${state.selectedSalesIds.size}条订价`);
+        return;
+      }
       if (action === 'export') { exportRows(); }
+    });
+
+    root.addEventListener('change', (event) => {
+      const selectAll = event.target.closest('[data-sales-select-all]');
+      if (selectAll) {
+        const start = (state.page - 1) * state.pageSize;
+        const visibleRows = state.filteredRows.slice(start, start + state.pageSize);
+        visibleRows.forEach((row) => {
+          if (selectAll.checked) state.selectedSalesIds.add(row.id);
+          else state.selectedSalesIds.delete(row.id);
+        });
+        root.querySelectorAll('[data-sales-select]').forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+        syncSalesSelectionState(visibleRows);
+        syncSalesActionState();
+        return;
+      }
+      const checkbox = event.target.closest('[data-sales-select]');
+      if (!checkbox) return;
+      if (checkbox.checked) state.selectedSalesIds.add(checkbox.dataset.priceId);
+      else state.selectedSalesIds.delete(checkbox.dataset.priceId);
+      const start = (state.page - 1) * state.pageSize;
+      syncSalesSelectionState(state.filteredRows.slice(start, start + state.pageSize));
+      syncSalesActionState();
     });
 
     root.addEventListener('keydown', (event) => {
@@ -425,6 +576,12 @@
       const file = event.target.files[0];
       document.getElementById('priceFileName').textContent = file ? file.name : '未选择文件';
     });
+    window.addEventListener('storage', (event) => {
+      if (event.key && event.key !== 'procurement-demo-v3') return;
+      refreshPriceTypeFilter();
+      refreshPriorityPresentation();
+      renderTable();
+    });
   }
 
   const root = window.AppShell.mount({ title: '价格执行清单', content: pageContent });
@@ -432,6 +589,7 @@
   state.filteredRows = [...state.rows];
   renderFilterFields();
   bindEvents(root);
+  refreshPriorityPresentation();
   state.pagination = window.Pagination.create({
     container: '#pricePagination',
     total: state.filteredRows.length,

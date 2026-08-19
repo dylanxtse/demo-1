@@ -92,6 +92,16 @@
 }
 .menu-item-header:hover { background: var(--primary-light); color: var(--primary); }
 .menu-item.active > .menu-item-header { color: var(--primary); background: transparent; font-weight: 500; }
+.menu-item.unavailable > .menu-item-header,
+.menu-sub-group.unavailable > .menu-sub-item {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+.menu-item.unavailable > .menu-item-header:hover,
+.menu-sub-group.unavailable > .menu-sub-item:hover {
+  color: var(--text-tertiary);
+  background: transparent;
+}
 .menu-item-header .menu-icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .menu-item-header .menu-icon svg { width: 16px; height: 16px; }
 .menu-arrow {

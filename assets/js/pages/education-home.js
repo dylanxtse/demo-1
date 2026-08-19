@@ -113,8 +113,8 @@
       trendMap.set(month, (trendMap.get(month) || 0) + 1);
     });
     const trendRows = [...trendMap.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-6).map(([label, value]) => ({ label: label === '待定' ? label : label.slice(5), value }));
-    const projectRows = [...bids].sort((a, b) => String(a.supplyStart || '').localeCompare(String(b.supplyStart || ''))).slice(0, 8);
-    const pendingRows = bids.filter((bid) => activeStatuses.has(bid.status)).sort((a, b) => String(a.openTime || '').localeCompare(String(b.openTime || ''))).slice(0, 6);
+    const projectRows = [...bids].sort((a, b) => String(a.supplyStart || '').localeCompare(String(b.supplyStart || '')));
+    const pendingRows = bids.filter((bid) => activeStatuses.has(bid.status)).sort((a, b) => String(a.openTime || '').localeCompare(String(b.openTime || '')));
     const categoryCount = unique(bids.flatMap((bid) => bid.categories || [])).length;
     const activeCount = bids.filter((bid) => activeStatuses.has(bid.status)).length;
     const completedCount = bids.filter((bid) => bid.status === '已开标').length;
@@ -162,7 +162,7 @@
   }
 
   function renderSchoolPanel(view) {
-    const rows = view.schoolRows.slice(0, 7);
+    const rows = view.schoolRows;
     const body = rows.length ? `<table class="dashboard-table education-school-table"><thead><tr><th>学校</th><th>竞价项目</th><th>品种数</th><th>供应商</th></tr></thead><tbody>${rows.map((row) => `<tr><td title="${escapeHtml(row.name)}">${display(row.name)}</td><td class="is-number">${formatNumber(row.bids)}</td><td class="is-number">${formatNumber(row.varieties)}</td><td class="is-number">${formatNumber(row.supplierCount)}</td></tr>`).join('')}</tbody></table>` : '<div class="dashboard-empty">暂无学校采购数据</div>';
     return panel('学校采购概览', body, 'panel-customers', `${view.schoolRows.length} 所`);
   }
@@ -177,12 +177,12 @@
     const statuses = ['全部', ...statusOrder];
     const rows = view.projectRows.filter((bid) => viewState.projectStatus === '全部' || bid.status === viewState.projectStatus);
     const tabs = statuses.map((status) => `<button type="button" class="dashboard-tab ${status === viewState.projectStatus ? 'is-active' : ''}" data-education-tab="status" data-value="${escapeHtml(status)}">${status}</button>`).join('');
-    const body = rows.length ? `<table class="dashboard-table education-project-table"><thead><tr><th>项目名称</th><th>学校</th><th>供货周期</th><th>报价</th><th>状态</th></tr></thead><tbody>${rows.slice(0, 7).map((bid) => `<tr><td title="${escapeHtml(bid.name)}">${display(bid.name)}</td><td title="${escapeHtml(bid.school)}">${display(bid.school)}</td><td>${periodText(bid)}</td><td class="is-number">${formatNumber(bid.quoteSupplierCount)}</td><td><span class="education-status-pill status-${statusOrder.indexOf(bid.status)}">${display(bid.status)}</span></td></tr>`).join('')}</tbody></table>` : '<div class="dashboard-empty">暂无符合条件的竞价项目</div>';
+    const body = rows.length ? `<table class="dashboard-table education-project-table"><thead><tr><th>项目名称</th><th>学校</th><th>供货周期</th><th>报价</th><th>状态</th></tr></thead><tbody>${rows.map((bid) => `<tr><td title="${escapeHtml(bid.name)}">${display(bid.name)}</td><td title="${escapeHtml(bid.school)}">${display(bid.school)}</td><td>${periodText(bid)}</td><td class="is-number">${formatNumber(bid.quoteSupplierCount)}</td><td><span class="education-status-pill status-${statusOrder.indexOf(bid.status)}">${display(bid.status)}</span></td></tr>`).join('')}</tbody></table>` : '<div class="dashboard-empty">暂无符合条件的竞价项目</div>';
     return panel('竞价项目总览', `<div class="dashboard-tabs education-status-tabs">${tabs}</div>${body}`, 'panel-purchases', `${rows.length} 项`);
   }
 
   function renderSupplierPanel(view) {
-    const values = view.supplierRows.slice(0, 6).map((row) => ({ name: row.name, value: row.bids }));
+    const values = view.supplierRows.slice(0, 10).map((row) => ({ name: row.name, value: row.bids }));
     const palette = ['#1a9bff', '#23d4bb', '#ffc857', '#8e7dff', '#ff7c8c', '#64b5ff'];
     const legend = values.length ? values.map((item, index) => `<li><i style="--legend-color:${palette[index % palette.length]}"></i><span>${display(item.name)}</span><strong>${formatNumber(item.value)} 项</strong></li>`).join('') : '<li class="dashboard-muted">暂无供应商参与数据</li>';
     return panel('供应商参与度 TOP10', `<div class="dashboard-chart-layout dashboard-supplier-chart education-supplier-chart">${donut(values, formatNumber(values.reduce((sum, item) => sum + item.value, 0)), palette)}<ul class="dashboard-legend">${legend}</ul></div>`, 'panel-suppliers');
@@ -190,7 +190,7 @@
 
   function renderLimitPanel(view) {
     const total = view.limits.length;
-    const rows = view.limitRows.slice(0, 6);
+    const rows = view.limitRows;
     const body = `<div class="education-limit-summary"><strong>${formatNumber(total)}</strong><span>已配置限价商品</span><i style="width:${total ? 100 : 0}%"></i></div>${rows.length ? `<table class="dashboard-table"><thead><tr><th>商品类别</th><th>限价商品数</th><th>执行状态</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${display(row.name)}</td><td class="is-number">${formatNumber(row.count)}</td><td><span class="education-limit-status">执行中</span></td></tr>`).join('')}</tbody></table>` : '<div class="dashboard-empty">暂无限价配置</div>'}`;
     return panel('商品限价执行情况', body, 'panel-inventory', `${view.limitRows.length} 类`);
   }
@@ -201,13 +201,13 @@
   }
 
   function renderRelationshipPanel(view) {
-    const rows = view.relationships.slice(0, 6);
+    const rows = view.relationships;
     const body = rows.length ? `<div class="education-timeline">${rows.map((row) => `<button type="button" class="education-timeline-item" data-dashboard-link="./supplier-relationship-management.html"><span class="education-timeline-dot"></span><span><strong>${display(row.supplierName)}</strong><small>${display(row.bidName)} · ${display(row.segment)}</small></span><em>${display(row.supplyStart)} 起</em></button>`).join('')}</div>` : '<div class="dashboard-empty">暂无供货关系记录</div>';
     return panel('供货关系动态', body, 'panel-delivery', `${view.relationships.length} 条`);
   }
 
   function renderDashboard(view) {
-    return `<div class="page-card enterprise-home-page education-dashboard-page"><div class="enterprise-dashboard" id="educationDashboard"><div class="dashboard-screen"><header class="dashboard-screen-header"><div class="dashboard-header-decoration dashboard-header-decoration-left"></div><div class="dashboard-heading"><h1>教育局数据监管平台</h1><p>南皮县教育局 · 膳食集采竞价监管 · 截止 ${escapeHtml(view.latestDate)}</p></div><div class="dashboard-header-decoration dashboard-header-decoration-right"></div><button type="button" class="dashboard-fullscreen" data-dashboard-action="fullscreen" aria-label="全屏查看">⛶</button></header><div class="dashboard-grid">${renderStatusPanel(view)}${renderMetricsPanel(view)}${renderSchoolPanel(view)}${renderTrendPanel(view)}<div class="dashboard-slot panel-purchases" data-dashboard-slot="projects">${renderProjectPanel(view)}</div>${renderSupplierPanel(view)}${renderLimitPanel(view)}${renderTodoPanel(view)}${renderRelationshipPanel(view)}</div></div></div></div>`;
+    return `<div class="page-card enterprise-home-page education-dashboard-page"><div class="enterprise-dashboard" id="educationDashboard"><div class="dashboard-screen"><header class="dashboard-screen-header"><div class="dashboard-header-decoration dashboard-header-decoration-left"></div><div class="dashboard-heading"><h1>教育局数据监管平台</h1><p>静安教育局 · 膳食集采竞价监管 · 截止 ${escapeHtml(view.latestDate)}</p></div><div class="dashboard-header-decoration dashboard-header-decoration-right"></div><button type="button" class="dashboard-fullscreen" data-dashboard-action="fullscreen" aria-label="全屏查看">⛶</button></header><div class="dashboard-grid">${renderStatusPanel(view)}${renderMetricsPanel(view)}${renderSchoolPanel(view)}${renderTrendPanel(view)}<div class="dashboard-slot panel-purchases" data-dashboard-slot="projects">${renderProjectPanel(view)}</div>${renderSupplierPanel(view)}${renderLimitPanel(view)}${renderTodoPanel(view)}${renderRelationshipPanel(view)}</div></div></div></div>`;
   }
 
   function bindInteractions(root, view) {

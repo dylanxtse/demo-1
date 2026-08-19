@@ -4,9 +4,16 @@
       const root = document.getElementById('app');
       if (!root) throw new Error('缺少 #app 页面挂载节点');
       const shellOptions = { variant };
+      const shellClass = variant === 'education'
+        ? 'education-shell'
+        : (variant === 'supplier'
+          ? 'supplier-shell'
+          : (variant === 'operations'
+            ? 'operations-shell'
+            : (variant === 'school' ? 'school-shell' : '')));
 
       root.innerHTML = `
-        <div class="app-layout ${variant === 'education' ? 'education-shell' : ''}">
+        <div class="app-layout ${shellClass}">
           ${window.AppSidebar.render(shellOptions)}
           <section class="main-section">
             ${window.AppHeader.render(shellOptions)}

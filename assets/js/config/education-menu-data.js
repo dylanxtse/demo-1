@@ -10,15 +10,7 @@
     { name: '价格管理', icon: 'tag', children: [
       { name: '指导价格' },
       { name: '商品限价' },
-      { name: '商品价格' },
-      { name: '采购竞价', children: [
-        { name: '竞价管理', href: './bid-management.html' },
-        { name: '竞价规则管理', href: './bid-rules-management.html' },
-        { name: '竞价限价管理', href: './auction-limit-price.html' },
-        { name: '废标管理', href: './wasted-bid-management.html' },
-        { name: '标段管理', href: './segment-management.html' },
-        { name: '供货关系管理', href: './supplier-relationship-management.html' }
-      ] }
+      { name: '商品价格' }
     ] },
     { name: '订单管理', icon: 'cart', children: [
       { name: '订单管理' },
@@ -41,10 +33,12 @@
 
   function normalize(entry) {
     const normalized = typeof entry === 'string' ? { name: entry } : entry;
+    const children = normalized.children?.map(normalize);
     return {
       ...normalized,
+      unavailable: Boolean(normalized.unavailable) || (!children?.length && !normalized.href),
       expanded: Boolean(normalized.expanded),
-      children: normalized.children?.map(normalize)
+      children
     };
   }
 

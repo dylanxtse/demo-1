@@ -3,6 +3,7 @@
     inventoryWarehouse: '',
     inventoryCategory: '全部'
   };
+  const dashboardChartLimit = 10;
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -105,7 +106,6 @@
     return [...suppliers.values()]
       .map((item) => ({ ...item, itemCount: item.itemCodes.size }))
       .sort((a, b) => b.amount - a.amount)
-      .slice(0, 8)
       .map((item) => ({ ...item, amountText: formatAmount(item.amount, settings) }));
   }
 
@@ -121,7 +121,6 @@
     });
     return [...customers.values()]
       .sort((a, b) => b.amount - a.amount)
-      .slice(0, 8)
       .map((item) => ({ ...item, itemCount: item.itemCodes.size, amountText: formatAmount(item.amount, settings) }));
   }
 
@@ -139,7 +138,6 @@
     });
     return [...routes.values()]
       .sort((a, b) => b.orders - a.orders)
-      .slice(0, 6)
       .map((item) => ({ ...item, customerCount: item.customers.size }));
   }
 
@@ -256,7 +254,7 @@
   }
 
   function renderHotPanel(view) {
-    const values = view.aggregates.categories.slice(0, 6);
+    const values = view.aggregates.categories.slice(0, dashboardChartLimit);
     const legend = values.length ? values.map((item, index) => `
       <li><i style="--legend-color:${['#1a9bff', '#23d4bb', '#ffc857', '#8e7dff', '#ff7c8c', '#64b5ff'][index % 6]}"></i><span>${display(item.name)}</span><strong>${formatAmount(item.value, view.settings)}</strong></li>`).join('') : '<li class="dashboard-muted">暂无商品销售数据</li>';
     return panel('近30天热销商品结构（TOP10）', `
@@ -286,7 +284,7 @@
     const rows = view.inventoryRows.filter((row) => (
       (row.warehouseName || row.warehouse) === viewState.inventoryWarehouse
       && (viewState.inventoryCategory === '全部' || String(row.category || '').split('-')[0] === viewState.inventoryCategory)
-    )).slice(0, 8);
+    ));
     const warehouseTabs = warehouseNames.map((name) => `<button type="button" class="dashboard-tab ${name === viewState.inventoryWarehouse ? 'is-active' : ''}" data-dashboard-tab="warehouse" data-value="${escapeHtml(name)}">${display(name)}</button>`).join('');
     const categoryTabs = categories.map((name) => `<button type="button" class="dashboard-tab ${name === viewState.inventoryCategory ? 'is-active' : ''}" data-dashboard-tab="category" data-value="${escapeHtml(name)}">${display(name)}</button>`).join('');
     const table = rows.length ? `
@@ -316,7 +314,7 @@
   }
 
   function renderPurchasePanel(view) {
-    const rows = view.purchaseRows.slice(0, 6);
+    const rows = view.purchaseRows;
     const body = rows.length ? `
       <table class="dashboard-table"><thead><tr><th>供应商名称</th><th>采购金额（元）</th><th>采购商品种数</th></tr></thead><tbody>
         ${rows.map((row) => `<tr><td title="${escapeHtml(row.name)}">${display(row.name)}</td><td class="is-number">${row.amountText}</td><td class="is-number">${formatNumber(row.itemCount)}</td></tr>`).join('')}
@@ -337,7 +335,7 @@
   }
 
   function renderCustomerPanel(view) {
-    const rows = view.customerRows.slice(0, 6);
+    const rows = view.customerRows;
     const body = rows.length ? `
       <table class="dashboard-table"><thead><tr><th>客户名称</th><th>下单金额（元）</th><th>商品种数</th></tr></thead><tbody>
         ${rows.map((row) => `<tr><td title="${escapeHtml(row.name)}">${display(row.name)}</td><td class="is-number">${row.amountText}</td><td class="is-number">${formatNumber(row.itemCount)}</td></tr>`).join('')}
@@ -346,7 +344,7 @@
   }
 
   function renderSupplierPanel(view) {
-    const values = view.purchaseRows.slice(0, 6).map((item) => ({ name: item.name, value: item.amount }));
+    const values = view.purchaseRows.slice(0, dashboardChartLimit).map((item) => ({ name: item.name, value: item.amount }));
     const legend = values.length ? values.map((item, index) => `<li><i style="--legend-color:${['#1a9bff', '#23d4bb', '#ffc857', '#8e7dff', '#ff7c8c', '#64b5ff'][index % 6]}"></i><span>${display(item.name)}</span><strong>${formatAmount(item.value, view.settings)}</strong></li>`).join('') : '<li class="dashboard-muted">暂无供应商采购数据</li>';
     return panel('近30天供应商采购（TOP10）', `
       <div class="dashboard-chart-layout dashboard-supplier-chart">

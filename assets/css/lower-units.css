@@ -36,7 +36,6 @@
 .lower-units-table th { color: var(--text-secondary); background: #f7f8fa; font-size: 13px; font-weight: 500; }
 .lower-units-table td { color: var(--text-primary); font-size: 13px; }
 .lower-units-table .company-name { font-weight: 500; }
-.lower-units-table .company-code { color: var(--text-tertiary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .lower-units-actions { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .district-tag { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 7px; border-radius: 3px; color: #37679f; background: #edf4ff; font-size: 12px; }
 .text-muted { color: var(--text-tertiary); }

@@ -79,10 +79,11 @@
     return items.map((child, childIndex) => {
       const path = `${parentPath}:${childIndex}`;
       const hasChildren = Array.isArray(child.children) && child.children.length > 0;
+      const unavailable = Boolean(child.unavailable) || (!hasChildren && !child.href);
       return `
-        <div class="menu-sub-group ${child.expanded ? 'expanded' : ''}" style="--menu-level:${level}">
+        <div class="menu-sub-group ${child.expanded ? 'expanded' : ''} ${unavailable ? 'unavailable' : ''}" style="--menu-level:${level}">
           <button class="menu-sub-item ${child.selected ? 'selected' : ''}" type="button"
-            data-menu-item="${path}" ${hasChildren ? `data-menu-toggle-path="${path}" aria-expanded="${child.expanded}"` : ''}>
+            data-menu-item="${path}" ${hasChildren ? `data-menu-toggle-path="${path}" aria-expanded="${child.expanded}"` : ''} ${unavailable ? 'data-menu-unavailable="true" aria-disabled="true"' : ''}>
             <span>${child.name}</span>
             ${hasChildren ? '<svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' : ''}
           </button>
@@ -93,10 +94,12 @@
   }
 
   function renderMenu(menu, icons) {
-    return menu.map((item, itemIndex) => `
-      <div class="menu-item ${item.active ? 'active' : ''} ${item.expanded ? 'expanded' : ''} ${item.children ? '' : 'menu-leaf'}" data-menu-index="${itemIndex}">
+    return menu.map((item, itemIndex) => {
+      const unavailable = Boolean(item.unavailable) || (!item.children && !item.href);
+      return `
+      <div class="menu-item ${item.active ? 'active' : ''} ${item.expanded ? 'expanded' : ''} ${item.children ? '' : 'menu-leaf'} ${unavailable ? 'unavailable' : ''}" data-menu-index="${itemIndex}">
         <button class="menu-item-header" type="button" data-menu-toggle="${itemIndex}"
-          ${item.children ? `aria-expanded="${item.expanded}"` : ''} ${item.href ? `data-menu-link="${item.href}"` : ''}>
+          ${item.children ? `aria-expanded="${item.expanded}"` : ''} ${item.href && !unavailable ? `data-menu-link="${item.href}"` : ''} ${unavailable ? 'data-menu-unavailable="true" aria-disabled="true"' : ''}>
           <span class="menu-icon">${icons[item.icon] || ''}</span>
           <span>${item.name}</span>
           ${item.children ? '<svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' : ''}
@@ -107,7 +110,8 @@
           </div>
         ` : ''}
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function bind(sidebar, menu) {
@@ -154,6 +158,12 @@
     };
 
     sidebar.addEventListener('click', (event) => {
+      const unavailable = event.target.closest('[data-menu-unavailable]');
+      if (unavailable) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       const toggle = event.target.closest('[data-menu-toggle]');
       if (toggle && menu[Number(toggle.dataset.menuToggle)]?.children) {
         const index = Number(toggle.dataset.menuToggle);
@@ -217,18 +227,28 @@
   }
 
   window.AppSidebar = {
+    getConfig({ variant = 'enterprise' } = {}) {
+      if (variant === 'education') return window.EducationMenuConfig;
+      if (variant === 'supplier') return window.SupplierMenuConfig;
+      if (variant === 'operations') return window.OperationsMenuConfig;
+      if (variant === 'school') return window.SchoolMenuConfig;
+      return window.AppMenuConfig;
+    },
     getVisibleMenu({ variant = 'enterprise' } = {}) {
-      const config = variant === 'education' ? window.EducationMenuConfig : window.AppMenuConfig;
+      const config = this.getConfig({ variant });
       return config?.menu || [];
     },
     render(options = {}) {
       const menu = this.getVisibleMenu(options);
-      const config = options.variant === 'education' ? window.EducationMenuConfig : window.AppMenuConfig;
+      const config = this.getConfig(options);
       const { icons } = config;
+      const isOperations = options.variant === 'operations';
+      const logoSrc = isOperations ? './assets/images/operations-logo.png' : './sidebar-logo.png';
+      const logoAlt = isOperations ? '校园集采管理平台' : '校园集采企业版';
       return `
         <aside class="sidebar">
           <div class="sidebar-logo">
-            <img src="./sidebar-logo.png" alt="校园集采企业版">
+            <img src="${logoSrc}" alt="${logoAlt}">
           </div>
           <nav class="sidebar-menu">${renderMenu(menu, icons)}</nav>
           <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="切换侧边栏折叠">
@@ -240,13 +260,16 @@
     bind(root, options = {}) {
       const sidebar = root.querySelector('.sidebar');
       const menu = this.getVisibleMenu(options);
-      const config = options.variant === 'education' ? window.EducationMenuConfig : window.AppMenuConfig;
+      const config = this.getConfig(options);
       const currentPath = window.location.pathname.split('/').pop() || 'index.html';
       const pageKey = root.querySelector('#app')?.dataset.page || '';
       autoSelectByHref(menu, currentPath, pageKey);
       if (sidebar) {
+        const isOperations = options.variant === 'operations';
+        const logoSrc = isOperations ? './assets/images/operations-logo.png' : './sidebar-logo.png';
+        const logoAlt = isOperations ? '校园集采管理平台' : '校园集采企业版';
         sidebar.innerHTML = `<div class="sidebar-logo">
-            <img src="./sidebar-logo.png" alt="校园集采企业版">
+            <img src="${logoSrc}" alt="${logoAlt}">
           </div>
           <nav class="sidebar-menu">${renderMenu(menu, config.icons)}</nav>
           <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="切换侧边栏折叠">

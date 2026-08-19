@@ -1,0 +1,234 @@
+/* 4404 运维/平台管理端：学校食材集采平台管理后台 */
+.operations-shell {
+  --operations-sidebar-width: 255px;
+  --operations-header-height: 58px;
+  background: #f3f4f8;
+}
+
+.operations-shell .sidebar {
+  width: var(--operations-sidebar-width);
+  background: #fff;
+  border-right: 1px solid #e9ebf0;
+  transition: width 0.2s ease;
+}
+
+.operations-shell .sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.operations-shell .sidebar-logo {
+  height: 78px;
+  padding: 0 13px;
+  border-top: 0;
+  border-bottom: 1px solid #f0f1f4;
+  justify-content: flex-start;
+}
+
+.operations-shell .sidebar-logo img {
+  width: 229px;
+  height: 75px;
+  object-fit: contain;
+}
+
+.operations-shell .sidebar-menu {
+  padding: 8px 0 20px;
+}
+
+.operations-shell .sidebar-toggle {
+  display: none;
+}
+
+.operations-shell .menu-item-header {
+  height: 48px;
+  padding: 0 24px;
+  gap: 13px;
+  color: #555;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.operations-shell .menu-item-header:hover {
+  background: #f5faff;
+  color: #4a90e2;
+}
+
+.operations-shell .menu-item.active > .menu-item-header {
+  color: #4a90e2;
+  background: #edf7ff;
+  border-right: 2px solid #4a90e2;
+  font-weight: 400;
+}
+
+.operations-shell .menu-item-header .menu-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.operations-shell .menu-item-header .menu-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.7;
+}
+
+.operations-shell .menu-arrow {
+  width: 13px;
+  height: 13px;
+  color: #666;
+}
+
+.operations-shell .menu-sub-item {
+  height: 48px;
+  padding-left: 48px;
+  line-height: 48px;
+  color: #555;
+  font-size: 14px;
+}
+
+.operations-shell .menu-sub-item:hover,
+.operations-shell .menu-sub-item.selected {
+  color: #4a90e2;
+  background: #f5faff;
+}
+
+.operations-shell .app-header {
+  height: var(--operations-header-height);
+  padding: 0 16px 0 20px;
+  background: #fff;
+  border-bottom: 0;
+}
+
+.operations-shell .header-left {
+  gap: 20px;
+}
+
+.operations-header-menu-toggle {
+  width: 20px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #555;
+  font-size: 21px;
+  line-height: 28px;
+  cursor: pointer;
+}
+
+.operations-header-menu-toggle:hover {
+  color: #4a90e2;
+}
+
+.operations-shell .header-company {
+  color: #666;
+  font-size: 14px !important;
+  font-weight: 400;
+}
+
+.operations-shell .header-right {
+  gap: 12px;
+}
+
+.operations-shell .header-user {
+  gap: 8px;
+}
+
+.operations-shell .header-user .user-avatar.operations-user-avatar {
+  width: 32px;
+  height: 32px;
+  background: #c9c9c9;
+  color: #fff;
+}
+
+.operations-user-icon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.operations-shell .header-user-name {
+  color: #555;
+  font-size: 14px;
+}
+
+.operations-shell .breadcrumb-bar {
+  height: 58px;
+  padding: 0 12px;
+  align-items: flex-end;
+  background: #f3f4f8;
+  border-bottom: 0;
+}
+
+.operations-shell .page-tabs {
+  height: 40px;
+}
+
+.operations-shell .page-tab {
+  min-width: 92px;
+  height: 40px;
+  padding: 0 10px 0 14px;
+  border: 0;
+  border-right: 1px solid #edf0f4;
+  background: #fff;
+  color: #888;
+  font-size: 14px;
+}
+
+.operations-shell .page-tab:first-child {
+  border-left: 0;
+}
+
+.operations-shell .page-tab.active {
+  color: #4a90e2;
+  background: #fff;
+  font-weight: 400;
+}
+
+.operations-shell .content-area {
+  padding: 0 12px 12px;
+  background: #f3f4f8;
+}
+
+.operations-shell .operations-welcome-page {
+  min-height: 100%;
+  padding: 220px 24px 32px;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: 0;
+  background: #fff;
+}
+
+.operations-welcome-title {
+  margin: 0 0 24px;
+  color: #242424;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 34px;
+}
+
+.operations-welcome-image {
+  display: block;
+  width: min(660px, 52vw);
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .operations-shell .sidebar {
+    width: 220px;
+  }
+
+  .operations-shell .sidebar-logo {
+    padding: 0 8px;
+  }
+
+  .operations-shell .operations-welcome-page {
+    padding-top: 150px;
+  }
+
+  .operations-welcome-image {
+    width: min(620px, 78vw);
+  }
+}

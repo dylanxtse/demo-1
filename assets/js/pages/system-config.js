@@ -4,15 +4,18 @@
     marketInquiryPriceMode: 'min',
     orderCutoffDays: '0',
     orderCutoffTime: '',
-    orderPricePriority1: '手动定价',
-    orderPricePriority2: '',
-    orderPricePriority3: '',
-    orderPricePriority4: '',
+    orderPricePriority1: '协议价',
+    orderPricePriority2: '近一次销售价',
+    orderPricePriority3: '手动定价',
+    orderPricePriority4: '市场价',
     allowClientEditPrice: false,
     purchasePriceMode: '竞价模式',
     purchasePricePriority1: '中标价',
-    purchasePricePriority2: '',
-    purchasePricePriority3: '',
+    purchasePricePriority2: '近一次采购价',
+    purchasePricePriority3: '近一次采购价',
+    purchasePricePriority4: '',
+    purchasePricePriority5: '',
+    purchasePricePriority6: '',
     autoInbound: false,
     sortingLowerThreshold: '',
     sortingUpperThreshold: '',
@@ -37,26 +40,60 @@
     orderPricePriority2: ['近一次销售价', '手动定价', '市场价', '协议价'],
     orderPricePriority3: ['市场价', '手动定价', '近一次销售价', '协议价'],
     orderPricePriority4: ['协议价', '市场价', '近一次销售价', '手动定价'],
-    purchasePriceMode: ['竞价模式', '询价模式', '协议价模式'],
-    purchasePricePriority1: ['中标价', '近一次采购价', '市场价'],
-    purchasePricePriority2: ['近一次采购价', '中标价', '市场价'],
-    purchasePricePriority3: ['市场价', '中标价', '近一次采购价'],
+    purchasePriceMode: ['订价模式', '竞价模式', '订价+竞价模式'],
+    purchasePricePriority1: ['中标价', '协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+    purchasePricePriority2: ['中标价', '协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+    purchasePricePriority3: ['中标价', '协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+    purchasePricePriority4: ['中标价', '协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+    purchasePricePriority5: ['中标价', '协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+    purchasePricePriority6: ['中标价', '协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
     printerType: ['佳博', '佳能', '惠普', '其他']
   };
 
-  const lockedBlankKeys = new Set([
-    'orderPricePriority2', 'orderPricePriority3', 'orderPricePriority4',
-    'purchasePricePriority2', 'purchasePricePriority3'
-  ]);
-  const lockedValueSettings = {
-    orderPricePriority1: '手动定价',
-    purchasePriceMode: '竞价模式',
-    purchasePricePriority1: '中标价'
+  const purchasePriorityProfiles = {
+    '订价模式': {
+      count: 5,
+      options: ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价']
+    },
+    '竞价模式': {
+      count: 3,
+      optionsByPosition: [
+        ['中标价'],
+        ['近一次采购价', '市场价'],
+        ['近一次采购价', '市场价']
+      ]
+    },
+    '订价+竞价模式': {
+      count: 6,
+      optionsByPosition: [
+        ['中标价'],
+        ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+        ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+        ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+        ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
+        ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价']
+      ]
+    }
   };
-  const optionMarkup = (key, includeBlank = false) => `${includeBlank ? '<option value=""></option>' : ''}${selectOptions[key].map((option) => `<option value="${option}">${option}</option>`).join('')}`;
+
+  const purchaseModeAliases = { '询价模式': '订价模式', '协议价模式': '订价模式' };
+  const normalizePurchaseMode = (mode) => {
+    const normalized = purchaseModeAliases[mode] || mode;
+    return purchasePriorityProfiles[normalized] ? normalized : '竞价模式';
+  };
+  const purchasePriorityOptions = (mode, index) => {
+    const profile = purchasePriorityProfiles[normalizePurchaseMode(mode)];
+    return profile.optionsByPosition?.[index - 1] || profile.options || [];
+  };
+  const optionMarkupFromValues = (values, includeBlank = false) => `${includeBlank ? '<option value=""></option>' : ''}${values.map((option) => `<option value="${option}">${option}</option>`).join('')}`;
+  const optionMarkup = (key, includeBlank = false) => optionMarkupFromValues(selectOptions[key], includeBlank);
   const help = (text) => `<span class="config-help" title="${text}" aria-label="${text}">?</span>`;
   const clearButton = (key) => `<button class="config-clear" type="button" data-clear="${key}">清空</button>`;
-  const configSelect = (key, className = '', options = {}) => `<select class="config-select ${className}" data-config="${key}" aria-label="${key}" ${options.disabled ? 'disabled' : ''}>${optionMarkup(key, options.includeBlank)}</select>`;
+  const configSelect = (key, className = '', options = {}) => `<select class="config-select ${className}" data-config="${key}" aria-label="${key}" ${options.disabled ? 'disabled' : ''}>${optionMarkupFromValues(options.values || selectOptions[key], options.includeBlank)}</select>`;
+  const purchasePrioritySelect = (index) => {
+    const key = `purchasePricePriority${index}`;
+    return configSelect(key, '', { includeBlank: true, values: purchasePriorityOptions(defaults.purchasePriceMode, index) });
+  };
   const configInput = (key, placeholder = '请输入', className = '') => `<input class="config-input ${className}" data-config="${key}" placeholder="${placeholder}" autocomplete="off">`;
   const configCheckbox = (key, label, helpText = '') => `<label class="config-checkbox"><input type="checkbox" data-config="${key}"><span class="config-checkmark"></span><span>${label}</span>${helpText ? help(helpText) : ''}</label>`;
   const configRadio = (key, value, label) => `<label class="config-radio"><input type="radio" name="${key}" value="${value}" data-radio-config="${key}"><span class="config-radiomark"></span><span>${label}</span></label>`;
@@ -91,10 +128,10 @@
         <div class="config-row priority-row">
           <div class="config-label">下单单价取值优先级</div>
           <div class="config-priority-group">
-            <span>1.</span>${configSelect('orderPricePriority1', 'config-locked-select', { disabled: true })}
-            <span>2.</span>${configSelect('orderPricePriority2', 'config-locked-select', { disabled: true, includeBlank: true })}
-            <span>3.</span>${configSelect('orderPricePriority3', 'config-locked-select', { disabled: true, includeBlank: true })}
-            <span>4.</span>${configSelect('orderPricePriority4', 'config-locked-select', { disabled: true, includeBlank: true })}
+            <span>1.</span>${configSelect('orderPricePriority1')}
+            <span>2.</span>${configSelect('orderPricePriority2', '', { includeBlank: true })}
+            <span>3.</span>${configSelect('orderPricePriority3', '', { includeBlank: true })}
+            <span>4.</span>${configSelect('orderPricePriority4', '', { includeBlank: true })}
           </div>
         </div>
         <div class="config-row permission-row">
@@ -105,14 +142,17 @@
         <h2 class="system-config-title">采购配置</h2>
         <div class="config-row purchase-mode-row">
           <div class="config-label">采购价模式</div>
-          ${configSelect('purchasePriceMode', 'config-locked-select', { disabled: true })}
+          ${configSelect('purchasePriceMode')}
         </div>
         <div class="config-row priority-row purchase-priority-row">
           <div class="config-label">采购单价取值优先级</div>
           <div class="config-priority-group">
-            <span>1.</span>${configSelect('purchasePricePriority1', 'config-locked-select', { disabled: true })}
-            <span>2.</span>${configSelect('purchasePricePriority2', 'config-locked-select', { disabled: true, includeBlank: true })}
-            <span>3.</span>${configSelect('purchasePricePriority3', 'config-locked-select', { disabled: true, includeBlank: true })}
+            <span data-purchase-priority-index="1">1.</span>${purchasePrioritySelect(1)}
+            <span data-purchase-priority-index="2">2.</span>${purchasePrioritySelect(2)}
+            <span data-purchase-priority-index="3">3.</span>${purchasePrioritySelect(3)}
+            <span data-purchase-priority-index="4">4.</span>${purchasePrioritySelect(4)}
+            <span data-purchase-priority-index="5">5.</span>${purchasePrioritySelect(5)}
+            <span data-purchase-priority-index="6">6.</span>${purchasePrioritySelect(6)}
             <button class="config-apply" type="button" data-action="apply-purchase">应用</button>
           </div>
         </div>
@@ -183,12 +223,7 @@
 
   const root = window.AppShell.mount({ title: '业务配置', content });
   const persistedSettings = window.DemoStore.getSettings() || {};
-  const normalizedSettings = { ...lockedValueSettings };
-  lockedBlankKeys.forEach((key) => { normalizedSettings[key] = ''; });
-  if (Object.entries(normalizedSettings).some(([key, value]) => persistedSettings[key] !== value)) {
-    window.DemoStore.updateSettings(normalizedSettings);
-  }
-  let savedSettings = { ...defaults, ...persistedSettings, ...normalizedSettings };
+  let savedSettings = { ...defaults, ...persistedSettings };
   let pendingScrollPosition = null;
 
   function readScrollPosition() {
@@ -212,12 +247,33 @@
     else window.setTimeout(restore, 0);
   }
 
+  function updatePurchasePriorityFields(mode) {
+    const normalizedMode = normalizePurchaseMode(mode);
+    const profile = purchasePriorityProfiles[normalizedMode];
+    root.querySelectorAll('[data-purchase-priority-index]').forEach((label) => {
+      const index = Number(label.dataset.purchasePriorityIndex);
+      const select = root.querySelector(`[data-config="purchasePricePriority${index}"]`);
+      if (!select) return;
+      const currentValue = select.value;
+      const options = purchasePriorityOptions(normalizedMode, index);
+      select.innerHTML = optionMarkupFromValues(options, true);
+      select.value = options.includes(currentValue) ? currentValue : '';
+      const active = index <= profile.count;
+      label.hidden = !active;
+      select.hidden = !active;
+      label.setAttribute('aria-hidden', String(!active));
+      select.setAttribute('aria-hidden', String(!active));
+    });
+  }
+
   function applySettingsToForm() {
     root.querySelectorAll('[data-config]').forEach((element) => {
       const key = element.dataset.config;
       if (element.type === 'checkbox') element.checked = Boolean(savedSettings[key]);
+      else if (key === 'purchasePriceMode') element.value = normalizePurchaseMode(savedSettings[key]);
       else element.value = savedSettings[key] ?? '';
     });
+    updatePurchasePriorityFields(root.querySelector('[data-config="purchasePriceMode"]')?.value);
     root.querySelectorAll('[data-radio-config]').forEach((element) => {
       element.checked = String(savedSettings[element.dataset.radioConfig] ?? defaults[element.dataset.radioConfig]) === element.value;
     });
@@ -262,7 +318,10 @@
   }, true);
 
   root.addEventListener('change', (event) => {
-    if (event.target.matches('[data-config], [data-radio-config]')) persistSettings();
+    if (event.target.matches('[data-config], [data-radio-config]')) {
+      if (event.target.dataset.config === 'purchasePriceMode') updatePurchasePriorityFields(event.target.value);
+      persistSettings();
+    }
   });
   root.addEventListener('input', (event) => {
     if (event.target.matches('.config-input')) persistSettings();
