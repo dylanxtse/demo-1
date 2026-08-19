@@ -175,7 +175,7 @@
 
       const topLevelLink = event.target.closest('[data-menu-link]');
       if (topLevelLink) {
-        window.location.href = topLevelLink.dataset.menuLink;
+        window.AppNavigation?.navigate?.(topLevelLink.dataset.menuLink);
         return;
       }
 
@@ -215,7 +215,7 @@
         });
         if (selected?.href) {
           event.preventDefault();
-          window.location.href = selected.href;
+          window.AppNavigation?.navigate?.(selected.href);
         }
         return;
       }

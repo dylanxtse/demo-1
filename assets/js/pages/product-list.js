@@ -385,7 +385,7 @@
       }
       if (action === 'query') filterProducts(true);
       if (action === 'reset') resetFilters();
-      if (action === 'add-product') window.location.href = './goodsAdd.html';
+      if (action === 'add-product') window.AppNavigation?.navigate?.('./goodsAdd.html');
       if (action === 'edit-category') window.alert('编辑商品分类');
       if (action === 'add-category') {
         event.stopPropagation();
@@ -425,8 +425,8 @@
       if (rowAction) {
         const product = state.products.find((item) => item.code === rowAction.dataset.code);
         if (!product) return;
-        if (rowAction.dataset.rowAction === 'edit') window.location.href = `./goodsAdd.html?mode=edit&id=${encodeURIComponent(product.code)}`;
-        if (rowAction.dataset.rowAction === 'detail') window.location.href = `./goodsAdd.html?mode=view&id=${encodeURIComponent(product.code)}`;
+        if (rowAction.dataset.rowAction === 'edit') window.AppNavigation?.navigate?.(`./goodsAdd.html?mode=edit&id=${encodeURIComponent(product.code)}`);
+        if (rowAction.dataset.rowAction === 'detail') window.AppNavigation?.navigate?.(`./goodsAdd.html?mode=view&id=${encodeURIComponent(product.code)}`);
         if (rowAction.dataset.rowAction === 'status') {
           if (product.status === 'ENABLE') openUnshelfModal(product);
           else updateProductStatus(product, 'ENABLE');

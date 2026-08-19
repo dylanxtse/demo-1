@@ -31,7 +31,7 @@
   }
 
   function back(flag) {
-    window.location.href = `./order-return.html${flag ? `?${flag}=1` : ''}`;
+    window.AppNavigation?.navigate?.(`./order-return.html${flag ? `?${flag}=1` : ''}`);
   }
 
   function toast(message, isError) {

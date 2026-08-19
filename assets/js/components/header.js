@@ -112,7 +112,7 @@
         const switchButton = event.target.closest('[data-shell-switch]');
         if (switchButton) {
           closePlatformMenus();
-          window.location.href = switchButton.dataset.shellHref || './index.html';
+          window.AppNavigation?.switchEndpoint?.(switchButton.dataset.shellHref || './index.html');
           return;
         }
         const user = event.target.closest('.header-user');

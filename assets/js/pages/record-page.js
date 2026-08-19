@@ -283,7 +283,7 @@
             const cell = formatCell(item, column);
             if (column.href) {
               const href = typeof column.href === 'function' ? column.href(item) : column.href;
-              return `<td><button class="cell-link" type="button" data-cell-href="${escapeHtml(href)}" onclick="window.location.href=this.dataset.cellHref">${cell}</button></td>`;
+              return `<td><button class="cell-link" type="button" data-cell-href="${escapeHtml(href)}" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">${cell}</button></td>`;
             }
             return `<td>${column.link ? `<button class="cell-link" data-row-action="view">${cell}</button>` : cell}</td>`;
           }).join('')}
@@ -548,7 +548,7 @@
       if (actionKey === 'view') {
         const detailHref = currentTab()?.detailHref || config.detailHref;
         if (detailHref) {
-          window.location.href = typeof detailHref === 'function' ? detailHref(item) : detailHref;
+          window.AppNavigation?.navigate?.(typeof detailHref === 'function' ? detailHref(item) : detailHref);
           return;
         }
         return showDetail(item);
@@ -556,7 +556,7 @@
       if (actionKey === 'edit') {
         const editHref = currentTab()?.editHref || config.editHref;
         if (editHref) {
-          window.location.href = typeof editHref === 'function' ? editHref(item) : editHref;
+          window.AppNavigation?.navigate?.(typeof editHref === 'function' ? editHref(item) : editHref);
           return;
         }
         return showForm(item);
@@ -566,7 +566,7 @@
       if (!action) return;
       if (action.href) {
         const target = typeof action.href === 'function' ? action.href(item) : action.href;
-        window.location.href = target;
+        window.AppNavigation?.navigate?.(target);
         return;
       }
       if (action.detailResource || action.detailColumns) return showRelatedDetail(item, action);
@@ -596,7 +596,7 @@
       if (action.key === 'add') {
         const addHref = currentTab()?.addHref || config.addHref;
         if (addHref) {
-          window.location.href = typeof addHref === 'function' ? addHref() : addHref;
+          window.AppNavigation?.navigate?.(typeof addHref === 'function' ? addHref() : addHref);
           return;
         }
         return showForm();
@@ -656,7 +656,7 @@
       }
       const cellLink = event.target.closest('[data-cell-href]');
       if (cellLink) {
-        window.location.href = cellLink.dataset.cellHref;
+        window.AppNavigation?.navigate?.(cellLink.dataset.cellHref);
         return;
       }
       const rowButton = event.target.closest('[data-row-action]');

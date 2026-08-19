@@ -1040,7 +1040,7 @@
         return;
       }
       if (action === 'goto-records') {
-        window.location.href = './processing-record.html';
+        window.AppNavigation?.navigate?.('./processing-record.html');
         return;
       }
     });

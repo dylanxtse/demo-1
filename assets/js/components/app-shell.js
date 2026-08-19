@@ -13,7 +13,7 @@
             : (variant === 'school' ? 'school-shell' : '')));
 
       root.innerHTML = `
-        <div class="app-layout ${shellClass}">
+        <div class="app-layout ${shellClass}" data-app-variant="${variant}">
           ${window.AppSidebar.render(shellOptions)}
           <section class="main-section">
             ${window.AppHeader.render(shellOptions)}

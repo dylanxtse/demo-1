@@ -159,10 +159,10 @@
     window.AppShell.mount({ title: '订单退货', content: render(record) });
     document.getElementById('pageContent').addEventListener('click', (event) => {
       if (event.target.closest('[data-action="back"]')) {
-        window.location.href = './order-return.html';
+        window.AppNavigation?.navigate?.('./order-return.html');
       }
     });
   }).catch((error) => {
-    window.AppShell.mount({ title: '订单退货', content: `<div class="page-card processing-detail-page order-detail-page"><div class="processing-detail-page-header"><button class="back-link" type="button" onclick="window.location.href='./order-return.html'">${backIcon}<span>返回</span></button><h1>退货详情</h1></div><div class="processing-detail-page-body"><div class="page-empty-state">${escapeHtml(error.message || '退货单加载失败')}</div></div></div>` });
+    window.AppShell.mount({ title: '订单退货', content: `<div class="page-card processing-detail-page order-detail-page"><div class="processing-detail-page-header"><button class="back-link" type="button" onclick="window.AppNavigation.navigate('./order-return.html')">${backIcon}<span>返回</span></button><h1>退货详情</h1></div><div class="processing-detail-page-body"><div class="page-empty-state">${escapeHtml(error.message || '退货单加载失败')}</div></div></div>` });
   });
 })();

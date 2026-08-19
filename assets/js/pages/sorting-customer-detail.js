@@ -129,7 +129,7 @@
 
   root.addEventListener('click', (event) => {
     const action = event.target.closest('[data-action]')?.dataset.action;
-    if (action === 'back') { window.location.href = './sorting-management.html'; return; }
+    if (action === 'back') { window.AppNavigation?.navigate?.('./sorting-management.html'); return; }
     if (action === 'query') { applyFilters(); return; }
     if (action === 'reset') { root.querySelector('#goodsNameFilter').value = ''; root.querySelector('#shippedFilter').value = ''; applyFilters(); return; }
     if (action === 'batch-sort' || action === 'batch-shortage') {

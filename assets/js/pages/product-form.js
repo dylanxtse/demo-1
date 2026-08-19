@@ -123,7 +123,7 @@
   }
 
   function returnToList() {
-    window.location.href = './index.html';
+    window.AppNavigation?.navigate?.('./index.html');
   }
 
   function updateConversionRateLabel() {

@@ -132,7 +132,7 @@
       if (action === 'reset') resetFilters();
       if (event.target.closest('[data-supplier-product]')) {
         const code = event.target.closest('[data-supplier-product]').dataset.supplierProduct;
-        window.location.href = `./goodsAdd.html?mode=view&id=${encodeURIComponent(code)}`;
+        window.AppNavigation?.navigate?.(`./goodsAdd.html?mode=view&id=${encodeURIComponent(code)}`);
       }
     });
   }

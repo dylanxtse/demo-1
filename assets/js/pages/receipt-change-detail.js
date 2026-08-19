@@ -6,7 +6,7 @@
   const esc = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const money = (value) => Number(value || 0).toFixed(2);
   const field = (label, value) => `<div class="order-detail-item"><dt>${label}</dt><dd>${esc(value || '--')}</dd></div>`;
-  root.addEventListener('click', (event) => { if (event.target.closest('[data-action="back"]')) window.location.href = './receipt-change.html'; });
+  root.addEventListener('click', (event) => { if (event.target.closest('[data-action="back"]')) window.AppNavigation?.navigate?.('./receipt-change.html'); });
   window.OperationsService.get('receiptChanges', id).then((record) => {
     if (!record) return (content.innerHTML = '<div class="detail-empty">变更单不存在或已删除</div>');
     const lines = record.items?.length ? record.items : [{ goodsName: record.goodsName || '--', unit: '斤', shippingQty: 1, acceptedQty: 1, afterQty: 1, differenceQty: 0, unitPrice: record.beforeAmount || 0, shippingAmount: record.beforeAmount || 0, afterAmount: record.afterAmount || 0, differenceAmount: record.differenceAmount || 0, reason: record.changeReason || '--' }];

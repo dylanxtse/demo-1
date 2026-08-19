@@ -16,12 +16,13 @@
   }
 
   function readTabs() {
+    const isAllowed = (tab) => !window.AppNavigation?.isAllowed || window.AppNavigation.isAllowed(tab.href);
     try {
       const tabs = JSON.parse(window.sessionStorage.getItem(storageKey) || '[]');
-      return Array.isArray(tabs) ? tabs.filter((tab) => tab && tab.href && tab.title) : [];
+      return Array.isArray(tabs) ? tabs.filter((tab) => tab && tab.href && tab.title && isAllowed(tab)) : [];
     } catch (error) {
       const tabs = window.AppStorage?.read(storageKey, []);
-      return Array.isArray(tabs) ? tabs.filter((tab) => tab && tab.href && tab.title) : [];
+      return Array.isArray(tabs) ? tabs.filter((tab) => tab && tab.href && tab.title && isAllowed(tab)) : [];
     }
   }
 
@@ -122,7 +123,7 @@
         writeTabs(tabs);
         if (href === currentHref()) {
           const fallback = tabs[tabs.length - 1];
-          window.location.href = fallback?.href || './index.html';
+          window.AppNavigation?.navigate?.(fallback?.href || window.AppNavigation?.homeHref?.());
         } else {
           tabElement.remove();
         }

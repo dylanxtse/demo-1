@@ -404,7 +404,7 @@
       }
       const link = event.target.closest('[data-dashboard-link]');
       if (link) {
-        window.location.href = link.dataset.dashboardLink;
+        window.AppNavigation?.navigate?.(link.dataset.dashboardLink);
         return;
       }
       const action = event.target.closest('[data-dashboard-action]');

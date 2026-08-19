@@ -121,6 +121,6 @@
 
   window.AppShell.mount({ title: '出库管理', content: render() });
   document.getElementById('pageContent').addEventListener('click', (event) => {
-    if (event.target.closest('[data-action="back-to-list"]')) window.location.href = `./${returnTo}`;
+    if (event.target.closest('[data-action="back-to-list"]')) window.AppNavigation?.navigate?.(`./${returnTo}`);
   });
 })();

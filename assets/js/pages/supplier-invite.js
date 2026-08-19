@@ -198,7 +198,7 @@
 
   form.addEventListener('click', (event) => {
     if (event.target.closest('[data-action="demo-return"]')) {
-      window.location.replace('./supplier-archive.html');
+      window.AppNavigation?.navigate?.('./supplier-archive.html');
       return;
     }
     const trigger = event.target.closest('[data-upload-trigger]');

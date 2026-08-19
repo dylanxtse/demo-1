@@ -57,7 +57,7 @@
   }
 
   function backToList(flag) {
-    window.location.href = `./order-management.html${flag ? `?${flag}=1` : ''}`;
+    window.AppNavigation?.navigate?.(`./order-management.html${flag ? `?${flag}=1` : ''}`);
   }
 
   function toast(message, error) {

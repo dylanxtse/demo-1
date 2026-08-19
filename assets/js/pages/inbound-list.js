@@ -1445,7 +1445,7 @@
       if (rowActionEl) {
         const rowAction = rowActionEl.dataset.rowAction;
         const id = rowActionEl.dataset.id;
-        if (rowAction === 'detail') { window.location.href = `./inbound-detail.html?id=${encodeURIComponent(id)}`; return; }
+        if (rowAction === 'detail') { window.AppNavigation?.navigate?.(`./inbound-detail.html?id=${encodeURIComponent(id)}`); return; }
         if (rowAction === 'audit') { auditOrder(id); return; }
         if (rowAction === 'edit') { showFormPage('edit', id); return; }
         if (rowAction === 'close') { closeOrder(id); return; }

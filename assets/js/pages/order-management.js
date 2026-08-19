@@ -237,7 +237,7 @@
   }
 
   function showDetail(item) {
-    window.location.href = `./order-detail.html?id=${encodeURIComponent(item.id)}`;
+    window.AppNavigation?.navigate?.(`./order-detail.html?id=${encodeURIComponent(item.id)}`);
   }
 
   function formField(field, item) {
@@ -273,19 +273,19 @@
     if (!item) return toast('记录不存在或已删除', 'error');
     if (action === 'view') return showDetail(item);
     if (action === 'edit') {
-      window.location.href = `./order-add.html?mode=edit&id=${encodeURIComponent(item.id)}`;
+      window.AppNavigation?.navigate?.(`./order-add.html?mode=edit&id=${encodeURIComponent(item.id)}`);
       return;
     }
     if (action === 'approve') {
-      window.location.href = `./order-add.html?mode=audit&id=${encodeURIComponent(item.id)}`;
+      window.AppNavigation?.navigate?.(`./order-add.html?mode=audit&id=${encodeURIComponent(item.id)}`);
       return;
     }
     if (action === 'confirm') {
-      window.location.href = `./order-add.html?mode=confirm&id=${encodeURIComponent(item.id)}`;
+      window.AppNavigation?.navigate?.(`./order-add.html?mode=confirm&id=${encodeURIComponent(item.id)}`);
       return;
     }
     if (action === 'copy') {
-      window.location.href = `./order-add.html?mode=copy&id=${encodeURIComponent(item.id)}`;
+      window.AppNavigation?.navigate?.(`./order-add.html?mode=copy&id=${encodeURIComponent(item.id)}`);
       return;
     }
     if (action === 'delete') {
@@ -325,7 +325,7 @@
       return load();
     }
     if (event.target.id === 'addButton') {
-      window.location.href = './order-add.html';
+      window.AppNavigation?.navigate?.('./order-add.html');
       return;
     }
     if (event.target.id === 'batchConfirmButton') {

@@ -271,7 +271,7 @@
       detail.querySelector('[data-detail-filter]').innerHTML = renderFilter(name);
       return;
     }
-    if (event.target.closest('[data-action="back"]')) window.location.href = './bid-management.html';
+    if (event.target.closest('[data-action="back"]')) window.AppNavigation?.navigate?.('./bid-management.html');
   });
 
   detail.addEventListener('change', (event) => {

@@ -83,7 +83,7 @@
     return root;
   }
 
-  function go(url) { window.location.href = url; }
+  function go(url) { window.AppNavigation?.navigate?.(url); }
 
   function showToast(message, error = false) {
     let toast = document.getElementById('biddingToast');

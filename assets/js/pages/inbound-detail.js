@@ -198,7 +198,7 @@
     const actionEl = event.target.closest('[data-action]');
     const action = actionEl?.dataset.action;
     if (action === 'back-to-list') {
-      window.location.href = `./${returnTo}`;
+      window.AppNavigation?.navigate?.(`./${returnTo}`);
       return;
     }
     if (action === 'open-quality-report') {

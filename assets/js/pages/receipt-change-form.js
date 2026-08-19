@@ -25,7 +25,7 @@
   const money = (value) => Number(value || 0).toFixed(2);
 
   function back(flag) {
-    window.location.href = `./receipt-change.html${flag ? `?${flag}=1` : ''}`;
+    window.AppNavigation?.navigate?.(`./receipt-change.html${flag ? `?${flag}=1` : ''}`);
   }
 
   function toast(message, isError) {

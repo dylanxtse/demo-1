@@ -150,7 +150,7 @@
       saved = await service.create(resource, payload);
     }
     if (submit) await service.transition(resource, saved.id, 'approve');
-    location.href = './inventory-counting.html';
+    window.AppNavigation?.navigate?.('./inventory-counting.html');
   }
 
   root.addEventListener('input', (event) => {
@@ -163,7 +163,7 @@
 
   root.addEventListener('click', async (event) => {
     const action = event.target.closest('[data-action]')?.dataset.action;
-    if (action === 'back') location.href = './inventory-counting.html';
+    if (action === 'back') window.AppNavigation?.navigate?.('./inventory-counting.html');
     if (action === 'add-row') {
       record.items.push(type === 'count' ? { goodsCode: '', goodsName: '', category: '', unit: '斤', bookQty: 0, countQty: 0, costPrice: 0 } : { goodsCode: '', goodsName: '', unit: '斤', quantity: 0, price: 0, reason: '' });
       renderItems();
@@ -176,8 +176,8 @@
     try {
       if (action === 'save') await save(false);
       if (action === 'submit') await save(true);
-      if (action === 'approve') { await service.transition(resource, id, 'approve'); location.href = './inventory-counting.html'; }
-      if (action === 'close') { await service.transition(resource, id, 'close'); location.href = './inventory-counting.html'; }
+      if (action === 'approve') { await service.transition(resource, id, 'approve'); window.AppNavigation?.navigate?.('./inventory-counting.html'); }
+      if (action === 'close') { await service.transition(resource, id, 'close'); window.AppNavigation?.navigate?.('./inventory-counting.html'); }
     } catch (error) {
       toast(error.message || '操作失败', 'error');
     }
