@@ -123,7 +123,7 @@
   }
 
   function returnToList() {
-    window.AppNavigation?.navigate?.('./index.html');
+    window.AppNavigation?.navigate?.('./product-list.html');
   }
 
   function updateConversionRateLabel() {
