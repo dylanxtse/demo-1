@@ -22,9 +22,16 @@
       { name: '计量单位', href: './unit-measurement.html' }
     ]},
     { name: '价格管理', icon: 'tag', children: [
-      { name: '采购价', children: ['询价报价', '采购协议价'] },
+      { name: '采购价', children: [
+        { name: '询价报价', href: './purchase-inquiry-quote.html' },
+        { name: '采购协议价', href: './purchase-agreement-price.html' }
+      ] },
       { name: '价格执行清单', href: './price-execution-list.html' },
-      { name: '销售价', children: ['市场询价', '销售协议价', '结算改价'] }
+      { name: '销售价', children: [
+        { name: '市场询价', href: './market-inquiry.html' },
+        { name: '销售协议价', href: './sales-agreement-price.html' },
+        { name: '结算改价', href: './settlement-price-change.html' }
+      ] }
     ] },
     { name: '订单管理', icon: 'cart', children: [
       { name: '订单管理', href: './order-management.html' },

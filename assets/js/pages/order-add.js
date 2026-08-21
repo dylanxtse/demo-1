@@ -538,5 +538,14 @@
     }
   });
 
+  // 下拉面板使用 fixed 定位；页面或表格滚动后原锚点会移动，因此及时收起。
+  // 面板内部滚动仍然保留，方便浏览较长的商品列表。
+  document.addEventListener('scroll', (event) => {
+    const scrollTarget = event.target;
+    if (scrollTarget instanceof Element && scrollTarget.closest('.custom-select-dropdown')) return;
+    closeAllGoodsSelects();
+  }, true);
+  window.addEventListener('resize', () => closeAllGoodsSelects());
+
   loadRecord();
 })();

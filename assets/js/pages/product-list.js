@@ -58,17 +58,20 @@
           <div class="action-bar">
             <div class="action-main">
               <button class="btn btn-primary btn-sm btn-action" type="button" data-action="add-product">${addIcon}添加商品</button>
-              <button class="btn btn-sm btn-action btn-blue" type="button">导入商品信息</button>
-              <button class="btn btn-sm btn-action btn-blue" type="button">导入商品图片</button>
-              <button class="btn btn-sm btn-action btn-blue" type="button">导入市场价</button>
+              <button class="btn btn-sm btn-action btn-blue" type="button" data-action="import-products">导入商品信息</button>
+              <button class="btn btn-sm btn-action btn-blue" type="button" data-action="import-product-images">导入商品图片</button>
+              <button class="btn btn-sm btn-action btn-blue" type="button" data-action="import-market-prices">导入市场价</button>
               <button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchShelfBtn" type="button" disabled>批量上架</button>
               <button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchUnshelfBtn" type="button" disabled>批量下架</button>
               <button class="btn btn-danger btn-sm btn-action btn-disabled" id="batchDeleteBtn" type="button" disabled>批量删除</button>
             </div>
             <div class="action-controls">
-              <button class="btn btn-sm btn-fixed" type="button">${downloadIcon}导出</button>
+              <button class="btn btn-sm btn-fixed" type="button" data-action="export-products">${downloadIcon}导出</button>
             </div>
           </div>
+
+          <div class="product-page-notice" id="productPageNotice" role="status" aria-live="polite"></div>
+          <input type="file" id="productImportInput" accept=".xlsx,.xls,.csv" hidden>
 
           <div class="table-container">
             <div class="table-wrapper">
@@ -126,18 +129,18 @@
 
   const treeData = [
     { name: '全部', selected: false },
-    { name: '主食（米面粉点心类）', expanded: true, children: [
-      { name: '新增二级分类' },
-      { name: '新增三级分类' },
-      { name: '粮食类', children: [{ name: '米类' }, { name: '面类' }] }
+      { name: '主食（米面粉点心类）', expanded: true, children: [
+        { name: '新增二级分类' },
+        { name: '新增三级分类' },
+        { name: '粮食类', children: [{ name: '米类' }, { name: '面类' }] }
     ]},
     { name: '食油', expanded: true, children: [{ name: '食油二级' }, { name: '食油三级' }, { name: '花生油' }] },
     { name: '果蔬', expanded: true, children: [{ name: '果蔬二级' }, { name: '果蔬三级' }] },
     { name: '肉（豆）制品', expanded: true, children: [{ name: '肉（豆）制品二级' }, { name: '肉（豆）制品三级' }] },
-    { name: '水产品', expanded: true, children: [{ name: '水产品二级' }] },
-    { name: '蛋奶类', children: [{ name: '蛋奶类二级' }] },
-    { name: '调味品', children: [{ name: '调味品二级' }] },
-    { name: '其他材料', children: [{ name: '其他二级' }] }
+    { name: '水产品', expanded: true, children: [{ name: '水产品二级' }, { name: '水产品三级' }] },
+    { name: '蛋奶类', children: [{ name: '蛋奶类二级' }, { name: '蛋奶类三级' }] },
+    { name: '调料', children: [{ name: '调料二级' }, { name: '调料三级' }] },
+    { name: '其他材料', children: [{ name: '其他二级' }, { name: '其他三级' }] }
   ];
 
   const state = {
@@ -149,7 +152,8 @@
     total: 0,
     pagination: null,
     tree: JSON.parse(JSON.stringify(treeData)),
-    treeSearch: ''
+    treeSearch: '',
+    category: ''
   };
 
   function getNodeByPath(path) {
@@ -180,7 +184,7 @@
       const path = node.__path.join('-');
       return `
         <div class="tree-node ${node.expanded ? 'expanded' : ''}">
-          <div class="tree-node-header ${node.selected ? 'selected' : ''}" data-tree-node="${path}">
+          <div class="tree-node-header ${node.selected || state.category === node.name ? 'selected' : ''}" data-tree-node="${path}" data-tree-category="${window.DomUtils.escapeHtml(node.name)}">
             <span class="tree-arrow">${node.children ? '▶' : ''}</span>
             <span class="tree-label">${window.DomUtils.escapeHtml(node.name)}</span>
             <div class="tree-actions"><button class="tree-action-btn" type="button" data-action="add-category">+</button></div>
@@ -190,11 +194,11 @@
               ${node.children.map((child, childIndex) => {
                 const childPath = [...node.__path, childIndex].join('-');
                 return `
-                  <div class="tree-child" data-tree-child="${childPath}">
+                  <div class="tree-child ${state.category === child.name ? 'selected' : ''}" data-tree-child="${childPath}" data-tree-category="${window.DomUtils.escapeHtml(child.name)}">
                     <span class="tree-arrow">${child.children ? '▶' : ''}</span>
                     <span class="tree-label">${window.DomUtils.escapeHtml(child.name)}</span>
                   </div>
-                  ${child.children ? child.children.map((grandchild) => `<div class="tree-grandchild">${window.DomUtils.escapeHtml(grandchild.name)}</div>`).join('') : ''}
+                  ${child.children ? child.children.map((grandchild) => `<div class="tree-grandchild ${state.category === grandchild.name ? 'selected' : ''}" data-tree-category="${window.DomUtils.escapeHtml(grandchild.name)}">${window.DomUtils.escapeHtml(grandchild.name)}</div>`).join('') : ''}
                 `;
               }).join('')}
             </div>
@@ -275,6 +279,7 @@
     const source = value('sourceFilter');
     const netVegetable = value('netVegetableFilter');
     const result = state.products.filter((product) => (
+      (!state.category || state.category === '全部' || String(product.category || '').split('-').includes(state.category)) &&
       (!nameOrCode || `${product.name} ${product.code}`.toLowerCase().includes(nameOrCode)) &&
       (!brand || product.brand.toLowerCase().includes(brand)) &&
       (status === '全部' || window.BusinessRules.statusLabel('products', product.status) === status) &&
@@ -291,7 +296,37 @@
   function resetFilters() {
     ['productNameFilter', 'brandFilter'].forEach((id) => { document.getElementById(id).value = ''; });
     ['statusFilter', 'purchaseTypeFilter', 'sourceFilter', 'netVegetableFilter'].forEach((id) => { document.getElementById(id).value = '全部'; });
+    state.category = '';
+    state.tree.forEach((node) => { node.selected = false; });
+    renderTree();
     filterProducts(true);
+  }
+
+  function showNotice(message, type = 'success') {
+    const notice = document.getElementById('productPageNotice');
+    if (!notice) return;
+    notice.textContent = message;
+    notice.className = `product-page-notice is-visible ${type}`;
+    window.clearTimeout(showNotice.timer);
+    showNotice.timer = window.setTimeout(() => {
+      notice.className = 'product-page-notice';
+    }, 2800);
+  }
+
+  function exportProducts() {
+    const rows = state.filteredProducts.map((product) => [
+      product.code, product.name, product.category, product.unit, product.marketPrice,
+      window.BusinessRules.statusLabel('products', product.status), product.purchaseType, product.source
+    ]);
+    const csv = [['商品编号', '商品名称', '分类', '计量单位', '市场价', '状态', '采购类型', '商品来源'], ...rows]
+      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    link.download = '商品信息.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    showNotice(`已导出 ${rows.length} 条商品信息`);
   }
 
   function updateProductStatus(product, status, reason = '') {
@@ -386,10 +421,16 @@
       if (action === 'query') filterProducts(true);
       if (action === 'reset') resetFilters();
       if (action === 'add-product') window.AppNavigation?.navigate?.('./goodsAdd.html');
-      if (action === 'edit-category') window.alert('编辑商品分类');
+      if (action === 'edit-category') showNotice('商品分类编辑功能已保留在本地演示版本中', 'info');
       if (action === 'add-category') {
         event.stopPropagation();
-        window.alert('新增子分类');
+        showNotice('新增分类功能已保留在本地演示版本中', 'info');
+      }
+      if (action === 'export-products') exportProducts();
+      if (action === 'import-products' || action === 'import-product-images' || action === 'import-market-prices') {
+        const input = document.getElementById('productImportInput');
+        input.dataset.importType = action;
+        input.click();
       }
       if (action === 'close-unshelf-modal' || action === 'cancel-unshelf') closeUnshelfModal();
       if (action === 'confirm-unshelf') confirmUnshelf();
@@ -411,6 +452,14 @@
       }
 
       const treeNode = event.target.closest('[data-tree-node]');
+      const treeCategory = event.target.closest('[data-tree-category]');
+      if (treeCategory && !event.target.closest('[data-action="add-category"]')) {
+        state.category = treeCategory.dataset.treeCategory === '全部' ? '' : treeCategory.dataset.treeCategory;
+        state.tree.forEach((item) => { item.selected = item.name === treeCategory.dataset.treeCategory; });
+        renderTree();
+        filterProducts(true);
+        return;
+      }
       if (treeNode && action !== 'add-category') {
         const node = getNodeByPath(treeNode.dataset.treeNode.split('-').map(Number));
         if (node) {
@@ -454,6 +503,17 @@
     document.getElementById('categorySearch').addEventListener('input', (event) => {
       state.treeSearch = event.target.value || '';
       renderTree();
+    });
+    document.getElementById('productImportInput').addEventListener('change', (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const labels = {
+        'import-products': '商品信息',
+        'import-product-images': '商品图片',
+        'import-market-prices': '市场价'
+      };
+      showNotice(`已选择${labels[event.target.dataset.importType] || '商品'}文件：${file.name}`);
+      event.target.value = '';
     });
     document.querySelectorAll('#productNameFilter, #brandFilter').forEach((input) => {
       input.addEventListener('keydown', (event) => {

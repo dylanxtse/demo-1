@@ -74,12 +74,14 @@
         <select class="page-size-select" data-pagination-page-size aria-label="每页数量">
           ${pageSizeOptions.map((size) => `<option value="${size}" ${size === state.pageSize ? 'selected' : ''}>${size} 条/页</option>`).join('')}
         </select>
+        ${config.showArrows ? `<button class="page-btn page-arrow" type="button" data-pagination-action="previous" aria-label="上一页" ${state.page <= 1 ? 'disabled' : ''}>‹</button>` : ''}
         <div class="page-btns">
           ${pages.map((page) => page === 'ellipsis'
             ? '<span class="page-ellipsis" aria-hidden="true">...</span>'
             : `<button class="page-btn ${page === state.page ? 'active' : ''}" type="button" data-pagination-page="${page}" aria-current="${page === state.page ? 'page' : 'false'}">${page}</button>`
           ).join('')}
         </div>
+        ${config.showArrows ? `<button class="page-btn page-arrow" type="button" data-pagination-action="next" aria-label="下一页" ${state.page >= totalPages() ? 'disabled' : ''}>›</button>` : ''}
         <div class="page-jump">
           <span>跳至</span>
           <input class="pagination-jump-input" type="text" value="${state.page}" data-pagination-jump aria-label="跳转页码">

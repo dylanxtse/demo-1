@@ -1,0 +1,100 @@
+.price-management-page { min-width: 0; padding: 16px 24px; }
+.price-management-tabs { display: flex; gap: 26px; height: 48px; margin: -4px -24px 14px; padding: 0 24px; border-bottom: 1px solid var(--border-color); }
+.price-management-tabs button { position: relative; height: 48px; padding: 0 2px; border: 0; background: transparent; color: var(--text-secondary); font: inherit; cursor: pointer; }
+.price-management-tabs button.active { color: var(--primary); font-weight: 600; }
+.price-management-tabs button.active::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--primary); content: ''; }
+.price-management-filter { margin: 0; padding: 0 0 8px; border: 0; border-radius: 0; background: transparent; }
+.price-management-filter .operations-filter-main { display: grid; grid-template-columns: minmax(0, 1fr) 180px; min-width: 0; align-items: start; gap: 12px; }
+.price-management-filter .operations-filter-grid { grid-template-columns: minmax(300px, 1.4fr) repeat(2, minmax(190px, 1fr)); gap: 14px 36px; padding: 4px 0 10px; }
+.price-management-filter .operations-field { min-width: 0; gap: 8px; }
+.price-management-filter .operations-field .filter-label { width: 92px; flex: 0 0 92px; margin: 0; white-space: nowrap; }
+.price-management-filter .operations-field.date-range-field .filter-label { width: 92px; flex-basis: 92px; }
+.price-management-filter .operations-field > .filter-input,
+.price-management-filter .operations-field > .filter-select,
+.price-management-filter .operations-field > .date-range-picker { width: 0; min-width: 0; flex: 1 1 0; }
+.price-management-filter .date-range-picker { position: relative; }
+.price-management-filter .date-range-display { width: 100%; box-sizing: border-box; padding-right: 22px; cursor: pointer; }
+.price-management-filter .date-range-field .date-range-display { font-size: 11px; }
+.price-management-filter .date-range-icon { position: absolute; right: 8px; top: 50%; display: inline-flex; color: var(--text-tertiary); pointer-events: none; transform: translateY(-50%); }
+.price-management-filter .operations-filter-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 4px 0 0; }
+.price-management-toolbar { min-height: 48px; padding: 10px 0 8px; }
+.price-management-toolbar .operations-summary { display: none; }
+.price-management-table-wrap { max-height: calc(100vh - 270px); min-height: 300px; }
+.price-management-table { min-width: 1180px; table-layout: fixed; }
+.price-management-table th,
+.price-management-table td { text-align: center; vertical-align: middle; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+.price-management-table th { height: 48px; white-space: normal; line-height: 1.35; }
+.price-management-table th:last-child,
+.price-management-table td:last-child { width: 260px; }
+.marketInquiry-page .price-management-table { width: 100%; min-width: 0; }
+.marketInquiry-page .price-management-table th:nth-child(1),
+.marketInquiry-page .price-management-table td:nth-child(1) { width: 56px; }
+.marketInquiry-page .price-management-table th:nth-child(2),
+.marketInquiry-page .price-management-table td:nth-child(2) { width: 116px; }
+.marketInquiry-page .price-management-table th:nth-child(3),
+.marketInquiry-page .price-management-table td:nth-child(3) { width: 150px; }
+.marketInquiry-page .price-management-table th:nth-child(4),
+.marketInquiry-page .price-management-table td:nth-child(4) { width: 120px; }
+.marketInquiry-page .price-management-table th:nth-child(5),
+.marketInquiry-page .price-management-table td:nth-child(5) { width: 82px; }
+.marketInquiry-page .price-management-table th:nth-child(6),
+.marketInquiry-page .price-management-table td:nth-child(6) { width: 86px; }
+.marketInquiry-page .price-management-table th:last-child,
+.marketInquiry-page .price-management-table td:last-child { width: 330px; }
+.marketInquiry-page .price-management-filter .operations-filter-grid { grid-template-columns: minmax(300px, 1.4fr) repeat(2, minmax(180px, 1fr)); }
+.price-management-table td:first-child,
+.price-management-table th:first-child { text-align: left; }
+.price-management-table .price-seq { text-align: center; }
+.price-management-product { display: flex; min-width: 140px; flex-direction: column; gap: 3px; text-align: left; }
+.price-management-product strong { color: var(--text-primary); font-weight: 500; }
+.price-management-product small { color: var(--text-tertiary); font-size: 12px; }
+.price-management-money { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.price-management-table .status-tag.warning { background: #fff5e6; color: #d48806; }
+.price-management-actions { white-space: nowrap; }
+.price-management-actions .action-divider { display: inline-block; width: 1px; height: 12px; margin: 0 6px; background: var(--border-color); vertical-align: middle; }
+.price-management-empty { height: 180px !important; color: var(--text-tertiary); text-align: center !important; }
+.price-management-pagination { display: flex !important; min-height: 54px; align-items: center; justify-content: flex-end; padding: 12px 0; gap: 12px; box-sizing: border-box; }
+.price-management-pagination > .page-total { flex: 0 0 auto !important; margin-right: auto !important; }
+.price-management-pagination > .page-size-select,
+.price-management-pagination > .page-arrow,
+.price-management-pagination > .page-btns,
+.price-management-pagination > .page-jump { flex: 0 0 auto !important; width: auto !important; }
+.price-management-pagination > .page-btns { display: flex !important; }
+.price-management-pagination > .page-jump { display: flex !important; }
+.price-management-pagination .page-total { margin-right: auto; white-space: nowrap; }
+.price-management-pagination .page-size-select { min-width: 88px; height: 32px; padding: 0 28px 0 8px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; color: var(--text-primary); font: inherit; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+.price-management-pagination .page-btn { display: inline-flex; min-width: 32px; height: 32px; align-items: center; justify-content: center; padding: 0 8px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; color: var(--text-secondary); font: inherit; cursor: pointer; }
+.price-management-pagination .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+.price-management-pagination .page-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.price-management-pagination .page-btn:disabled { border-color: transparent; background: transparent; color: #c4cbd5; cursor: not-allowed; }
+.price-management-pagination .page-btns { display: flex; align-items: center; gap: 4px; }
+.price-management-pagination .page-jump { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.price-management-pagination .pagination-jump-input { width: 48px; height: 32px; box-sizing: border-box; padding: 0 6px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; text-align: center; outline: none; }
+.price-management-toast { position: fixed; z-index: 100; top: 78px; left: 50%; display: none; min-width: 160px; padding: 10px 18px; border-radius: 4px; background: rgba(31, 36, 48, .9); color: #fff; font-size: 13px; text-align: center; transform: translateX(-50%); }
+.price-management-toast.is-visible { display: block; }
+.price-management-toast.error { background: rgba(198, 54, 54, .92); }
+.price-management-modal { position: fixed; z-index: 90; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(20, 31, 51, .35); }
+.price-management-modal.is-visible { display: flex; }
+.price-management-dialog { width: min(520px, calc(100vw - 32px)); border-radius: 6px; background: #fff; box-shadow: 0 12px 40px rgba(20, 31, 51, .2); }
+.price-management-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+.price-management-dialog-head h2 { margin: 0; color: var(--text-primary); font-size: 16px; font-weight: 500; }
+.price-management-close { border: 0; background: transparent; color: var(--text-tertiary); font-size: 24px; line-height: 1; cursor: pointer; }
+.price-management-dialog-body { display: grid; gap: 14px; padding: 20px; }
+.price-management-dialog-body label { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: center; color: var(--text-secondary); font-size: 13px; }
+.price-management-dialog-body input,
+.price-management-dialog-body textarea { box-sizing: border-box; width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 7px 9px; font: inherit; outline: none; }
+.price-management-dialog-body textarea { resize: vertical; }
+.price-management-dialog-body input:focus,
+.price-management-dialog-body textarea:focus { border-color: var(--primary); }
+.price-management-dialog-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--border-light); }
+@media (max-width: 1180px) {
+  .price-management-filter .operations-filter-main { grid-template-columns: 1fr; }
+  .price-management-filter .operations-filter-grid { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+  .price-management-filter .operations-filter-actions { justify-content: flex-start; padding-top: 0; }
+}
+@media (max-width: 760px) {
+  .price-management-page { padding: 10px; }
+  .price-management-tabs { margin: -2px -10px 12px; padding: 0 10px; }
+  .price-management-filter .operations-filter-grid { grid-template-columns: 1fr; }
+  .price-management-table-wrap { max-height: calc(100vh - 310px); }
+}
