@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品维护 - 集采企业版企业端</title>
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/layout.css?v=20260819-menu-guard-2">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/product-form.css">
+</head>
+<body>
+  <div id="app"></div>
+
+  <template id="productFormTemplate">
+    <div class="page-card product-form-page">
+      <div class="product-form-header">
+        <button class="back-link" type="button" data-action="back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg>
+          <span>返回</span>
+        </button>
+        <h1 id="formPageTitle">添加商品</h1>
+      </div>
+
+      <div class="form-status" id="formStatus" role="status"></div>
+
+      <form class="product-form" id="productForm" novalidate>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="field-label required" for="category">商品分类</label>
+            <select class="form-control" id="category" name="category">
+              <option value="" selected disabled hidden>请选择</option>
+              <option>主食（米面粉点心类）-粮食类</option>
+              <option>蛋奶类-蛋奶类二级</option>
+              <option>食油-食油二级</option>
+              <option>果蔬-果蔬二级</option>
+              <option>肉（豆）制品-肉（豆）制品二级</option>
+              <option>水产品-水产品二级</option>
+              <option>其他材料-其他二级</option>
+            </select>
+            <span class="field-error" data-error-for="category"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label required" for="name">商品名称</label>
+            <input class="form-control" id="name" name="name" placeholder="请输入">
+            <span class="field-error" data-error-for="name"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="correspondingFood">对应食材</label>
+            <select class="form-control" id="correspondingFood" name="correspondingFood">
+              <option value="" selected disabled hidden>请选择</option>
+              <option>土豆</option><option>大米</option><option>牛奶</option><option>鸡蛋</option><option>西红柿</option>
+            </select>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label required" for="unit">计量单位</label>
+            <select class="form-control" id="unit" name="unit">
+              <option value="" selected disabled hidden>请选择</option><option>斤</option><option>瓶</option><option>KG</option><option>L</option>
+            </select>
+            <span class="field-error" data-error-for="unit"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label required" for="marketPrice">市场价</label>
+            <input class="form-control" id="marketPrice" name="marketPrice" inputmode="decimal" placeholder="请输入">
+            <span class="field-error" data-error-for="marketPrice"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="brand">品牌</label>
+            <input class="form-control" id="brand" name="brand" placeholder="请输入">
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="spec">规格</label>
+            <input class="form-control" id="spec" name="spec" placeholder="请输入">
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="origin">产地</label>
+            <input class="form-control" id="origin" name="origin" placeholder="请输入">
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="indicatorDescription">指标说明</label>
+            <input class="form-control" id="indicatorDescription" name="indicatorDescription" placeholder="请输入">
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="alias">商品别名</label>
+            <input class="form-control" id="alias" name="alias" placeholder="请输入">
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="netContent">净含量</label>
+            <div class="net-content-control">
+              <div class="number-stepper">
+                <input class="form-control net-content-number" id="netContent" name="netContent" type="number" min="0.01" step="0.01" placeholder="请输入">
+                <div class="number-stepper-buttons">
+                  <button class="number-stepper-button" type="button" data-number-step="up" data-number-target="netContent" aria-label="增加净含量">&#9650;</button>
+                  <button class="number-stepper-button" type="button" data-number-step="down" data-number-target="netContent" aria-label="减少净含量">&#9660;</button>
+                </div>
+              </div>
+              <select class="form-control net-content-unit" id="netContentUnit" name="netContentUnit">
+                <option value="" selected disabled hidden>请选择</option><option>斤</option><option>瓶</option><option>KG</option><option>L</option>
+              </select>
+            </div>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="qualificationCertificate">上传合格证明</label>
+            <select class="form-control" id="qualificationCertificate" name="qualificationCertificate">
+              <option value="" selected disabled hidden>请选择</option><option>限制</option><option>不限制</option>
+            </select>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-field standalone-switch-field net-vegetable-switch-field">
+            <label class="field-label" for="isNetVegetable">是否净菜</label>
+            <label class="switch-control">
+              <input class="switch-input" id="isNetVegetable" name="isNetVegetable" type="checkbox">
+              <span class="switch-slider" aria-hidden="true"></span>
+            </label>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="procurement-row net-vegetable-procurement-row">
+          <div class="form-field" role="group" aria-labelledby="purchaseTypeLabel">
+            <span class="field-label required" id="purchaseTypeLabel">采购类型</span>
+            <div class="radio-group">
+              <label class="radio-option purchase-type-option" data-purchase-type="供应商送货"><input type="radio" name="purchaseType" value="供应商送货" checked>供应商送货</label>
+              <label class="radio-option purchase-type-option" data-purchase-type="市场自采"><input type="radio" name="purchaseType" value="市场自采">市场自采</label>
+              <label class="radio-option purchase-type-option" data-purchase-type="企业自加工"><input type="radio" name="purchaseType" value="企业自加工">企业自加工</label>
+            </div>
+            <span class="field-error" data-error-for="purchaseType"></span>
+          </div>
+
+          <div class="form-field procurement-field" id="defaultSupplierField">
+            <label class="field-label required" for="defaultSupplier">默认供应商</label>
+            <select class="form-control" id="defaultSupplier" name="defaultSupplier">
+              <option value="" selected disabled hidden>请选择</option><option>平台默认供应商</option><option>供应商A</option><option>供应商B</option>
+            </select>
+            <span class="field-error" data-error-for="defaultSupplier"></span>
+          </div>
+
+          <div class="form-field procurement-field" id="responsibleField">
+            <label class="field-label required" for="responsible">采购负责人</label>
+            <select class="form-control" id="responsible" name="responsible">
+              <option value="" selected disabled hidden>请选择</option><option>管理员</option><option>张三</option><option>李四</option>
+            </select>
+            <span class="field-error" data-error-for="responsible"></span>
+          </div>
+          </div>
+
+          <div class="multi-unit-area">
+          <div class="multi-unit-row">
+          <div class="form-field">
+            <label class="field-label" for="multiUnit">启用多单位</label>
+            <label class="switch-control">
+              <input class="switch-input" id="multiUnit" name="multiUnit" type="checkbox">
+              <span class="switch-slider" aria-hidden="true"></span>
+            </label>
+            <span class="field-error"></span>
+          </div>
+          <h2 class="multi-unit-title multi-unit-heading">单位设置</h2>
+          </div>
+
+          <section class="multi-unit-settings is-hidden" aria-label="多单位设置">
+            <div class="multi-unit-setting-row multi-unit-setting-row-first">
+              <div class="multi-unit-primary-group">
+                <label class="multi-unit-label required" for="multiUnitName1">辅助单位1:</label>
+                <div class="multi-unit-control-group">
+                  <select class="form-control multi-unit-select" id="multiUnitName1" name="multiUnitName1">
+                    <option value="" selected disabled hidden>请选择</option><option>斤</option><option>瓶</option><option>KG</option><option>L</option>
+                  </select>
+                  <span class="multi-unit-equals">=</span>
+                  <div class="multi-unit-rate-control"><input class="form-control" id="multiUnitRate1" name="multiUnitRate1" type="number" min="0.01" step="0.01" placeholder="请输入"></div>
+                  <span class="multi-unit-base" id="multiUnitBase1">--</span>
+                </div>
+              </div>
+              <div class="multi-unit-price-group">
+                <label class="multi-unit-price-label required" for="multiUnitPrice1">市场价1</label>
+                <input class="form-control multi-unit-price" id="multiUnitPrice1" name="multiUnitPrice1" inputmode="decimal" placeholder="请输入">
+              </div>
+            </div>
+            <div class="multi-unit-setting-row multi-unit-setting-row-second">
+              <div class="multi-unit-primary-group">
+                <label class="multi-unit-label" for="multiUnitName2">辅助单位2:</label>
+                <div class="multi-unit-control-group">
+                  <select class="form-control multi-unit-select" id="multiUnitName2" name="multiUnitName2">
+                    <option value="" selected disabled hidden>请选择</option><option>斤</option><option>瓶</option><option>KG</option><option>L</option>
+                  </select>
+                  <span class="multi-unit-equals">=</span>
+                  <div class="multi-unit-rate-control"><input class="form-control" id="multiUnitRate2" name="multiUnitRate2" type="number" min="0.01" step="0.01" placeholder="请输入"></div>
+                  <span class="multi-unit-base" id="multiUnitBase2">--</span>
+                </div>
+              </div>
+              <div class="multi-unit-price-group">
+                <label class="multi-unit-price-label" for="multiUnitPrice2">市场价2</label>
+                <input class="form-control multi-unit-price" id="multiUnitPrice2" name="multiUnitPrice2" inputmode="decimal" placeholder="请输入">
+              </div>
+            </div>
+          </section>
+          </div>
+
+          <div class="weighing-row">
+            <div class="form-field">
+              <label class="field-label" for="isWeighed">是否称重</label>
+              <label class="switch-control">
+                <input class="switch-input" id="isWeighed" name="isWeighed" type="checkbox">
+                <span class="switch-slider" aria-hidden="true"></span>
+              </label>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-field conversion-rate-field">
+              <label class="field-label required" for="conversionRate">“<span id="conversionRateUnit">--</span>”与“kg”的换算率=</label>
+              <div class="conversion-rate-control">
+                <div class="number-stepper">
+                  <input class="form-control net-content-number" id="conversionRate" name="conversionRate" type="number" min="0.01" step="0.01" placeholder="请输入">
+                  <div class="number-stepper-buttons">
+                    <button class="number-stepper-button" type="button" data-number-step="up" data-number-target="conversionRate" aria-label="增加换算率">&#9650;</button>
+                    <button class="number-stepper-button" type="button" data-number-step="down" data-number-target="conversionRate" aria-label="减少换算率">&#9660;</button>
+                  </div>
+                </div>
+                <span class="conversion-rate-suffix">kg</span>
+              </div>
+              <span class="field-error" data-error-for="conversionRate"></span>
+            </div>
+          </div>
+
+          <div class="form-field standalone-switch-field shelf-life-switch-field">
+            <label class="field-label" for="shelfLife">设置保质期</label>
+            <label class="switch-control">
+              <input class="switch-input" id="shelfLife" name="shelfLife" type="checkbox">
+              <span class="switch-slider" aria-hidden="true"></span>
+            </label>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="shelf-life-fields-row">
+          <div class="form-field shelf-life-field is-hidden">
+            <label class="field-label required" for="shelfLifeValue">保质期</label>
+            <div class="net-content-control shelf-life-control">
+              <div class="number-stepper">
+                <input class="form-control net-content-number" id="shelfLifeValue" name="shelfLifeValue" type="number" min="1" step="1" inputmode="numeric" placeholder="请输入">
+                <div class="number-stepper-buttons">
+                  <button class="number-stepper-button" type="button" data-number-step="up" data-number-target="shelfLifeValue" aria-label="增加保质期">&#9650;</button>
+                  <button class="number-stepper-button" type="button" data-number-step="down" data-number-target="shelfLifeValue" aria-label="减少保质期">&#9660;</button>
+                </div>
+              </div>
+              <select class="form-control" id="shelfLifeUnit" name="shelfLifeUnit">
+                <option value="" selected disabled hidden>请选择</option><option>天</option><option>月</option><option>年</option>
+              </select>
+            </div>
+            <span class="field-error" data-error-for="shelfLifeValue"></span>
+            <span class="field-error" data-error-for="shelfLifeUnit"></span>
+          </div>
+
+          <div class="form-field shelf-life-warning-field is-hidden">
+            <label class="field-label" for="shelfLifeWarning">预警天数</label>
+            <div class="number-stepper">
+              <input class="form-control net-content-number" id="shelfLifeWarning" name="shelfLifeWarning" type="number" min="0" step="1" inputmode="numeric" placeholder="请输入">
+              <div class="number-stepper-buttons">
+                <button class="number-stepper-button" type="button" data-number-step="up" data-number-target="shelfLifeWarning" aria-label="增加预警天数">&#9650;</button>
+                <button class="number-stepper-button" type="button" data-number-step="down" data-number-target="shelfLifeWarning" aria-label="减少预警天数">&#9660;</button>
+              </div>
+            </div>
+            <span class="field-error" data-error-for="shelfLifeWarning"></span>
+          </div>
+
+          <div class="form-field shelf-life-method-field is-hidden">
+            <label class="field-label required" for="expiryCalculationMethod">到期日计算方式</label>
+            <select class="form-control" id="expiryCalculationMethod" name="expiryCalculationMethod">
+              <option value="" selected disabled hidden>请选择</option>
+              <option>生产日期+保质期</option>
+              <option>生产日期+保质期-1</option>
+            </select>
+            <span class="field-error" data-error-for="expiryCalculationMethod"></span>
+          </div>
+          </div>
+
+          <div class="form-field image-field">
+            <span class="field-label">图片</span>
+            <div class="image-upload">
+              <button class="image-upload-box" type="button" data-action="choose-image">
+                <span class="image-upload-plus">+</span>
+                <span id="imageButtonText">选择文件</span>
+              </button>
+              <div class="image-upload-tip" id="imageTip">支持 png、jpg、jpeg 等图片格式，单张图片不超过 5M</div>
+              <input id="imageFile" name="imageFile" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" hidden>
+            </div>
+            <span class="field-error" data-error-for="imageFile"></span>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" id="submitButton" type="submit">提交</button>
+            <button class="btn" type="button" data-action="cancel">取消</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </template>
+
+  <script src="./assets/js/config/menu-data.js?v=20260819-menu-guard-3"></script>
+  <script src="./assets/js/components/navigation-guard.js?v=20260819-navigation-2"></script><script src="./assets/js/components/header.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/page-tabs.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/sidebar.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/number-stepper.js"></script>
+  <script src="./assets/js/utils/dom.js"></script>
+  <script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js"></script>
+  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js"></script>
+  <script src="./assets/js/utils/validator.js"></script>
+
+  <script src="./assets/js/services/product-service.js"></script>
+  <script src="./assets/js/pages/product-form.js?v=20260819-navigation-2"></script>
+</body>
+</html>

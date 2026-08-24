@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订单维护 - 集采企业版企业端</title>
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/layout.css?v=20260819-menu-guard-2">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/product-list.css">
+  <link rel="stylesheet" href="./assets/css/warehouse.css">
+  <link rel="stylesheet" href="./assets/css/operations.css?v=20260731-7">
+  <link rel="stylesheet" href="./assets/css/order-lists.css?v=20260731-7">
+  <link rel="stylesheet" href="./assets/css/processing.css?v=20260731-7">
+  <link rel="stylesheet" href="./assets/css/order-form.css?v=20260731-7">
+</head>
+<body>
+  <div id="app"></div>
+
+  <template id="orderAddTemplate">
+    <div class="page-card order-form-page">
+      <div class="order-form-header">
+        <button class="back-link" type="button" data-action="back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg>
+          <span>返回</span>
+        </button>
+        <h1 id="orderPageTitle">添加订单</h1>
+      </div>
+
+      <div class="order-form-status" id="orderFormStatus" role="status"></div>
+
+      <form class="order-form" id="orderAddForm" novalidate>
+        <section class="order-form-section">
+          <div class="order-section-heading">
+            <h2 class="goods-title-marker">基本信息</h2>
+          </div>
+          <div class="order-form-grid" id="orderBasicInfoGrid">
+            <div class="order-form-field">
+              <label class="field-label required" for="customerName">客户名称</label>
+              <select class="form-control filter-select" id="customerName" name="customerName"><option value="" selected disabled hidden>请选择</option></select>
+              <span class="field-error" data-error-for="customerName"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="expectedAt">期望送达时间</label>
+              <div class="date-input-control"><input class="form-control filter-input" id="expectedAt" name="expectedAt" type="text" placeholder="请选择日期和时间" readonly><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div>
+              <span class="field-error" data-error-for="expectedAt"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="canteen">食堂</label>
+              <select class="form-control filter-select" id="canteen" name="canteen"><option value="" selected disabled hidden>请选择</option></select>
+              <span class="field-error" data-error-for="canteen"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="orderTag">订单标签</label>
+              <select class="form-control filter-select" id="orderTag" name="orderTag"><option value="" selected disabled hidden>请选择</option><option>营养餐</option><option>普通餐</option><option>应急保供</option></select>
+              <span class="field-error" data-error-for="orderTag"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="order-form-section goods-section">
+          <div class="order-section-heading">
+            <h2 class="goods-title-marker">商品信息</h2>
+            <button class="btn btn-primary btn-sm" id="batchAddGoods" type="button">批量添加商品</button>
+          </div>
+          <div class="order-goods-table-wrap">
+            <table class="order-goods-table">
+              <thead><tr><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th class="required-head">下单数量</th><th class="required-head">下单单价</th><th>下单小计</th><th>协议价</th><th>近一次销售价</th><th>市场价</th><th>备注</th><th>操作</th></tr></thead>
+              <tbody id="goodsTableBody"></tbody>
+              <tfoot><tr><td colspan="6">合计</td><td id="goodsTotal">0.00</td><td colspan="5"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="goods-table-error" id="goodsTableError"></div>
+          <div class="order-remark-section">
+            <div class="order-section-heading">
+              <h2 class="goods-title-marker">订单备注</h2>
+            </div>
+            <div class="remark-input-wrap">
+              <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="请输入备注"></textarea>
+            </div>
+          </div>
+        </section>
+      </form>
+
+      <div class="order-form-actions">
+        <button class="btn" type="button" data-action="back">返回</button>
+        <button class="btn" id="draftButton" type="button" data-action="draft">暂存</button>
+        <button class="btn btn-danger" id="rejectButton" type="button" data-action="reject">驳回</button>
+        <button class="btn btn-primary" id="primaryButton" type="button" data-action="save">保存订单</button>
+      </div>
+    </div>
+    <div id="orderFormOverlay"></div>
+  </template>
+
+  <script src="./assets/js/config/menu-data.js?v=20260819-menu-guard-3"></script>
+  <script src="./assets/js/components/navigation-guard.js?v=20260819-navigation-2"></script><script src="./assets/js/components/header.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/page-tabs.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/sidebar.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/date-range-picker.js"></script>
+  <script src="./assets/js/utils/dom.js"></script>
+  <script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js"></script>
+  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js"></script>
+
+
+  <script src="./assets/js/services/operations-service.js?v=20260731-11"></script>
+  <script src="./assets/js/pages/order-add.js?v=20260819-navigation-2"></script>
+</body>
+</html>

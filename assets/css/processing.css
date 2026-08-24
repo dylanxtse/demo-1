@@ -1,0 +1,1847 @@
+/* ===== 净菜加工 - 状态标签 ===== */
+.status-tag.pending { background: #fff7e6; color: var(--warning); }
+.status-tag.draft { background: #fff7e6; color: var(--warning); }
+.status-tag.cancelled { background: #fff1f0; color: var(--danger); }
+
+/* ===== 加工表单（页面内展开） ===== */
+.processing-form-page {
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.processing-form-page.is-visible { display: flex; }
+.processing-list-page.is-hidden { display: none; }
+
+.processing-form-header {
+  height: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  flex-shrink: 0;
+}
+.processing-form-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222b3a;
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+}
+
+.processing-form-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 24px 100px;
+}
+
+.processing-form-status {
+  display: none;
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+.processing-form-status.visible { display: block; }
+.processing-form-status.error { color: #a61b1b; background: #fff1f0; }
+.processing-form-status.success { color: #176b47; background: #e8f8f0; }
+
+/* ===== 表单区块 ===== */
+.form-section {
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 16px;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.form-section-header .section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-section-body { padding: 16px; }
+
+/* ===== 基本信息区 ===== */
+.basic-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 32px;
+}
+.basic-info-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.basic-info-field .field-label {
+  width: 80px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.basic-info-field .field-label.required::before {
+  content: '*';
+  margin-right: 4px;
+  color: var(--danger);
+}
+.basic-info-field .form-control {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #cfd5df;
+  border-radius: 3px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.basic-info-field .form-control:focus { border-color: var(--primary); }
+.basic-info-field .form-control:disabled {
+  background: #f3f5f8;
+  color: #9aa4b2;
+  cursor: not-allowed;
+}
+
+/* 净菜加工页面的数字输入框不显示浏览器原生步进器 */
+.processing-workspace input[type="number"],
+.template-editor-page input[type="number"] {
+  -moz-appearance: textfield;
+}
+.processing-workspace input[type="number"]::-webkit-inner-spin-button,
+.processing-workspace input[type="number"]::-webkit-outer-spin-button,
+.template-editor-page input[type="number"]::-webkit-inner-spin-button,
+.template-editor-page input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+.date-input-control {
+  position: relative;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+.date-input-control .form-control {
+  position: relative;
+  width: 100%;
+  padding-right: 30px;
+  cursor: pointer;
+}
+.date-input-control input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.date-input-control .date-range-icon {
+  right: 8px;
+}
+.basic-info-field > .date-range-picker {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+.basic-info-field > .date-range-picker .form-control { width: 100%; }
+.operation-remark-field .remark-input-wrap {
+  position: relative;
+  min-width: 0;
+}
+.operation-remark-field textarea.form-control {
+  display: block;
+  width: 100%;
+  height: 78px;
+  border: 1px solid var(--border-color);
+  padding: 8px 62px 24px 10px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.operation-remark-field textarea.form-control:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(2, 73, 196, 0.14);
+}
+.remark-counter {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: var(--text-tertiary, #9aa4b2);
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+}
+/* 加工备注上传附件区域 */
+.remark-upload-area {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.remark-upload-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 12px;
+}
+.remark-attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.remark-attachment-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  background: #fafbfc;
+  font-size: 12px;
+}
+.remark-attachment-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 2px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.remark-attachment-name {
+  color: var(--text-primary);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.remark-attachment-meta {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+.remark-attachment-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+}
+.remark-attachment-remove:hover {
+  color: var(--danger);
+  background: #fff1f0;
+}
+.basic-info-field.readonly-value {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.basic-info-field .field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin-left: 88px;
+  margin-top: -12px;
+  margin-bottom: 4px;
+  grid-column: 1;
+}
+
+/* ===== 成本模式切换 ===== */
+.cost-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+.cost-mode-toggle .radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.cost-mode-toggle .radio-option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+.cost-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-light);
+  background: #fff;
+  font-size: 14px;
+}
+.cost-mode-label {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.cost-mode-row .radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cost-mode-row .radio-option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+.reference-fill-btn:disabled {
+  color: var(--text-tertiary);
+  border-color: var(--border-color);
+  background: #f3f5f8;
+  cursor: not-allowed;
+}
+.operation-cost-section {
+  margin-bottom: 20px;
+}
+.operation-cost-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 0;
+  padding: 0 0 10px;
+  background: transparent;
+}
+.cost-price-label {
+  flex-shrink: 0;
+}
+.operation-cost-header .cost-mode-row {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* ===== 原料/成片子表 ===== */
+.processing-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.processing-sub-table th {
+  background: #fafafa;
+  height: 40px;
+  padding: 0 8px;
+  text-align: center;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+.processing-sub-table th:last-child { border-right: none; }
+.processing-sub-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  text-align: center;
+  color: var(--text-primary);
+}
+.processing-sub-table td:last-child { border-right: none; }
+.processing-sub-table .sub-table-select,
+.processing-sub-table .sub-table-input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 0 6px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+.processing-sub-table .sub-table-select:focus,
+.processing-sub-table .sub-table-input:focus {
+  border-color: var(--primary);
+}
+.processing-sub-table .sub-table-input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+/* 加工成品的实际获得量与入库单价输入内容居中显示 */
+#opOutputBody [data-op-output-field="actualQty"],
+#opOutputBody .cost-price-input {
+  text-align: center;
+}
+.unit-price-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 104px;
+  height: 30px;
+}
+.unit-price-control .cost-price-input {
+  flex: 1;
+  width: 70px;
+  min-width: 0;
+  height: 30px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.unit-price-control .unit-price-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.unit-price-suffix {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 30px;
+  white-space: nowrap;
+}
+.form-section-header .reference-fill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  line-height: 1;
+}
+.processing-sub-table .sub-table-readonly {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.processing-sub-table .sub-table-placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+.processing-sub-table .row-delete-btn {
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 8px;
+}
+.processing-sub-table .row-delete-btn:hover { opacity: 0.8; }
+.processing-sub-table .row-delete-btn:disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+.sub-table-add-row {
+  padding: 8px;
+  text-align: center;
+}
+.sub-table-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 3px;
+  padding: 4px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sub-table-add-btn:hover { background: #d6e4ff; }
+.sub-table-error {
+  padding: 4px 12px 8px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* ===== 表单底部操作（固定底部） ===== */
+.processing-form-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-light);
+  background: #fff;
+}
+.processing-form-footer .btn { min-width: 100px; justify-content: center; }
+
+/* ===== 加工记录详情页 ===== */
+.processing-detail-page {
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-white);
+  border-radius: 6px;
+}
+.processing-detail-page-header {
+  height: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  flex-shrink: 0;
+}
+.processing-detail-page-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222b3a;
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+}
+.inbound-detail-page .detail-header-status,
+.outbound-detail-page .detail-header-status,
+.order-detail-page .detail-header-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inbound-detail-page .detail-header-status-label,
+.outbound-detail-page .detail-header-status-label,
+.order-detail-page .detail-header-status-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.processing-detail-page-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 24px 40px;
+}
+.processing-detail-footer {
+  position: relative;
+  z-index: 10;
+}
+
+.processing-detail-section { margin-bottom: 20px; }
+.processing-detail-section:last-child { margin-bottom: 0; }
+.processing-detail-section h3 {
+  height: 20px;
+  line-height: 20px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary);
+}
+.processing-detail-info {
+  display: grid;
+  grid-template-columns: repeat(var(--detail-grid-columns), minmax(0, 1fr));
+  gap: var(--detail-grid-row-gap) var(--detail-grid-column-gap);
+  font-size: 14px;
+}
+.processing-detail-info .info-item {
+  display: grid;
+  grid-template-columns: var(--detail-field-label-width) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.processing-detail-info .info-label {
+  width: var(--detail-field-label-width);
+  color: var(--text-tertiary);
+  text-align: right;
+  white-space: nowrap;
+}
+.processing-detail-info .info-value {
+  min-width: 0;
+  color: var(--text-primary);
+  text-align: left;
+}
+.processing-detail-edit-control {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 32px;
+}
+.processing-detail-remark-input {
+  max-width: 640px;
+}
+.detail-quality-report-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.processing-detail-info .info-item.info-item-wide {
+  grid-column: span 2;
+  grid-template-columns: 144px minmax(0, 1fr);
+}
+.processing-detail-info .info-item.info-item-wide .info-label {
+  width: 144px;
+}
+/* 入库/出库/订单详情页：一行三列，标签加宽以适配"供应商/采购员/客户" */
+.inbound-detail-page .processing-detail-info,
+.outbound-detail-page .processing-detail-info,
+.order-detail-page .processing-detail-info {
+  --detail-grid-columns: 3;
+  --detail-field-label-width: 140px;
+}
+
+/* 入库/出库/订单详情页：商品图片、商品名称子文本 */
+.inbound-detail-table .detail-product-img,
+.outbound-detail-table .detail-product-img,
+.order-detail-table .detail-product-img {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.order-detail-table .detail-product-name {
+  display: inline;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 20px;
+}
+.inbound-detail-table .detail-product-name,
+.outbound-detail-table .detail-product-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 20px;
+}
+.order-detail-table .detail-product-sub {
+  display: inline;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 18px;
+}
+.inbound-detail-table .detail-product-sub,
+.outbound-detail-table .detail-product-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 18px;
+}
+
+/* 入库/出库/订单/加工详情页：备注框 */
+.inbound-detail-page .detail-remark-box,
+.outbound-detail-page .detail-remark-box,
+.order-detail-page .detail-remark-box,
+.processing-detail-page .detail-remark-box {
+  padding: 10px 12px;
+  background: #fafbfc;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 22px;
+  min-height: 40px;
+}
+.inbound-detail-page .detail-empty,
+.outbound-detail-page .detail-empty,
+.order-detail-page .detail-empty,
+.processing-detail-page .detail-empty {
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+/* 入库/出库/加工详情页：附件列表 */
+.inbound-detail-page .detail-attachment-list,
+.outbound-detail-page .detail-attachment-list,
+.processing-detail-page .detail-attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.inbound-detail-page .detail-attachment-item,
+.outbound-detail-page .detail-attachment-item,
+.processing-detail-page .detail-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: #fafbfc;
+}
+.inbound-detail-page .detail-attachment-thumb,
+.outbound-detail-page .detail-attachment-thumb,
+.processing-detail-page .detail-attachment-thumb {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.inbound-detail-page .detail-attachment-info,
+.outbound-detail-page .detail-attachment-info,
+.processing-detail-page .detail-attachment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.inbound-detail-page .detail-attachment-name,
+.outbound-detail-page .detail-attachment-name,
+.processing-detail-page .detail-attachment-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 18px;
+  white-space: nowrap;
+}
+.inbound-detail-page .detail-attachment-meta,
+.outbound-detail-page .detail-attachment-meta,
+.processing-detail-page .detail-attachment-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 16px;
+}
+
+/* 入库/出库/订单/加工详情页：操作记录时间轴 */
+.inbound-detail-page .detail-timeline,
+.outbound-detail-page .detail-timeline,
+.order-detail-page .detail-timeline,
+.processing-detail-page .detail-timeline {
+  padding: 4px 0 4px 8px;
+}
+.inbound-detail-page .detail-timeline-item,
+.outbound-detail-page .detail-timeline-item,
+.order-detail-page .detail-timeline-item,
+.processing-detail-page .detail-timeline-item {
+  position: relative;
+  padding: 0 0 40px 20px;
+}
+.inbound-detail-page .detail-timeline-item:last-child,
+.outbound-detail-page .detail-timeline-item:last-child,
+.order-detail-page .detail-timeline-item:last-child,
+.processing-detail-page .detail-timeline-item:last-child {
+  padding-bottom: 0;
+}
+.inbound-detail-page .detail-timeline-item::before,
+.outbound-detail-page .detail-timeline-item::before,
+.order-detail-page .detail-timeline-item::before,
+.processing-detail-page .detail-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-color);
+}
+.inbound-detail-page .detail-timeline-item:last-child::before,
+.outbound-detail-page .detail-timeline-item:last-child::before,
+.order-detail-page .detail-timeline-item:last-child::before,
+.processing-detail-page .detail-timeline-item:last-child::before {
+  display: none;
+}
+.inbound-detail-page .detail-timeline-node,
+.outbound-detail-page .detail-timeline-node,
+.order-detail-page .detail-timeline-node,
+.processing-detail-page .detail-timeline-node {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.inbound-detail-page .detail-timeline-content,
+.outbound-detail-page .detail-timeline-content,
+.order-detail-page .detail-timeline-content,
+.processing-detail-page .detail-timeline-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.inbound-detail-page .detail-timeline-action,
+.outbound-detail-page .detail-timeline-action,
+.order-detail-page .detail-timeline-action,
+.processing-detail-page .detail-timeline-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 3px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.inbound-detail-page .detail-timeline-desc,
+.outbound-detail-page .detail-timeline-desc,
+.order-detail-page .detail-timeline-desc,
+.processing-detail-page .detail-timeline-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 20px;
+}
+.processing-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.processing-detail-table th {
+  background: #fafafa;
+  height: 36px;
+  padding: 0 8px;
+  text-align: center;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+.processing-detail-table td {
+  padding: 6px 8px;
+  text-align: center;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+
+/* 订单详情页：商品列表单行显示 + 横向滑动 */
+.order-detail-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-light);
+}
+.order-detail-table {
+  min-width: 2000px;
+}
+
+/* ===== 加工列表页操作列宽度 ===== */
+.processing-list-page .data-table .action-cell { min-width: 140px; }
+.processing-list-page .action-main {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+.processing-record-page .action-main { display: flex; }
+.processing-record-page .action-controls-multi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.processing-record-page .action-controls-row {
+  display: flex;
+  gap: 8px;
+  height: 32px;
+}
+.processing-record-page .action-controls-row:last-child {
+  justify-content: flex-end;
+}
+.processing-record-page .data-table th,
+.processing-record-page .data-table td { text-align: center; }
+.processing-record-page .data-table .processing-record-material-col {
+  width: 230px;
+  min-width: 230px;
+  max-width: 230px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.processing-record-page .data-table .processing-record-product-col {
+  width: 230px;
+  min-width: 230px;
+  max-width: 230px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.processing-record-page .data-table .action-cell {
+  min-width: 140px;
+  white-space: nowrap;
+}
+.processing-record-page .table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.processing-record-page .data-table {
+  min-width: 1900px;
+}
+/* 加工记录表为两级表头：滚动时保持“加工成品”及其子表头同时可见 */
+.processing-record-page .data-table thead tr:first-child th {
+  top: 0;
+  z-index: 4;
+  background: #fafafa;
+}
+.processing-record-page .data-table thead tr:nth-child(2) th {
+  top: 44px;
+  z-index: 3;
+  background: #fafafa;
+}
+.processing-record-page .data-table thead tr:first-child th[rowspan="2"] {
+  z-index: 5;
+}
+.processing-record-page .processing-record-product-name {
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+.processing-record-page .processing-record-material-col .processing-record-product-name {
+  text-align: center;
+}
+.processing-record-page .processing-record-product-name .name-main,
+.processing-record-page .processing-record-product-name .name-sub {
+  white-space: nowrap;
+}
+.processing-record-page .processing-record-product-more {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.processing-record-page .data-table tbody tr { height: 100px; }
+.processing-record-page .data-table tbody td { height: 100px; vertical-align: middle; }
+.processing-record-page .data-table tbody tr.is-multi-output,
+.processing-record-page .data-table tbody tr.is-multi-output td {
+  height: 50px;
+  box-sizing: border-box;
+}
+.processing-record-page .data-table tbody tr.is-multi-output td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.processing-record-page .data-table tbody tr.is-order-hover td,
+.processing-record-page .data-table tbody tr.is-order-hover td:last-child {
+  background: #f5f7fa;
+}
+.processing-record-page .data-table thead tr:first-child th[colspan] {
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+}
+.processing-record-page .data-table thead tr:nth-child(2) th:last-child,
+.processing-record-page .data-table tbody td.record-output-qty-cell {
+  border-right: 1px solid var(--border-light);
+}
+.processing-record-page .data-table a.code-link,
+.processing-record-page .data-table a.code-link:hover {
+  text-decoration: none;
+}
+.processing-record-sub-row + .processing-record-sub-row td {
+  border-top: 0;
+}
+.record-output-product-cell,
+.record-output-qty-cell {
+  min-width: 100px;
+}
+.record-output-product {
+  display: block;
+  white-space: nowrap;
+}
+.record-output-product-cell .processing-record-product-name {
+  text-align: center;
+}
+.record-output-product-cell .processing-record-product-name .name-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.record-output-product-cell .processing-record-product-name .name-sub {
+  text-align: center;
+}
+.record-output-more {
+  flex-shrink: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.processing-record-page .related-order-link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ===== 返回按钮（复用 product-form 风格） ===== */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5b6473;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.back-link:hover { color: #2f3a4d; }
+.back-link svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ===== 加工操作面板 - 左右分栏布局 ===== */
+.processing-workspace {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  column-gap: var(--content-gap);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 左侧：加工方案面板（灰色底，同分类树样式） */
+.processing-template-panel {
+  display: flex;
+  flex-direction: column;
+  background: #fafbfc;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+.template-panel-header {
+  height: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.template-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.template-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.template-search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #cfd5df;
+  border-radius: 3px;
+  font-size: 13px;
+  outline: none;
+  background: #fafbfc;
+}
+.template-search-input:focus { border-color: var(--primary); background: #fff; }
+.template-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.template-demand-notice {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid #f2d29b;
+  border-radius: 4px;
+  background: #fff8e8;
+  color: #8a5a12;
+  font-size: 12px;
+  line-height: 18px;
+}
+.template-demand-notice-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+}
+.template-demand-notice-row + .template-demand-notice-row {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(242, 210, 155, 0.7);
+}
+.template-demand-notice-row .btn {
+  flex-shrink: 0;
+  min-width: auto;
+  height: auto;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--primary);
+}
+.template-demand-notice-row .btn:hover,
+.template-demand-notice-row .btn:focus {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  text-decoration: underline;
+}
+.template-demand-notice.is-empty {
+  border-color: var(--border-light);
+  background: transparent;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+.template-list-empty {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  padding: 40px 0;
+}
+
+/* 模版卡片 */
+.template-card {
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  background: transparent;
+}
+.template-card:hover {
+  background: var(--primary-light);
+}
+.template-card.selected {
+  background: var(--primary-light);
+}
+.template-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.template-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.template-card-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.template-card-flow {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.template-card-flow .flow-label {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.template-card-flow .flow-content {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+.template-card-actions {
+  display: none;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.template-card:hover .template-card-actions,
+.template-card.selected .template-card-actions {
+  display: flex;
+}
+.template-card-actions .btn-text {
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+/* 自定义商品下拉选择 */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  height: 30px;
+  padding: 0 24px 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.custom-select-trigger:hover { border-color: var(--primary); }
+.custom-select-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.custom-select-text.is-placeholder { color: var(--text-tertiary); }
+.template-product-select .custom-select-trigger {
+  justify-content: center;
+}
+.template-product-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+.template-product-label .custom-select-text {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.template-product-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  text-align: center;
+}
+.custom-select-arrow {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: var(--text-tertiary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s;
+  pointer-events: none;
+}
+.custom-select.is-open .custom-select-arrow {
+  transform: translateY(-50%) rotate(180deg);
+}
+.custom-select-dropdown {
+  display: none;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.custom-select.is-open .custom-select-dropdown { /* 由 JS 控制显隐和定位 */ }
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.custom-select-option:hover { background: var(--primary-light); }
+.custom-select-option.is-disabled {
+  color: var(--text-tertiary);
+  background: #f7f8fa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.custom-select-option.is-disabled:hover { background: #f7f8fa; }
+.custom-select-option.selected {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 500;
+}
+.product-select-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+.product-select-label .custom-select-text { flex: 1; }
+.product-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  width: 100%;
+  max-height: 240px;
+}
+.product-select.is-open .product-select-dropdown { display: block; }
+
+/* 右侧：操作面板（白色底） */
+.processing-operation-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  min-height: 0;
+}
+.operation-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  gap: 12px;
+}
+.operation-empty-icon { opacity: 0.4; }
+.operation-empty p { font-size: 14px; margin: 0; }
+
+.operation-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.operation-form-header {
+  height: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 0;
+  background: #fff;
+  flex-shrink: 0;
+}
+.operation-form-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 5px 8px;
+  border-left: 0;
+  border-radius: 3px;
+  background: var(--primary-light);
+  white-space: nowrap;
+}
+.operation-form-desc {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(60%, 520px);
+  padding: 5px 8px;
+  border-radius: 3px;
+  background: var(--primary-light);
+  font-size: 13px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.operation-form-header .btn { margin-left: auto; }
+
+.operation-mode-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  height: 42px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: #fff;
+  flex-shrink: 0;
+}
+.operation-mode-tab {
+  position: relative;
+  height: 42px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.operation-mode-tab.active {
+  color: var(--primary);
+  font-weight: 500;
+}
+.operation-mode-tab.active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--primary);
+}
+.operation-mode-tab:hover { color: var(--primary); }
+
+.operation-record-button {
+  margin-left: auto;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.order-processing-query {
+  flex-shrink: 0;
+}
+.order-processing-query-header {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 24px 0;
+}
+.order-processing-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 16px 32px;
+  align-items: end;
+  padding: 4px 24px 12px;
+  flex-shrink: 0;
+}
+.order-processing-context .basic-info-field {
+  min-width: 0;
+}
+.order-processing-query-button {
+  min-width: 52px;
+  margin-bottom: 0;
+}
+
+.operation-form-status {
+  display: none;
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+.operation-form-status.visible { display: block; }
+.operation-form-status.error { color: #a61b1b; background: #fff1f0; }
+.operation-form-status.success { color: #176b47; background: #e8f8f0; }
+
+.operation-form-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 24px;
+}
+
+/* ===== 方案编辑页面 ===== */
+.template-editor-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+.template-editor-header {
+  height: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  flex-shrink: 0;
+}
+.template-editor-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+}
+.template-editor-header .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5b6473;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.template-editor-header .back-link:hover { color: #2f3a4d; }
+.template-editor-header .back-link svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.template-editor-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 24px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.template-editor-page .template-editor-section:first-child {
+  padding: 5px 100px 5px 8px;
+}
+.template-description-field {
+  align-items: flex-start;
+}
+.template-description-control {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.template-description-control #tplDesc {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 56px 24px 8px;
+  line-height: 20px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.template-description-counter {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+}
+
+/* 模版编辑器 */
+.template-editor-section {
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  overflow: visible;
+}
+.template-editor-section .form-section-header {
+  border-top: none;
+}
+.template-editor-page > .processing-form-footer {
+  position: sticky;
+  bottom: 0;
+  flex: 0 0 auto;
+  margin-top: auto;
+  z-index: 10;
+}
+
+.template-operation-toast,
+.processing-record-toast {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  z-index: 200;
+  transform: translate(-50%, -10px);
+  padding: 10px 18px;
+  border-radius: 4px;
+  background: #2f3a4d;
+  color: #fff;
+  font-size: 14px;
+  line-height: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.template-operation-toast.visible,
+.processing-record-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ===== 加工操作面板 / 方案编辑页统一详情页视觉 ===== */
+.processing-operation-panel,
+.template-editor-page {
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.operation-form-header,
+.template-editor-header {
+  height: 50px;
+  min-height: 50px;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+}
+
+/* 操作面板的方案标题与描述使用内容宽度的选中态底色，不显示标题栏下划线 */
+.processing-operation-panel .operation-form-header {
+  border-bottom: 0;
+}
+.processing-operation-panel .operation-form-title-group {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border-radius: 3px;
+  background: var(--primary-light);
+  overflow: hidden;
+}
+.operation-form.is-order-mode .operation-form-header {
+  height: 42px;
+  min-height: 42px;
+}
+.operation-form.is-order-mode .operation-form-title-group {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.processing-operation-panel .operation-form-header h1 {
+  display: inline-block;
+  width: fit-content;
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border-left: 0;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.processing-operation-panel .operation-form-desc {
+  display: inline-block;
+  width: fit-content;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: 12px;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.operation-form-body,
+.template-editor-body {
+  padding: 20px 24px 40px;
+  background: #fff;
+}
+
+.processing-operation-panel .form-section,
+.template-editor-page .template-editor-section {
+  margin-bottom: 20px;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.processing-operation-panel .form-section-header,
+.template-editor-page .form-section-header {
+  height: auto;
+  min-height: 0;
+  padding: 0 0 10px;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.processing-operation-panel .form-section-body {
+  padding: 0;
+}
+
+.processing-operation-panel .processing-sub-table,
+.template-editor-page .processing-sub-table {
+  font-size: 13px;
+  border: 1px solid var(--border-light);
+}
+
+.processing-operation-panel .processing-sub-table th,
+.template-editor-page .processing-sub-table th {
+  height: 36px;
+  border: 1px solid var(--border-light);
+}
+
+.processing-operation-panel .processing-sub-table td,
+.template-editor-page .processing-sub-table td {
+  border: 1px solid var(--border-light);
+}
+
+.template-editor-page .template-editor-section:first-child {
+  padding: 0 0 20px;
+}
+
+.template-editor-page .template-editor-body {
+  gap: 0;
+}
+.template-single-warehouse-field {
+  padding-top: 0;
+  padding-bottom: 16px;
+}
+.template-single-warehouse-field .basic-info-field {
+  width: min(100%, 640px);
+  max-width: 640px;
+}
+.template-single-warehouse-field .basic-info-field > [id$="WarehouseField"] {
+  flex: 0 0 300px;
+  width: 300px;
+  min-width: 0;
+}
+.template-single-warehouse-field .custom-select-trigger {
+  height: 32px;
+  font-size: 14px;
+}
+.template-warehouse-readonly {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: #f3f5f8;
+}
+
+/* 加工记录编辑页复用加工操作面板，不提供加工方案切换 */
+.processing-record-edit-page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.processing-record-edit-page .operation-form-header {
+  gap: 16px;
+}
+.processing-record-edit-page .operation-form-header .back-link {
+  flex-shrink: 0;
+}
+.processing-record-edit-page .operation-form-header h1 {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+.processing-record-edit-order-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.processing-record-edit-order-value {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 32px;
+}
+.processing-record-edit-page input[type="number"] {
+  -moz-appearance: textfield;
+}
+.processing-record-edit-page input[type="number"]::-webkit-inner-spin-button,
+.processing-record-edit-page input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+.processing-record-edit-page .edit-order-context {
+  border-bottom: 1px solid var(--border-light);
+}
+.processing-record-edit-page .edit-order-context .order-processing-context {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.processing-submit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.42);
+}
+.processing-submit-modal.is-visible { display: flex; }
+.processing-submit-dialog {
+  width: min(420px, calc(100vw - 48px));
+  overflow: hidden;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+.processing-submit-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.processing-submit-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+.processing-submit-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 22px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.processing-submit-body {
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+}
+.processing-submit-footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px 20px;
+}
+.processing-submit-footer .btn { min-width: 72px; justify-content: center; }

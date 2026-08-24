@@ -1,0 +1,940 @@
+/* ============================================================
+   仓库管理（入库管理 / 出库管理）
+   依赖：variables.css / layout.css / components.css / product-list.css
+   风格对齐：processing.css / product-form.css
+   ============================================================ */
+
+/* ===== 仓库状态标签 ===== */
+.status-tag.pending { background: #fff7e6; color: var(--warning); }
+.status-tag.completed { background: #e8f8f0; color: var(--success); }
+.status-tag.rejected { background: #fff1f0; color: var(--danger); }
+.status-tag.closed { background: #f5f5f5; color: var(--text-tertiary); }
+
+.warehouse-archive-page + #recordOverlay .operations-multi-select {
+  border: 0;
+}
+
+/* 仓库详情为基础信息单列展示，使用紧凑弹窗避免横向留白。 */
+.operations-modal.warehouse-detail-modal {
+  width: min(720px, calc(100vw - 48px));
+}
+
+.warehouse-detail-modal .operations-modal-body {
+  padding: 24px 32px;
+}
+
+.warehouse-detail-modal .operations-detail-grid.single-column {
+  gap: 16px;
+}
+
+.warehouse-detail-modal .operations-detail-item dt {
+  width: 104px;
+  flex-basis: 104px;
+}
+
+/* ===== 列表页容器（复用 .page-card 布局） ===== */
+.warehouse-list-page { /* 视觉与弹性布局由 .page-card 提供 */ }
+
+/* 高级筛选切换按钮 */
+.filter-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.filter-advanced-toggle:hover { opacity: 0.8; }
+.filter-advanced-toggle .toggle-arrow {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+.filter-advanced-toggle.is-active .toggle-arrow { transform: rotate(180deg); }
+
+/* 筛选区操作按钮：高级筛选与查询之间间距 50px */
+.warehouse-list-page .filter-panel .action-controls {
+  width: auto;
+  gap: 8px;
+}
+.warehouse-list-page .filter-panel .action-controls .filter-advanced-toggle {
+  margin-right: 42px;
+}
+
+/* ===== 日期区间选择器（日历组件） ===== */
+.date-range-group { position: relative; }
+.date-range-picker { position: relative; width: var(--query-control-width); }
+.date-range-display {
+  width: 100%;
+  cursor: pointer;
+  padding-right: 30px;
+  background: #fff;
+}
+.date-range-display::-webkit-calendar-picker-indicator { display: none; }
+.date-range-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+  display: inline-flex;
+}
+
+/* 日历面板 */
+.calendar-panel {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  user-select: none;
+}
+.calendar-panel.is-visible { display: block; }
+
+/* 双面板日历 */
+.calendar-panel.cal-dual {
+  width: 600px;
+  padding: 16px;
+}
+.cal-dual-body {
+  display: flex;
+  align-items: flex-start;
+}
+.cal-panel {
+  flex: 1;
+  min-width: 0;
+}
+.cal-panel-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-align: center;
+}
+.cal-panel-left .cal-panel-label { color: var(--primary); }
+.cal-panel-right .cal-panel-label { color: var(--primary); }
+.cal-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-light);
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cal-nav {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cal-nav:hover { background: var(--primary-light); color: var(--primary); }
+.cal-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.cal-table { width: 100%; border-collapse: collapse; }
+.cal-table th {
+  height: 30px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+.cal-table td {
+  height: 32px;
+  text-align: center;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+.cal-empty { cursor: default; }
+.cal-day:hover { background: var(--primary-light); color: var(--primary); }
+.cal-today { font-weight: 600; }
+.cal-start, .cal-end {
+  background: var(--primary);
+  color: #fff;
+}
+.cal-start:hover, .cal-end:hover { background: var(--primary); color: #fff; }
+.cal-in-range {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.cal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+.cal-hint { font-size: 12px; color: var(--text-tertiary); }
+.cal-btns { display: flex; gap: 6px; }
+
+/* 高级筛选区（默认隐藏） */
+.filter-advanced {
+  display: none;
+  margin-top: 12px;
+}
+.filter-advanced.is-visible { display: block; }
+
+/* 高级筛选 3 列网格（与 .filter-fields 一致，三行行距相同） */
+.filter-advanced-grid {
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--query-label-width) + 8px + var(--query-control-width)));
+  gap: 12px 56px;
+}
+
+/* ===== 新增/编辑表单页（页面内展开） ===== */
+.warehouse-form-page {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  background: var(--bg-white);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.warehouse-form-page.is-visible { display: flex; }
+.warehouse-list-page.is-hidden { display: none; }
+
+/* 表单头部（同 .processing-form-header） */
+.warehouse-form-header {
+  height: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  flex-shrink: 0;
+}
+.warehouse-form-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222b3a;
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+}
+
+/* 表单主体 */
+.warehouse-form-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px 24px 100px;
+}
+
+/* 表单底部操作（同 .processing-form-footer） */
+.warehouse-form-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-light);
+  background: #fff;
+}
+.warehouse-form-footer .btn { min-width: 100px; justify-content: center; }
+
+/* 表单状态提示 */
+.form-status {
+  display: none;
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+.form-status.visible { display: block; }
+.form-status.error { color: #a61b1b; background: #fff1f0; }
+.form-status.success { color: #176b47; background: #e8f8f0; }
+
+/* ===== 表单区块（复用 processing.css 区块结构） ===== */
+.form-section {
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 16px;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.form-section-header .section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-section-body { padding: 16px; }
+
+/* 基本信息区 - 3 列网格（同 processing.css） */
+.basic-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 16px 32px;
+}
+.basic-info-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.basic-info-field .field-label {
+  width: 80px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.basic-info-field .field-label.required::before {
+  content: '*';
+  margin-right: 4px;
+  color: var(--danger);
+}
+.basic-info-field .form-control {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #cfd5df;
+  border-radius: 3px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.basic-info-field .form-control:focus { border-color: var(--primary); }
+.basic-info-field .form-control:disabled {
+  background: #f3f5f8;
+  color: #9aa4b2;
+  cursor: not-allowed;
+}
+.basic-info-field .form-control[aria-invalid="true"] { border-color: var(--danger); }
+
+/* 入库 / 出库页面的数字输入框不显示浏览器原生步进器 */
+.warehouse-list-page input[type="number"],
+.warehouse-form-page input[type="number"] {
+  -moz-appearance: textfield;
+}
+.warehouse-list-page input[type="number"]::-webkit-inner-spin-button,
+.warehouse-list-page input[type="number"]::-webkit-outer-spin-button,
+.warehouse-form-page input[type="number"]::-webkit-inner-spin-button,
+.warehouse-form-page input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+.basic-info-field.readonly-value {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.basic-info-field .field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin-left: 88px;
+  margin-top: -12px;
+  margin-bottom: 4px;
+  grid-column: 1;
+}
+
+/* ===== 备注区（整行文本域 + 字数统计） ===== */
+.form-remark {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.form-remark .field-label {
+  width: 80px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding-top: 8px;
+}
+.form-remark .remark-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.form-remark textarea.form-control {
+  display: block;
+  width: 100%;
+  height: 78px;
+  padding: 8px 62px 24px 10px;
+  resize: vertical;
+  box-sizing: border-box;
+  border: 1px solid #cfd5df;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.form-remark textarea.form-control:focus { border-color: var(--primary); }
+.form-remark textarea.form-control[aria-invalid="true"] { border-color: var(--danger); }
+.form-remark .remark-counter {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+}
+
+/* ===== 附件上传区（出库单） ===== */
+.form-attachment {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.attachment-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px dashed var(--primary);
+  border-radius: 4px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.attachment-upload-btn:hover { background: #d6e4ff; }
+.attachment-tip {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* ===== 明细子表（同 .processing-sub-table） ===== */
+.warehouse-sub-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.warehouse-sub-table th {
+  background: #fafafa;
+  height: 40px;
+  padding: 0 8px;
+  text-align: center;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+.warehouse-sub-table th:last-child { border-right: none; }
+.warehouse-sub-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  text-align: center;
+  color: var(--text-primary);
+}
+.warehouse-sub-table td:last-child { border-right: none; }
+.warehouse-sub-table .sub-table-select,
+.warehouse-sub-table .sub-table-input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 0 6px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+.warehouse-sub-table .sub-table-select:focus,
+.warehouse-sub-table .sub-table-input:focus {
+  border-color: var(--primary);
+}
+.warehouse-sub-table .sub-table-input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.warehouse-sub-table .sub-table-readonly {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.warehouse-sub-table .sub-table-placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* 生产日期自定义选择器单元格 */
+.prod-date-cell {
+  position: relative;
+  width: 100%;
+}
+.prod-date-cell .prod-date-input {
+  width: 100%;
+  padding-right: 28px;
+  cursor: pointer;
+}
+.prod-date-icon {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+  display: inline-flex;
+}
+
+/* 生产日期日历面板 */
+.pcal-panel {
+  display: none;
+  position: fixed;
+  z-index: 1001;
+  width: 260px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  user-select: none;
+}
+.pcal-panel.is-visible { display: block; }
+.pcal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.pcal-nav {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pcal-nav:hover { background: var(--primary-light); color: var(--primary); }
+.pcal-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.pcal-table { width: 100%; border-collapse: collapse; }
+.pcal-table th {
+  height: 28px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+.pcal-table td {
+  height: 30px;
+  text-align: center;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+.pcal-empty { cursor: default; }
+.pcal-day:hover { background: var(--primary-light); color: var(--primary); }
+.pcal-today { font-weight: 600; }
+.pcal-selected {
+  background: var(--primary);
+  color: #fff;
+}
+.pcal-selected:hover { background: var(--primary); color: #fff; }
+.pcal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+.warehouse-sub-table .row-delete-btn {
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 8px;
+}
+.warehouse-sub-table .row-delete-btn:hover { opacity: 0.8; }
+.warehouse-sub-table .row-delete-btn:disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+.sub-table-add-row {
+  padding: 8px;
+  text-align: center;
+}
+.sub-table-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 3px;
+  padding: 4px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sub-table-add-btn:hover { background: #d6e4ff; }
+.sub-table-error {
+  padding: 4px 12px 8px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* ===== 返回按钮（复用 product-form / processing 风格） ===== */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5b6473;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.back-link:hover { color: #2f3a4d; }
+.back-link svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ===== 列表页操作列宽度 ===== */
+.warehouse-list-page .data-table .action-cell { min-width: 140px; }
+.warehouse-list-page .action-main {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+/* ===== 入库表单页：合计栏固定底部 ===== */
+.inb-form-table-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.inb-form-table-container .table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+.inb-total-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-white);
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
+.inb-total-label {
+  margin-right: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.inb-total-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ===== 质检报告按钮（表格内） ===== */
+.qr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-white);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.qr-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.qr-btn .icon-svg {
+  width: 14px;
+  height: 14px;
+}
+.qr-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  padding: 0 4px;
+}
+
+/* ===== 质检报告弹窗 ===== */
+.qr-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+.qr-modal.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+.qr-modal-dialog {
+  width: 560px;
+  max-width: 90vw;
+  background: var(--bg-white);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+.qr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.qr-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.qr-modal-close {
+  border: 0;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0;
+}
+.qr-modal-close:hover {
+  color: var(--text-primary);
+}
+.qr-modal-body {
+  padding: 20px;
+}
+.qr-upload-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.qr-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.qr-thumb {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+.qr-thumb-img {
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  color: var(--text-tertiary);
+}
+.qr-thumb-img .icon-svg {
+  width: 24px;
+  height: 24px;
+}
+.qr-thumb-name {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.qr-thumb-del {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+}
+.qr-thumb-del:hover {
+  opacity: 0.85;
+}
+.qr-upload-btn {
+  width: 80px;
+  height: 80px;
+  border: 1px dashed var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 12px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.qr-upload-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.qr-upload-btn .icon-svg {
+  width: 20px;
+  height: 20px;
+}
+.qr-modal-tip {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* ===== 出库表单：备注与附件区（无标题，直接排列） ===== */
+.ob-form-extra {
+  margin-top: 16px;
+}
+.ob-remark-row,
+.ob-attachment-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ob-remark-row .filter-label,
+.ob-attachment-row .filter-label {
+  width: var(--query-label-width, 80px);
+  flex-shrink: 0;
+  text-align: right;
+  padding-top: 8px;
+}
+.ob-remark-row .remark-input-wrap {
+  position: relative;
+  flex: 1;
+}
+.ob-remark-row textarea.form-control {
+  display: block;
+  width: 100%;
+  height: 78px;
+  padding: 8px 62px 24px 10px;
+  resize: vertical;
+  box-sizing: border-box;
+  border: 1px solid #cfd5df;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.ob-remark-row textarea.form-control:focus { border-color: var(--primary); }
+.ob-remark-row .remark-counter {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+}
+.ob-attachment-row .form-attachment {
+  flex: 1;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 1100px) {
+  .filter-advanced-grid {
+    grid-template-columns: repeat(2, calc(var(--query-label-width) + 8px + var(--query-control-width)));
+  }
+  .basic-info-grid {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .filter-advanced-grid {
+    grid-template-columns: 1fr;
+  }
+  .basic-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

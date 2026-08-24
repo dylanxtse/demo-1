@@ -1,0 +1,310 @@
+.filter-label {
+  width: var(--query-label-width);
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.filter-input {
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  width: var(--query-control-width);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.filter-input:focus { border-color: var(--primary); }
+.filter-input::placeholder { color: var(--text-tertiary); }
+.filter-select {
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0 28px 0 12px;
+  font-size: 14px;
+  width: var(--query-control-width);
+  outline: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
+  appearance: none;
+  cursor: pointer;
+}
+.filter-select:focus { border-color: var(--primary); }
+
+/* ===== 全局区块标题标记 =====
+   用法：<span class="section-title-mark">区块标题</span> */
+.section-title-mark {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 20px;
+  min-height: 20px;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--primary); color: var(--primary); }
+.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-primary:hover { background: #035ee0; border-color: #035ee0; color: #fff; }
+.btn-blue { color: var(--primary); border-color: var(--primary); background: #fff; }
+.btn-blue:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-text {
+  border: none;
+  background: none;
+  padding: 0 4px;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-text:hover { opacity: 0.8; }
+.btn-text.danger { color: var(--danger); }
+.btn-text.disabled { color: var(--text-tertiary); cursor: not-allowed; }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.status-tag.online { background: #e8f8f0; color: var(--success); }
+.status-tag.offline { background: #f5f5f5; color: var(--text-tertiary); }
+
+.custom-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: #fff;
+}
+.custom-checkbox:hover { border-color: var(--primary); }
+.custom-checkbox.checked { background: var(--primary); border-color: var(--primary); }
+.custom-checkbox.checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.switch-control {
+  width: 100px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #cfd5df;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.switch-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease;
+}
+
+.switch-input:checked + .switch-slider {
+  background: var(--primary);
+}
+
+.switch-input:checked + .switch-slider::after {
+  transform: translateX(16px);
+}
+
+.switch-input:focus-visible + .switch-slider {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+.number-stepper {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.number-stepper .form-control {
+  width: 100%;
+  padding-right: 34px;
+  appearance: textfield;
+}
+
+.number-stepper .form-control::-webkit-inner-spin-button,
+.number-stepper .form-control::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.number-stepper-buttons {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 30px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.number-stepper:hover .number-stepper-buttons,
+.number-stepper:focus-within .number-stepper-buttons {
+  opacity: 1;
+}
+
+.number-stepper-button {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: #eef0f4;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.number-stepper-button + .number-stepper-button {
+  border-top: 1px solid #fff;
+}
+
+.number-stepper-button:hover {
+  background: #dfe4ec;
+}
+
+/* Shared calendar used by list filters across business modules. */
+.calendar-panel {
+  position: fixed;
+  z-index: 1001;
+  display: none;
+  width: 280px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+.calendar-panel.is-visible { display: block; }
+.calendar-panel.single-calendar-panel.with-time { width: 520px; padding: 14px; }
+.calendar-panel.cal-dual { width: 600px; padding: 16px; }
+.cal-dual-body { display: flex; align-items: flex-start; }
+.cal-panel { flex: 1; min-width: 0; }
+.cal-divider { width: 1px; align-self: stretch; margin: 0 12px; background: var(--border-light); }
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-nav {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+}
+.cal-nav:hover { background: var(--primary-light); color: var(--primary); }
+.cal-title { color: var(--text-primary); font-size: 14px; font-weight: 500; }
+.cal-time-panel { width: 174px; box-sizing: border-box; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border-light); }
+.cal-current-time { margin: 2px 0 14px; color: var(--text-primary); font-size: 22px; font-weight: 400; letter-spacing: 1px; text-align: center; }
+.cal-time-scrolls { display: flex; justify-content: center; gap: 8px; }
+.cal-time-column-wrap { display: flex; align-items: center; gap: 4px; }
+.cal-time-label { display: none; }
+.cal-time-column { width: 48px; height: 180px; box-sizing: border-box; overflow-y: auto; padding: 72px 0; border: 1px solid var(--border-color); border-radius: 5px; scroll-snap-type: y mandatory; scrollbar-width: none; }
+.cal-time-column::-webkit-scrollbar { display: none; }
+.cal-time-option { display: block; width: 100%; height: 36px; box-sizing: border-box; padding: 0; border: 0; background: #fff; color: var(--text-secondary); font-size: 14px; line-height: 36px; text-align: center; scroll-snap-align: center; cursor: pointer; }
+.cal-time-option:hover { background: var(--primary-light); color: var(--primary); }
+.cal-time-option.is-selected { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.cal-table { width: 100%; border-collapse: collapse; }
+.cal-table th { height: 30px; color: var(--text-tertiary); font-size: 12px; font-weight: 400; text-align: center; }
+.cal-table td { height: 32px; border-radius: 4px; color: var(--text-primary); font-size: 13px; text-align: center; cursor: pointer; }
+.cal-empty { cursor: default; }
+.cal-day:hover { background: var(--primary-light); color: var(--primary); }
+.cal-today { font-weight: 600; }
+.cal-start, .cal-end { background: var(--primary); color: #fff; }
+.cal-start:hover, .cal-end:hover { background: var(--primary); color: #fff; }
+.cal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+.cal-hint { color: var(--text-tertiary); font-size: 12px; }
+.cal-btns { display: flex; gap: 6px; }
+
+/* 全局输入控件聚焦态统一使用系统蓝色，避免浏览器默认高亮颜色干扰页面样式。 */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary) !important;
+  outline: none !important;
+}
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  border-color: var(--danger) !important;
+}

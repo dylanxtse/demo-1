@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实收变更单维护 - 集采企业版企业端</title>
+  <link rel="stylesheet" href="./assets/css/variables.css"><link rel="stylesheet" href="./assets/css/layout.css?v=20260819-menu-guard-2"><link rel="stylesheet" href="./assets/css/components.css"><link rel="stylesheet" href="./assets/css/product-list.css"><link rel="stylesheet" href="./assets/css/warehouse.css"><link rel="stylesheet" href="./assets/css/operations.css"><link rel="stylesheet" href="./assets/css/order-form.css?v=20260731-1">
+</head>
+<body><div id="app"></div>
+<template id="receiptChangeTemplate">
+  <div class="page-card order-form-page">
+    <div class="order-form-header"><button class="back-link" data-action="back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg><span>返回</span></button><h1 id="changePageTitle">新增变更单</h1></div>
+    <div class="order-form-status" id="changeStatus"></div>
+    <form class="order-form" id="changeForm">
+      <section class="order-form-section"><h2>基本信息</h2><div class="order-form-grid">
+        <div class="order-form-field"><label class="field-label required" for="changeCustomer">客户名称</label><div><input class="form-control" id="changeCustomer" readonly placeholder="请选择客户"><span class="field-error" data-error-for="changeCustomer"></span></div></div>
+        <div class="order-form-field"><label class="field-label required" for="changeCanteen">食堂</label><div><input class="form-control" id="changeCanteen" readonly placeholder="请选择食堂"><span class="field-error" data-error-for="changeCanteen"></span></div></div>
+        <div class="order-form-field"><label class="field-label required" for="changeOrderNo">关联订单号</label><div class="inline-picker-control"><input class="form-control" id="changeOrderNo" readonly placeholder="请选择订单"><button class="btn btn-sm" id="chooseChangeOrder" type="button">选择订单</button></div><span class="field-error" data-error-for="changeOrderNo"></span></div>
+        <div class="order-form-field"><label class="field-label required" for="changeDate">变更日期</label><div><div class="date-input-control"><input class="form-control" id="changeDate" name="changeDate" type="date"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div><span class="field-error" data-error-for="changeDate"></span></div></div>
+        <div class="order-form-field"><label class="field-label required" for="changeReason">变更原因</label><div><textarea class="form-control" id="changeReason" rows="3" placeholder="请输入变更原因"></textarea><span class="field-error" data-error-for="changeReason"></span></div></div>
+      </div></section>
+      <section class="order-form-section goods-section">
+        <h2>商品信息</h2>
+        <div class="order-goods-table-wrap"><table class="order-goods-table change-goods-table"><thead><tr><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>发货数量</th><th>验收数量</th><th class="required-head">变更后数量</th><th>差异数量</th><th>下单单价</th><th>变更后金额</th><th>差异金额</th><th class="required-head">变更原因</th></tr></thead><tbody id="changeGoodsBody"><tr><td class="empty-goods" colspan="12">请选择关联订单</td></tr></tbody></table></div>
+        <div class="goods-table-error" id="changeGoodsError"></div>
+        <div class="change-summary-grid">
+          <div><span>变更前发货数量合计</span><strong id="beforeQtyTotal">0</strong></div><div><span>变更后发货数量合计</span><strong id="afterQtyTotal">0</strong></div>
+          <div><span>变更前发货金额合计</span><strong>¥<b id="beforeAmountTotal">0.00</b></strong></div><div><span>变更后发货金额合计</span><strong>¥<b id="afterAmountTotal">0.00</b></strong></div>
+        </div>
+        <div class="order-remark-row"><label for="changeRemark">备注</label><textarea class="form-control" id="changeRemark" rows="3" placeholder="请输入备注"></textarea></div>
+        <div class="order-remark-row"><label>附件</label><div class="attachment-control"><button class="btn btn-sm" id="changeAttachment" type="button">上传附件</button><span id="changeAttachmentName">未上传</span></div></div>
+      </section>
+    </form>
+    <div class="order-form-actions"><button class="btn" data-action="back">返回</button><button class="btn btn-danger" id="changeReject" data-action="reject">驳回</button><button class="btn btn-primary" id="changePrimary" data-action="save">保存变更单</button></div>
+  </div><div id="changeOverlay"></div>
+</template>
+<script src="./assets/js/config/menu-data.js?v=20260819-menu-guard-3"></script><script src="./assets/js/components/navigation-guard.js?v=20260819-navigation-2"></script><script src="./assets/js/components/header.js?v=20260819-navigation-2"></script><script src="./assets/js/components/page-tabs.js?v=20260819-navigation-2"></script><script src="./assets/js/components/sidebar.js?v=20260819-navigation-2"></script><script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script><script src="./assets/js/utils/dom.js"></script><script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js"></script>
+  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js"></script><script src="./assets/js/services/operations-service.js?v=20260731-11"></script><script src="./assets/js/pages/receipt-change-form.js?v=20260819-navigation-2"></script>
+</body></html>

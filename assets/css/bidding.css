@@ -1,0 +1,834 @@
+.bidding-page {
+  min-width: 0;
+  gap: 0;
+}
+
+.bidding-filter-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+  padding: 4px 0 14px;
+  flex-shrink: 0;
+}
+
+.bidding-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(250px, 1fr));
+  gap: 12px 28px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bidding-filter-item,
+.bidding-form-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bidding-filter-item > label,
+.bidding-form-field > label {
+  flex: 0 0 88px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.bidding-filter-item input,
+.bidding-filter-item select,
+.bidding-form-field input,
+.bidding-form-field select,
+.bidding-form-field textarea,
+.bidding-dialog input,
+.bidding-dialog select {
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  padding: 0 10px;
+  font: inherit;
+  outline: none;
+}
+
+.bidding-filter-item input:focus,
+.bidding-filter-item select:focus,
+.bidding-form-field input:focus,
+.bidding-form-field select:focus,
+.bidding-form-field textarea:focus,
+.bidding-dialog input:focus,
+.bidding-dialog select:focus { border-color: var(--primary); }
+
+.bidding-filter-item select,
+.bidding-form-field select,
+.bidding-dialog select {
+  appearance: auto;
+}
+
+.bidding-filter-item select[multiple],
+.bidding-form-field select[multiple] {
+  height: auto;
+  min-height: 88px;
+  padding: 6px 8px;
+}
+
+.bidding-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bidding-range input { min-width: 0; }
+.bidding-range span { color: var(--text-tertiary); flex: 0 0 auto; }
+
+/* 空日期控件不显示浏览器自带的“年/月/日”占位字样 */
+.bidding-date-empty::-webkit-datetime-edit,
+.bidding-date-empty::-webkit-datetime-edit-fields-wrapper,
+.bidding-date-empty::-webkit-datetime-edit-text,
+.bidding-date-empty::-webkit-datetime-edit-year-field,
+.bidding-date-empty::-webkit-datetime-edit-month-field,
+.bidding-date-empty::-webkit-datetime-edit-day-field,
+.bidding-date-empty::-webkit-datetime-edit-hour-field,
+.bidding-date-empty::-webkit-datetime-edit-minute-field,
+.bidding-date-empty::-webkit-datetime-edit-ampm-field {
+  color: transparent;
+}
+
+.bidding-filter-actions,
+.bidding-toolbar,
+.bidding-form-actions,
+.bidding-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bidding-filter-actions { padding-top: 1px; }
+.bidding-filter-actions .btn { min-width: 64px; justify-content: center; }
+
+.bidding-toolbar {
+  min-height: 42px;
+  justify-content: space-between;
+  padding: 0 0 12px;
+}
+
+.bidding-toolbar .toolbar-note { color: var(--text-tertiary); font-size: 12px; }
+.bidding-toolbar-left,
+.bidding-toolbar-right { display: flex; gap: 8px; align-items: center; }
+
+.bidding-table-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.bidding-table-wrapper {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.bidding-table-wrapper::-webkit-scrollbar { width: 8px; height: 8px; }
+.bidding-table-wrapper::-webkit-scrollbar-thumb { background: #d9dde5; border-radius: 4px; }
+
+.bidding-table {
+  width: 100%;
+  min-width: 1220px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.bidding-table th,
+.bidding-table td {
+  height: 46px;
+  padding: 7px 10px;
+  border-right: 1px solid #f0f2f5;
+  border-bottom: 1px solid #f0f2f5;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.bidding-table th { background: #f7f8fb; color: #5f6672; font-weight: 500; }
+.bidding-table td { color: #3f4650; }
+.bidding-table tbody tr:nth-child(even) td { background: #fbfcfe; }
+.bidding-table tbody tr:hover td { background: #f3f7ff; }
+.bidding-table .align-left { text-align: left; }
+.bidding-table .empty-row { height: 120px; color: var(--text-tertiary); }
+
+/* 供应商档案在宽屏时铺满列表容器，小屏时保留内容宽度并横向滚动。 */
+#supplierManagementPage .supplier-archive-table {
+  width: max(100%, 1220px);
+  min-width: 1220px;
+}
+
+.bidding-actions-cell { display: inline-flex; align-items: center; gap: 8px; }
+.bidding-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+.bidding-link:hover { text-decoration: underline; }
+.bidding-link.danger { color: var(--danger); }
+.bidding-link:disabled { color: #b9c0cb; cursor: not-allowed; text-decoration: none; }
+.bidding-table-link { color: var(--primary); text-decoration: none; }
+.bidding-table-link:hover { text-decoration: underline; }
+
+.bidding-status { display: inline-flex; align-items: center; gap: 5px; }
+.bidding-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #aab2bf; }
+.bidding-status.active::before { background: var(--success); }
+.bidding-status.pending::before { background: var(--warning); }
+.bidding-status.danger::before { background: var(--danger); }
+.bidding-status-tag { min-width: 52px; text-align: center; }
+.status-tag.pending { background: #fff3cd; color: #8a5a00; }
+.status-tag.danger { background: #fff1f0; color: var(--danger); }
+
+.bidding-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 58px;
+  flex-shrink: 0;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--border-light);
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.bidding-pagination .page-total { margin-right: auto; white-space: nowrap; }
+.bidding-pagination .page-size-select {
+  height: 32px;
+  min-width: 88px;
+  padding: 0 28px 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.bidding-pagination .page-btns { display: flex; align-items: center; gap: 4px; }
+.bidding-pagination .page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.bidding-pagination .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+.bidding-pagination .page-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.bidding-pagination .page-ellipsis { min-width: 20px; text-align: center; color: var(--text-tertiary); }
+.bidding-pagination .page-jump { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.bidding-pagination .page-jump input,
+.bidding-pagination .pagination-jump-input {
+  width: 48px;
+  height: 32px;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: center;
+  outline: none;
+}
+.bidding-pagination .page-jump input:focus,
+.bidding-pagination .pagination-jump-input:focus { border-color: var(--primary); }
+
+.bidding-form-page { overflow: auto; }
+.bidding-form-title-row {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 49px;
+  margin: -16px -16px 24px;
+  padding: 0 48px;
+  border-bottom: 1px solid var(--border-light);
+}
+.bidding-form-title-row h2 { font-size: 16px; font-weight: 500; }
+.bidding-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: auto !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  font-size: 14px !important;
+  box-shadow: none !important;
+}
+.bidding-back-button::before { content: '‹'; font-size: 24px; font-weight: 300; line-height: 1; }
+
+.bidding-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(360px, 1fr));
+  gap: 16px 36px;
+  max-width: 1100px;
+}
+
+.bidding-form-field { align-items: flex-start; min-height: 34px; }
+.bidding-form-field > label { padding-top: 8px; }
+.bidding-form-field.required > label::before { content: '*'; color: var(--danger); margin-right: 4px; }
+.bidding-form-field > input,
+.bidding-form-field > select,
+.bidding-form-field > .bidding-range,
+.bidding-form-field > .bidding-control-stack { flex: 1; }
+.bidding-form-field .field-hint { margin-top: 4px; color: var(--text-tertiary); font-size: 12px; line-height: 18px; }
+.bidding-control-stack { min-width: 0; }
+.bidding-control-stack > input { width: 100%; }
+.bidding-form-field.full-width { grid-column: 1 / -1; }
+.bidding-form-field textarea { height: 76px; padding: 8px 10px; resize: vertical; }
+.bidding-readonly { background: #f7f8fb !important; color: var(--text-tertiary) !important; }
+
+.bidding-check-row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.bidding-check-row input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--primary); }
+.bidding-form-actions { justify-content: center; max-width: 1100px; padding: 28px 0 12px; }
+.bidding-form-actions .btn { min-width: 86px; justify-content: center; }
+.bidding-note { color: var(--text-tertiary); font-size: 12px; line-height: 20px; }
+
+.supplier-form-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: none;
+  gap: 0;
+  padding: 15px 0 0 56px;
+}
+.supplier-form-grid > .bidding-form-field { min-height: 57px; }
+.supplier-form-grid > .bidding-form-field > label { flex-basis: 108px; }
+.supplier-form-grid .supplier-basic-field { max-width: 640px; }
+.supplier-form-grid .supplier-basic-field > input,
+.supplier-form-grid .supplier-basic-field > .bidding-control-stack { flex: 0 0 360px; max-width: 360px; }
+.supplier-form-grid .supplier-basic-field .bidding-control-stack > input { width: 100%; }
+.supplier-form-grid .supplier-username-field { padding-bottom: 40px; }
+.supplier-form-grid .supplier-phone-field { padding-bottom: 36px; border-bottom: 1px solid var(--border-light); }
+.supplier-form-grid input::placeholder { color: var(--text-tertiary); opacity: 1; }
+.supplier-form-grid .supplier-license-field { padding: 24px 0 14px; }
+.supplier-form-grid .supplier-license-field .bidding-control-stack { max-width: none; }
+.supplier-upload-tile {
+  display: inline-flex;
+  width: 104px;
+  height: 104px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid #cfd5df;
+  border-radius: 4px;
+  background: #f8fbff;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.supplier-upload-tile:hover { border-color: var(--primary); color: var(--primary); }
+.supplier-upload-tile .upload-plus { font-size: 26px; font-weight: 300; line-height: 24px; }
+.supplier-form-grid .supplier-license-field .bidding-file-name { display: none; }
+.supplier-form-grid .supplier-license-field .field-hint:first-of-type { margin-top: 8px; }
+.supplier-form-grid .supplier-license-field .field-hint:last-child {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid #d7e4fb;
+  border-radius: 2px;
+  background: #eef5ff;
+  color: var(--text-primary);
+}
+.supplier-form-grid .supplier-license-meta {
+  margin-left: 180px;
+  padding: 10px 36px;
+  border-right: 1px solid #e6ebf2;
+  border-left: 1px solid #e6ebf2;
+  background: #fff;
+}
+.supplier-form-grid .supplier-license-meta + .supplier-license-meta { padding-top: 0; border-top: 0; }
+.supplier-form-grid .supplier-license-meta > label { flex-basis: 120px; }
+.supplier-form-grid .supplier-license-meta > input { flex: 1; }
+.supplier-form-grid .supplier-qualification-field {
+  margin-top: 12px;
+  padding: 24px 0 60px;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+.supplier-add-qualification { width: 80px; justify-content: center; font-size: 18px !important; }
+.supplier-form-grid .supplier-date-field > .bidding-range { flex: 0 0 400px; max-width: 400px; }
+.supplier-form-page .bidding-form-actions { max-width: none; padding-top: 28px; }
+
+.bidding-rule-row { display: grid; grid-template-columns: 86px minmax(180px, 1fr) minmax(220px, 1fr) 52px; gap: 10px; align-items: center; margin-bottom: 10px; }
+.bidding-rule-row .rule-row-label { color: var(--text-secondary); font-size: 13px; }
+.bidding-rule-row select { width: 100%; }
+.bidding-remove-row { color: var(--danger); }
+
+.bidding-product-table { min-width: 1450px; }
+.bidding-product-table input,
+.bidding-product-table select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border-color); border-radius: 3px; background: #fff; }
+.bidding-product-table td { min-width: 110px; }
+.bidding-product-table .product-image-placeholder { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid #e6eaf0; color: #b5bdc9; font-size: 11px; }
+.bidding-product-table .row-actions { display: inline-flex; gap: 6px; }
+
+.bidding-switch-row { display: flex; align-items: center; gap: 12px; min-height: 34px; }
+.bidding-switch { position: relative; width: 36px; height: 20px; border: 0; border-radius: 10px; background: #cfd5df; cursor: pointer; }
+.bidding-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.18); transition: transform .2s ease; }
+.bidding-switch.on { background: var(--primary); }
+.bidding-switch.on::after { transform: translateX(16px); }
+.bidding-switch-label { color: var(--text-secondary); font-size: 13px; }
+
+.bidding-modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .35);
+  padding: 24px;
+}
+.bidding-modal-mask.open { display: flex; }
+.bidding-dialog {
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(26, 38, 64, .18);
+}
+.bidding-dialog.wide { width: min(1120px, 100%); }
+.bidding-dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+.bidding-dialog-header h2 { font-size: 16px; font-weight: 500; }
+.bidding-dialog-close { border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 14px; }
+.bidding-dialog-body { flex: 1; min-height: 0; overflow: auto; padding: 18px 20px; }
+.bidding-dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border-light); }
+.bidding-dialog-filter { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.bidding-dialog-filter label { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+.bidding-dialog-filter input, .bidding-dialog-filter select { width: 210px; }
+.bidding-dialog .bidding-table { min-width: 900px; }
+.bidding-dialog .bidding-form-grid { grid-template-columns: 1fr; gap: 12px; }
+.supplier-reject-confirm-dialog { width: min(420px, 100%); }
+.supplier-reject-confirm-message,
+.supplier-reject-confirm-supplier { margin: 0; color: var(--text-primary); line-height: 22px; text-align: center; }
+.supplier-reject-confirm-supplier { margin-top: 10px; color: var(--text-secondary); word-break: break-all; }
+.supplier-reject-confirm-supplier strong { color: var(--text-primary); font-weight: 500; }
+
+.supplier-invite-dialog { width: min(620px, 100%); }
+.supplier-invite-description { margin: 0 0 22px; color: var(--text-primary); line-height: 22px; }
+.supplier-invite-field { display: flex; flex-direction: column; gap: 8px; }
+.supplier-invite-field > label { color: var(--text-secondary); font-size: 13px; }
+.supplier-invite-link-row { display: flex; gap: 8px; align-items: center; }
+.supplier-invite-link-row input { flex: 1; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--border-color); border-radius: 3px; }
+.supplier-invite-link-row .btn { flex: 0 0 auto; white-space: nowrap; }
+.supplier-invite-hint { color: var(--text-secondary); font-size: 12px; line-height: 18px; }
+.supplier-invite-expire-field { flex-direction: row; align-items: center; margin-top: 18px; }
+.supplier-invite-expire-field input { width: 220px; height: 32px; padding: 0 10px; border: 1px solid var(--border-color); border-radius: 3px; background: #fff; }
+.supplier-invite-footer { justify-content: space-between; align-items: center; }
+.supplier-invite-footer-actions { display: inline-flex; align-items: center; gap: 8px; }
+.supplier-demo-button { border: 1px dashed #e2a13b; background: #fff7e8; color: #b66a12; }
+.supplier-demo-button:hover { border-color: #c77b18; background: #ffefd0; color: #9b5607; }
+.supplier-invite-result-page,
+.supplier-invite-expired { display: flex; min-height: 360px; align-items: center; justify-content: center; }
+.supplier-invite-result { min-width: min(460px, 100%); padding: 46px 24px; text-align: center; }
+.supplier-invite-result h2 { margin-bottom: 12px; color: var(--text-primary); font-size: 20px; font-weight: 500; }
+.supplier-invite-result p { margin-bottom: 24px; color: var(--text-secondary); }
+
+.bidding-category-options { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 10px 18px; }
+.bidding-category-option { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.bidding-category-option input { width: 16px; height: 16px; accent-color: var(--primary); }
+.bidding-dialog .bidding-category-options { margin-top: 4px; }
+
+.bidding-toast { position: fixed; z-index: 1100; top: 92px; left: 50%; transform: translateX(-50%); display: none; max-width: min(520px, calc(100vw - 32px)); padding: 10px 18px; border-radius: 4px; background: #2f3a4d; color: #fff; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+.bidding-toast.show { display: block; }
+.bidding-toast.error { background: #c0392b; }
+
+.bidding-file-row { display: flex; align-items: center; gap: 10px; }
+.bidding-file-name { color: var(--text-secondary); font-size: 13px; }
+.bidding-asset-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.bidding-asset-chip { padding: 4px 8px; border: 1px solid var(--border-light); border-radius: 3px; color: var(--text-secondary); font-size: 12px; }
+
+@media (max-width: 1180px) {
+  .bidding-filter-grid { grid-template-columns: repeat(2, minmax(250px, 1fr)); }
+  .bidding-form-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .bidding-filter-panel { flex-direction: column; gap: 10px; }
+  .bidding-filter-grid { width: 100%; grid-template-columns: 1fr; }
+  .bidding-filter-actions { padding-left: 98px; }
+  .bidding-toolbar { align-items: flex-start; flex-direction: column; }
+  .bidding-form-field > label { flex-basis: 78px; }
+  .bidding-filter-item > label { flex-basis: 78px; }
+  .bidding-rule-row { grid-template-columns: 1fr; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--border-light); }
+  .bidding-category-options { grid-template-columns: 1fr; }
+}
+
+/* 竞价新增/编辑页：按南皮县教育局端参考页统一为单列表单 */
+.bidding-form-page {
+  padding: 16px;
+  overflow: auto;
+}
+.bidding-form-page .bidding-form-title-row {
+  min-height: 58px;
+  margin: -16px -16px 0;
+  padding: 0 40px;
+  gap: 16px;
+  background: #fff;
+}
+.supplier-editor-form-page .bidding-form-title-row {
+  position: sticky;
+  top: -16px;
+  z-index: 5;
+  flex-shrink: 0;
+  box-shadow: 0 1px 0 var(--border-light);
+}
+.bidding-form-page .bidding-form-title-row h2 {
+  font-size: 16px;
+  font-weight: 500;
+}
+.bidding-form-page .bidding-back-button {
+  margin-right: 0;
+  padding-right: 16px !important;
+  border-right: 1px solid var(--border-light) !important;
+}
+.bidding-form-page > .bidding-form-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  padding: 24px 48px 36px;
+  box-sizing: border-box;
+}
+.bidding-form-page > .bidding-form-grid > .bidding-form-field {
+  display: flex;
+  align-items: center;
+  width: min(760px, 100%);
+  min-height: 56px;
+  gap: 18px;
+  box-sizing: border-box;
+}
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > label {
+  flex: 0 0 140px;
+  padding-top: 0;
+  text-align: right;
+  line-height: 20px;
+}
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > input,
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > select,
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > textarea,
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > .bidding-range,
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > .bidding-control-stack,
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > .bidding-check-row {
+  flex: 0 1 500px;
+  width: 500px;
+  max-width: calc(100% - 158px);
+  box-sizing: border-box;
+}
+.bidding-form-page > .bidding-form-grid > .bidding-form-field > select[multiple] {
+  min-height: 128px;
+}
+.bidding-form-page > .bidding-form-grid > .bidding-form-field.full-width {
+  width: min(900px, 100%);
+}
+.bidding-form-page > .bidding-form-grid > .bidding-form-field.full-width > .bidding-control-stack {
+  max-width: 700px;
+}
+.bidding-form-page .bidding-form-field.full-width > .bidding-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 700px;
+  padding: 0;
+}
+.bidding-form-page .bidding-form-field.full-width > .bidding-form-grid > input {
+  width: 100%;
+  max-width: none;
+}
+.bidding-form-page .bidding-form-field .field-hint {
+  line-height: 18px;
+}
+.bidding-form-page .bidding-form-actions {
+  position: sticky;
+  bottom: -16px;
+  z-index: 2;
+  flex: 0 0 auto;
+  width: calc(100% + 32px);
+  max-width: none;
+  min-height: 68px;
+  margin: 0 -16px -16px;
+  padding: 16px 0;
+  gap: 24px;
+  border-top: 1px solid var(--border-light);
+  background: #fff;
+  box-sizing: border-box;
+}
+.bidding-form-page .bidding-form-actions .btn {
+  width: 160px;
+  min-width: 160px;
+  height: 32px;
+  justify-content: center;
+}
+
+/* 限价表单的执行周期与其他表单保持相同的标签/输入起始线 */
+.bidding-limit-form-grid {
+  padding-bottom: 18px !important;
+}
+
+/* 供应商新增/编辑页沿用同一套标签和控件起始线 */
+.supplier-form-grid {
+  padding: 24px 48px 36px;
+}
+.supplier-form-grid > .bidding-form-field {
+  width: min(820px, 100%) !important;
+  min-height: 56px;
+}
+.supplier-form-grid > .bidding-form-field > label {
+  flex: 0 0 140px;
+  padding-top: 0;
+  text-align: right;
+}
+.supplier-form-grid .supplier-basic-field > input,
+.supplier-form-grid .supplier-basic-field > .bidding-control-stack,
+.supplier-form-grid .supplier-license-field > .bidding-control-stack,
+.supplier-form-grid .supplier-license-meta > input,
+.supplier-form-grid .supplier-qualification-field > .bidding-control-stack,
+.supplier-form-grid .supplier-date-field > .bidding-range {
+  flex: 0 1 500px;
+  width: 500px;
+  max-width: calc(100% - 158px);
+  box-sizing: border-box;
+}
+.supplier-form-grid .supplier-basic-field > .bidding-control-stack,
+.supplier-form-grid .supplier-license-field > .bidding-control-stack,
+.supplier-form-grid .supplier-qualification-field > .bidding-control-stack {
+  max-width: 500px;
+}
+.supplier-form-grid .supplier-username-field,
+.supplier-form-grid .supplier-phone-field,
+.supplier-form-grid .supplier-license-field,
+.supplier-form-grid .supplier-qualification-field {
+  padding-bottom: 0;
+}
+.supplier-form-grid .supplier-phone-field {
+  border-bottom: 0;
+}
+.supplier-form-grid .supplier-license-field {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.supplier-form-grid .supplier-license-meta {
+  margin-left: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.supplier-form-grid .supplier-license-meta > label {
+  flex-basis: 140px;
+}
+.supplier-form-grid .supplier-qualification-field {
+  margin-top: 14px;
+  padding: 18px 0 24px;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+.supplier-form-page .bidding-form-actions {
+  padding-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .bidding-form-page > .bidding-form-grid,
+  .supplier-form-grid { padding-right: 16px; padding-left: 16px; }
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field,
+  .supplier-form-grid > .bidding-form-field { width: 100% !important; }
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > label,
+  .supplier-form-grid > .bidding-form-field > label { flex-basis: 110px; }
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > input,
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > select,
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > textarea,
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > .bidding-range,
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > .bidding-control-stack,
+  .bidding-form-page > .bidding-form-grid > .bidding-form-field > .bidding-check-row,
+  .supplier-form-grid .supplier-basic-field > input,
+  .supplier-form-grid .supplier-basic-field > .bidding-control-stack,
+  .supplier-form-grid .supplier-license-field > .bidding-control-stack,
+  .supplier-form-grid .supplier-license-meta > input,
+  .supplier-form-grid .supplier-qualification-field > .bidding-control-stack,
+  .supplier-form-grid .supplier-date-field > .bidding-range {
+    width: auto;
+    max-width: calc(100% - 128px);
+  }
+}
+
+/* 下拉、返回和日期控件统一复用企业端的紧凑交互样式 */
+.bidding-multi-select {
+  position: relative;
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.bidding-select-trigger {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 32px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 28px 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bidding-select-trigger:hover,
+.bidding-multi-select.is-open .bidding-select-trigger { border-color: var(--primary); }
+.bidding-select-trigger:disabled { background: #f7f8fa; color: var(--text-tertiary); cursor: not-allowed; }
+.bidding-select-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bidding-select-text.is-placeholder { color: var(--text-tertiary); }
+.bidding-select-arrow {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: var(--text-tertiary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: transform .2s ease;
+}
+.bidding-multi-select.is-open .bidding-select-arrow { transform: translateY(-50%) rotate(180deg); }
+.bidding-multi-select.is-disabled .bidding-select-trigger { background: #f7f8fa; color: var(--text-tertiary); cursor: not-allowed; }
+
+.bidding-select-dropdown {
+  position: fixed;
+  z-index: 1200;
+  display: none;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+}
+
+.bidding-multi-select.is-open .bidding-select-dropdown { display: block; }
+.bidding-select-option {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+.bidding-select-option:hover { background: var(--primary-light); }
+.bidding-select-option.selected { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+.bidding-select-option input[data-multi-option] {
+  flex: 0 0 16px;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0;
+  padding: 0 !important;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.bidding-select-option input[data-multi-option]:disabled { cursor: not-allowed; }
+
+.bidding-date-picker-input {
+  cursor: pointer !important;
+  background: #fff !important;
+}
+.bidding-date-picker-input:read-only:focus { border-color: var(--primary) !important; }
+body > .calendar-panel { z-index: 1200; }
+
+.bidding-form-page .bidding-form-title-row h2,
+.bidding-detail-page .bidding-detail-heading h2 { font-weight: 600; }
+.bidding-form-page .bidding-back-button,
+.bidding-detail-page .bidding-back-button {
+  display: inline-flex;
+  min-width: 0 !important;
+  height: 32px !important;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px 0 0 !important;
+  border: 0 !important;
+  border-right: 1px solid var(--border-light) !important;
+  background: transparent !important;
+  color: #5f6c7c !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  box-shadow: none !important;
+}
+.bidding-form-page .bidding-back-button::before,
+.bidding-detail-page .bidding-back-button::before { content: none; }
+.bidding-back-icon {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+}
+.bidding-back-icon::before {
+  position: absolute;
+  top: 6px;
+  left: 1px;
+  width: 12px;
+  height: 1px;
+  background: currentColor;
+  content: '';
+}
+.bidding-back-icon::after {
+  position: absolute;
+  top: 3px;
+  left: 1px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+  content: '';
+  transform: rotate(45deg);
+}

@@ -1,0 +1,72 @@
+.supplier-product-page {
+  padding: 16px;
+  border-radius: 0;
+}
+
+.supplier-product-page .workspace-grid {
+  grid-template-columns: 202px minmax(0, 1fr);
+  column-gap: 16px;
+}
+
+.supplier-product-page .category-tree {
+  border-radius: 0;
+  background: #fff;
+}
+
+.supplier-product-page .category-filter {
+  padding: 10px 8px 12px;
+}
+
+.supplier-product-page .category-filter .filter-label {
+  font-size: 14px;
+}
+
+.supplier-filter-panel {
+  min-height: 90px;
+  padding: 14px 10px;
+  border: 1px solid var(--border-light);
+  background: #fff;
+}
+
+.supplier-product-page .filter-fields {
+  grid-template-columns: repeat(3, minmax(210px, 1fr));
+  gap: 12px 28px;
+}
+
+.supplier-product-page .table-container {
+  border-radius: 0;
+}
+
+.supplier-data-table {
+  min-width: 1420px;
+}
+
+.supplier-data-table th,
+.supplier-data-table td {
+  height: 48px;
+  padding: 0 12px;
+}
+
+.supplier-data-table .seq-cell { width: 64px; }
+.supplier-data-table .img-cell { width: 70px; }
+.supplier-data-table .code-cell { min-width: 100px; }
+.supplier-data-table .name-cell { min-width: 244px; }
+.supplier-data-table th:nth-child(5) { min-width: 190px; }
+.supplier-data-table th:nth-child(10) { min-width: 90px; }
+.supplier-data-table th:nth-child(11) { min-width: 110px; }
+.supplier-data-table th:nth-child(12) { min-width: 90px; }
+.supplier-data-table th:nth-child(13) { min-width: 160px; }
+
+.supplier-data-table .status-tag {
+  white-space: nowrap;
+}
+
+.supplier-empty {
+  height: 220px !important;
+  color: var(--text-tertiary) !important;
+  text-align: center !important;
+}
+
+.supplier-shell .header-company {
+  font-size: 18px;
+}

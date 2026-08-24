@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>退货单维护 - 集采企业版企业端</title>
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/layout.css?v=20260819-menu-guard-2">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/product-list.css">
+  <link rel="stylesheet" href="./assets/css/warehouse.css">
+  <link rel="stylesheet" href="./assets/css/operations.css?v=20260731-7">
+  <link rel="stylesheet" href="./assets/css/order-lists.css?v=20260731-7">
+  <link rel="stylesheet" href="./assets/css/processing.css?v=20260731-7">
+  <link rel="stylesheet" href="./assets/css/order-form.css?v=20260731-7">
+</head>
+<body>
+  <div id="app"></div>
+  <template id="returnFormTemplate">
+    <div class="page-card order-form-page">
+      <div class="order-form-header">
+        <button class="back-link" type="button" data-action="back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg>
+          <span>返回</span>
+        </button>
+        <h1 id="returnPageTitle">添加退货单</h1>
+      </div>
+      <div class="order-form-status" id="returnStatus" role="status"></div>
+      <form class="order-form" id="returnForm" novalidate>
+        <section class="order-form-section">
+          <div class="order-section-heading">
+            <h2 class="goods-title-marker">基本信息</h2>
+          </div>
+          <div class="order-form-grid">
+            <div class="order-form-field">
+              <label class="field-label required" for="returnMode">退货方式</label>
+              <select class="form-control filter-select" id="returnMode"><option value="">请选择退货类型</option><option value="RELATED">关联订单</option><option value="UNRELATED">不关联订单</option></select>
+              <span class="field-error" data-error-for="returnMode"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="orderNo">关联订单</label>
+              <div class="inline-picker-control"><input class="form-control" id="orderNo" readonly placeholder="请选择订单"><button class="btn btn-sm" id="chooseOrder" type="button">选择订单</button></div>
+              <span class="field-error" data-error-for="orderNo"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="customerName">客户</label>
+              <input class="form-control" id="customerName" readonly placeholder="请选择客户">
+              <span class="field-error" data-error-for="customerName"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="canteen">食堂</label>
+              <input class="form-control" id="canteen" readonly placeholder="请选择食堂">
+              <span class="field-error" data-error-for="canteen"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label required" for="reason">退货原因</label>
+              <textarea class="form-control" id="reason" rows="3" placeholder="请输入退货原因"></textarea>
+              <span class="field-error" data-error-for="reason"></span>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label" for="includeDamage">包含报损数量</label>
+              <select class="form-control filter-select" id="includeDamage"><option>否</option><option>是</option></select>
+            </div>
+            <div class="order-form-field">
+              <label class="field-label">附件</label>
+              <div class="attachment-control"><button class="btn btn-sm" id="uploadAttachment" type="button">上传附件</button><span id="attachmentName">未上传</span></div>
+            </div>
+          </div>
+        </section>
+        <section class="order-form-section goods-section">
+          <div class="order-section-heading">
+            <h2 class="goods-title-marker">退货商品</h2>
+            <strong>退款金额：¥<span id="refundTotal">0.00</span></strong>
+          </div>
+          <div class="order-goods-table-wrap"><table class="order-goods-table return-goods-table">
+            <thead><tr><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>下单单价</th><th>发货数量</th><th>已退数</th><th class="required-head">申请退货数量</th><th class="required-head">申请退货单价</th><th>申请退货金额</th><th>报损数量</th><th>关联采购单</th><th>备注</th></tr></thead>
+            <tbody id="returnGoodsBody"><tr><td class="empty-goods" colspan="13">请选择关联订单</td></tr></tbody>
+          </table></div>
+          <div class="goods-table-error" id="returnGoodsError"></div>
+        </section>
+      </form>
+      <div class="order-form-actions">
+        <button class="btn" type="button" data-action="back">返回</button>
+        <button class="btn btn-danger" id="returnReject" data-action="reject">驳回</button>
+        <button class="btn btn-primary" id="returnPrimary" data-action="save">保存退货单</button>
+      </div>
+    </div>
+    <div id="returnOverlay"></div>
+  </template>
+  <script src="./assets/js/config/menu-data.js?v=20260819-menu-guard-3"></script>
+  <script src="./assets/js/components/navigation-guard.js?v=20260819-navigation-2"></script><script src="./assets/js/components/header.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/page-tabs.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/sidebar.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/utils/dom.js"></script>
+  <script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js"></script>
+  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js"></script>
+
+  <script src="./assets/js/services/operations-service.js?v=20260731-11"></script>
+  <script src="./assets/js/pages/order-return-form.js?v=20260819-navigation-2"></script>
+</body>
+</html>

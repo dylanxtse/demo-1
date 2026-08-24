@@ -1,0 +1,14 @@
+{
+  "name": "procurement-demo-vanilla",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:data && npm run test:e2e",
+    "test:data": "node --test tests/data-contract.test.cjs",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}

@@ -1,0 +1,101 @@
+.education-platform-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.education-platform-button {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.education-platform-button.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.education-shell .header-user-name { display: none; }
+
+.education-shell .menu-item.menu-leaf.active > .menu-item-header {
+  background: var(--primary);
+  color: #fff;
+}
+
+.education-shell .menu-item.menu-leaf.active > .menu-item-header:hover {
+  background: #035ee0;
+  color: #fff;
+}
+
+.education-home-page {
+  gap: 18px;
+  background: #fff;
+}
+
+.education-home-banner {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-radius: 6px;
+  background: linear-gradient(120deg, #eef5ff, #f7faff);
+}
+
+.education-home-banner h1 {
+  margin-bottom: 8px;
+  color: #1f3e79;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.education-home-banner p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.education-home-badge {
+  padding: 8px 14px;
+  border: 1px solid #b8ccf4;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.education-home-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.education-home-card {
+  padding: 18px 20px;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.education-home-card-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.education-home-card-value {
+  margin-top: 14px;
+  color: var(--primary);
+  font-size: 26px;
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .education-platform-button { padding: 0 7px; font-size: 12px; }
+  .education-home-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
