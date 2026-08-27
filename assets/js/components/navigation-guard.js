@@ -29,7 +29,15 @@
     'wasted-bid-management.html': 'education',
     'sales-reconciliation.html': 'enterprise',
     'sales-reconciliation-detail.html': 'enterprise',
-    'sales-reconciliation-statement.html': 'enterprise'
+    'sales-reconciliation-statement.html': 'enterprise',
+    'purchase-task.html': 'enterprise',
+    'purchase-task-allocation.html': 'enterprise',
+    'purchase-task-allocation-detail.html': 'enterprise',
+    'purchase-order.html': 'enterprise',
+    'purchase-order-detail.html': 'enterprise',
+    'purchase-order-form.html': 'enterprise',
+    'purchase-order-receipt.html': 'enterprise',
+    'supplier-purchase-order.html': 'supplier'
   });
 
   const validVariants = new Set(Object.keys(endpointHomes));

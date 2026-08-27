@@ -39,7 +39,13 @@
       { name: '订单标签', href: './order-tag.html' },
       { name: '实收变更', href: './receipt-change.html' }
     ] },
-    { name: '采购管理', icon: 'truck', children: ['采购任务', '采购单', '采购退货', { name: '供应商档案', href: './supplier-archive.html' }, '采购员'] },
+    { name: '采购管理', icon: 'truck', children: [
+      { name: '采购任务', href: './purchase-task.html' },
+      { name: '采购单', href: './purchase-order.html' },
+      '采购退货',
+      { name: '供应商档案', href: './supplier-archive.html' },
+      '采购员'
+    ] },
     { name: '分拣管理', icon: 'layers', children: [
       { name: '分拣管理', href: './sorting-management.html' },
       { name: '分拣进度', href: './sorting-progress.html' },

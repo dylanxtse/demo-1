@@ -12,7 +12,12 @@
       'sales-reconciliation-detail.html': 'sales-reconciliation.html',
       'sales-reconciliation-statement.html': 'sales-reconciliation.html',
       'bid-management-detail.html': 'bid-management.html',
-      'bid-management-detail': 'bid-management.html'
+      'bid-management-detail': 'bid-management.html',
+      'purchase-task-allocation.html': 'purchase-task.html',
+      'purchase-task-allocation-detail.html': 'purchase-task.html',
+      'purchase-order-detail.html': 'purchase-order.html',
+      'purchase-order-form.html': 'purchase-order.html',
+      'purchase-order-receipt.html': 'purchase-order.html'
     };
     const pageAliases = {
       'bid-management': 'bid-management.html',
