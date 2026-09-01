@@ -2,6 +2,7 @@
   window.RecordPageConfig = {
     title: '订单标签',
     pageClass: 'order-module-page order-tag-page',
+    useDemoListLayout: true,
     resource: 'tags',
     selectable: false,
     filters: [

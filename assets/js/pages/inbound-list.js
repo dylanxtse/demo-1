@@ -81,6 +81,14 @@
                 ${warehouses.map((w) => `<option value="${w}">${w}</option>`).join('')}
               </select>
             </div>
+            <div class="filter-group">
+              <label class="filter-label" for="inbNetVegetable">是否净菜</label>
+              <select class="filter-select" id="inbNetVegetable">
+                <option value="全部">全部</option>
+                <option value="净菜">净菜</option>
+                <option value="非净菜">非净菜</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -116,20 +124,7 @@
             <tbody id="inbTableBody"></tbody>
           </table>
         </div>
-        <div class="pagination">
-          <span class="page-total" id="inbPageTotal">共 0 条数据</span>
-          <select class="page-size-select" id="inbPageSize" aria-label="每页数量">
-            <option value="20">20 条/页</option>
-            <option value="50">50 条/页</option>
-            <option value="100">100 条/页</option>
-          </select>
-          <div class="page-btns" id="inbPageBtns"></div>
-          <div class="page-jump">
-            <span>跳至</span>
-            <input type="text" id="inbPageJump" value="1" aria-label="跳转页码">
-            <span>页</span>
-          </div>
-        </div>
+        <div class="pagination" id="inbPagination"></div>
       </div>
 
     </div>
@@ -171,6 +166,7 @@
     selectedIds: new Set(),
     currentPage: 1,
     pageSize: 20,
+    pagination: null,
     advancedFilterVisible: false,
     products: [],
     formMode: null,
@@ -204,14 +200,15 @@
 
   function renderProductSelect(selectedCode) {
     const selectedProduct = selectedCode ? findProduct(selectedCode) : null;
+    const selectedDisplay = selectedProduct ? window.DomUtils.formatProductDisplay(selectedProduct, state.products) : '';
     const selectedLabel = selectedProduct
-      ? `${selectedProduct.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span class="custom-select-text">${escapeHtml(selectedProduct.name)} (${escapeHtml(selectedProduct.code)})</span>`
+      ? `${selectedProduct.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span class="custom-select-text">${escapeHtml(selectedDisplay)}</span>`
       : '<span class="custom-select-text is-placeholder">请选择</span>';
     const options = state.products.map((product) => `
       <div class="custom-select-option ${product.code === selectedCode ? 'selected' : ''}"
         data-action="select-product" data-value="${escapeHtml(product.code)}">
         ${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}
-        <span>${escapeHtml(product.name)} (${escapeHtml(product.unit)}/${escapeHtml(product.brand || '--')}/${escapeHtml(product.spec || '--')})</span>
+        <span>${escapeHtml(window.DomUtils.formatProductDisplay(product, state.products))}</span>
       </div>
     `).join('');
     return `
@@ -264,11 +261,11 @@
             <td><span class="status-tag ${getStatusClass(order.status)}">${escapeHtml(statusLabel)}</span></td>
             <td>${escapeHtml(order.purchaserLeaderName)}</td>
             <td>${escapeHtml(order.creator)}</td>
-            <td class="action-cell">
+            <td class="action-cell"><div class="operation-actions">
               <button class="btn-text ${!canAudit ? 'disabled' : ''}" type="button" data-row-action="audit" data-id="${escapeHtml(order.id)}" ${!canAudit ? 'disabled' : ''}>审核</button>
               <button class="btn-text ${!canEdit ? 'disabled' : ''}" type="button" data-row-action="edit" data-id="${escapeHtml(order.id)}" ${!canEdit ? 'disabled' : ''}>编辑</button>
               <button class="btn-text ${!canClose ? 'disabled' : ''}" type="button" data-row-action="close" data-id="${escapeHtml(order.id)}" ${!canClose ? 'disabled' : ''}>关闭</button>
-            </td>
+            </div></td>
           </tr>
         `;
       }).join('');
@@ -282,28 +279,7 @@
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.currentPage > totalPages) state.currentPage = totalPages;
 
-    document.getElementById('inbPageTotal').textContent = `共 ${total} 条数据`;
-
-    const btnsContainer = document.getElementById('inbPageBtns');
-    const pages = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (state.currentPage > 4) pages.push('...');
-      const start = Math.max(2, state.currentPage - 1);
-      const end = Math.min(totalPages - 1, state.currentPage + 1);
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (state.currentPage < totalPages - 3) pages.push('...');
-      pages.push(totalPages);
-    }
-    btnsContainer.innerHTML = pages.map((p) => {
-      if (p === '...') return '<span class="page-ellipsis" style="padding:0 4px;color:var(--text-tertiary);">...</span>';
-      return `<button class="page-btn ${p === state.currentPage ? 'active' : ''}" type="button" data-action="goto-page" data-page="${p}">${p}</button>`;
-    }).join('');
-
-    const jumpInput = document.getElementById('inbPageJump');
-    if (jumpInput) jumpInput.value = String(state.currentPage);
+    state.pagination?.update({ page: state.currentPage, pageSize: state.pageSize, total });
   }
 
   function updateVisibleOrders() {
@@ -346,6 +322,7 @@
     const status = value('inbStatus');
     const orderNo = value('inbOrderNo').toLowerCase();
     const warehouse = value('inbWarehouse');
+    const netVegetable = value('inbNetVegetable');
 
     state.filteredOrders = state.orders.filter((order) => {
       const entryDate = (order.entryTime || '').slice(0, 10);
@@ -369,6 +346,15 @@
       if (status !== '全部' && window.BusinessRules.statusLabel('inboundOrders', order.status) !== status) return false;
       if (orderNo && !(order.id || '').toLowerCase().includes(orderNo)) return false;
       if (warehouse !== '全部' && order.warehouseName !== warehouse) return false;
+      if (netVegetable !== '全部') {
+        const expected = netVegetable === '净菜';
+        const hasMatch = (order.items || []).some((item) => {
+          const product = findProduct(item.productCode || item.goodsCode || item.productId);
+          const actual = product ? product.isNetVegetable === true : item.isNetVegetable === true;
+          return actual === expected;
+        });
+        if (!hasMatch) return false;
+      }
       return true;
     });
 
@@ -385,7 +371,7 @@
     });
     const display = document.getElementById('inbDateDisplay');
     if (display) display.value = '';
-    ['inbCategory', 'inbEntryType', 'inbStatus', 'inbWarehouse'].forEach((id) => {
+    ['inbCategory', 'inbEntryType', 'inbStatus', 'inbWarehouse', 'inbNetVegetable'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.value = '全部';
     });
@@ -669,10 +655,12 @@
     const order = window.InboundService.getDetail(id) || state.orders.find((o) => o.id === id);
     if (!order) return;
     const statusClass = getStatusClass(order.status);
-    const itemRows = (order.items || []).map((item, index) => `
+    const itemRows = (order.items || []).map((item, index) => {
+      const productDisplay = window.DomUtils.formatProductDisplay(item, state.products);
+      return `
       <tr>
         <td>${index + 1}</td>
-        <td>${escapeHtml(item.productName)}</td>
+        <td><span class="product-display-text" title="${escapeHtml(productDisplay)}">${escapeHtml(productDisplay)}</span></td>
         <td>${escapeHtml(item.unit)}</td>
         <td>${escapeHtml(String(item.conversionRate ?? '--'))}</td>
         <td>${escapeHtml(String(item.expectedQty ?? '--'))}</td>
@@ -683,7 +671,8 @@
         <td>${escapeHtml(item.productionDate || '--')}</td>
         <td>${escapeHtml(item.qualityReport || '--')}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     document.getElementById('inbDetailBody').innerHTML = `
       <div class="processing-detail-section">
@@ -855,7 +844,7 @@
               <tr>
                 <th style="width:55px">序号</th>
                 <th style="width:66px">图片</th>
-                <th style="width:230px">商品名称(计量单位/品牌/规格)</th>
+                <th style="width:230px">商品名称（计量单位/品牌/规格）</th>
                 <th style="width:88px">计量单位</th>
                 <th style="width:77px">换算率</th>
                 <th style="width:110px">应入库数量</th>
@@ -1430,50 +1419,18 @@
           updateToggleAllCheckbox();
           return;
         }
-        if (action === 'goto-page') {
-          const page = Number(actionEl.dataset.page);
-          if (page >= 1 && page !== state.currentPage) {
-            state.currentPage = page;
-            refreshTable();
-            updateToggleAllCheckbox();
-          }
-          return;
-        }
       }
 
       const rowActionEl = event.target.closest('[data-row-action]');
       if (rowActionEl) {
         const rowAction = rowActionEl.dataset.rowAction;
         const id = rowActionEl.dataset.id;
-        if (rowAction === 'detail') { window.AppNavigation?.navigate?.(`./inbound-detail.html?id=${encodeURIComponent(id)}`); return; }
+        if (rowAction === 'detail') { window.location.href = `./inbound-detail.html?id=${encodeURIComponent(id)}`; return; }
         if (rowAction === 'audit') { auditOrder(id); return; }
         if (rowAction === 'edit') { showFormPage('edit', id); return; }
         if (rowAction === 'close') { closeOrder(id); return; }
       }
     });
-
-    const pageSizeSelect = document.getElementById('inbPageSize');
-    if (pageSizeSelect) {
-      pageSizeSelect.addEventListener('change', (event) => {
-        state.pageSize = Number(event.target.value) || 20;
-        state.currentPage = 1;
-        refreshTable();
-        updateToggleAllCheckbox();
-      });
-    }
-
-    const pageJumpInput = document.getElementById('inbPageJump');
-    if (pageJumpInput) {
-      pageJumpInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          const totalPages = Math.max(1, Math.ceil(state.filteredOrders.length / state.pageSize));
-          const page = Math.min(Math.max(1, Number(event.target.value) || 1), totalPages);
-          state.currentPage = page;
-          refreshTable();
-          updateToggleAllCheckbox();
-        }
-      });
-    }
 
     ['inbProductName', 'inbRelNo', 'inbOrderNo'].forEach((id) => {
       const input = document.getElementById(id);
@@ -1494,6 +1451,20 @@
     startInput: '#inbDateStart',
     endInput: '#inbDateEnd',
     panelId: 'inbCalendarPanel'
+  });
+
+  state.pagination = window.Pagination.create({
+    container: '#inbPagination',
+    page: state.currentPage,
+    pageSize: state.pageSize,
+    total: state.filteredOrders.length,
+    pageSizeOptions: [20, 50, 100],
+    onChange: ({ page, pageSize }) => {
+      state.currentPage = page;
+      state.pageSize = pageSize;
+      refreshTable();
+      updateToggleAllCheckbox();
+    }
   });
 
   loadProducts();

@@ -1,5 +1,9 @@
 (function () {
   const service = window.OperationsService;
+  const toolbarIcons = {
+    'supplier-purchase-print': '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>',
+    'supplier-purchase-export': '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>'
+  };
   const defaultStatusMap = {
     PENDING: ['待审核', 'warning'],
     PENDING_CONFIRM: ['待确认', 'warning'],
@@ -32,6 +36,8 @@
 
   function mount(config) {
     const statusMap = { ...defaultStatusMap, ...(config.statusMap || {}) };
+    const useDemoListLayout = config.useDemoListLayout === true;
+    const usePagination = config.usePagination === true || useDemoListLayout;
     const state = {
       page: 1,
       pageSize: config.pageSize || 20,
@@ -39,6 +45,7 @@
       items: [],
       selected: new Set(),
       condition: {},
+      pagination: null,
       activeTab: config.tabs?.[0]?.key,
       activeStatus: config.tabs?.[0]?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
     };
@@ -62,22 +69,23 @@
       </div>`;
     const filters = config.filters || [];
     const filterHtml = filters.map(renderFilter).join('');
-    const primaryFilterHtml = filters.slice(0, 3).map(renderFilter).join('');
-    const advancedFilterHtml = filters.slice(3).map(renderFilter).join('');
+    const primaryFilterHtml = useDemoListLayout ? filterHtml : filters.slice(0, 3).map(renderFilter).join('');
+    const advancedFilterHtml = useDemoListLayout ? '' : filters.slice(3).map(renderFilter).join('');
     const toolbarActions = config.toolbar || [];
     const isSideToolbarAction = (action) => action.key === 'export' || action.side === true;
     const isToolbarActionVisible = (action) => !action.visibleStatuses
       || String(state.activeStatus).split(',').some((status) => action.visibleStatuses.includes(status));
     const renderToolbarButton = (action, compact = false) => {
       const buttonClass = compact ? 'btn btn-sm' : 'btn';
+      const icon = toolbarIcons[action.icon] || '';
       const options = (action.dropdownOptions || []).filter(isToolbarActionVisible);
       const activeStatus = String(state.activeStatus);
       const effectiveKey = action.defaultActionByStatus?.[activeStatus] || action.key;
       const effectiveLabel = action.labelByStatus?.[activeStatus] || action.label;
       const dropdownVisible = !action.dropdownVisibleStatuses || action.dropdownVisibleStatuses.includes(activeStatus);
-      if (!options.length || !dropdownVisible) return `<button class="${buttonClass} ${action.primary ? 'btn-primary' : ''}" data-toolbar-action="${escapeHtml(effectiveKey)}">${escapeHtml(effectiveLabel)}</button>`;
+      if (!options.length || !dropdownVisible) return `<button class="${buttonClass} ${action.primary ? 'btn-primary' : ''}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>`;
       return `<div class="toolbar-dropdown">
-        <button class="${buttonClass} toolbar-dropdown-main ${action.primary ? 'btn-primary' : ''}" data-toolbar-action="${escapeHtml(effectiveKey)}">${escapeHtml(effectiveLabel)}</button>
+        <button class="${buttonClass} toolbar-dropdown-main ${action.primary ? 'btn-primary' : ''}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>
         <button class="${buttonClass} toolbar-dropdown-toggle ${action.primary ? 'btn-primary' : ''}" type="button" data-toolbar-dropdown-toggle aria-label="更多操作">▾</button>
         <div class="toolbar-dropdown-menu">${options.map((option) => `<button type="button" data-toolbar-option="${escapeHtml(option.key)}">${escapeHtml(option.label)}</button>`).join('')}</div>
       </div>`;
@@ -112,7 +120,7 @@
         </div>
         <div class="operations-table-container">
           <div class="operations-table-wrap"><table class="operations-table"><thead id="recordHead"></thead><tbody id="recordBody"></tbody></table></div>
-          <div class="operations-pagination" id="recordPagination"></div>
+          <div class="${usePagination ? 'pagination' : 'operations-pagination'}" id="recordPagination"></div>
         </div>
       </section>
       <div id="recordOverlay"></div>`;
@@ -126,7 +134,7 @@
         </div>
         <div class="operations-toolbar">${legacyToolbarHtml}<span class="toolbar-spacer"></span></div>
         <div class="operations-table-wrap"><table class="operations-table"><thead id="recordHead"></thead><tbody id="recordBody"></tbody></table></div>
-        <div class="operations-pagination" id="recordPagination"></div>
+        <div class="${usePagination ? 'pagination' : 'operations-pagination'}" id="recordPagination"></div>
       </section>
       <div id="recordOverlay"></div>`;
     const content = config.pageClass ? standardContent : legacyContent;
@@ -236,12 +244,17 @@
 
     function formatCell(item, column) {
       if (column.render) return column.render(item);
+      if (column.productDisplay) {
+        const display = window.DomUtils?.formatProductDisplay?.(item) || item[column.key] || '--';
+        return `<span class="product-display-text" title="${escapeHtml(display)}">${escapeHtml(display)}</span>`;
+      }
       const value = item[column.key];
       if (column.editableNumber) {
         const inputValue = column.blankZero && Number(value || 0) === 0 ? '' : (value ?? '');
         return `<input class="quantity-input record-inline-input" data-inline-field="${column.key}" type="number" min="0" value="${escapeHtml(inputValue)}" placeholder="${escapeHtml(column.placeholder || '请输入')}" aria-label="${escapeHtml(column.label)}">`;
       }
       if (column.format === 'money') return Number(value || 0).toFixed(2);
+      if (column.format === 'decimal') return Number(value || 0).toFixed(2);
       if (column.format === 'status') {
         const status = statusMap[value]
           || [window.BusinessRules?.statusLabel(currentResource(), value) || value || '--', ''];
@@ -252,9 +265,26 @@
     }
 
     function renderHead() {
+      const showSequence = config.hideSequence !== true;
+      const showActions = config.hideRowActions !== true;
+      const selectionHeader = config.selectable === false
+        ? ''
+        : '<th><input type="checkbox" id="recordSelectAll" aria-label="选择全部"></th>';
+      if (Array.isArray(config.headerRows) && config.headerRows.length) {
+        const rows = config.headerRows;
+        const selection = selectionHeader ? selectionHeader.replace('<th', `<th rowspan="${rows.length}"`) : '';
+        const sequence = showSequence ? `<th rowspan="${rows.length}">序号</th>` : '';
+        const actions = showActions ? `<th rowspan="${rows.length}">操作</th>` : '';
+        $('#recordHead').innerHTML = rows.map((row, rowIndex) => `<tr>
+          ${rowIndex === 0 ? `${selection}${sequence}` : ''}
+          ${row.map((header) => `<th${header.rowspan ? ` rowspan="${header.rowspan}"` : ''}${header.colspan ? ` colspan="${header.colspan}"` : ''}>${escapeHtml(header.label)}</th>`).join('')}
+          ${rowIndex === 0 ? actions : ''}
+        </tr>`).join('');
+        return;
+      }
       $('#recordHead').innerHTML = `<tr>
-        ${config.selectable !== false ? '<th><input type="checkbox" id="recordSelectAll" aria-label="选择全部"></th>' : ''}
-        <th>序号</th>${currentColumns().map((column) => `<th>${column.label}</th>`).join('')}<th>操作</th>
+        ${selectionHeader}
+        ${showSequence ? '<th>序号</th>' : ''}${currentColumns().map((column) => `<th>${column.label}</th>`).join('')}${showActions ? '<th>操作</th>' : ''}
       </tr>`;
     }
 
@@ -270,15 +300,18 @@
 
     function renderBody() {
       const columns = currentColumns();
+      const showSequence = config.hideSequence !== true;
+      const showActions = config.hideRowActions !== true;
       if (!state.items.length) {
-        $('#recordBody').innerHTML = `<tr><td class="empty-cell" colspan="${columns.length + (config.selectable === false ? 2 : 3)}">暂无数据</td></tr>`;
+        const extraColumns = (config.selectable === false ? 0 : 1) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
+        $('#recordBody').innerHTML = `<tr><td class="empty-cell" colspan="${columns.length + extraColumns}">暂无数据</td></tr>`;
         return;
       }
       $('#recordBody').innerHTML = state.items.map((item, index) => {
-        const actions = currentActions(item);
+        const actions = showActions ? currentActions(item) : [];
         return `<tr data-id="${escapeHtml(item.id)}">
           ${config.selectable !== false ? `<td><input type="checkbox" class="record-row-select" aria-label="选择数据" ${state.selected.has(item.id) ? 'checked' : ''} ${isSelectable(item) ? '' : 'disabled'}></td>` : ''}
-          <td>${(state.page - 1) * state.pageSize + index + 1}</td>
+          ${showSequence ? `<td>${(state.page - 1) * state.pageSize + index + 1}</td>` : ''}
           ${columns.map((column) => {
             const cell = formatCell(item, column);
             if (column.href) {
@@ -287,15 +320,19 @@
             }
             return `<td>${column.link ? `<button class="cell-link" data-row-action="view">${cell}</button>` : cell}</td>`;
           }).join('')}
-          <td><div class="cell-actions">${actions.map((action, actionIndex) => {
+          ${showActions ? `<td><div class="cell-actions${usePagination ? ' operation-actions' : ''}">${actions.map((action, actionIndex) => {
             const isDisabled = action.disabled && action.disabled(item);
-            return `${actionIndex ? '<span class="divider">|</span>' : ''}<button class="btn-text ${action.danger ? 'danger' : ''}" data-row-action="${action.key}"${isDisabled ? ' disabled' : ''}>${action.label}</button>`;
-          }).join('') || '--'}</div></td>
+            return `${usePagination && actionIndex ? '' : (!usePagination && actionIndex ? '<span class="divider">|</span>' : '')}<button class="btn-text ${action.danger ? 'danger' : ''}" data-row-action="${action.key}"${isDisabled ? ' disabled' : ''}>${action.label}</button>`;
+          }).join('') || '--'}</div></td>` : ''}
         </tr>`;
       }).join('');
     }
 
     function renderPagination() {
+      if (usePagination) {
+        state.pagination?.update({ page: state.page, pageSize: state.pageSize, total: state.total });
+        return;
+      }
       const pages = Math.max(1, Math.ceil(state.total / state.pageSize));
       $('#recordPagination').innerHTML = `
         <span>共 ${state.total} 条数据</span>
@@ -756,6 +793,21 @@
       }
       if (event.key === 'Escape' && overlay.innerHTML) closeModal();
     });
+
+    if (usePagination && window.Pagination?.create) {
+      state.pagination = window.Pagination.create({
+        container: '#recordPagination',
+        page: state.page,
+        pageSize: state.pageSize,
+        total: state.total,
+        pageSizeOptions: [10, 20, 50],
+        onChange: ({ page, pageSize }) => {
+          state.page = page;
+          state.pageSize = pageSize;
+          return load();
+        }
+      });
+    }
 
     (config.filters || []).filter((field) => field.type === 'date').forEach((field) => {
       const input = $(`#filter-${field.key}`);

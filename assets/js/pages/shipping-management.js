@@ -2,6 +2,8 @@
   window.RecordPageConfig = {
     title: '发货管理',
     pageClass: 'order-module-page shipping-management-page',
+    useDemoListLayout: true,
+    usePagination: true,
     showSelectionSummary: false,
     resource: 'shippingOrders',
     filters: [
@@ -48,7 +50,7 @@
         resource: 'shippingDifferences',
         columns: [
           { key: 'orderNo', label: '订单号', link: true },
-          { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）' },
+          { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）', productDisplay: true },
           { key: 'warehouse', label: '仓库' },
           { key: 'stockQty', label: '库存数量' },
           { key: 'sortingQty', label: '分拣数量' },
@@ -63,8 +65,8 @@
     ],
     toolbar: [
       { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
-      { key: 'print', label: '打印', toast: '已生成订单发货出库打印预览' },
-      { key: 'export', label: '导出' }
+      { key: 'print', label: '打印', icon: 'supplier-purchase-print', toast: '已生成订单发货出库打印预览' },
+      { key: 'export', label: '导出', icon: 'supplier-purchase-export' }
     ],
     statusMap: {
       PENDING: ['未发货', 'warning'],

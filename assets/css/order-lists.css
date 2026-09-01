@@ -173,6 +173,36 @@
   display: block;
 }
 
+.shipping-management-page .operations-toolbar [data-toolbar-action="print"],
+.shipping-management-page .operations-toolbar [data-toolbar-action="export"] {
+  display: inline-flex;
+  width: auto;
+  min-width: 0;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.shipping-management-page .operations-toolbar [data-toolbar-action="print"]:hover,
+.shipping-management-page .operations-toolbar [data-toolbar-action="export"]:hover {
+  color: var(--primary);
+}
+
+.shipping-management-page .operations-toolbar [data-toolbar-action="print"] .icon-svg,
+.shipping-management-page .operations-toolbar [data-toolbar-action="export"] .icon-svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
 .order-module-page .operations-toolbar {
   display: flex;
   min-height: 32px;
@@ -308,15 +338,40 @@
   justify-content: center;
 }
 
-.order-module-page .operations-pagination {
+.order-module-page .pagination {
   min-height: 52px;
+  box-sizing: border-box;
   flex-shrink: 0;
   padding: 0 16px;
   border-top: 1px solid var(--border-light);
 }
 
-.order-module-page .operations-pagination > span:first-child {
+.order-module-page .pagination > span:first-child {
   margin-right: auto;
+}
+
+.order-module-page .operation-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.order-module-page .operation-actions > * + * {
+  position: relative;
+  margin-left: 22px;
+}
+
+.order-module-page .operation-actions > * + *::before {
+  position: absolute;
+  top: 50%;
+  left: -11px;
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  content: '';
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* 仓库档案按内容自适应列宽，超出内容区时通过横向滚动查看。 */

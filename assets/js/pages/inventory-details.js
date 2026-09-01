@@ -2,11 +2,17 @@
   window.RecordPageConfig = {
     title: '库存明细',
     pageClass: 'order-module-page inventory-details-page',
+    useDemoListLayout: true,
+    usePagination: true,
     resource: 'inventoryDetails',
     selectable: false,
     filters: [
       { key: 'dateRange', label: '发生日期', type: 'dateRange' },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入名称/编号' },
+      { key: 'isNetVegetable', label: '是否净菜', options: [
+        { label: '净菜', value: 'true' },
+        { label: '非净菜', value: 'false' }
+      ] },
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'category', label: '商品分类', options: ['果蔬-果蔬二级', '蛋奶类-蛋奶类二级', '主食-粮食类'] },
       { key: 'documentType', label: '单据类型', options: ['期初库存', '采购入库', '销售出库', '盘盈入库', '盘亏出库'] },
@@ -14,7 +20,7 @@
     ],
     columns: [
       { key: 'goodsCode', label: '商品编码', link: true },
-      { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）' },
+      { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）', productDisplay: true },
       { key: 'category', label: '商品分类' },
       { key: 'warehouse', label: '仓库' },
       { key: 'documentType', label: '单据类型' },

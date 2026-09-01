@@ -139,7 +139,7 @@
   function renderGoodsSelect(selectedCode, lineId) {
     const selectedProduct = selectedCode ? catalog.find((p) => p.id === selectedCode) : null;
     const netTag = selectedProduct?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-    const displayText = selectedProduct ? escapeHtml(selectedProduct.goodsName) : '请选择';
+    const displayText = selectedProduct ? escapeHtml(window.DomUtils.formatProductDisplay(selectedProduct, catalog)) : '请选择';
     const selectedCodes = goodsItems.filter((item) => item.goodsId && item.id !== lineId).map((item) => item.goodsId);
     return `
       <div class="custom-select order-goods-select" data-select-type="goods" data-line-id="${escapeHtml(lineId)}">
@@ -151,7 +151,7 @@
           ${catalog.map((p) => {
             const isDuplicate = selectedCodes.includes(p.id);
             const tag = p.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-            return `<div class="custom-select-option ${p.id === selectedCode ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.id)}" data-disabled="${isDuplicate}" data-action="select-goods">${tag}${escapeHtml(p.goodsName)}</div>`;
+            return `<div class="custom-select-option ${p.id === selectedCode ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.id)}" data-disabled="${isDuplicate}" data-action="select-goods">${tag}${escapeHtml(window.DomUtils.formatProductDisplay(p, catalog))}</div>`;
           }).join('')}
         </div>
       </div>
@@ -189,7 +189,7 @@
           const tag = item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
           return `<div class="goods-picker-row">
             <input type="checkbox" value="${item.id}" ${exists ? 'disabled' : ''}>
-            <span>${tag}${escapeHtml(item.goodsName)}</span>
+            <span>${tag}${escapeHtml(window.DomUtils.formatProductDisplay(item, catalog))}</span>
             <span>${escapeHtml(item.unit)}</span>
             ${exists ? '<span class="picker-already-tag">已添加</span>' : '<input type="number" class="picker-qty-input" min="0.01" step="0.01" placeholder="请输入数量">'}
           </div>`;

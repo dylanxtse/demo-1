@@ -280,6 +280,36 @@
   text-align: center;
 }
 .data-table .name-cell .name-sub { font-size: 13px; color: var(--text-tertiary); }
+.product-display-text {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.operation-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+}
+.operation-actions > * + * {
+  position: relative;
+  margin-left: 22px;
+}
+.operation-actions > * + *::before {
+  position: absolute;
+  top: 50%;
+  left: -11px;
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  content: '';
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 .data-table .action-cell { white-space: nowrap; }
 .data-table .action-cell .btn-text { padding: 0 6px; }
 .pagination {

@@ -3,7 +3,7 @@
     'orders', 'orderLines', 'sortingItems', 'sortingProgress', 'shippingOrders', 'outboundOrders',
     'inventoryBalance', 'inventoryDetails', 'inventoryCounts', 'inventoryLosses', 'openingInventory',
     'returns', 'tags', 'receiptChanges', 'shortageItems', 'sorters', 'warehouses', 'qualityReports',
-    'shippingDifferences'
+    'shippingDifferences', 'productSales', 'goodsProfitStatistics'
   ]);
   const legacyOrderNumbers = {
     XS202607300001: { orderNo: 'DD202607300100001', orderId: 'ORD-20260730-001' },
@@ -107,6 +107,29 @@
     return String(value ?? '').trim().toLocaleLowerCase();
   }
 
+  function orderContainsNetVegetable(order) {
+    const products = window.DemoStore?.get('products') || window.MockProducts || [];
+    const productsByCode = new Map(products.map((product) => [String(product.code || product.id), product]));
+    return (order.items || []).some((line) => {
+      if (line.isNetVegetable === true) return true;
+      const code = line.productId || line.goodsCode || line.productCode || line.goodsId;
+      return productsByCode.get(String(code))?.isNetVegetable === true;
+    });
+  }
+
+  function isNetVegetable(item) {
+    if (Array.isArray(item?.items) && item.items.some((entry) => isNetVegetable(entry))) return true;
+    if (item && item.isNetVegetable !== undefined && item.isNetVegetable !== null) {
+      return item.isNetVegetable === true
+        || item.isNetVegetable === 'true'
+        || item.isNetVegetable === '是';
+    }
+    const products = window.DemoStore?.get('products') || window.MockProducts || [];
+    const code = item?.productId || item?.productCode || item?.goodsCode || item?.goodsId;
+    const product = products.find((entry) => String(entry.code || entry.id) === String(code));
+    return product?.isNetVegetable === true;
+  }
+
   function matches(item, conditions, resource) {
     return Object.entries(conditions || {}).every(([key, value]) => {
       if (value === '' || value == null) return true;
@@ -117,6 +140,15 @@
       if (key === 'dateRange' && Array.isArray(value) && value.length === 2) {
         const source = item.createdAt || item.expectedAt || item.occurredAt || item.inboundAt || item.countAt || '';
         return (!value[0] || source >= value[0]) && (!value[1] || source <= `${value[1]} 23:59:59`);
+      }
+      if (resource === 'orders' && key === 'netVegetable') {
+        const containsNetVegetable = orderContainsNetVegetable(item);
+        return value === 'net' ? containsNetVegetable : value === 'non-net' ? !containsNetVegetable : true;
+      }
+      if (key === 'isNetVegetable') {
+        const expected = String(value).toLowerCase();
+        const actual = isNetVegetable(item);
+        return expected === 'true' || value === '净菜' ? actual : expected === 'false' || value === '非净菜' ? !actual : true;
       }
       if (key === 'status') {
         const expected = Array.isArray(value) ? value : [value];
@@ -288,6 +320,8 @@
   }
 
   window.OperationsService = {
+    isNetVegetable,
+
     async list(resource, query = {}) {
       const page = Math.max(1, Number(query.page) || 1);
       const pageSize = Math.max(1, Number(query.pageSize) || 20);

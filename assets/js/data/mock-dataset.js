@@ -27,7 +27,19 @@
     { seq: 17, code: 'SP0300016', name: '面粉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '其他材料-其他二级', marketPrice: '30.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 18, code: 'SP0300015', name: '香蕉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: '30.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 19, code: 'SP0300014', name: '苹果', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: '23.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
-    { seq: 20, code: 'SP0300013', name: '鸡腿肉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '肉（豆）制品-肉（豆）制品二级', marketPrice: '23.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' }
+    { seq: 20, code: 'SP0300013', name: '鸡腿肉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '肉（豆）制品-肉（豆）制品二级', marketPrice: '23.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
+    { seq: 22, code: 'SP0300050', name: '土豆块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '5.20', status: '已上架', alias: '净菜土豆块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:05:00' },
+    { seq: 23, code: 'SP0300051', name: '白菜段', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '3.20', status: '已上架', alias: '净菜白菜段', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:10:00' },
+    { seq: 24, code: 'SP0300052', name: '白菜丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '3.40', status: '已上架', alias: '净菜白菜丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:15:00' },
+    { seq: 25, code: 'SP0300053', name: '胡萝卜', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-根茎类', marketPrice: '2.80', status: '已上架', alias: '红萝卜', origin: '河北', shelfLife: '10天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-31 09:20:00' },
+    { seq: 26, code: 'SP0300054', name: '胡萝卜丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '4.80', status: '已上架', alias: '净菜胡萝卜丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:25:00' },
+    { seq: 27, code: 'SP0300055', name: '胡萝卜片', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '4.60', status: '已上架', alias: '净菜胡萝卜片', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:30:00' },
+    { seq: 28, code: 'SP0300056', name: '青椒', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-茄果类', marketPrice: '4.50', status: '已上架', alias: '甜椒', origin: '山东', shelfLife: '7天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-31 09:35:00' },
+    { seq: 29, code: 'SP0300057', name: '青椒丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '7.20', status: '已上架', alias: '净菜青椒丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:40:00' },
+    { seq: 30, code: 'SP0300058', name: '青椒块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '6.80', status: '已上架', alias: '净菜青椒块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:45:00' },
+    { seq: 31, code: 'SP0300059', name: '什锦配菜', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜组合', marketPrice: '6.50', status: '已上架', alias: '三色什锦配菜', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:50:00' },
+    { seq: 32, code: 'SP0300060', name: '西兰花', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-花菜类', marketPrice: '5.20', status: '已上架', alias: '青花菜', origin: '云南', shelfLife: '5天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-31 09:55:00' },
+    { seq: 33, code: 'SP0300061', name: '西兰花块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '7.80', status: '已上架', alias: '净菜西兰花块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 10:00:00' }
   ];
 })();
 
@@ -266,8 +278,8 @@
   ];
 
   const qualityReports = [
-    { id: 'QR-001', inboundAt: '2026-07-30 06:20', inboundNo: 'RK202607300009', goodsName: '鲫鱼(斤/--/--)', partner: '海鲜供应商', inboundType: '采购入库', warehouse: '中心仓', reportStatus: '未上传', reportName: '', createdAt: '2026-07-30 06:20' },
-    { id: 'QR-002', inboundAt: '2026-07-29 05:40', inboundNo: 'RK202607290016', goodsName: '大米(KG/--/--)', partner: '粮油供应商', inboundType: '采购入库', warehouse: '北区仓', reportStatus: '已上传', reportName: '大米质检报告.pdf', createdAt: '2026-07-29 05:40' }
+    { id: 'QR-001', inboundAt: '2026-07-30 06:20', inboundNo: 'RK202607300009', goodsCode: 'SP0300029', goodsName: '鲫鱼(斤/--/--)', isNetVegetable: false, partner: '海鲜供应商', inboundType: '采购入库', warehouse: '中心仓', reportStatus: '未上传', reportName: '', createdAt: '2026-07-30 06:20' },
+    { id: 'QR-002', inboundAt: '2026-07-29 05:40', inboundNo: 'RK202607290016', goodsCode: 'SP0300025', goodsName: '大米(KG/--/--)', isNetVegetable: false, partner: '粮油供应商', inboundType: '采购入库', warehouse: '北区仓', reportStatus: '已上传', reportName: '大米质检报告.pdf', createdAt: '2026-07-29 05:40' }
   ];
 
   const inventoryCounts = [
@@ -366,8 +378,209 @@
     expectedAt: simulatedOrder.expectedAt
   };
 
-  orders.unshift(simulatedOrder);
-  sortingItems.unshift(simulatedSortingItem);
+  // 7 月 31 日订单加工演示：同时覆盖一对多、多对一方案的成品需求。
+  const processingDemoOrder = {
+    id: 'ORD-PROCESS-20260731-001',
+    orderNo: 'DD202607310300001',
+    customerName: '加工演示学校',
+    canteen: '加工演示食堂',
+    customerType: '学校',
+    orderTag: '营养餐',
+    orderAmount: 630.5,
+    shippingAmount: 0,
+    returnAmount: 0,
+    reconciliationAmount: 0,
+    expectedAt: '2026-07-31 10:30',
+    status: 'CONFIRMED',
+    receiptStatus: '待收货',
+    productCount: 4,
+    warehouse: '中心仓',
+    supplement: '否',
+    remark: '模拟数据：用于验证订单加工方案匹配与缺失提示',
+    route: '加工演示线路',
+    driver: '',
+    source: '模拟数据',
+    creator: '管理员',
+    createdAt: '2026-07-30 09:30:00',
+    items: [
+      { goodsName: '土豆丝', isNetVegetable: true, goodsCode: 'SP0300039', unit: '斤', quantity: 40, shippedQty: 40, actualQty: 40, unitPrice: 4.8, subtotal: 192, remark: '' },
+      { goodsName: '白菜段', isNetVegetable: true, goodsCode: 'SP0300051', unit: '斤', quantity: 30, shippedQty: 30, actualQty: 30, unitPrice: 3.2, subtotal: 96, remark: '' },
+      { goodsName: '胡萝卜片', isNetVegetable: true, goodsCode: 'SP0300055', unit: '斤', quantity: 25, shippedQty: 25, actualQty: 25, unitPrice: 4.6, subtotal: 115, remark: '' },
+      { goodsName: '什锦配菜', isNetVegetable: true, goodsCode: 'SP0300059', unit: '斤', quantity: 35, shippedQty: 35, actualQty: 35, unitPrice: 6.5, subtotal: 227.5, remark: '' }
+    ]
+  };
+  const processingDemoSortingItems = [
+    { id: 'SORT-PROCESS-20260731-001', goodsCode: 'SP0300039', goodsName: '土豆丝(斤/--/散装)', unit: '斤', orderQty: 40, actualQty: 40, category: '净菜' },
+    { id: 'SORT-PROCESS-20260731-002', goodsCode: 'SP0300051', goodsName: '白菜段(斤/--/散装)', unit: '斤', orderQty: 30, actualQty: 30, category: '净菜' },
+    { id: 'SORT-PROCESS-20260731-003', goodsCode: 'SP0300055', goodsName: '胡萝卜片(斤/--/散装)', unit: '斤', orderQty: 25, actualQty: 25, category: '净菜' },
+    { id: 'SORT-PROCESS-20260731-004', goodsCode: 'SP0300059', goodsName: '什锦配菜(斤/--/散装)', unit: '斤', orderQty: 35, actualQty: 35, category: '净菜' }
+  ].map((item, index) => ({
+    ...item,
+    orderId: processingDemoOrder.id,
+    isNetVegetable: true,
+    customerName: processingDemoOrder.customerName,
+    canteen: processingDemoOrder.canteen,
+    route: processingDemoOrder.route,
+    orderNo: processingDemoOrder.orderNo,
+    orderTag: processingDemoOrder.orderTag,
+    shipped: '否',
+    progress: '100%',
+    remark: processingDemoOrder.remark,
+    stock: item.actualQty,
+    status: 'SORTED',
+    sorter: '陈分拣',
+    sortingAt: `2026-07-31 08:${String(40 + index * 3).padStart(2, '0')}`,
+    warehouse: processingDemoOrder.warehouse,
+    shortage: '否',
+    supplier: '净菜加工演示供应商',
+    expectedAt: processingDemoOrder.expectedAt
+  }));
+
+  orders.unshift(processingDemoOrder, simulatedOrder);
+  sortingItems.unshift(...processingDemoSortingItems, simulatedSortingItem);
+
+  const productSales = [
+    {
+      id: 'SALE-001',
+      goodsCode: 'SP0300039',
+      goodsName: '土豆丝(斤/--/散装)',
+      isNetVegetable: true,
+      category: '果蔬',
+      fullCategory: '果蔬-净菜类',
+      unit: '斤',
+      orderCount: 4,
+      orderQty: 120,
+      orderAmount: 576,
+      shippedQty: 110,
+      shippedAmount: 528,
+      returnCount: 0,
+      returnQty: 0,
+      returnAmount: 0,
+      actualAmount: 528,
+      actualRank: 1,
+      warehouse: '中心仓',
+      businessUnit: '学校',
+      customerType: '学校',
+      customerName: '第一实验学校',
+      canteen: '第一食堂',
+      createdAt: '2026-08-01 08:00:00'
+    },
+    {
+      id: 'SALE-002',
+      goodsCode: 'SP0300040',
+      goodsName: '土豆(斤/田园直供/散装)',
+      isNetVegetable: false,
+      category: '果蔬',
+      fullCategory: '果蔬-根茎类',
+      unit: '斤',
+      orderCount: 3,
+      orderQty: 95,
+      orderAmount: 304,
+      shippedQty: 95,
+      shippedAmount: 304,
+      returnCount: 0,
+      returnQty: 0,
+      returnAmount: 0,
+      actualAmount: 304,
+      actualRank: 2,
+      warehouse: '中心仓',
+      businessUnit: '学校',
+      customerType: '学校',
+      customerName: '育才中学',
+      canteen: '高中部食堂',
+      createdAt: '2026-08-02 08:00:00'
+    },
+    {
+      id: 'SALE-003',
+      goodsCode: 'SP0300025',
+      goodsName: '大米(KG/--/--)',
+      isNetVegetable: false,
+      category: '主食',
+      fullCategory: '主食-粮食类',
+      unit: 'KG',
+      orderCount: 2,
+      orderQty: 160,
+      orderAmount: 3040,
+      shippedQty: 160,
+      shippedAmount: 3040,
+      returnCount: 1,
+      returnQty: 10,
+      returnAmount: 190,
+      actualAmount: 2850,
+      actualRank: 3,
+      warehouse: '北区仓',
+      businessUnit: '学校',
+      customerType: '学校',
+      customerName: '育才中学',
+      canteen: '高中部食堂',
+      createdAt: '2026-08-03 08:00:00'
+    }
+  ];
+
+  const goodsProfitStatistics = [
+    {
+      id: 'PROFIT-001',
+      goodsCode: 'SP0300039',
+      goodsName: '土豆丝(斤/--/散装)',
+      isNetVegetable: true,
+      category: '果蔬',
+      warehouse: '中心仓',
+      unit: '斤',
+      orderCount: 4,
+      sendQty: 110,
+      sendAvgPrice: 4.80,
+      sendAmt: 528,
+      sendCostAvgPrice: 3.20,
+      sendCost: 352,
+      returnOrderCount: 0,
+      returnQty: 0,
+      returnAmt: 0,
+      returnCost: 0,
+      actualQty: 110,
+      actualAvgPrice: 4.80,
+      actualAmt: 528,
+      actualCost: 352,
+      grossProfit: 176,
+      grossProfitRate: '33.33%',
+      businessUnit: '学校',
+      customerType: '学校',
+      customerName: '第一实验学校',
+      canteen: '第一食堂',
+      orderNo: 'DD202608010100001',
+      createdAt: '2026-08-01 08:00:00'
+    },
+    {
+      id: 'PROFIT-002',
+      goodsCode: 'SP0300040',
+      goodsName: '土豆(斤/田园直供/散装)',
+      isNetVegetable: false,
+      category: '果蔬',
+      warehouse: '中心仓',
+      unit: '斤',
+      orderCount: 3,
+      sendQty: 95,
+      sendAvgPrice: 3.20,
+      sendAmt: 304,
+      sendCostAvgPrice: 2.10,
+      sendCost: 199.50,
+      returnOrderCount: 0,
+      returnQty: 0,
+      returnAmt: 0,
+      returnCost: 0,
+      actualQty: 95,
+      actualAvgPrice: 3.20,
+      actualAmt: 304,
+      actualCost: 199.50,
+      grossProfit: 104.50,
+      grossProfitRate: '34.38%',
+      businessUnit: '学校',
+      customerType: '学校',
+      customerName: '育才中学',
+      canteen: '高中部食堂',
+      orderNo: 'DD202608020100002',
+      createdAt: '2026-08-02 08:00:00'
+    }
+  ];
 
   window.MockOperations = {
     orders,
@@ -386,7 +599,9 @@
     inventoryLosses,
     openingInventory,
     inventoryBalance,
-    inventoryDetails
+    inventoryDetails,
+    productSales,
+    goodsProfitStatistics
   };
 })();
 
@@ -1072,6 +1287,270 @@
         { warehouse: '中心仓', productCode: 'SP0300034', productName: '黑大米', unit: '斤', refCoefficient: 1.0 }
       ],
       createTime: '2026-07-26 16:00:00'
+    }
+  ];
+})();
+
+/* 净菜加工方案与加工单同步演示资料（PP 编号、关系类型及多物料数据） */
+(function () {
+  window.MockProcessingOrders = [
+    {
+      id: 'JGD202608300300005',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '已加工',
+      operator: '管理员',
+      remark: '三种净菜按5:3:2比例组合包装',
+      costMode: 'auto',
+      templateId: 'PP005',
+      templateName: '什锦配菜组合方案',
+      materials: [
+        { productCode: 'SP0300050', productName: '土豆块', unit: '斤', stock: 90, avgPrice: 5.20, consumeQty: 25 },
+        { productCode: 'SP0300055', productName: '胡萝卜片', unit: '斤', stock: 75, avgPrice: 4.60, consumeQty: 15 },
+        { productCode: 'SP0300058', productName: '青椒块', unit: '斤', stock: 60, avgPrice: 6.80, consumeQty: 10 }
+      ],
+      outputs: [
+        { productCode: 'SP0300059', productName: '什锦配菜', unit: '斤', refCoefficient: 1, refQty: 50, actualQty: 49, allocatedCost: '267.00', costPrice: '5.45' }
+      ],
+      createTime: '2026-08-30 14:00:00',
+      attachments: [
+        { name: '加工现场照片.jpg', format: 'jpg', size: '1.2MB' },
+        { name: '原料检验报告.pdf', format: 'pdf', size: '256KB' }
+      ],
+      operationLogs: [
+        { action: '创建', desc: '管理员 创建加工单 2026-08-30 14:00:00' },
+        { action: '提交审核', desc: '管理员 提交审核 2026-08-30 14:02:00' },
+        { action: '审核通过', desc: '管理员 审核通过 2026-08-30 14:10:00' },
+        { action: '加工完成', desc: '管理员 加工完成 2026-08-30 14:40:00' }
+      ]
+    },
+    {
+      id: 'JGD202608300300006',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '待审核',
+      operator: '杨师傅',
+      remark: '大白菜去老叶、去根后分切',
+      costMode: 'auto',
+      templateId: 'PP002',
+      templateName: '大白菜切配方案',
+      materials: [
+        { productCode: 'SP0300019', productName: '大白菜', unit: '斤', stock: 180, avgPrice: 2.20, consumeQty: 60 }
+      ],
+      outputs: [
+        { productCode: 'SP0300051', productName: '白菜段', unit: '斤', refCoefficient: 0.55, refQty: 33, actualQty: 32, allocatedCost: '81.23', costPrice: '2.54' },
+        { productCode: 'SP0300052', productName: '白菜丝', unit: '斤', refCoefficient: 0.35, refQty: 21, actualQty: 20, allocatedCost: '50.77', costPrice: '2.54' }
+      ],
+      createTime: '2026-08-30 15:00:00',
+      submittedAt: '2026-08-30 15:05:00',
+      auditedAt: '',
+      auditResult: '',
+      attachments: [],
+      operationLogs: [
+        { action: '创建', operator: '杨师傅', desc: '杨师傅 创建加工单 2026-08-30 15:00:00' },
+        { action: '提交审核', operator: '杨师傅', desc: '杨师傅 提交审核 2026-08-30 15:05:00' }
+      ]
+    },
+    {
+      id: 'JGD202608300300004',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '已加工',
+      operator: '管理员',
+      remark: '青椒去蒂去籽后按规格分切',
+      costMode: 'auto',
+      templateId: 'PP004',
+      templateName: '青椒切配方案',
+      materials: [
+        { productCode: 'SP0300056', productName: '青椒', unit: '斤', stock: 120, avgPrice: 4.50, consumeQty: 50 }
+      ],
+      outputs: [
+        { productCode: 'SP0300057', productName: '青椒丝', unit: '斤', refCoefficient: 0.42, refQty: 21, actualQty: 20, allocatedCost: '115.38', costPrice: '5.77' },
+        { productCode: 'SP0300058', productName: '青椒块', unit: '斤', refCoefficient: 0.40, refQty: 20, actualQty: 19, allocatedCost: '109.62', costPrice: '5.77' }
+      ],
+      createTime: '2026-08-30 13:00:00',
+      attachments: [],
+      operationLogs: [
+        { action: '创建', desc: '管理员 创建加工单 2026-08-30 13:00:00' },
+        { action: '提交审核', desc: '管理员 提交审核 2026-08-30 13:02:00' },
+        { action: '审核通过', desc: '管理员 审核通过 2026-08-30 13:10:00' },
+        { action: '加工完成', desc: '管理员 加工完成 2026-08-30 13:40:00' }
+      ]
+    },
+    {
+      id: 'JGD202608300300003',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '已加工',
+      operator: '管理员',
+      remark: '胡萝卜清洗去皮后按规格分切',
+      costMode: 'auto',
+      templateId: 'PP003',
+      templateName: '胡萝卜切配方案',
+      materials: [
+        { productCode: 'SP0300053', productName: '胡萝卜', unit: '斤', stock: 100, avgPrice: 2.80, consumeQty: 40 }
+      ],
+      outputs: [
+        { productCode: 'SP0300054', productName: '胡萝卜丝', unit: '斤', refCoefficient: 0.45, refQty: 18, actualQty: 17.5, allocatedCost: '58.51', costPrice: '3.34' },
+        { productCode: 'SP0300055', productName: '胡萝卜片', unit: '斤', refCoefficient: 0.42, refQty: 16.8, actualQty: 16, allocatedCost: '53.49', costPrice: '3.34' }
+      ],
+      createTime: '2026-08-30 11:00:00',
+      attachments: [
+        { name: '加工说明.txt', format: 'txt', size: '4KB' }
+      ],
+      operationLogs: [
+        { action: '创建', desc: '管理员 创建加工单 2026-08-30 11:00:00' },
+        { action: '提交审核', desc: '管理员 提交审核 2026-08-30 11:02:00' },
+        { action: '审核通过', desc: '管理员 审核通过 2026-08-30 11:10:00' },
+        { action: '加工完成', desc: '管理员 加工完成 2026-08-30 11:35:00' }
+      ]
+    },
+    {
+      id: 'JGD202608300300002',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '已加工',
+      operator: '管理员',
+      remark: '大白菜去老叶、去根后分切',
+      costMode: 'auto',
+      templateId: 'PP002',
+      templateName: '大白菜切配方案',
+      materials: [
+        { productCode: 'SP0300019', productName: '大白菜', unit: '斤', stock: 180, avgPrice: 2.20, consumeQty: 60 }
+      ],
+      outputs: [
+        { productCode: 'SP0300051', productName: '白菜段', unit: '斤', refCoefficient: 0.55, refQty: 33, actualQty: 32, allocatedCost: '81.23', costPrice: '2.54' },
+        { productCode: 'SP0300052', productName: '白菜丝', unit: '斤', refCoefficient: 0.35, refQty: 21, actualQty: 20, allocatedCost: '50.77', costPrice: '2.54' }
+      ],
+      createTime: '2026-08-30 10:00:00',
+      attachments: [],
+      operationLogs: [
+        { action: '创建', desc: '管理员 创建加工单 2026-08-30 10:00:00' },
+        { action: '提交审核', desc: '管理员 提交审核 2026-08-30 10:02:00' },
+        { action: '审核通过', desc: '管理员 审核通过 2026-08-30 10:10:00' },
+        { action: '加工完成', desc: '管理员 加工完成 2026-08-30 10:35:00' }
+      ]
+    },
+    {
+      id: 'JGD202608300300001',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '已加工',
+      operator: '管理员',
+      remark: '鲜土豆清洗去皮后按规格分切',
+      costMode: 'auto',
+      templateId: 'PP001',
+      templateName: '土豆切配方案',
+      materials: [
+        { productCode: 'SP0300040', productName: '土豆', unit: '斤', stock: 220, avgPrice: 3.20, consumeQty: 80 }
+      ],
+      outputs: [
+        { productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 0.45, refQty: 36, actualQty: 35, allocatedCost: '135.76', costPrice: '3.88' },
+        { productCode: 'SP0300050', productName: '土豆块', unit: '斤', refCoefficient: 0.40, refQty: 32, actualQty: 31, allocatedCost: '120.24', costPrice: '3.88' }
+      ],
+      createTime: '2026-08-30 09:00:00',
+      attachments: [
+        { name: '成品检验照片.png', format: 'png', size: '892KB' },
+        { name: '加工记录单.docx', format: 'docx', size: '48KB' }
+      ],
+      operationLogs: [
+        { action: '创建', desc: '管理员 创建加工单 2026-08-30 09:00:00' },
+        { action: '提交审核', desc: '管理员 提交审核 2026-08-30 09:02:00' },
+        { action: '审核通过', desc: '管理员 审核通过 2026-08-30 09:10:00' },
+        { action: '加工完成', desc: '管理员 加工完成 2026-08-30 09:40:00' }
+      ]
+    }
+  ];
+
+  window.MockProcessingTemplates = [
+    {
+      id: 'PP001',
+      name: '土豆切配方案',
+      relationType: 'one-to-many',
+      description: '鲜土豆清洗去皮后分切为土豆丝和土豆块，综合出成率约85%',
+      materials: [
+        { warehouse: '中心仓', productCode: 'SP0300040', productName: '土豆', unit: '斤' }
+      ],
+      outputs: [
+        { warehouse: '中心仓', productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 0.45 },
+        { warehouse: '中心仓', productCode: 'SP0300050', productName: '土豆块', unit: '斤', refCoefficient: 0.4 }
+      ],
+      createTime: '2026-07-31 09:00:00'
+    },
+    {
+      id: 'PP002',
+      name: '大白菜切配方案',
+      relationType: 'one-to-many',
+      description: '大白菜去除老叶和根部后分切为白菜段和白菜丝，综合出成率约90%',
+      materials: [
+        { warehouse: '中心仓', productCode: 'SP0300019', productName: '大白菜', unit: '斤' }
+      ],
+      outputs: [
+        { warehouse: '中心仓', productCode: 'SP0300051', productName: '白菜段', unit: '斤', refCoefficient: 0.55 },
+        { warehouse: '中心仓', productCode: 'SP0300052', productName: '白菜丝', unit: '斤', refCoefficient: 0.35 }
+      ],
+      createTime: '2026-07-31 09:30:00'
+    },
+    {
+      id: 'PP003',
+      name: '胡萝卜切配方案',
+      relationType: 'one-to-many',
+      description: '胡萝卜清洗去皮后分切为胡萝卜丝和胡萝卜片，综合出成率约87%',
+      materials: [
+        { warehouse: '中心仓', productCode: 'SP0300053', productName: '胡萝卜', unit: '斤' }
+      ],
+      outputs: [
+        { warehouse: '中心仓', productCode: 'SP0300054', productName: '胡萝卜丝', unit: '斤', refCoefficient: 0.45 },
+        { warehouse: '中心仓', productCode: 'SP0300055', productName: '胡萝卜片', unit: '斤', refCoefficient: 0.42 }
+      ],
+      createTime: '2026-07-31 10:00:00'
+    },
+    {
+      id: 'PP004',
+      name: '青椒切配方案',
+      relationType: 'one-to-many',
+      description: '青椒去蒂去籽后分切为青椒丝和青椒块，综合出成率约82%',
+      materials: [
+        { warehouse: '中心仓', productCode: 'SP0300056', productName: '青椒', unit: '斤' }
+      ],
+      outputs: [
+        { warehouse: '中心仓', productCode: 'SP0300057', productName: '青椒丝', unit: '斤', refCoefficient: 0.42 },
+        { warehouse: '中心仓', productCode: 'SP0300058', productName: '青椒块', unit: '斤', refCoefficient: 0.4 }
+      ],
+      createTime: '2026-07-31 10:30:00'
+    },
+    {
+      id: 'PP005',
+      name: '什锦配菜组合方案',
+      relationType: 'many-to-one',
+      description: '土豆块、胡萝卜片和青椒块按5:3:2比例组合包装为什锦配菜',
+      materials: [
+        { warehouse: '中心仓', productCode: 'SP0300050', productName: '土豆块', unit: '斤', refConsumeQty: 0.5 },
+        { warehouse: '中心仓', productCode: 'SP0300055', productName: '胡萝卜片', unit: '斤', refConsumeQty: 0.3 },
+        { warehouse: '中心仓', productCode: 'SP0300058', productName: '青椒块', unit: '斤', refConsumeQty: 0.2 }
+      ],
+      outputs: [
+        { warehouse: '中心仓', productCode: 'SP0300059', productName: '什锦配菜', unit: '斤' }
+      ],
+      createTime: '2026-07-31 11:00:00'
     }
   ];
 })();

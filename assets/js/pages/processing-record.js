@@ -61,8 +61,7 @@
               <tr>
                 <th class="checkbox-cell" rowspan="2"><span class="custom-checkbox" role="checkbox" aria-checked="false" data-action="toggle-all"></span></th>
                 <th rowspan="2">加工单号</th>
-                <th rowspan="2" class="processing-record-material-col">原料商品（计量单位/品牌/规格）</th>
-                <th rowspan="2">原料用量</th>
+                <th colspan="2">加工原料</th>
                 <th colspan="2">加工成品</th>
                 <th rowspan="2">原料出库单</th>
                 <th rowspan="2">成品入库单</th>
@@ -72,6 +71,8 @@
                 <th rowspan="2">操作</th>
               </tr>
               <tr>
+                <th class="processing-record-material-col">原料商品（计量单位/品牌/规格）</th>
+                <th>原料用量</th>
                 <th class="processing-record-product-col">成品商品（计量单位/品牌/规格）</th>
                 <th>实际获得量</th>
               </tr>
@@ -79,16 +80,7 @@
             <tbody id="recTableBody"></tbody>
           </table>
         </div>
-        <div class="pagination">
-          <span class="page-total">共 0 条数据</span>
-          <select class="page-size-select" aria-label="每页数量"><option>20 条/页</option><option>50 条/页</option><option>100 条/页</option></select>
-          <div class="page-btns" id="recPageBtns"></div>
-          <div class="page-jump">
-            <span>跳至</span>
-            <input type="text" value="1" aria-label="跳转页码">
-            <span>页</span>
-          </div>
-        </div>
+        <div class="pagination" id="recPagination"></div>
       </div>
 
     </div>
@@ -110,7 +102,11 @@
 
   const state = {
     orders: [],
+    filteredOrders: [],
     visibleOrders: [],
+    page: 1,
+    pageSize: 20,
+    pagination: null,
     selectedIds: new Set(),
     dateStart: '',
     dateEnd: ''
@@ -132,26 +128,126 @@
   }
 
   function renderProductName(productCode, productName, unit, nameSuffix = '') {
-    const products = window.ProductService?.getList?.() || window.MockProducts || [];
-    const product = products.find((item) => item.code === productCode) || {};
-    const name = product.name || productName || '--';
-    const displayUnit = product.unit || unit || '--';
-    const brand = product.brand || '--';
-    const spec = product.spec || '--';
-    return `<div class="name-cell processing-record-product-name">
-      <div class="name-main">${productNetTag(productCode)}${escapeHtml(name)}${nameSuffix}</div>
-      <div class="name-sub">${escapeHtml(displayUnit)}/${escapeHtml(brand)}/${escapeHtml(spec)}</div>
-    </div>`;
+    const display = window.DomUtils.formatProductDisplay({ productCode, productName, unit });
+    return `<span class="name-cell processing-record-product-name product-display-text">${productNetTag(productCode)}${escapeHtml(display)}${nameSuffix}</span>`;
   }
 
-  function renderOperationLogs(logs) {
-    if (!logs || !logs.length) return '<span class="detail-empty">--</span>';
-    return logs.map((log) => `
+  function getOperationNodeType(log) {
+    const action = String(log?.action || '');
+    const desc = String(log?.desc || '');
+    const text = `${action} ${desc}`;
+    if (/编辑后提交审核|重新提交审核|编辑|修改/.test(text)) return 'edit';
+    if (/提交审核/.test(action)) return '';
+    if (/审核通过|审核驳回|驳回|审核|作废/.test(text)) return 'audit';
+    if (/创建|添加/.test(text)) return 'create';
+    return '';
+  }
+
+  function getOperationTime(log) {
+    const source = log?.time || log?.createdAt || log?.timestamp || log?.desc || '';
+    const match = String(source).match(/(20\d{2}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?)/);
+    return match ? match[1].replace(/\//g, '-').replace('T', ' ') : '';
+  }
+
+  function getOperationActor(log, type, fallback) {
+    if (log?.operator) return String(log.operator);
+    const desc = String(log?.desc || '');
+    const time = getOperationTime(log);
+    const beforeTime = time ? desc.slice(0, desc.indexOf(time)).trim() : desc.trim();
+    const actionPattern = {
+      create: /\s*(?:创建|添加)(?:加工单)?\s*$/,
+      audit: /\s*(?:审核通过|审核驳回|审核|驳回|作废)(?:加工单)?\s*$/,
+      edit: /\s*(?:编辑后提交审核|重新提交审核|编辑|修改)(?:加工单)?\s*$/
+    }[type];
+    const actor = actionPattern ? beforeTime.replace(actionPattern, '').trim() : '';
+    return actor || fallback || '管理员';
+  }
+
+  function isRejectedOperation(log) {
+    return /驳回|拒绝|不通过|作废/.test(`${log?.action || ''} ${log?.desc || ''} ${log?.result || ''} ${log?.status || ''}`);
+  }
+
+  function getOperationSortValue(time) {
+    const parsed = Date.parse(String(time || '').replace(/-/g, '/'));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function getProcessingCreateTime(order) {
+    if (order.createTime) return order.createTime;
+    const date = String(order.processingDate || '').slice(0, 10);
+    return date ? `${date} 00:00:00` : '';
+  }
+
+  function buildProcessingOperationNodes(order) {
+    const logs = Array.isArray(order.operationLogs) ? order.operationLogs : [];
+    const fallbackActor = order.operator || '管理员';
+    const nodes = logs.map((log, index) => {
+      const type = getOperationNodeType(log);
+      if (!type) return null;
+      return {
+        type,
+        label: { create: '创建', audit: '审核', edit: '编辑' }[type],
+        operator: getOperationActor(log, type, fallbackActor),
+        time: getOperationTime(log),
+        rejected: type === 'audit' && isRejectedOperation(log),
+        sourceIndex: index
+      };
+    }).filter(Boolean);
+
+    const displayStatus = getDisplayStatus(order);
+    const hasAuditFlow = nodes.some((node) => node.type === 'audit' || node.type === 'edit')
+      || order.auditedAt
+      || order.auditResult
+      || displayStatus === '待审核'
+      || displayStatus === '已驳回';
+    if (!nodes.some((node) => node.type === 'create')) {
+      nodes.push({
+        type: 'create',
+        label: '创建',
+        operator: fallbackActor,
+        time: getProcessingCreateTime(order),
+        rejected: false,
+        sourceIndex: -1
+      });
+    }
+
+    const hasAuditNode = nodes.some((node) => node.type === 'audit');
+    if (!hasAuditNode && (order.auditedAt || order.auditResult || displayStatus === '已驳回')) {
+      const fallbackTime = [...nodes].reverse().map((node) => node.time).find(Boolean)
+        || order.submittedAt || getProcessingCreateTime(order);
+      nodes.push({
+        type: 'audit',
+        label: '审核',
+        operator: order.auditOperator || '管理员',
+        time: order.auditedAt || fallbackTime,
+        rejected: displayStatus === '已驳回' || /驳回|拒绝|不通过/.test(String(order.auditResult || '')),
+        sourceIndex: logs.length
+      });
+    }
+
+    return nodes.map((node) => ({
+      ...node,
+      result: node.type === 'audit' ? (node.rejected ? '审核驳回' : '审核通过') : '',
+      status: node.type === 'audit'
+        ? (node.rejected ? '已驳回' : '已完成')
+        : node.type === 'edit'
+          ? '待审核'
+          : (hasAuditFlow ? '待审核' : '已完成')
+    })).sort((first, second) => (
+      getOperationSortValue(second.time) - getOperationSortValue(first.time)
+      || second.sourceIndex - first.sourceIndex
+    ));
+  }
+
+  function renderOperationLogs(order) {
+    const nodes = buildProcessingOperationNodes(order);
+    if (!nodes.length) return '<span class="detail-empty">--</span>';
+    return nodes.map((node) => `
       <div class="detail-timeline-item">
         <div class="detail-timeline-node"></div>
         <div class="detail-timeline-content">
-          <span class="detail-timeline-action">${escapeHtml(log.action)}</span>
-          <span class="detail-timeline-desc">${escapeHtml(log.desc)}</span>
+          <span class="detail-timeline-action operation-status-tag status-tag ${getStatusClass(node.status)}">${escapeHtml(node.status)}</span>
+          <span class="detail-timeline-desc">${escapeHtml(`${node.operator} ${node.result || node.label} ${node.time || '--'}`)}</span>
         </div>
       </div>
     `).join('');
@@ -230,24 +326,60 @@
     return materials.map((m) => `${m.consumeQty}${escapeHtml(m.unit)}`).join('，');
   }
 
-  function renderOrderRows(order) {
-    const outputs = (order.outputs || []).slice(0, 2);
-    const outputCount = (order.outputs || []).length;
-    const visibleOutputs = outputs.length > 0 ? outputs : [{ productName: '--', actualQty: '--', unit: '' }];
-    const rowSpan = visibleOutputs.length;
-    const sharedCells = (index) => index === 0 ? `
-      <td class="checkbox-cell" rowspan="${rowSpan}"><span class="custom-checkbox ${state.selectedIds.has(order.id) ? 'checked' : ''}" role="checkbox" aria-checked="${state.selectedIds.has(order.id)}" data-action="toggle-row" data-id="${escapeHtml(order.id)}"></span></td>
+  function renderRecordIdentityCells(order, rowSpan, index) {
+    if (index !== 0) return '';
+    const selected = state.selectedIds.has(order.id);
+    return `
+      <td class="checkbox-cell" rowspan="${rowSpan}"><span class="custom-checkbox ${selected ? 'checked' : ''}" role="checkbox" aria-checked="${selected}" data-action="toggle-row" data-id="${escapeHtml(order.id)}"></span></td>
       <td rowspan="${rowSpan}"><button class="btn-text code-link" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">${escapeHtml(order.id)}</button></td>
-      <td rowspan="${rowSpan}" class="processing-record-material-col">${summarizeMaterials(order.materials)}</td>
-      <td rowspan="${rowSpan}">${summarizeConsumeQty(order.materials)}</td>
-    ` : '';
-    const tailCells = (index) => index === 0 ? `
+    `;
+  }
+
+  function renderRecordTailCells(order, rowSpan, index) {
+    if (index !== 0) return '';
+    return `
       <td rowspan="${rowSpan}">${renderRelatedOrderLink(order, 'outbound')}</td>
       <td rowspan="${rowSpan}">${renderRelatedOrderLink(order, 'inbound')}</td>
       <td rowspan="${rowSpan}">${escapeHtml(order.processingDate)}</td>
       <td rowspan="${rowSpan}"><span class="status-tag ${getStatusClass(getDisplayStatus(order))}">${escapeHtml(getDisplayStatus(order))}</span></td>
       <td rowspan="${rowSpan}">${escapeHtml(order.operator)}</td>
-      <td class="action-cell" rowspan="${rowSpan}">${renderRowActions(order)}</td>
+      <td class="action-cell" rowspan="${rowSpan}"><div class="operation-actions">${renderRowActions(order)}</div></td>
+    `;
+  }
+
+  function renderMultiMaterialRows(order, output) {
+    const allMaterials = order.materials || [];
+    const materials = allMaterials.slice(0, 2);
+    const materialCount = allMaterials.length;
+    const rowSpan = materials.length;
+    return materials.map((material, index) => `
+      <tr class="processing-record-sub-row is-multi-material" data-order-id="${escapeHtml(order.id)}">
+        ${renderRecordIdentityCells(order, rowSpan, index)}
+        <td class="processing-record-material-col">${renderProductName(material.productCode, material.productName, material.unit, materialCount > materials.length && index === materials.length - 1 ? `<button class="btn-text record-material-more" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">更多</button>` : '')}</td>
+        <td>${escapeHtml(material.consumeQty !== '' && material.consumeQty != null ? `${material.consumeQty}${material.unit || ''}` : '--')}</td>
+        ${index === 0 ? `
+          <td class="record-output-product-cell processing-record-product-col" rowspan="${rowSpan}">
+            <div class="record-output-product">${renderProductName(output.productCode, output.productName, output.unit)}</div>
+          </td>
+          <td class="record-output-qty-cell" rowspan="${rowSpan}">${escapeHtml(output.actualQty !== '' && output.actualQty != null ? `${output.actualQty}${output.unit || ''}` : '--')}</td>
+        ` : ''}
+        ${renderRecordTailCells(order, rowSpan, index)}
+      </tr>
+    `).join('');
+  }
+
+  function renderOrderRows(order) {
+    const outputs = (order.outputs || []).slice(0, 2);
+    const outputCount = (order.outputs || []).length;
+    const visibleOutputs = outputs.length > 0 ? outputs : [{ productName: '--', actualQty: '--', unit: '' }];
+    if ((order.materials || []).length > 1 && outputs.length === 1) {
+      return renderMultiMaterialRows(order, outputs[0]);
+    }
+    const rowSpan = visibleOutputs.length;
+    const sharedCells = (index) => index === 0 ? `
+      ${renderRecordIdentityCells(order, rowSpan, index)}
+      <td rowspan="${rowSpan}" class="processing-record-material-col">${summarizeMaterials(order.materials)}</td>
+      <td rowspan="${rowSpan}">${summarizeConsumeQty(order.materials)}</td>
     ` : '';
 
     const rowClass = visibleOutputs.length > 1 ? 'is-multi-output' : 'is-single-output';
@@ -258,7 +390,7 @@
           <div class="record-output-product">${renderProductName(output.productCode, output.productName, output.unit, outputCount > 2 && index === 1 ? `<button class="btn-text record-output-more" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">更多</button>` : '')}</div>
         </td>
         <td class="record-output-qty-cell">${escapeHtml(output.actualQty !== '' && output.actualQty != null ? `${output.actualQty}${output.unit || ''}` : '--')}</td>
-        ${tailCells(index)}
+        ${renderRecordTailCells(order, rowSpan, index)}
       </tr>
     `).join('');
   }
@@ -267,8 +399,15 @@
     state.visibleOrders = orders;
     const tbody = document.getElementById('recTableBody');
     tbody.innerHTML = orders.map(renderOrderRows).join('');
-    document.querySelector('.processing-record-page .page-total').textContent = `共 ${orders.length} 条数据`;
     updateToggleAllCheckbox();
+  }
+
+  function renderPage() {
+    const totalPages = Math.max(1, Math.ceil(state.filteredOrders.length / state.pageSize));
+    if (state.page > totalPages) state.page = totalPages;
+    const start = (state.page - 1) * state.pageSize;
+    renderTable(state.filteredOrders.slice(start, start + state.pageSize));
+    state.pagination?.update({ page: state.page, pageSize: state.pageSize, total: state.filteredOrders.length });
   }
 
   function updateToggleAllCheckbox() {
@@ -297,7 +436,9 @@
       (!dateStart || order.processingDate >= dateStart) &&
       (!dateEnd || order.processingDate <= dateEnd)
     ));
-    renderTable(result);
+    state.filteredOrders = result;
+    state.page = 1;
+    renderPage();
   }
 
   function resetFilters() {
@@ -551,7 +692,7 @@
           <div class="form-section-body" style="padding:0"><table class="processing-sub-table"><thead><tr><th style="width:200px">原料商品</th><th style="width:80px">单位</th><th style="width:90px">当前库存</th><th style="width:90px">库存均价</th><th style="width:120px">消耗量</th></tr></thead><tbody id="recEditMaterialBody"></tbody></table></div>
         </div>
         <div class="operation-cost-section"><div class="operation-cost-header"><span class="cost-price-label section-title-mark">成品入库单价</span><div class="cost-mode-row"><label class="radio-option"><input type="radio" name="recEditCostMode" value="auto" ${editFormState.costMode === 'auto' ? 'checked' : ''}>按原料成本及实际获得量计算</label><label class="radio-option"><input type="radio" name="recEditCostMode" value="manual" ${editFormState.costMode === 'manual' ? 'checked' : ''}>手动输入成品入库单价</label></div></div></div>
-        <div class="form-section"><div class="form-section-header"><span class="section-title-mark">加工成品</span><button class="btn btn-sm btn-blue reference-fill-btn" type="button" data-action="edit-fill-reference" ${editFormState.outputs.some((output) => output.refQty !== '' && output.refQty != null) ? '' : 'disabled'}>按参考值填充实际获得量</button></div><div class="form-section-body" style="padding:0"><table class="processing-sub-table"><thead><tr><th style="width:180px">成品商品</th><th style="width:70px">单位</th><th style="width:80px">参考系数</th><th style="width:90px">参考获得量</th><th style="width:90px">实际获得量</th>${editFormState.processingMode === 'order' ? '<th style="width:90px">订单分拣量</th><th style="width:90px">剩余量</th>' : ''}<th style="width:130px">成品入库单价</th></tr></thead><tbody id="recEditOutputBody"></tbody></table></div></div>
+        <div class="form-section"><div class="form-section-header"><span class="section-title-mark">加工成品</span><button class="btn btn-sm btn-blue reference-fill-btn" type="button" data-action="edit-fill-reference" ${editFormState.outputs.some((output) => output.refQty !== '' && output.refQty != null) ? '' : 'disabled'}>按参考值填充实际获得量</button></div><div class="form-section-body" style="padding:0"><table class="processing-sub-table"><thead><tr><th style="width:180px">成品商品</th><th style="width:70px">单位</th><th style="width:100px">参考加工系数</th><th style="width:90px">参考获得量</th><th style="width:90px">实际获得量</th>${editFormState.processingMode === 'order' ? '<th style="width:90px">订单分拣量</th><th style="width:90px">剩余量</th>' : ''}<th style="width:130px">成品入库单价</th></tr></thead><tbody id="recEditOutputBody"></tbody></table></div></div>
         <div class="form-section operation-remark-section"><div class="form-section-header"><span class="section-title-mark">加工备注</span></div><div class="form-section-body"><div class="operation-remark-field"><div class="remark-input-wrap"><textarea class="form-control" id="recEditRemark" maxlength="200" rows="3" placeholder="请输入">${escapeHtml(editFormState.remark)}</textarea><span class="remark-counter" id="recEditRemarkCounter">${editFormState.remark.length}/200</span></div><div class="remark-upload-area"><button class="btn btn-sm btn-blue remark-upload-btn" type="button" data-action="edit-upload-attachment">上传附件</button><input type="file" id="recEditAttachmentInput" accept="image/*,.txt,.doc,.docx,.pdf,.xls,.xlsx" multiple style="display:none"><div class="remark-attachment-list" id="recEditAttachmentList"></div></div></div></div></div>
       </div>
       <div class="processing-form-footer"><button class="btn btn-primary" type="button" data-action="${submitAction}" data-id="${escapeHtml(order.id)}">${submitText}</button><button class="btn" type="button" data-action="cancel-edit">取消编辑</button></div>
@@ -693,9 +834,12 @@
     if (!order) return;
     const displayStatus = getDisplayStatus(order);
     const statusClass = getStatusClass(displayStatus);
+    const processingTemplate = getProcessingTemplate(order);
+    const templateId = order.templateId || processingTemplate?.id || '';
+    const templateName = order.templateName || processingTemplate?.name || '';
     const materialRows = (order.materials || []).map((m) => `
       <tr>
-        <td>${productNetTag(m.productCode)}${escapeHtml(m.productName)}</td>
+        <td><span class="product-display-text">${productNetTag(m.productCode)}${escapeHtml(window.DomUtils.formatProductDisplay(m))}</span></td>
         <td>${escapeHtml(m.unit)}</td>
         <td>${m.stock ?? '--'}</td>
         <td>${m.avgPrice ?? '--'}</td>
@@ -706,13 +850,13 @@
 
     const outputRows = (order.outputs || []).map((o) => `
       <tr>
-        <td>${productNetTag(o.productCode)}${escapeHtml(o.productName)}</td>
+        <td><span class="product-display-text">${productNetTag(o.productCode)}${escapeHtml(window.DomUtils.formatProductDisplay(o))}</span></td>
         <td>${escapeHtml(o.unit)}</td>
         <td>${o.refCoefficient ?? '--'}</td>
         <td>${o.refQty ?? '--'}</td>
         <td>${o.actualQty ?? '--'}</td>
         <td>${o.allocatedCost || '--'}</td>
-        <td>${o.costPrice ? `${o.costPrice}/${escapeHtml(o.unit || '--')}` : '--'}</td>
+        <td>${o.costPrice || '--'}</td>
       </tr>
     `).join('');
 
@@ -721,6 +865,8 @@
         <h3>基本信息</h3>
         <div class="processing-detail-info">
           <div class="info-item"><span class="info-label">加工单号：</span><span class="info-value">${escapeHtml(order.id)}</span></div>
+          <div class="info-item"><span class="info-label">编号：</span><span class="info-value">${escapeHtml(templateId || '--')}</span></div>
+          <div class="info-item"><span class="info-label">加工方案名称：</span><span class="info-value">${escapeHtml(templateName || '--')}</span></div>
           <div class="info-item"><span class="info-label">加工日期：</span><span class="info-value">${escapeHtml(order.processingDate)}</span></div>
           <div class="info-item"><span class="info-label">状态：</span><span class="info-value"><span class="status-tag ${statusClass}">${escapeHtml(displayStatus)}</span></span></div>
           <div class="info-item"><span class="info-label">成本模式：</span><span class="info-value">${order.costMode === 'auto' ? '按原料成本及实际获得量计算' : '手动输入成品入库单价'}</span></div>
@@ -745,7 +891,7 @@
         <h3>成品产出</h3>
         <table class="processing-detail-table">
           <thead>
-            <tr><th>成品商品</th><th>单位</th><th>参考系数</th><th>参考获得量</th><th>实际获得量</th><th>分摊成本</th><th>成品入库单价</th></tr>
+            <tr><th>成品商品</th><th>单位</th><th>参考加工系数</th><th>参考获得量</th><th>实际获得量</th><th>分摊成本</th><th>成品入库单价</th></tr>
           </thead>
           <tbody>${outputRows || '<tr><td colspan="7">暂无数据</td></tr>'}</tbody>
         </table>
@@ -760,7 +906,7 @@
       </div>
       <div class="processing-detail-section">
         <h3>操作记录</h3>
-        <div class="detail-timeline">${renderOperationLogs(order.operationLogs)}</div>
+        <div class="detail-timeline">${renderOperationLogs(order)}</div>
       </div>
     `;
     document.getElementById('recDetailFooter').innerHTML = renderDetailFooter(order, displayStatus);
@@ -890,9 +1036,21 @@
       filterOrders();
     }
   });
+  state.pagination = window.Pagination.create({
+    container: '#recPagination',
+    page: state.page,
+    pageSize: state.pageSize,
+    total: state.filteredOrders.length,
+    pageSizeOptions: [20, 50, 100],
+    onChange: ({ page, pageSize }) => {
+      state.page = page;
+      state.pageSize = pageSize;
+      renderPage();
+    }
+  });
   loadOrders();
-  state.visibleOrders = [...state.orders];
-  renderTable();
+  state.filteredOrders = [...state.orders];
+  renderPage();
   bindEvents();
 
   if (detailId) {

@@ -71,11 +71,13 @@
       remark: ''
     }];
 
-    const itemRows = lines.map((line, index) => `
+    const itemRows = lines.map((line, index) => {
+      const productDisplay = window.DomUtils.formatProductDisplay(line);
+      return `
       <tr>
         <td>${index + 1}</td>
         <td>${renderProductImg()}</td>
-        <td class="goods-name-cell" style="min-width:230px;text-align:left">${escapeHtml(line.goodsName)}</td>
+        <td class="goods-name-cell" style="min-width:230px;text-align:left"><span class="product-display-text" title="${escapeHtml(productDisplay)}">${escapeHtml(productDisplay)}</span></td>
         <td>${escapeHtml(line.unit)}</td>
         <td>${money(line.orderPrice)}</td>
         <td>${line.shippedQty || 0}</td>
@@ -87,7 +89,8 @@
         <td>${escapeHtml(line.purchaseOrder || '--')}</td>
         <td>${escapeHtml(line.remark || '--')}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     const logs = ensureOperationLogs(record);
 

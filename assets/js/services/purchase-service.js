@@ -20,6 +20,18 @@
   var datePart = function (value) {
     return String(value || today()).slice(0, 10);
   };
+  var shiftDate = function (value, offset) {
+    var source = datePart(value).split('-').map(Number);
+    var date = new Date(source[0], source[1] - 1, source[2]);
+    date.setDate(date.getDate() + Number(offset || 0));
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  };
+  var enterpriseExpectedAt = function (schoolValue, value) {
+    var schoolDate = datePart(schoolValue);
+    var nextDate = String(value || '').trim() ? datePart(value) : shiftDate(schoolDate, -2);
+    if (schoolDate && nextDate > schoolDate) return null;
+    return nextDate + ' 00:00:00';
+  };
   var sum = function (items, field) {
     return round((items || []).reduce(function (total, item) {
       return total + number(item[field]);
@@ -64,7 +76,7 @@
 
   function displayName(item) {
     if (!item) return '--';
-    return String(item.name || item.productName || '') + '(' + String(item.unit || '--') + '/' + String(item.brand || '--') + '/' + String(item.spec || '--') + ')';
+    return window.DomUtils.formatProductDisplay(item);
   }
 
   function makeTask(spec) {
@@ -130,6 +142,7 @@
       source: spec.source || '手动创建',
       manager: spec.manager || '杨采',
       expectedAt: spec.expectedAt || '2026-08-28 00:00:00',
+      enterpriseExpectedAt: spec.enterpriseExpectedAt || '',
       addedAt: spec.addedAt || '2026-08-25 16:20:20',
       warehouse: spec.warehouse || '东南区域仓库',
       creator: spec.creator || '杨',
@@ -263,6 +276,15 @@
       normalizedTasks.forEach(refreshTask);
       window.DemoStore.replace('purchaseTasks', normalizedTasks);
     }
+    var normalizedOrders = window.DemoStore.get('purchaseOrders');
+    if (Array.isArray(normalizedOrders) && normalizedOrders.length) {
+      normalizedOrders.forEach(function (order) {
+        if (!String(order.enterpriseExpectedAt || '').trim()) {
+          order.enterpriseExpectedAt = enterpriseExpectedAt(order.expectedAt) || order.expectedAt || '';
+        }
+      });
+      window.DemoStore.replace('purchaseOrders', normalizedOrders);
+    }
   }
 
   function refreshTask(task) {
@@ -324,8 +346,11 @@
     var condition = filters || {};
     return window.DemoStore.get('purchaseOrders').filter(function (order) {
       var itemText = (order.items || []).map(function (item) { return item.productName + item.productCode + item.category; }).join(' ');
+      var enterpriseAt = order.enterpriseExpectedAt || order.expectedAt;
       if (condition.deliveryStart && datePart(order.expectedAt) < condition.deliveryStart) return false;
       if (condition.deliveryEnd && datePart(order.expectedAt) > condition.deliveryEnd) return false;
+      if (condition.enterpriseDeliveryStart && datePart(enterpriseAt) < condition.enterpriseDeliveryStart) return false;
+      if (condition.enterpriseDeliveryEnd && datePart(enterpriseAt) > condition.enterpriseDeliveryEnd) return false;
       if (condition.purchaseType && order.purchaseType !== condition.purchaseType) return false;
       if (condition.category && !itemText.includes(condition.category)) return false;
       if (condition.productName && !itemText.includes(condition.productName)) return false;
@@ -393,11 +418,14 @@
       };
       var items = normalizeOrderItems(values.items);
       var expectedAt = values.expectedAt || record.expectedAt || '2026-08-27 00:00:00';
+      var requestedEnterpriseAt = values.enterpriseExpectedAt == null ? record.enterpriseExpectedAt : values.enterpriseExpectedAt;
+      var nextEnterpriseAt = requestedEnterpriseAt ? enterpriseExpectedAt(expectedAt, requestedEnterpriseAt) : '';
       Object.assign(record, {
         supplier: values.supplier || record.supplier || '盒马鲜生',
         purchaseType: values.purchaseType || record.purchaseType || '供应商送货',
         manager: values.manager || record.manager || '杨采',
         expectedAt: expectedAt,
+        enterpriseExpectedAt: nextEnterpriseAt || '',
         warehouse: values.warehouse || record.warehouse || '东南区域仓库',
         creator: values.creator || record.creator || '杨',
         remark: values.remark || '',
@@ -449,8 +477,11 @@
     });
   }
 
-  function saveTaskAllocation(taskId, rows) {
+  function saveTaskAllocation(taskId, rows, enterpriseAtValue) {
     ensureSeed();
+    var sourceTask = getTask(taskId);
+    var nextEnterpriseAt = enterpriseExpectedAt(sourceTask?.date, enterpriseAtValue);
+    if (enterpriseAtValue && !nextEnterpriseAt) return { ok: false, message: '企业期望送达时间不能晚于学校期望送达时间' };
     return window.DemoStore.transact(function (state) {
       var task = (state.purchaseTasks || []).find(function (item) { return item.id === taskId; });
       if (!task) return null;
@@ -463,7 +494,8 @@
           supplier: row.supplier || line.allocation?.supplier || '盒马鲜生',
           manager: task.manager,
           price: number(row.price),
-          status: number(row.price) > 0 && number(row.quantity) > 0 ? '已生成采购单' : '未生成采购单'
+          status: number(row.price) > 0 && number(row.quantity) > 0 ? '已生成采购单' : '未生成采购单',
+          enterpriseExpectedAt: nextEnterpriseAt || line.allocation?.enterpriseExpectedAt || ''
         });
         if (line.allocation.status === '已生成采购单' && !line.allocation.purchaseOrderNo) {
           line.allocation.purchaseOrderNo = nextOrderNo(orders, task.date);
@@ -474,6 +506,7 @@
             source: '采购任务生成',
             manager: task.manager,
             expectedAt: task.date + ' 00:00:00',
+            enterpriseExpectedAt: nextEnterpriseAt || enterpriseExpectedAt(task.date),
             addedAt: now(),
             status: '待收货',
             items: [{
@@ -492,9 +525,12 @@
     });
   }
 
-  function generatePurchaseOrders(taskIds) {
+  function generatePurchaseOrders(taskIds, enterpriseAtValue) {
     ensureSeed();
     var ids = Array.isArray(taskIds) ? taskIds : [];
+    var tasks = ids.map(getTask).filter(Boolean);
+    var invalidTask = tasks.find(function (task) { return !enterpriseExpectedAt(task.date, enterpriseAtValue); });
+    if (invalidTask) return { ok: false, message: '企业期望送达时间不能晚于学校期望送达时间' };
     return window.DemoStore.transact(function (state) {
       var orders = state.purchaseOrders || (state.purchaseOrders = []);
       var generated = [];
@@ -507,11 +543,13 @@
           var quantity = number(line.toPurchaseQty);
           var price = number(allocation.price);
           if (!quantity || price <= 0) return;
+          var nextEnterpriseAt = enterpriseExpectedAt(task.date, enterpriseAtValue);
           var purchaseOrderNo = nextOrderNo(orders, task.date);
           line.allocation = Object.assign({}, allocation, {
             purchaseType: allocation.purchaseType || '供应商送货',
             supplier: allocation.supplier || '盒马鲜生',
             manager: task.manager,
+            enterpriseExpectedAt: nextEnterpriseAt,
             status: '已生成采购单',
             purchaseOrderNo: purchaseOrderNo
           });
@@ -522,6 +560,7 @@
             source: '采购任务生成',
             manager: task.manager,
             expectedAt: task.date + ' 00:00:00',
+            enterpriseExpectedAt: nextEnterpriseAt,
             addedAt: now(),
             status: '待收货',
             items: [{

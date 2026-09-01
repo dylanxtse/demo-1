@@ -1,5 +1,13 @@
 (function () {
   const parameters = new URLSearchParams(window.location.search);
+  const isSupplierProductPage = document.body?.dataset.userEnd === 'supplier'
+    || parameters.get('from') === 'supplier';
+  if (isSupplierProductPage) {
+    document.body.dataset.userEnd = 'supplier';
+    document.body.dataset.supplierId ||= 'SUP-004';
+    document.body.dataset.supplierName ||= '南皮供应商01';
+    document.getElementById('app')?.setAttribute('data-page', 'supplier.html');
+  }
   const productId = parameters.get('id');
   const pageMode = parameters.get('mode');
   const isViewMode = pageMode === 'view';
@@ -12,7 +20,8 @@
   window.AppShell.mount({
     // 添加/编辑商品是商品管理的下钻页，不作为独立导航页面显示。
     title: '商品管理',
-    content: template.innerHTML
+    content: template.innerHTML,
+    variant: isSupplierProductPage ? 'supplier' : 'enterprise'
   });
 
   const form = document.getElementById('productForm');
@@ -123,7 +132,9 @@
   }
 
   function returnToList() {
-    window.AppNavigation?.navigate?.('./product-list.html');
+    const target = isSupplierProductPage ? './supplier.html' : './product-list.html';
+    if (window.AppNavigation?.navigate) window.AppNavigation.navigate(target);
+    else window.location.href = target;
   }
 
   function updateConversionRateLabel() {

@@ -6,17 +6,23 @@
   window.RecordPageConfig = {
     title: '库存余额',
     pageClass: 'order-module-page inventory-balance-page',
+    useDemoListLayout: true,
+    usePagination: true,
     showSelectionSummary: false,
     resource: 'inventoryBalance',
     filters: [
       { key: 'goodsName', label: '商品名称', placeholder: '请输入名称/编号' },
+      { key: 'isNetVegetable', label: '是否净菜', options: [
+        { label: '净菜', value: 'true' },
+        { label: '非净菜', value: 'false' }
+      ] },
       { key: 'category', label: '商品分类', options: ['果蔬-果蔬二级', '蛋奶类-蛋奶类二级', '主食-粮食类', '水产品-水产品二级'] },
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'unit', label: '计量单位', options: ['斤', 'KG', '瓶', 'L'] }
     ],
     columns: [
       { key: 'goodsCode', label: '商品编码', link: true },
-      { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）' },
+      { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）', productDisplay: true },
       { key: 'category', label: '商品分类' },
       { key: 'warehouse', label: '仓库' },
       { key: 'unit', label: '计量单位' },

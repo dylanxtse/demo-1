@@ -81,12 +81,12 @@
     if (!lines.length) {
       body.innerHTML = '<tr><td class="empty-goods" colspan="12">请选择关联订单</td></tr>';
     } else {
-      body.innerHTML = lines.map((line, index) => `<tr data-line-id="${esc(line.id)}">
-        <td>${index + 1}</td><td><span class="goods-thumb">暂无图片</span></td><td class="goods-name-cell">${esc(line.goodsName)}</td><td>${esc(line.unit)}</td>
+      body.innerHTML = lines.map((line, index) => { const productDisplay = window.DomUtils.formatProductDisplay(line); return `<tr data-line-id="${esc(line.id)}">
+        <td>${index + 1}</td><td><span class="goods-thumb">暂无图片</span></td><td class="goods-name-cell"><span class="product-display-text" title="${esc(productDisplay)}">${esc(productDisplay)}</span></td><td>${esc(line.unit)}</td>
         <td>${line.shippingQty}</td><td>${line.acceptedQty}</td><td><input class="table-input" data-field="afterQty" type="number" min="0.01" step="0.01" value="${line.afterQty}" ${readonly ? 'disabled' : ''}></td>
         <td class="difference-qty">${line.differenceQty}</td><td>${money(line.unitPrice)}</td><td class="after-amount">${money(line.afterAmount)}</td><td class="difference-amount">${money(line.differenceAmount)}</td>
         <td><input class="table-input remark-input" data-field="reason" value="${esc(line.reason)}" placeholder="请输入变更原因" ${readonly ? 'disabled' : ''}></td>
-      </tr>`).join('');
+      </tr>`; }).join('');
     }
     totals();
   }

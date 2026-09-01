@@ -378,10 +378,17 @@
       ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', '斤', 10], ['SP0300031', '鲫鱼', 'L', 20], ['SP0300030', '金龙鱼5L桶装油', '瓶', 55],
       ['SP0300029', '鲫鱼', '斤', 15], ['SP0300026', '面', '瓶', 1], ['SP0300025', '大米', 'KG', 19], ['SP0300024', '三元牛奶', '瓶', 10],
       ['SP0300023', '大饼', '斤', 1], ['SP0300020', '西红柿', 'KG', 20], ['SP0300019', '大白菜', '斤', 8], ['SP0300018', '鸡蛋', '斤', 22],
-      ['SP0300017', '金龙鱼豆油', '斤', 50], ['SP0300016', '面粉', '斤', 30], ['SP0300015', '香蕉', '斤', 30], ['SP0300014', '苹果', '斤', 23]
+      ['SP0300017', '金龙鱼豆油', '斤', 50], ['SP0300016', '面粉', '斤', 30], ['SP0300015', '香蕉', '斤', 30], ['SP0300014', '苹果', '斤', 23],
+      ['SP0300050', '土豆块', '斤', 5.2], ['SP0300051', '白菜段', '斤', 3.2], ['SP0300052', '白菜丝', '斤', 3.4],
+      ['SP0300053', '胡萝卜', '斤', 2.8], ['SP0300054', '胡萝卜丝', '斤', 4.8], ['SP0300055', '胡萝卜片', '斤', 4.6],
+      ['SP0300056', '青椒', '斤', 4.5], ['SP0300057', '青椒丝', '斤', 7.2], ['SP0300058', '青椒块', '斤', 6.8],
+      ['SP0300059', '什锦配菜', '斤', 6.5], ['SP0300060', '西兰花', '斤', 5.2], ['SP0300061', '西兰花块', '斤', 7.8]
     ].map(([code, name, unit, marketPrice], index) => ({ code, name, unit, marketPrice, status: '已上架', brand: '--', spec: '--', category: '其他材料-其他二级', seq: index + 1 }));
     const source = Array.isArray(window.MockProducts) && window.MockProducts.length ? window.MockProducts : fallbackProducts;
-    const seededNetVegetables = new Set(['SP0300039', 'SP0300020', 'SP0300019', 'SP0300034']);
+    const seededNetVegetables = new Set([
+      'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
+      'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
+    ]);
     return source.filter((product) => product && (product.code || product.id)).map((product, index) => ({
       ...clone(product),
       id: product.id || product.code,
@@ -701,10 +708,19 @@
   }
 
   function normalizeProductMetadata(state) {
-    const seededNetVegetables = new Set(['SP0300039', 'SP0300020', 'SP0300019', 'SP0300034']);
+    const revision = 'products-v6';
+    const seededNetVegetables = new Set([
+      'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
+      'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
+    ]);
+    const refreshedProductCodes = new Set([
+      'SP0300039', 'SP0300040', 'SP0300034', 'SP0300031', 'SP0300020', 'SP0300019',
+      'SP0300050', 'SP0300051', 'SP0300052', 'SP0300053', 'SP0300054', 'SP0300055',
+      'SP0300056', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300060', 'SP0300061'
+    ]);
     const legacyEggLiquidCode = 'SIM-NET-EGG-LIQUID';
     const eggLiquidCode = 'SP0300043';
-    const shouldNormalizeSeedNetVegetables = state.productSeedRevision !== 'products-v4';
+    const shouldRefreshProducts = state.productSeedRevision !== revision;
     let changed = false;
     const replaceLegacyEggLiquidCode = (value) => {
       if (Array.isArray(value)) {
@@ -722,6 +738,27 @@
       return value;
     };
     replaceLegacyEggLiquidCode(state);
+    state.products = Array.isArray(state.products) ? state.products : [];
+    if (shouldRefreshProducts) {
+      (window.MockProducts || [])
+        .filter((sourceProduct) => refreshedProductCodes.has(sourceProduct.code || sourceProduct.id))
+        .forEach((sourceProduct) => {
+          const productCode = sourceProduct.code || sourceProduct.id;
+          const existing = state.products.find((product) => (product.code || product.productId || product.id) === productCode);
+          const normalized = {
+            ...clone(sourceProduct),
+            id: existing?.id || sourceProduct.id || productCode,
+            productId: productCode,
+            code: productCode,
+            seq: existing?.seq || sourceProduct.seq || state.products.length + 1,
+            marketPrice: number(sourceProduct.marketPrice),
+            isNetVegetable: sourceProduct.isNetVegetable === true
+          };
+          if (!existing) state.products.push(normalized);
+          else Object.assign(existing, normalized);
+          changed = true;
+        });
+    }
     (state.products || []).forEach((product, index) => {
       const productCode = product.code || product.productId;
       const isSeededNetVegetable = seededNetVegetables.has(productCode);
@@ -730,7 +767,7 @@
         product.seq = index + 1;
         changed = true;
       }
-      if (shouldNormalizeSeedNetVegetables && sourceProduct && product.isNetVegetable !== sourceProduct.isNetVegetable) {
+      if (shouldRefreshProducts && sourceProduct && product.isNetVegetable !== sourceProduct.isNetVegetable) {
         product.isNetVegetable = sourceProduct.isNetVegetable === true;
         changed = true;
       }
@@ -763,8 +800,8 @@
         changed = true;
       }
     });
-    if (state.productSeedRevision !== 'products-v4') {
-      state.productSeedRevision = 'products-v4';
+    if (state.productSeedRevision !== revision) {
+      state.productSeedRevision = revision;
       changed = true;
     }
     return changed;
@@ -840,12 +877,66 @@
   }
 
   function seedProcessingAuditDemo(state) {
-    const demoId = 'JGD202608120300006';
+    const demoId = 'JGD202608300300006';
     if (!Array.isArray(state.processingOrders)) state.processingOrders = [];
     if (state.processingOrders.some((record) => record.id === demoId)) return false;
     const source = (window.MockProcessingOrders || []).find((record) => record.id === demoId);
     if (!source) return false;
     state.processingOrders.push(clone(source));
+    return true;
+  }
+
+  function resetProcessingModuleData(state) {
+    const revision = 'processing-module-v2';
+    if (state.processingModuleSeedRevision === revision) return false;
+    state.processingTemplates = clone(window.MockProcessingTemplates || []);
+    state.processingOrders = clone(window.MockProcessingOrders || []);
+    state.processingModuleSeedRevision = revision;
+    return true;
+  }
+
+  function ensureProcessingDemoData(state) {
+    const seedOrder = (window.MockOperations?.orders || []).find((order) => order.id === 'ORD-PROCESS-20260731-001');
+    if (!seedOrder) return false;
+
+    let changed = false;
+    let demoOrder = (state.orders || []).find((order) => order.id === seedOrder.id);
+    if (!demoOrder) {
+      demoOrder = normalizeOrder(seedOrder, (state.orders || []).length);
+      state.orders = Array.isArray(state.orders) ? state.orders : [];
+      state.orders.push(demoOrder);
+      changed = true;
+    }
+
+    state.orderLines = Array.isArray(state.orderLines) ? state.orderLines : [];
+    if (!state.orderLines.some((line) => line.orderId === demoOrder.id)) {
+      state.orderLines.push(...clone(demoOrder.items || []));
+      changed = true;
+    }
+
+    const demoTasks = makeSortingTasks([demoOrder]);
+    state.sortingTasks = Array.isArray(state.sortingTasks) ? state.sortingTasks : [];
+    const existingTaskIds = new Set(state.sortingTasks.map((task) => task.id));
+    demoTasks.forEach((task) => {
+      if (existingTaskIds.has(task.id)) return;
+      state.sortingTasks.push(task);
+      changed = true;
+    });
+
+    if (Array.isArray(state.shippingOrders)
+      && !state.shippingOrders.some((order) => order.orderId === demoOrder.id)) {
+      state.shippingOrders.push(...makeShippingOrders([demoOrder], demoTasks));
+      changed = true;
+    }
+    return changed;
+  }
+
+  function resetStatisticsData(state) {
+    const revision = 'statistics-module-v1';
+    if (state.statisticsSeedRevision === revision) return false;
+    state.productSales = clone(window.MockOperations?.productSales || []);
+    state.goodsProfitStatistics = clone(window.MockOperations?.goodsProfitStatistics || []);
+    state.statisticsSeedRevision = revision;
     return true;
   }
 
@@ -872,6 +963,7 @@
   function normalizeStateContracts(state) {
     const rules = window.BusinessRules;
     let changed = seedProcessingAuditDemo(state);
+    changed = ensureProcessingDemoData(state) || changed;
     const fixes = [];
     const mark = (resource, field, from, to) => {
       if (String(from ?? '') === String(to ?? '')) return;
@@ -1485,17 +1577,7 @@
       orders,
       orderLines: orders.flatMap((order) => order.items.map((line) => clone(line))),
       sortingTasks,
-      processingOrders: padRecords(window.MockProcessingOrders || [], 20, (index) => {
-        const material = products[index % products.length];
-        const output = products[(index + 1) % products.length];
-        return {
-          id: `JGD2026080503${String(index + 1).padStart(5, '0')}`, customerCode: '03', processingDate: `2026-08-${String((index % 9) + 1).padStart(2, '0')}`,
-          warehouse: index % 3 ? '中心仓' : '北区仓', status: '已加工', operator: ['管理员', '杨师傅', '周师傅'][index % 3], remark: '日常净菜加工', costMode: 'auto',
-          materials: [{ productCode: material.code, productName: material.name, unit: material.unit, stock: 100, avgPrice: number(material.marketPrice), consumeQty: 10 }],
-          outputs: [{ productCode: output.code, productName: output.name, unit: output.unit, refCoefficient: 1, refQty: 10, actualQty: 9, costPrice: number(output.marketPrice).toFixed(2) }],
-          createTime: `2026-08-${String((index % 9) + 1).padStart(2, '0')} 09:00:00`, attachments: [], operationLogs: [{ action: '创建', desc: `管理员 创建加工单 ${index + 1}` }]
-        };
-      }),
+      processingOrders: clone(window.MockProcessingOrders || []),
       shippingOrders,
       shippingDifferences: padRecords(window.MockOperations?.shippingDifferences || [], 20, (index) => {
         const task = sortingTasks[index % sortingTasks.length];
@@ -1533,7 +1615,9 @@
       qualityReports: padRecords(window.MockOperations?.qualityReports || [], 20, (index) => { const product = products[index % products.length]; return { id: `QUALITY-${String(index + 1).padStart(3, '0')}`, inboundNo: `RKD2026080503${String(index + 1).padStart(5, '0')}`, goodsName: product.name, warehouse: index % 2 ? '中心仓' : '北区仓', status: index % 4 ? 'PASSED' : 'NOT_UPLOADED' }; }),
       inventoryCounts: padRecords(window.MockOperations?.inventoryCounts || [], 20, (index) => ({ id: `COUNT-DEMO-${String(index + 1).padStart(3, '0')}`, warehouse: '中心仓', countAt: '2026-08-04', status: 'COMPLETED' })),
       inventoryLosses: padRecords(window.MockOperations?.inventoryLosses || [], 20, (index) => { const product = products[index % products.length]; return { id: `LOSS-${String(index + 1).padStart(3, '0')}`, warehouse: index % 2 ? '中心仓' : '北区仓', status: 'PENDING_AUDIT', goodsName: product.name, productCode: product.code, quantity: 1, amount: number(product.marketPrice) }; }),
-      openingInventory: padRecords(window.MockOperations?.openingInventory || [], 20, (index) => { const product = products[index % products.length]; return { id: `OPENING-${String(index + 1).padStart(3, '0')}`, warehouse: index % 2 ? '中心仓' : '北区仓', goodsName: product.name, goodsCode: product.code, openingQty: 100, openingPrice: number(product.marketPrice), openingAmount: 100 * number(product.marketPrice), status: 'COMPLETED' }; })
+      openingInventory: padRecords(window.MockOperations?.openingInventory || [], 20, (index) => { const product = products[index % products.length]; return { id: `OPENING-${String(index + 1).padStart(3, '0')}`, warehouse: index % 2 ? '中心仓' : '北区仓', goodsName: product.name, goodsCode: product.code, openingQty: 100, openingPrice: number(product.marketPrice), openingAmount: 100 * number(product.marketPrice), status: 'COMPLETED' }; }),
+      productSales: clone(window.MockOperations?.productSales || []),
+      goodsProfitStatistics: clone(window.MockOperations?.goodsProfitStatistics || [])
     };
   }
 
@@ -1565,13 +1649,15 @@
       const dateTimesNormalized = normalizeStateDateTimes(state);
       const productMetadataNormalized = normalizeProductMetadata(state);
       const orderNumbersNormalized = normalizeOrderNumbers(state);
+      const processingModuleReset = resetProcessingModuleData(state);
+      const statisticsModuleReset = resetStatisticsData(state);
       const processingIdsNormalized = normalizeProcessingIds(state);
       const processingOutputsNormalized = normalizeProcessingOutputs(state);
       const contractsNormalized = normalizeStateContracts(state);
       const warehouseCodesNormalized = normalizeWarehouseCodes(state);
       const settingsNormalized = normalizeSettings(state);
       const decimalsNormalized = normalizeStateDecimals(state);
-      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingIdsNormalized || processingOutputsNormalized || contractsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized) persist();
+      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingModuleReset || statisticsModuleReset || processingIdsNormalized || processingOutputsNormalized || contractsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized) persist();
     }
     else {
       state = buildSeed();
@@ -1581,6 +1667,8 @@
       normalizeStateDateTimes(state);
       normalizeProductMetadata(state);
       normalizeOrderNumbers(state);
+      resetProcessingModuleData(state);
+      resetStatisticsData(state);
       normalizeProcessingIds(state);
       normalizeProcessingOutputs(state);
       normalizeStateContracts(state);

@@ -48,21 +48,21 @@
     if (!order) {
       return `<div class="page-card processing-detail-page"><div class="processing-detail-page-header"><button class="back-link" type="button" data-action="back-to-list">${backIcon}<span>返回</span></button><h1>出库单详情</h1></div><div class="processing-detail-page-body"><div class="page-empty-state">未找到出库单</div></div></div>`;
     }
-    const itemRows = (order.items || []).map((item, index) => `
+    const itemRows = (order.items || []).map((item, index) => {
+      const productDisplay = window.DomUtils.formatProductDisplay(item);
+      return `
       <tr>
         <td>${index + 1}</td>
         <td>${renderProductImg()}</td>
-        <td>
-          <div class="detail-product-name">${escapeHtml(item.productName)}</div>
-          <div class="detail-product-sub">(${escapeHtml(item.unit)}/${escapeHtml(item.brand || '--')}/${escapeHtml(item.spec || '--')})</div>
-        </td>
+        <td><span class="product-display-text" title="${escapeHtml(productDisplay)}">${escapeHtml(productDisplay)}</span></td>
         <td>${escapeHtml(item.unit)}</td>
         <td>${escapeHtml(String(item.outboundQty ?? '--'))}</td>
         <td>${escapeHtml(String(item.unitPrice ?? '--'))}</td>
         <td>${escapeHtml(String(item.amount ?? '--'))}</td>
         <td>${escapeHtml(item.remark || '--')}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     return `<div class="page-card processing-detail-page outbound-detail-page">
       <div class="processing-detail-page-header">
@@ -92,7 +92,7 @@
               <tr>
                 <th>序号</th>
                 <th>图片</th>
-                <th style="min-width:230px">商品名称(计量单位/品牌/规格)</th>
+                <th style="min-width:230px">商品名称（计量单位/品牌/规格）</th>
                 <th>计量单位</th>
                 <th>出库数量</th>
                 <th>出库单价</th>

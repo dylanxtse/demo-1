@@ -105,6 +105,49 @@
     return { close: close, element: backdrop };
   }
 
+  function openEnterpriseExpectedDateModal(options) {
+    var config = options || {};
+    var schoolDate = datePart(config.schoolExpectedAt);
+    var defaultDate = datePart(config.defaultDate || shiftDate(schoolDate, -2));
+    var modal = openModal({
+      title: config.title || '生成采购单',
+      messageHtml: '<div class="purchase-enterprise-date-form">' +
+        '<div class="purchase-enterprise-date-context">学校期望送达时间：<strong>' + escapeHtml(schoolDate || '--') + '</strong></div>' +
+        '<label class="purchase-modal-field" for="enterpriseExpectedAt"><span>企业期望送达时间</span><input class="form-control" id="enterpriseExpectedAt" data-enterprise-expected-at type="text" readonly value="' + escapeHtml(defaultDate) + '"></label>' +
+        '<p class="purchase-modal-error" data-enterprise-date-error hidden></p>' +
+      '</div>',
+      cancelText: config.cancelText || '取消',
+      confirmText: config.confirmText || '生成采购单',
+      kind: 'confirm',
+      onConfirm: function () {
+        var input = modal.element.querySelector('[data-enterprise-expected-at]');
+        var error = modal.element.querySelector('[data-enterprise-date-error]');
+        var value = datePart(input?.value);
+        var showError = function (message) {
+          if (error) {
+            error.textContent = message;
+            error.hidden = !message;
+          }
+          input?.classList.toggle('is-invalid', Boolean(message));
+        };
+        if (!value) {
+          showError('请选择企业期望送达时间');
+          return false;
+        }
+        if (schoolDate && value > schoolDate) {
+          showError('企业期望送达时间不能晚于学校期望送达时间');
+          return false;
+        }
+        showError('');
+        return config.onConfirm ? config.onConfirm(value, schoolDate) : true;
+      }
+    });
+    var input = modal.element.querySelector('[data-enterprise-expected-at]');
+    mountDate(input, defaultDate, false);
+    if (schoolDate) input?.setAttribute('data-max-date', schoolDate);
+    return modal;
+  }
+
   function renderPagination(container, state, onChange) {
     if (!container) return;
     var pageSize = Number(state.pageSize) || 20;
@@ -140,6 +183,7 @@
     mountDate: mountDate,
     mountDateRange: mountDateRange,
     openModal: openModal,
+    openEnterpriseExpectedDateModal: openEnterpriseExpectedDateModal,
     shiftDate: shiftDate,
     renderPagination: renderPagination
   };

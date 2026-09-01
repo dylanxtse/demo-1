@@ -84,6 +84,14 @@
               <label class="filter-label" for="obWarehouse">仓库</label>
               <select class="filter-select" id="obWarehouse">${buildOptions(['全部', ...warehouses])}</select>
             </div>
+            <div class="filter-group">
+              <label class="filter-label" for="obNetVegetable">是否净菜</label>
+              <select class="filter-select" id="obNetVegetable">
+                <option value="全部">全部</option>
+                <option value="净菜">净菜</option>
+                <option value="非净菜">非净菜</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -119,20 +127,7 @@
             <tbody id="obTableBody"></tbody>
           </table>
         </div>
-        <div class="pagination">
-          <span class="page-total">共 0 条数据</span>
-          <select class="page-size-select" id="obPageSize" aria-label="每页数量">
-            <option value="20">20 条/页</option>
-            <option value="50">50 条/页</option>
-            <option value="100">100 条/页</option>
-          </select>
-          <div class="page-btns" id="obPageBtns"></div>
-          <div class="page-jump">
-            <span>跳至</span>
-            <input type="text" id="obPageJump" value="1" aria-label="跳转页码">
-            <span>页</span>
-          </div>
-        </div>
+        <div class="pagination" id="obPagination"></div>
       </div>
 
     </div>
@@ -147,6 +142,7 @@
     products: [],
     page: 1,
     pageSize: 20,
+    pagination: null,
     selectedIds: new Set(),
     formMode: null,      // 'create' | 'edit'
     editId: null,
@@ -165,14 +161,15 @@
 
   function renderProductSelect(selectedCode) {
     const selectedProduct = selectedCode ? findProduct(selectedCode) : null;
+    const selectedDisplay = selectedProduct ? window.DomUtils.formatProductDisplay(selectedProduct, state.products) : '';
     const selectedLabel = selectedProduct
-      ? `${selectedProduct.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span class="custom-select-text">${escapeHtml(selectedProduct.name)} (${escapeHtml(selectedProduct.code)})</span>`
+      ? `${selectedProduct.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span class="custom-select-text">${escapeHtml(selectedDisplay)}</span>`
       : '<span class="custom-select-text is-placeholder">请选择</span>';
     const options = state.products.map((product) => `
       <div class="custom-select-option ${product.code === selectedCode ? 'selected' : ''}"
         data-action="select-product" data-value="${escapeHtml(product.code)}">
         ${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}
-        <span>${escapeHtml(product.name)} (${escapeHtml(product.code)})</span>
+        <span>${escapeHtml(window.DomUtils.formatProductDisplay(product, state.products))}</span>
       </div>
     `).join('');
     return `
@@ -240,11 +237,11 @@
             <td>${relNoCell}</td>
             <td><span class="status-tag ${statusClass}">${escapeHtml(statusLabel)}</span></td>
             <td>${escapeHtml(order.creator)}</td>
-            <td class="action-cell">
+            <td class="action-cell"><div class="operation-actions">
               <button class="btn-text ${!actionable ? 'disabled' : ''}" type="button" data-row-action="audit" data-id="${escapeHtml(order.id)}" ${!actionable ? 'disabled' : ''}>审核</button>
               <button class="btn-text ${!actionable ? 'disabled' : ''}" type="button" data-row-action="edit" data-id="${escapeHtml(order.id)}" ${!actionable ? 'disabled' : ''}>编辑</button>
               <button class="btn-text ${!actionable ? 'disabled' : ''}" type="button" data-row-action="close" data-id="${escapeHtml(order.id)}" ${!actionable ? 'disabled' : ''}>关闭</button>
-            </td>
+            </div></td>
           </tr>
         `;
       }).join('');
@@ -258,33 +255,8 @@
   function renderPagination() {
     const total = state.visibleOrders.length;
     const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
-    const container = document.getElementById('obPageBtns');
-    let html = '';
-    // 上一页
-    html += `<button class="page-btn ${state.page === 1 ? 'disabled' : ''}" type="button" data-page="prev" ${state.page === 1 ? 'disabled' : ''}>‹</button>`;
-    // 页码按钮（最多显示 7 个）
-    let startPage = 1;
-    let endPage = totalPages;
-    if (totalPages > 7) {
-      startPage = Math.max(1, state.page - 2);
-      endPage = Math.min(totalPages, state.page + 2);
-      if (startPage > 1) {
-        html += `<button class="page-btn" type="button" data-page="1">1</button>`;
-        if (startPage > 2) html += `<span class="page-ellipsis">…</span>`;
-      }
-    }
-    for (let p = startPage; p <= endPage; p++) {
-      html += `<button class="page-btn ${p === state.page ? 'active' : ''}" type="button" data-page="${p}">${p}</button>`;
-    }
-    if (totalPages > 7 && endPage < totalPages) {
-      if (endPage < totalPages - 1) html += `<span class="page-ellipsis">…</span>`;
-      html += `<button class="page-btn" type="button" data-page="${totalPages}">${totalPages}</button>`;
-    }
-    // 下一页
-    html += `<button class="page-btn ${state.page === totalPages ? 'disabled' : ''}" type="button" data-page="next" ${state.page === totalPages ? 'disabled' : ''}>›</button>`;
-    container.innerHTML = html;
-    document.querySelector('#outboundListPage .page-total').textContent = `共 ${total} 条数据`;
-    document.getElementById('obPageJump').value = state.page;
+    if (state.page > totalPages) state.page = totalPages;
+    state.pagination?.update({ page: state.page, pageSize: state.pageSize, total });
   }
 
   function syncSelectAllCheckbox() {
@@ -320,6 +292,7 @@
     const status = val('obStatus');
     const orderNo = val('obOrderNo').toLowerCase();
     const warehouse = val('obWarehouse');
+    const netVegetable = val('obNetVegetable');
 
     const result = state.orders.filter((order) => {
       // 出库日期
@@ -355,6 +328,16 @@
       if (orderNo && !(order.id || '').toLowerCase().includes(orderNo)) return false;
       // 仓库
       if (warehouse !== '全部' && order.warehouseName !== warehouse) return false;
+      // 是否净菜：单据明细中存在匹配商品即可命中
+      if (netVegetable !== '全部') {
+        const expected = netVegetable === '净菜';
+        const hasMatch = (order.items || []).some((item) => {
+          const product = findProduct(item.productCode || item.goodsCode || item.productId);
+          const actual = product ? product.isNetVegetable === true : item.isNetVegetable === true;
+          return actual === expected;
+        });
+        if (!hasMatch) return false;
+      }
       return true;
     });
 
@@ -369,7 +352,7 @@
     });
     const display = document.getElementById('obDateDisplay');
     if (display) display.value = '';
-    ['obCategory', 'obType', 'obStatus', 'obWarehouse'].forEach((id) => {
+    ['obCategory', 'obType', 'obStatus', 'obWarehouse', 'obNetVegetable'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.value = '全部';
     });
@@ -679,10 +662,12 @@
     const order = window.OutboundService.getDetail(id) || state.orders.find((o) => o.id === id);
     if (!order) return;
     const statusClass = getStatusClass(order.status);
-    const itemRows = (order.items || []).map((item, index) => `
+    const itemRows = (order.items || []).map((item, index) => {
+      const productDisplay = window.DomUtils.formatProductDisplay(item, state.products);
+      return `
       <tr>
         <td class="center">${index + 1}</td>
-        <td>${escapeHtml(item.productName)}</td>
+        <td><span class="product-display-text" title="${escapeHtml(productDisplay)}">${escapeHtml(productDisplay)}</span></td>
         <td class="center">${escapeHtml(item.unit)}</td>
         <td class="center">${item.conversionRate ?? '--'}</td>
         <td class="center">${item.currentStock ?? '--'}</td>
@@ -691,7 +676,8 @@
         <td class="center">${escapeHtml(item.amount)}</td>
         <td>${escapeHtml(item.remark || '--')}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     document.getElementById('obDetailBody').innerHTML = `
       <div class="processing-detail-section">
@@ -856,7 +842,7 @@
                 <tr>
                   <th style="width:61px">序号</th>
                   <th style="width:73px">图片</th>
-                  <th style="width:230px">商品名称(计量单位/品牌/规格)</th>
+                  <th style="width:230px">商品名称（计量单位/品牌/规格）</th>
                   <th style="width:98px">计量单位</th>
                   <th style="width:98px">换算率</th>
                   <th style="width:110px">现有库存</th>
@@ -1102,38 +1088,10 @@
       if (rowActionEl) {
         const rowAction = rowActionEl.dataset.rowAction;
         const id = rowActionEl.dataset.id;
-        if (rowAction === 'detail') { window.AppNavigation?.navigate?.(`./outbound-detail.html?id=${encodeURIComponent(id)}`); return; }
+        if (rowAction === 'detail') { window.location.href = `./outbound-detail.html?id=${encodeURIComponent(id)}`; return; }
         if (rowAction === 'audit') { auditOrder(id); return; }
         if (rowAction === 'edit') { showFormPage('edit', id); return; }
         if (rowAction === 'close') { closeOrder(id); return; }
-      }
-    });
-
-    // 分页
-    document.getElementById('obPageBtns').addEventListener('click', (event) => {
-      const btn = event.target.closest('[data-page]');
-      if (!btn || btn.disabled) return;
-      const page = btn.dataset.page;
-      const totalPages = Math.max(1, Math.ceil(state.visibleOrders.length / state.pageSize));
-      if (page === 'prev') state.page = Math.max(1, state.page - 1);
-      else if (page === 'next') state.page = Math.min(totalPages, state.page + 1);
-      else state.page = Number(page);
-      renderTable();
-    });
-
-    document.getElementById('obPageSize').addEventListener('change', (event) => {
-      state.pageSize = Number(event.target.value);
-      state.page = 1;
-      renderTable();
-    });
-
-    document.getElementById('obPageJump').addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        const totalPages = Math.max(1, Math.ceil(state.visibleOrders.length / state.pageSize));
-        const target = Math.min(totalPages, Math.max(1, Number(event.target.value) || 1));
-        state.page = target;
-        event.target.value = target;
-        renderTable();
       }
     });
 
@@ -1235,6 +1193,18 @@
     startInput: '#obDateStart',
     endInput: '#obDateEnd',
     panelId: 'obCalendarPanel'
+  });
+  state.pagination = window.Pagination.create({
+    container: '#obPagination',
+    page: state.page,
+    pageSize: state.pageSize,
+    total: state.visibleOrders.length,
+    pageSizeOptions: [20, 50, 100],
+    onChange: ({ page, pageSize }) => {
+      state.page = page;
+      state.pageSize = pageSize;
+      renderTable();
+    }
   });
   loadOrders();
   loadProducts();

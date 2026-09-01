@@ -29,6 +29,40 @@
     return `JGD${datePart}${customerCode}${String(fallbackSequence).padStart(5, '0')}`;
   }
 
+  function normalizeTemplateId(id) {
+    return String(id || '').replace(/^MB(?=\d)/, 'PP');
+  }
+
+  function getDemoProcessingSequence(id) {
+    const digits = String(id || '').replace(/\D/g, '');
+    return Number(digits.length > 8 ? digits.slice(8).slice(-5) : 0) || 0;
+  }
+
+  function getDemoTemplateReference(order, index) {
+    if (order.templateId || order.templateName) {
+      return { id: normalizeTemplateId(order.templateId), name: order.templateName || '' };
+    }
+
+    const currentId = String(order.id || '');
+    const currentDatePart = getDatePart(order.processingDate || order.createTime);
+    const sourceOrder = (window.MockProcessingOrders || []).find((source) => {
+      if (String(source.id || '') === currentId) return true;
+      return getDatePart(source.processingDate || source.createTime) === currentDatePart
+        && getDemoProcessingSequence(source.id) > 0
+        && getDemoProcessingSequence(source.id) === getDemoProcessingSequence(currentId);
+    });
+    if (sourceOrder?.templateId || sourceOrder?.templateName) {
+      return { id: normalizeTemplateId(sourceOrder.templateId), name: sourceOrder.templateName || '' };
+    }
+
+    if (!currentId.startsWith('JGD20260805')) return null;
+    const templates = window.MockProcessingTemplates || [];
+    if (templates.length === 0) return null;
+    const sequence = getDemoProcessingSequence(currentId) || index + 1;
+    const template = templates[(sequence - 1) % templates.length];
+    return template ? { id: normalizeTemplateId(template.id), name: template.name || '' } : null;
+  }
+
   function normalizeStatus(status) {
     return window.BusinessRules.normalizeStatus('processingOrders', status);
   }
@@ -128,12 +162,15 @@
     const normalizedStatus = sourceStatus === 'PENDING_CONFIRM'
       ? (getConfig().auditEnabled ? 'PENDING_AUDIT' : 'COMPLETED')
       : sourceStatus;
+    const templateReference = getDemoTemplateReference(order, index);
     const normalizedBase = {
       ...order,
       materials: normalizedMaterials,
       outputs: normalizedOutputs,
       customerCode,
-      status: normalizedStatus
+      status: normalizedStatus,
+      templateId: normalizeTemplateId(order.templateId || templateReference?.id || ''),
+      templateName: order.templateName || templateReference?.name || ''
     };
     const sequence = currentId.match(/(\d{1,5})$/)?.[1] || String(index + 1);
     const normalizedOrder = {
@@ -393,6 +430,13 @@
         error.code = 'INVALID_PROCESSING_DATA';
         throw error;
       }
+      const hasCreateLog = (normalized.operationLogs || []).some((log) => /创建|添加/.test(`${log.action || ''} ${log.desc || ''}`));
+      if (!hasCreateLog) {
+        normalized.operationLogs = [
+          ...(normalized.operationLogs || []),
+          { action: '创建', operator: normalized.operator || '管理员', desc: `${normalized.operator || '管理员'} 创建 ${normalized.createTime}` }
+        ];
+      }
       window.BusinessRules.assertValid('processingOrders', normalized);
       orders.unshift(normalized);
       save(orders);
@@ -413,7 +457,6 @@
 
       const now = window.BusinessRules.now();
       const nextStatus = getConfig().auditEnabled ? 'PENDING_AUDIT' : 'COMPLETED';
-      const currentStatus = orders[index].status;
       const updated = normalizeOrder({
         ...orders[index],
         ...data,
@@ -428,9 +471,9 @@
       updated.operationLogs = [
         ...(updated.operationLogs || []),
         {
-          action: currentStatus === 'REJECTED' ? '重新提交审核' : '编辑后提交审核',
+          action: '编辑',
           operator: updated.operator || '管理员',
-          desc: `${updated.operator || '管理员'} ${currentStatus === 'REJECTED' ? '修改后重新提交审核' : '编辑后提交审核'} ${now}`
+          desc: `${updated.operator || '管理员'} 编辑 ${now}`
         }
       ];
       orders[index] = ensureRelatedDocuments(updated);
@@ -468,11 +511,17 @@
       const index = orders.findIndex((order) => order.id === id);
       if (index < 0 || orders[index].status !== 'PENDING_AUDIT') return null;
       const now = window.BusinessRules.now();
+      const auditOperator = orders[index].auditOperator || '管理员';
       orders[index] = ensureRelatedDocuments({
         ...orders[index],
         status: approved ? 'COMPLETED' : 'REJECTED',
         auditedAt: now,
-        auditResult: approved ? '通过' : '驳回'
+        auditResult: approved ? '通过' : '驳回',
+        auditOperator,
+        operationLogs: [
+          ...(orders[index].operationLogs || []),
+          { action: '审核', operator: auditOperator, result: approved ? '通过' : '驳回', desc: `${auditOperator} 审核 ${now}` }
+        ]
       });
       save(orders);
       if (approved) applyProcessedQuantities(orders[index]);

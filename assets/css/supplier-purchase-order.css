@@ -197,6 +197,117 @@
   border-radius: 3px;
 }
 
+/* 采购单列表复用统一数字分页结构，避免组件的块级容器把统计、页码和跳转拆成多行。 */
+.supplier-purchase-pagination {
+  display: flex !important;
+  min-height: 54px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 0;
+  box-sizing: border-box;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.supplier-purchase-pagination > .page-total {
+  flex: 0 0 auto;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+.supplier-purchase-pagination > .page-size-select,
+.supplier-purchase-pagination > .page-btns,
+.supplier-purchase-pagination > .page-jump {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.supplier-purchase-pagination .page-size-select {
+  min-width: 88px;
+  height: 32px;
+  padding: 0 28px 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
+  color: var(--text-primary);
+  font: inherit;
+  appearance: none;
+  cursor: pointer;
+}
+
+.supplier-purchase-pagination .page-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.supplier-purchase-pagination .page-btn {
+  display: inline-flex;
+  min-width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.supplier-purchase-pagination .page-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.supplier-purchase-pagination .page-btn.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.supplier-purchase-pagination .page-btn:disabled {
+  border-color: transparent;
+  background: transparent;
+  color: #c4cbd5;
+  cursor: not-allowed;
+}
+
+.supplier-purchase-pagination .page-ellipsis {
+  min-width: 20px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.supplier-purchase-pagination .page-jump {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.supplier-purchase-pagination .pagination-jump-input {
+  width: 48px;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: center;
+  outline: none;
+}
+
+.supplier-purchase-pagination .pagination-jump-input:focus {
+  border-color: var(--primary);
+}
+
 .supplier-purchase-table,
 .supplier-purchase-nested-table {
   table-layout: fixed;

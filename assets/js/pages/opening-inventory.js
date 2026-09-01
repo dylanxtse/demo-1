@@ -15,12 +15,16 @@
     resource: 'openingInventory',
     filters: [
       { key: 'goodsName', label: '商品名称/编码', placeholder: '请输入名称/编号' },
+      { key: 'isNetVegetable', label: '是否净菜', options: [
+        { label: '净菜', value: 'true' },
+        { label: '非净菜', value: 'false' }
+      ] },
       { key: 'inputType', label: '商品录入类型', options: ['手工录入', '导入'] },
       { key: 'warehouse', label: '商品所属仓库', options: ['中心仓', '北区仓', '临时仓'] }
     ],
     columns: [
       { key: 'goodsCode', label: '商品编号', link: true },
-      { key: 'goodsName', label: '商品名称（计量单位/规格/指标说明）' },
+      { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）', productDisplay: true },
       { key: 'category', label: '商品分类' },
       { key: 'unit', label: '计量单位' },
       { key: 'openingQty', label: '期初库存', editableNumber: true },

@@ -1,4 +1,18 @@
 (function () {
+  const escapeHtml = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  const renderGoodsName = (item) => {
+    const marker = window.OperationsService?.isNetVegetable?.(item)
+      ? '<span class="net-vegetable-tag">净菜</span>'
+      : '';
+    const display = window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || '--';
+    return `<span class="product-display-text">${marker}${escapeHtml(display)}</span>`;
+  };
+
   const productDetailColumns = [
     { key: 'customerName', label: '客户名称' },
     { key: 'canteen', label: '食堂' },
@@ -8,7 +22,7 @@
     { key: 'status', label: '分拣状态', format: 'status' }
   ];
   const customerDetailColumns = [
-    { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）' },
+    { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）', productDisplay: true },
     { key: 'orderQty', label: '下单数量' },
     { key: 'actualQty', label: '实际数量' },
     { key: 'route', label: '线路' },
@@ -19,6 +33,7 @@
     title: '分拣进度',
     resource: 'sortingItems',
     pageClass: 'sorting-module-page sorting-progress-page',
+    usePagination: true,
     selectable: false,
     filters: [
       { key: 'expectedAt', label: '期望送达时间', type: 'date' },
@@ -41,7 +56,7 @@
         label: '商品分拣进度',
         resource: 'sortingItems',
         columns: [
-          { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）' },
+          { key: 'goodsName', label: '商品名称（计量单位/品牌/规格）', render: renderGoodsName },
           { key: 'unit', label: '计量单位' },
           { key: 'actualQty', label: '已分拣数' },
           { key: 'orderQty', label: '下单数' },

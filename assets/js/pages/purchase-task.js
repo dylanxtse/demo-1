@@ -9,17 +9,17 @@
       '<div class="purchase-filter" id="purchaseTaskFilter">',
         '<div class="purchase-filter-main">',
           '<div class="purchase-filter-grid">',
-            '<div class="purchase-field"><label class="filter-label" for="taskDate">期望送达时间</label><input class="filter-input" id="taskDate" type="text" placeholder="请选择日期" readonly></div>',
+            '<div class="purchase-field"><label class="filter-label" for="taskDate">学校期望送达时间</label><input class="filter-input" id="taskDate" type="text" placeholder="请选择日期" readonly></div>',
             '<div class="purchase-field"><label class="filter-label" for="taskPurchaseType">采购类型</label><select class="filter-select" id="taskPurchaseType"><option value="">全部</option><option>联营供应商采购</option><option>市场自采</option><option>供应商送货</option></select></div>',
             '<div class="purchase-field"><label class="filter-label" for="taskCustomerName">客户名称</label><select class="filter-select" id="taskCustomerName"><option value="">全部</option><option>静安第1中学</option><option>第一实验学校</option><option>阳光幼儿园</option></select></div>',
           '</div>',
           '<div class="purchase-filter-actions">',
-            '<button class="purchase-advanced-toggle" type="button" data-action="toggle-advanced">高级筛选<span class="toggle-arrow">▾</span></button>',
+            '<button class="purchase-advanced-toggle" type="button" data-action="toggle-advanced" aria-expanded="false" aria-controls="purchaseTaskAdvancedFilter">高级筛选<span class="toggle-arrow">▾</span></button>',
             '<button class="btn btn-primary" type="button" data-action="query">查询</button>',
             '<button class="btn" type="button" data-action="reset">重置</button>',
           '</div>',
         '</div>',
-        '<div class="purchase-filter-advanced">',
+        '<div class="purchase-filter-advanced" id="purchaseTaskAdvancedFilter" hidden>',
           '<div class="purchase-filter-grid">',
             '<div class="purchase-field"><label class="filter-label" for="taskOrderTag">订单标签</label><select class="filter-select" id="taskOrderTag"><option value="">全部</option><option>营养餐</option><option>普通餐</option></select></div>',
             '<div class="purchase-field"><label class="filter-label" for="taskPurchaseStatus">采购状态</label><select class="filter-select" id="taskPurchaseStatus"><option value="">全部</option><option>未生成采购单</option><option>已生成采购单</option></select></div>',
@@ -50,42 +50,13 @@
   document.title = '采购任务 - 集采企业版企业端';
   var page = root.querySelector('.purchase-task-page');
   var state = { page: 1, pageSize: 20, total: 0, selected: new Set(), condition: { date: '2026-08-26' }, inventoryMode: 'stock' };
-  state.expanded = new Set();
 
   function $(selector) { return page.querySelector(selector); }
   function value(selector) { return ($(selector)?.value || '').trim(); }
   function text(value) { return utils.escapeHtml(value == null ? '' : value); }
   function fixed(value) { return Number(value || 0).toFixed(2); }
   function displayProduct(task) {
-    return text((task.productName || '') + '(' + (task.unit || '--') + '/' + (task.brand || '--') + '/' + (task.spec || '--') + ')');
-  }
-
-  function renderExpandedTask(task) {
-    var lines = task.orderLines || [];
-    return '<tr class="purchase-task-expanded-row" data-expanded-for="' + text(task.id) + '">' +
-      '<td colspan="12"><div class="purchase-task-expanded-wrap">' +
-        '<div class="purchase-task-nested-table-wrap"><table class="purchase-task-nested-table">' +
-          '<colgroup><col class="nested-order-col"><col class="nested-customer-col"><col class="nested-canteen-col"><col class="nested-warehouse-col"><col class="nested-number-col"><col class="nested-number-col"><col class="nested-number-col"><col class="nested-number-col"><col class="nested-allocation-col"><col class="nested-order-col"></colgroup>' +
-          '<thead><tr><th>订单号</th><th>客户名称</th><th>食堂</th><th>仓库</th><th>下单数量</th><th>库存抵扣量</th><th>在途库存抵扣量</th><th>待采购量</th><th>供应商/采购员</th><th>关联采购单号</th></tr></thead>' +
-          '<tbody>' + (lines.length ? lines.map(function (line) {
-            var allocation = line.allocation || {};
-            var allocationLabel = allocation.supplier || allocation.purchaseType ? (allocation.purchaseType || '供应商送货') + ' / ' + (allocation.supplier || '盒马鲜生') : '--';
-            return '<tr>' +
-              '<td><span class="purchase-cell-link">' + text(line.orderNo) + '<small>' + text(line.orderCreatedAt) + '</small></span></td>' +
-              '<td>' + text(line.customerName) + '</td>' +
-              '<td>' + text(line.canteen) + '</td>' +
-              '<td>' + text(line.warehouse) + '</td>' +
-              '<td>' + fixed(line.orderQty) + '</td>' +
-              '<td>' + fixed(line.stockDeduction) + '</td>' +
-              '<td>' + fixed(line.inTransitDeduction) + '</td>' +
-              '<td>' + fixed(line.toPurchaseQty) + '</td>' +
-              '<td>' + text(allocationLabel) + '</td>' +
-              '<td>' + text(allocation.purchaseOrderNo || '--') + '</td>' +
-            '</tr>';
-          }).join('') : '<tr><td class="purchase-empty" colspan="10">暂无关联订单</td></tr>') + '</tbody>' +
-        '</table></div>' +
-      '</div></td>' +
-    '</tr>';
+    return text(window.DomUtils.formatProductDisplay(task));
   }
 
   utils.mountDate($('#taskDate'), '2026-08-26', false);
@@ -114,14 +85,12 @@
     state.total = all.length;
     var start = (state.page - 1) * state.pageSize;
     var visible = all.slice(start, start + state.pageSize);
-    $('#taskTableHead').innerHTML = '<tr><th class="purchase-expand-cell" aria-label="展开"></th><th class="purchase-sticky-select"><input type="checkbox" data-action="select-all" aria-label="选择全部"></th><th>商品名称（计量单位/品牌/规格）</th><th>商品分类</th><th>计量单位</th><th>订单数</th><th>下单汇总量</th><th>库存抵扣汇总</th><th>在途库存抵扣汇总</th><th>待采购量</th><th>生成进度</th><th class="purchase-sticky-action">操作</th></tr>';
+    $('#taskTableHead').innerHTML = '<tr><th class="purchase-sticky-select"><input type="checkbox" data-action="select-all" aria-label="选择全部"></th><th>商品名称（计量单位/品牌/规格）</th><th>商品分类</th><th>计量单位</th><th>订单数</th><th>下单汇总量</th><th>库存抵扣汇总</th><th>在途库存抵扣汇总</th><th>待采购量</th><th>生成进度</th><th class="purchase-sticky-action">操作</th></tr>';
     $('#taskTableBody').innerHTML = visible.length ? visible.map(function (task) {
       var checked = state.selected.has(task.id) ? ' checked' : '';
-      var expanded = state.expanded.has(task.id);
       return '<tr data-id="' + text(task.id) + '">' +
-        '<td class="purchase-expand-cell"><button class="purchase-expand-button" type="button" data-action="toggle-expand" aria-expanded="' + (expanded ? 'true' : 'false') + '" aria-controls="purchase-task-expanded-' + text(task.id) + '" aria-label="' + (expanded ? '收起' : '展开') + text(task.productName) + '"><svg class="purchase-expand-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button></td>' +
         '<td class="purchase-sticky-select"><input type="checkbox" class="task-row-select" aria-label="选择商品"' + checked + '></td>' +
-        '<td>' + displayProduct(task) + '</td>' +
+        '<td><span class="product-display-text" title="' + displayProduct(task) + '">' + displayProduct(task) + '</span></td>' +
         '<td title="' + text(task.category) + '">' + text(task.category) + '</td>' +
         '<td>' + text(task.unit) + '</td>' +
         '<td>' + task.orderCount + '</td>' +
@@ -131,8 +100,8 @@
         '<td>' + fixed(task.toPurchaseQty) + '</td>' +
         '<td><span class="purchase-progress">' + text(task.progress + ' (' + task.progressCount + ')') + '</span></td>' +
         '<td class="purchase-sticky-action"><div class="purchase-action-group"><button class="btn-text" type="button" data-action="allocation-detail">分配详情</button><button class="btn-text" type="button" data-action="allocation">分配</button></div></td>' +
-      '</tr>' + (expanded ? renderExpandedTask(task).replace('class="purchase-task-expanded-row"', 'id="purchase-task-expanded-' + text(task.id) + '" class="purchase-task-expanded-row"') : '');
-    }).join('') : '<tr><td class="purchase-empty" colspan="12">暂无数据</td></tr>';
+      '</tr>';
+    }).join('') : '<tr><td class="purchase-empty" colspan="11">暂无数据</td></tr>';
     var selectedVisible = visible.filter(function (task) { return state.selected.has(task.id); }).length;
     var selectAll = $('#taskTableHead [data-action="select-all"]');
     if (selectAll) {
@@ -161,7 +130,11 @@
     if (!target || !page.contains(target)) return;
     var action = target.dataset.action;
     if (action === 'toggle-advanced') {
-      $('#purchaseTaskFilter').classList.toggle('is-expanded');
+      var filter = $('#purchaseTaskFilter');
+      var expanded = filter.classList.toggle('is-expanded');
+      var advanced = $('#purchaseTaskAdvancedFilter');
+      if (advanced) advanced.hidden = !expanded;
+      target.setAttribute('aria-expanded', String(expanded));
       return;
     }
     if (action === 'query') {
@@ -172,15 +145,6 @@
     }
     if (action === 'reset') {
       resetFilters();
-      return;
-    }
-    if (action === 'toggle-expand') {
-      var expandableRow = target.closest('tr[data-id]');
-      if (!expandableRow) return;
-      var expandableId = expandableRow.dataset.id;
-      if (state.expanded.has(expandableId)) state.expanded.delete(expandableId);
-      else state.expanded.add(expandableId);
-      render();
       return;
     }
     if (action === 'batch-allocate' || action === 'generate-order') {
@@ -194,27 +158,33 @@
         else utils.toast('批量分配成功');
       } else {
         var pending = selected.filter(function (task) { return task.generatedCount !== task.orderCount; });
-        var expectedDates = Array.from(new Set(selected.map(function (task) { return task.date; })));
-        if (expectedDates.length !== 1) {
-          utils.toast('请按期望送达时间分别生成采购单', 'error');
+        var schoolDates = Array.from(new Set(selected.map(function (task) { return task.date; })));
+        if (schoolDates.length !== 1) {
+          utils.toast('请按学校期望送达时间分别生成采购单', 'error');
           return;
         }
-        if (!pending.length) {
-          utils.toast('所选商品不需生成采购单');
-          return;
-        }
-        var result = service.generatePurchaseOrders(pending.map(function (task) { return task.id; }));
-        if (!result?.ok) {
-          utils.toast(result?.message || '采购单生成失败', 'error');
-          return;
-        }
-        if (!result.orders?.length) {
-          utils.toast('请先在分配页面设置中标价', 'error');
-          return;
-        }
-        state.selected.clear();
-        render();
-        utils.toast('采购单生成成功');
+        utils.openEnterpriseExpectedDateModal({
+          schoolExpectedAt: schoolDates[0],
+          onConfirm: function (enterpriseDate) {
+            if (!pending.length) {
+              utils.toast('所选商品不需生成采购单');
+              return true;
+            }
+            var result = service.generatePurchaseOrders(pending.map(function (task) { return task.id; }), enterpriseDate);
+            if (!result?.ok) {
+              utils.toast(result?.message || '采购单生成失败', 'error');
+              return false;
+            }
+            if (!result.orders?.length) {
+              utils.toast('请先在分配页面设置中标价', 'error');
+              return false;
+            }
+            state.selected.clear();
+            render();
+            utils.toast('采购单生成成功');
+            return true;
+          }
+        });
       }
       return;
     }

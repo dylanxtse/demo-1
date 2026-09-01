@@ -3,7 +3,7 @@
   const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   const money = (value) => Number(value || 0).toFixed(2);
   const productIsNetVegetable = (line) => {
-    const code = line.goodsCode || line.goodsId;
+    const code = line.productId || line.productCode || line.goodsCode || line.goodsId;
     const catalogProduct = (window.DemoStore?.get('products') || window.MockProducts || []).find((product) => product.code === code || product.id === code);
     if (catalogProduct) return Boolean(catalogProduct.isNetVegetable);
     return Boolean(line.isNetVegetable);
@@ -74,13 +74,15 @@
     }
 
     const lines = order.items && order.items.length ? order.items : [];
-    const itemRows = lines.map((line, index) => `
+    const itemRows = lines.map((line, index) => {
+      const productDisplay = window.DomUtils.formatProductDisplay(line);
+      const productTag = productIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : '';
+      return `
       <tr>
         <td>${index + 1}</td>
         <td>${renderProductImg()}</td>
         <td>
-          <div class="detail-product-name">${productIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(line.goodsName)}</div>
-          <div class="detail-product-sub">(${escapeHtml(line.unit)}/${escapeHtml(line.brand || '--')}/${escapeHtml(line.spec || '--')})</div>
+          <span class="product-display-text" title="${escapeHtml(productDisplay)}">${productTag}${escapeHtml(productDisplay)}</span>
         </td>
         <td>${escapeHtml(line.goodsCode || line.goodsId || '--')}</td>
         <td>${escapeHtml(line.unit)}</td>
@@ -101,7 +103,8 @@
         <td>${(line.inspectionImages && line.inspectionImages.length) ? `${line.inspectionImages.length}张` : '--'}</td>
         <td>${(line.inspectionVideos && line.inspectionVideos.length) ? `${line.inspectionVideos.length}个` : '--'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     return `<div class="page-card processing-detail-page order-detail-page">
       <div class="processing-detail-page-header">
@@ -140,7 +143,7 @@
               <tr>
                 <th>序号</th>
                 <th>图片</th>
-                <th style="min-width:230px">商品名称(计量单位/品牌/规格)</th>
+                <th style="min-width:230px">商品名称（计量单位/品牌/规格）</th>
                 <th>商品编号</th>
                 <th>计量单位</th>
                 <th>下单单价</th>

@@ -36,7 +36,7 @@
           <thead><tr><th><input id="detailSelectAll" type="checkbox" aria-label="选择全部"></th><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>客户名称</th><th>食堂</th><th>下单数量</th><th>实际数量</th><th>是否发货</th><th>计量单位</th><th>分拣进度</th><th>备注</th><th>库存</th><th>分拣状态</th><th>分拣员</th><th>分拣时间</th><th>线路</th><th>操作</th></tr></thead>
           <tbody id="detailBody"></tbody>
         </table></div>
-        <div class="operations-pagination"><span id="detailTotal">共 0 条数据</span></div>
+        <div class="pagination"><span class="page-total" id="detailTotal">共 0 条数据</span></div>
       </div>
       <div id="detailOverlay"></div>
     </section>`;
@@ -52,7 +52,11 @@
   const isSorted = (item) => item.status === 'SORTED' || Number(item.actualQty || 0) >= Number(item.orderQty || 0);
   const statusText = (item) => isSorted(item) ? '已分拣' : '未分拣';
   const statusClass = (item) => isSorted(item) ? 'success' : 'danger';
-  const renderGoodsName = (item) => `${item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(item.goodsName || '--')}`;
+  const renderGoodsName = (item) => {
+    const display = window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || '--';
+    const marker = item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
+    return `<span class="product-display-text">${marker}${escapeHtml(display)}</span>`;
+  };
 
   function toast(message, type = '') {
     root.querySelector('.operations-toast')?.remove();
@@ -76,7 +80,7 @@
       const sorted = isSorted(item);
       const actionHtml = sorted
         ? '<button class="btn-text" data-row-action="resetSort">重置</button>'
-        : `<button class="btn-text" data-row-action="sort">分拣</button><span class="divider">|</span><button class="btn-text" data-row-action="markShortage">${shortage ? '取消缺货' : '标记缺货'}</button>`;
+        : `<button class="btn-text" data-row-action="sort">分拣</button><button class="btn-text" data-row-action="markShortage">${shortage ? '取消缺货' : '标记缺货'}</button>`;
       const progress = `${item.actualQty ?? 0}/${item.orderQty ?? 0}`;
       return `<tr data-id="${escapeHtml(item.id)}">
         <td><input class="detail-row-select" type="checkbox" ${selected.has(item.id) ? 'checked' : ''} aria-label="选择数据"></td>
@@ -84,7 +88,7 @@
         <td>${escapeHtml(item.orderQty)}</td><td><input class="quantity-input detail-actual-qty" type="number" min="0" value="${item.actualQty ? escapeHtml(item.actualQty) : ''}" placeholder="请输入" aria-label="实际数量"></td>
         <td>${escapeHtml(item.shipped || '否')}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(progress)}</td><td>${escapeHtml(item.remark || '--')}</td><td>${escapeHtml(item.stock)}</td>
         <td><span class="operation-status ${statusClass(item)}">${statusText(item)}</span></td><td>${escapeHtml(item.sorter || '--')}</td><td>${escapeHtml(item.sortingAt || '--')}</td><td>${escapeHtml(item.route || '--')}</td>
-        <td><div class="cell-actions">${actionHtml}</div></td>
+        <td><div class="cell-actions operation-actions">${actionHtml}</div></td>
       </tr>`;
     }).join('') : '<tr><td class="empty-cell" colspan="17">暂无数据</td></tr>';
     root.querySelector('#detailTotal').textContent = `共 ${filteredItems.length} 条数据`;

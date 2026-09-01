@@ -84,9 +84,9 @@
       { name: '采购对账', children: ['对账', '采购账款'] }
     ] },
     { name: '数据统计', icon: 'chart', children: [
-      { name: '销售统计', children: ['订单汇总', '商品销量', '客户统计'] },
+      { name: '销售统计', children: ['订单汇总', { name: '商品销量', href: './product-sales.html' }, '客户统计'] },
       { name: '采购统计', children: ['采购明细', '采购商品', '供应商统计'] },
-      { name: '销售毛利统计', children: ['商品毛利统计', '客户毛利统计'] }
+      { name: '销售毛利统计', children: [{ name: '商品毛利统计', href: './goods-profit-statistics.html' }, '客户毛利统计'] }
     ] },
     { name: '系统管理', icon: 'settings', children: [
       { name: '系统配置', children: ['审核配置', { name: '业务配置', href: './system-config.html' }] },

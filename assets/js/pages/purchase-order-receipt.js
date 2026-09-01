@@ -23,7 +23,7 @@
   function text(value) { return utils.escapeHtml(value == null ? '' : value); }
   function fixed(value) { return Number(value || 0).toFixed(2); }
   function displayProduct(item) {
-    return (item.productName || '') + '(' + (item.unit || '--') + '/' + (item.brand || '--') + '/' + (item.spec || '--') + ')';
+    return window.DomUtils.formatProductDisplay(item);
   }
 
   var content = [
@@ -31,7 +31,7 @@
       '<div class="purchase-form-header"><button class="purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>收货</h1></div>',
       '<div class="purchase-receipt-summary">',
         '<div>采购单号：<span>' + text(order.purchaseOrderNo) + '</span></div><div>仓库：<span>' + text(order.warehouse) + '</span></div><div>商品种类数：<span>' + order.productCount + '</span></div><div>已收种类数：<span>0</span></div>',
-        '<div>期望送达时间：<span>' + text(order.expectedAt) + '</span></div><div>添加时间：<span>' + text(order.addedAt) + '</span></div><div>单据来源：<span>' + text(order.source) + '</span></div><div>制单人：<span>' + text(order.creator) + '</span></div>',
+        '<div>学校期望送达时间：<span>' + text(order.expectedAt) + '</span></div><div>企业期望送达时间：<span>' + text(order.enterpriseExpectedAt || '--') + '</span></div><div>添加时间：<span>' + text(order.addedAt) + '</span></div><div>单据来源：<span>' + text(order.source) + '</span></div><div>制单人：<span>' + text(order.creator) + '</span></div>',
         '<div>采购类型：<span>' + text(order.purchaseType) + '</span></div><div>采购员/供应商：<span>' + text(order.supplier) + '</span></div><div>采购负责人：<span>' + text(order.manager) + '</span></div>',
       '</div>',
       '<div class="purchase-receipt-table-container"><div class="purchase-receipt-table-wrap"><table class="purchase-table purchase-receipt-table"><thead><tr><th>序号</th><th>图片</th><th class="required-head">商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>待采购量</th><th>采购单价</th><th class="required-head">收货数量</th><th class="required-head">本次采购单价</th><th>收货金额</th><th>生产日期</th><th>质检报告</th><th>未收数量</th><th>供应商报价</th><th>协议价</th><th>近一次采购价</th><th>市场价</th><th>备注</th></tr></thead><tbody id="receiptRows"></tbody><tfoot><tr><td colspan="8">合计金额：<span id="receiptTotal">0</span></td><td colspan="9"></td></tr></tfoot></table></div></div>',
@@ -60,7 +60,7 @@
       return '<tr data-line-id="' + text(item.id) + '">' +
         '<td>' + (index + 1) + '</td>' +
         '<td><span class="purchase-product-image">' + (item.image ? '<img src="' + text(item.image) + '" alt="' + text(item.productName) + '">' : '暂无') + '</span></td>' +
-        '<td>' + text(displayProduct(item)) + '</td>' +
+        '<td><span class="product-display-text" title="' + text(displayProduct(item)) + '">' + text(displayProduct(item)) + '</span></td>' +
         '<td>' + text(item.unit) + '</td>' +
         '<td>' + fixed(item.quantity) + '</td>' +
         '<td>' + fixed(item.purchasePrice) + '</td>' +

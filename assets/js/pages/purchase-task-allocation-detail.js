@@ -14,7 +14,7 @@
   function text(value) { return utils.escapeHtml(value == null ? '' : value); }
   function fixed(value) { return Number(value || 0).toFixed(2); }
   function productDisplay() {
-    return (task.productName || '') + '(' + (task.unit || '--') + '/' + (task.brand || '--') + '/' + (task.spec || '--') + ')';
+    return window.DomUtils.formatProductDisplay(task);
   }
 
   var detailRows = task.orderLines || [];

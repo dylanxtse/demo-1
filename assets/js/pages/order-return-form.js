@@ -68,15 +68,15 @@
     if (!lines.length) {
       body.innerHTML = '<tr><td class="empty-goods" colspan="13">请选择关联订单</td></tr>';
     } else {
-      body.innerHTML = lines.map((line, index) => `<tr data-line-id="${escapeHtml(line.id)}">
-        <td>${index + 1}</td><td><span class="goods-thumb">暂无图片</span></td><td class="goods-name-cell">${escapeHtml(line.goodsName)}</td><td>${escapeHtml(line.unit)}</td>
+      body.innerHTML = lines.map((line, index) => { const productDisplay = window.DomUtils.formatProductDisplay(line); return `<tr data-line-id="${escapeHtml(line.id)}">
+        <td>${index + 1}</td><td><span class="goods-thumb">暂无图片</span></td><td class="goods-name-cell"><span class="product-display-text" title="${escapeHtml(productDisplay)}">${escapeHtml(productDisplay)}</span></td><td>${escapeHtml(line.unit)}</td>
         <td>${money(line.orderPrice)}</td><td>${line.shippedQty}</td><td>${line.returnedQty}</td>
         <td><input class="table-input" type="number" min="0" step="0.01" data-field="applyQty" value="${line.applyQty}" ${readonly ? 'disabled' : ''}></td>
         <td><input class="table-input" type="number" min="0" step="0.01" data-field="applyPrice" value="${money(line.applyPrice)}" ${readonly ? 'disabled' : ''}></td>
         <td class="return-line-total">${money(line.applyQty * line.applyPrice)}</td>
         <td><input class="table-input" type="number" min="0" step="0.01" data-field="damageQty" value="${line.damageQty}" ${readonly ? 'disabled' : ''}></td>
         <td>${escapeHtml(line.purchaseOrder)}</td><td><input class="table-input remark-input" data-field="remark" value="${escapeHtml(line.remark)}" ${readonly ? 'disabled' : ''}></td>
-      </tr>`).join('');
+      </tr>`; }).join('');
     }
     document.getElementById('refundTotal').textContent = money(lines.reduce((sum, line) => sum + line.applyQty * line.applyPrice, 0));
   }
@@ -88,7 +88,7 @@
       <div class="operations-modal-body">
         <div class="operations-filter-grid compact-picker-filter"><div class="operations-field"><label>商品名称</label><input class="filter-input" placeholder="请输入"></div><div class="operations-field"><label>期望发货日期</label><input class="filter-input" type="date"></div><button class="btn btn-primary btn-sm">查询</button><button class="btn btn-sm">重置</button></div>
         <div class="order-goods-table-wrap"><table class="order-goods-table"><thead><tr><th>订单号</th><th>期望送达时间</th><th>下单金额</th><th>操作</th></tr></thead><tbody>
-        ${result.items.filter((item) => !['DRAFT', 'CLOSED'].includes(item.status)).map((item) => `<tr><td>${escapeHtml(item.orderNo)}</td><td>${escapeHtml(item.expectedAt)}</td><td>${money(item.orderAmount)}</td><td><button class="btn-text" data-select-order="${escapeHtml(item.id)}" data-full="1">整单退</button><span class="divider">|</span><button class="btn-text" data-select-order="${escapeHtml(item.id)}" data-full="0">部分退</button></td></tr>`).join('')}
+        ${result.items.filter((item) => !['DRAFT', 'CLOSED'].includes(item.status)).map((item) => `<tr><td>${escapeHtml(item.orderNo)}</td><td>${escapeHtml(item.expectedAt)}</td><td>${money(item.orderAmount)}</td><td><div class="operation-actions"><button class="btn-text" data-select-order="${escapeHtml(item.id)}" data-full="1">整单退</button><button class="btn-text" data-select-order="${escapeHtml(item.id)}" data-full="0">部分退</button></div></td></tr>`).join('')}
         </tbody></table></div>
       </div><footer class="operations-modal-footer"><button class="btn" data-close>取消</button></footer>
     </section></div>`;

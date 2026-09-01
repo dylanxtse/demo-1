@@ -2,6 +2,7 @@
   window.RecordPageConfig = {
     title: '订单退货',
     pageClass: 'order-module-page',
+    useDemoListLayout: true,
     showSelectionSummary: false,
     resource: 'returns',
     addHref: './order-return-form.html?mode=add',

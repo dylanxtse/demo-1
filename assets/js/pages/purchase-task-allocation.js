@@ -14,7 +14,7 @@
   function text(value) { return utils.escapeHtml(value == null ? '' : value); }
   function fixed(value) { return Number(value || 0).toFixed(2); }
   function productDisplay() {
-    return (task.productName || '') + '(' + (task.unit || '--') + '/' + (task.brand || '--') + '/' + (task.spec || '--') + ')';
+    return window.DomUtils.formatProductDisplay(task);
   }
   function allocationDisplay(line) {
     var allocation = line.allocation || {};
@@ -129,13 +129,19 @@
           quantity: row.querySelector('[data-field="quantity"]')?.value || task.orderLines.find(function (line) { return line.id === row.dataset.lineId; })?.toPurchaseQty
         };
       });
-      var result = service.saveTaskAllocation(task.id, rows);
-      if (!result?.ok) {
-        utils.toast(result?.message || '保存失败', 'error');
-        return;
-      }
-      utils.toast('保存成功');
-      window.setTimeout(function () { utils.navigate('./purchase-task.html'); }, 650);
+      utils.openEnterpriseExpectedDateModal({
+        schoolExpectedAt: task.date,
+        onConfirm: function (enterpriseDate) {
+          var result = service.saveTaskAllocation(task.id, rows, enterpriseDate);
+          if (!result?.ok) {
+            utils.toast(result?.message || '保存失败', 'error');
+            return false;
+          }
+          utils.toast('保存成功');
+          window.setTimeout(function () { utils.navigate('./purchase-task.html'); }, 650);
+          return true;
+        }
+      });
       return;
     }
     if (target.matches('.purchase-cascade-input')) {

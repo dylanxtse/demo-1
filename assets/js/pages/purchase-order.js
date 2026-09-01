@@ -3,7 +3,8 @@
 
   var service = window.PurchaseService;
   var utils = window.PurchasePageUtils;
-  var downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+  var exportIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
+  var printIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>';
   service.ensureSeed();
 
   var content = [
@@ -11,7 +12,8 @@
       '<div class="purchase-filter" id="purchaseOrderFilter">',
         '<div class="purchase-filter-main">',
           '<div class="purchase-filter-grid">',
-            '<div class="purchase-field purchase-school-date-field"><label class="filter-label" for="orderDeliveryDisplay">期望送达时间</label><div class="purchase-date-range purchase-date-range-combined" id="orderDeliveryRange"><input class="filter-input date-range-display" id="orderDeliveryDisplay" type="text" placeholder="请选择日期" readonly><span class="date-range-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><input type="hidden" id="orderDeliveryStart" data-date-start><input type="hidden" id="orderDeliveryEnd" data-date-end></div></div>',
+            '<div class="purchase-field purchase-school-date-field"><label class="filter-label" for="orderDeliveryDisplay">学校期望送达时间</label><div class="purchase-date-range purchase-date-range-combined" id="orderDeliveryRange"><input class="filter-input date-range-display" id="orderDeliveryDisplay" type="text" placeholder="请选择日期" readonly><span class="date-range-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><input type="hidden" id="orderDeliveryStart" data-date-start><input type="hidden" id="orderDeliveryEnd" data-date-end></div></div>',
+            '<div class="purchase-field purchase-enterprise-date-field"><label class="filter-label" for="orderEnterpriseDeliveryDisplay">企业期望送达时间</label><div class="purchase-date-range purchase-date-range-combined" id="orderEnterpriseDeliveryRange"><input class="filter-input date-range-display" id="orderEnterpriseDeliveryDisplay" type="text" placeholder="请选择日期" readonly><span class="date-range-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span><input type="hidden" id="orderEnterpriseDeliveryStart" data-date-start><input type="hidden" id="orderEnterpriseDeliveryEnd" data-date-end></div></div>',
             '<div class="purchase-field"><label class="filter-label" for="orderPurchaseType">采购类型</label><select class="filter-select" id="orderPurchaseType"><option value="">全部</option><option>联营供应商采购</option><option>市场自采</option><option>供应商送货</option></select></div>',
           '</div>',
           '<div class="purchase-filter-actions">',
@@ -35,8 +37,7 @@
         '</div>',
       '</div>',
       '<div class="purchase-toolbar purchase-order-toolbar">',
-        '<div class="purchase-toolbar-main"><button class="btn btn-primary" type="button" data-action="add">添加采购单</button></div>',
-        '<div class="purchase-toolbar-side"><button class="btn btn-sm purchase-export-button" type="button" data-action="export">' + downloadIcon + '导出</button><button class="btn btn-sm purchase-print-button" type="button" data-action="print" disabled>打印</button></div>',
+        '<div class="purchase-toolbar-side"><button class="btn btn-sm purchase-export-button" type="button" data-action="export">' + exportIcon + '导出</button><button class="btn btn-sm purchase-print-button" type="button" data-action="print" disabled>' + printIcon + '打印</button></div>',
       '</div>',
       '<div class="purchase-table-container">',
         '<div class="purchase-table-wrap">',
@@ -58,6 +59,8 @@
     condition: {
       deliveryStart: '2026-06-01',
       deliveryEnd: '2026-09-01',
+      enterpriseDeliveryStart: '2026-06-01',
+      enterpriseDeliveryEnd: '2026-09-01'
     }
   };
 
@@ -69,12 +72,15 @@
   }
 
   var deliveryPicker = utils.mountDateRange($('#orderDeliveryRange'), '2026-06-01', '2026-09-01');
+  var enterpriseDeliveryPicker = utils.mountDateRange($('#orderEnterpriseDeliveryRange'), '2026-06-01', '2026-09-01');
   var addDatePicker = utils.mountDateRange($('#orderAddRange'), '', '');
 
   function collectCondition() {
     state.condition = {
       deliveryStart: ($('#orderDeliveryStart').value || '').trim(),
       deliveryEnd: ($('#orderDeliveryEnd').value || '').trim(),
+      enterpriseDeliveryStart: ($('#orderEnterpriseDeliveryStart').value || '').trim(),
+      enterpriseDeliveryEnd: ($('#orderEnterpriseDeliveryEnd').value || '').trim(),
       purchaseType: ($('#orderPurchaseType').value || '').trim(),
       category: ($('#orderCategory').value || '').trim(),
       productName: ($('#orderProductName').value || '').trim(),
@@ -94,7 +100,7 @@
     state.total = all.length;
     var start = (state.page - 1) * state.pageSize;
     var visible = all.slice(start, start + state.pageSize);
-    $('#orderTableHead').innerHTML = '<tr><th class="purchase-sticky-select"><input type="checkbox" data-action="select-all" aria-label="选择全部"></th><th>采购单号</th><th>供应商/采购员</th><th>采购类型</th><th>单据来源</th><th>采购负责人</th><th class="purchase-date-column purchase-school-expected-column">期望送达时间</th><th>采购金额</th><th>已收货金额</th><th>退货金额</th><th>对账金额</th><th>供应商状态</th><th>单据状态</th><th>商品种类数</th><th>收货进度</th><th>仓库</th><th>添加人</th><th>备注</th><th class="purchase-sticky-action">操作</th></tr>';
+    $('#orderTableHead').innerHTML = '<tr><th class="purchase-sticky-select"><input type="checkbox" data-action="select-all" aria-label="选择全部"></th><th>采购单号</th><th>供应商/采购员</th><th>采购类型</th><th>单据来源</th><th>采购负责人</th><th class="purchase-date-column purchase-school-expected-column">学校期望送达时间</th><th class="purchase-date-column purchase-enterprise-expected-column">企业期望送达时间</th><th>采购金额</th><th>已收货金额</th><th>退货金额</th><th>对账金额</th><th>供应商状态</th><th>单据状态</th><th>商品种类数</th><th>收货进度</th><th>仓库</th><th>添加人</th><th>备注</th><th class="purchase-sticky-action">操作</th></tr>';
     $('#orderTableBody').innerHTML = visible.length ? visible.map(function (order) {
       var selected = state.selected.has(order.id) ? ' checked' : '';
       var canEdit = order.status === '待收货' && order.source === '手动创建';
@@ -108,6 +114,7 @@
         '<td>' + text(order.source) + '</td>' +
         '<td>' + text(order.manager) + '</td>' +
         '<td class="purchase-date-column purchase-school-expected-column">' + text(order.expectedAt) + '</td>' +
+        '<td class="purchase-date-column purchase-enterprise-expected-column">' + text(order.enterpriseExpectedAt || order.expectedAt || '--') + '</td>' +
         '<td>' + fixed(order.purchaseAmount) + '</td>' +
         '<td>' + fixed(order.receivedAmount) + '</td>' +
         '<td>' + fixed(order.returnAmount) + '</td>' +
@@ -127,7 +134,7 @@
           button('关闭', 'close', canClose) +
         '</div></td>' +
       '</tr>';
-    }).join('') : '<tr><td class="purchase-empty" colspan="19">暂无数据</td></tr>';
+    }).join('') : '<tr><td class="purchase-empty" colspan="20">暂无数据</td></tr>';
     var selectedVisible = visible.filter(function (order) { return state.selected.has(order.id); }).length;
     var selectAll = $('#orderTableHead [data-action="select-all"]');
     if (selectAll) {
@@ -145,6 +152,7 @@
 
   function resetFilters() {
     if (deliveryPicker) deliveryPicker.setValue('2026-06-01', '2026-09-01', false);
+    if (enterpriseDeliveryPicker) enterpriseDeliveryPicker.setValue('2026-06-01', '2026-09-01', false);
     if (addDatePicker) addDatePicker.setValue('', '', false);
     ['#orderPurchaseType', '#orderCategory', '#orderStatus', '#orderWarehouse', '#orderSource', '#orderManager', '#orderSupplierStatus'].forEach(function (selector) { $(selector).value = ''; });
     ['#orderProductName', '#orderNoFilter'].forEach(function (selector) { $(selector).value = ''; });
@@ -170,10 +178,6 @@
     }
     if (action === 'reset') {
       resetFilters();
-      return;
-    }
-    if (action === 'add') {
-      utils.navigate('./purchase-order-form.html');
       return;
     }
     if (action === 'export') {

@@ -1,4 +1,5 @@
 (function () {
+  const materialLimit = 20;
   const outputLimit = 200;
 
   function clone(value) {
@@ -9,20 +10,24 @@
     return window.BusinessRules.now();
   }
 
+  function parseActionTime(value) {
+    return Date.parse(String(value || '').replace(/-/g, '/')) || 0;
+  }
+
   function getActionMeta(template) {
     const actionType = template.lastActionType || 'created';
     const actionAt = template.lastActionAt || template.updatedAt || template.createTime || '';
-    const priority = { processed: 3, created: 2, edited: 1 }[actionType] || 0;
-    const actionTime = Date.parse(String(actionAt).replace(/-/g, '/')) || 0;
-    return { priority, actionTime };
+    const actionPriority = { processed: 3, created: 2, edited: 1 }[actionType] || 0;
+    return { actionPriority, actionTime: parseActionTime(actionAt) };
   }
 
   function sortTemplates(templates) {
     return templates.slice().sort((a, b) => {
       const actionA = getActionMeta(a);
       const actionB = getActionMeta(b);
-      if (actionA.priority !== actionB.priority) return actionB.priority - actionA.priority;
-      return actionB.actionTime - actionA.actionTime;
+      if (actionA.actionTime !== actionB.actionTime) return actionB.actionTime - actionA.actionTime;
+      if (actionA.actionPriority !== actionB.actionPriority) return actionB.actionPriority - actionA.actionPriority;
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
     });
   }
 
@@ -49,13 +54,25 @@
     }));
   }
 
+  function normalizeTemplateId(id) {
+    return String(id || '').replace(/^MB(?=\d)/, 'PP');
+  }
+
   function normalizeTemplate(template) {
-    const materials = normalizeWarehouseRows(Array.isArray(template.materials) ? template.materials.slice(0, 1) : []);
-    const outputs = normalizeWarehouseRows(Array.isArray(template.outputs) ? template.outputs.slice(0, outputLimit) : []);
+    const relationType = template.relationType === 'many-to-one' ? 'many-to-one' : 'one-to-many';
+    const { relations: _relations, ...templateData } = template;
+    const materials = normalizeWarehouseRows(Array.isArray(template.materials)
+      ? template.materials.slice(0, relationType === 'many-to-one' ? materialLimit : 1)
+      : []);
+    const outputs = normalizeWarehouseRows(Array.isArray(template.outputs)
+      ? template.outputs.slice(0, relationType === 'many-to-one' ? 1 : outputLimit)
+      : []);
     const materialWarehouse = normalizeWarehouseName(template.materialWarehouse || materials[0]?.warehouse || '');
     const outputWarehouse = normalizeWarehouseName(template.outputWarehouse || outputs.find((item) => item.warehouse)?.warehouse || materialWarehouse);
     return {
-      ...template,
+      ...templateData,
+      id: normalizeTemplateId(templateData.id),
+      relationType,
       materialWarehouse,
       outputWarehouse,
       materials: materials.map((item) => ({ ...item, warehouse: materialWarehouse })),
@@ -63,14 +80,64 @@
     };
   }
 
+  function mergeDemoTemplates(templates) {
+    const merged = templates.slice();
+    const demoTemplateIds = new Set(['PP005']);
+    const existingTemplateIds = new Set(merged.map((template) => normalizeTemplateId(template.id)));
+    let changed = false;
+    (window.MockProcessingTemplates || [])
+      .filter((template) => demoTemplateIds.has(template.id))
+      .forEach((seedTemplate) => {
+        if (existingTemplateIds.has(seedTemplate.id)) return;
+        merged.push(clone(seedTemplate));
+        existingTemplateIds.add(seedTemplate.id);
+        changed = true;
+      });
+    return { templates: merged, changed };
+  }
+
+  function syncProcessingActivity(templates) {
+    const orders = window.DemoStore?.get('processingOrders') || [];
+    const latestByTemplate = new Map();
+    orders.forEach((order) => {
+      const templateId = normalizeTemplateId(order.templateId);
+      if (!templateId) return;
+      const actionAt = order.createTime || order.createdAt || order.processingDate || '';
+      const actionTime = parseActionTime(actionAt);
+      const current = latestByTemplate.get(templateId);
+      if (!current || actionTime > current.actionTime) {
+        latestByTemplate.set(templateId, { actionAt, actionTime });
+      }
+    });
+
+    let changed = false;
+    const syncedTemplates = templates.map((template) => {
+      const latest = latestByTemplate.get(template.id);
+      const currentActionAt = template.lastActionAt || template.updatedAt || template.createTime || '';
+      if (!latest || latest.actionTime <= parseActionTime(currentActionAt)) return template;
+      changed = true;
+      return {
+        ...template,
+        lastActionType: 'processed',
+        lastActionAt: latest.actionAt,
+        lastProcessedAt: latest.actionAt
+      };
+    });
+    return { templates: syncedTemplates, changed };
+  }
+
   function load() {
     if (!window.DemoStore) throw new Error('统一数据仓库未加载');
-    const templates = window.DemoStore.get('processingTemplates') || [];
-    const normalizedTemplates = clone(templates).map(normalizeTemplate);
-    if (JSON.stringify(normalizedTemplates) !== JSON.stringify(templates)) {
-      window.DemoStore.replace('processingTemplates', normalizedTemplates);
+    const sourceTemplates = window.DemoStore.get('processingTemplates') || [];
+    const mergedResult = mergeDemoTemplates(sourceTemplates);
+    const normalizedTemplates = clone(mergedResult.templates).map(normalizeTemplate);
+    const activityResult = syncProcessingActivity(normalizedTemplates);
+    if (mergedResult.changed
+      || activityResult.changed
+      || JSON.stringify(activityResult.templates) !== JSON.stringify(sourceTemplates)) {
+      window.DemoStore.replace('processingTemplates', activityResult.templates);
     }
-    return sortTemplates(normalizedTemplates);
+    return sortTemplates(activityResult.templates);
   }
 
   function save(templates) {
@@ -80,10 +147,10 @@
   function generateId() {
     const templates = load();
     const maxNum = templates.reduce((max, t) => {
-      const num = parseInt(t.id.replace('MB', ''), 10);
+      const num = parseInt(String(t.id || '').replace(/^(?:PP|MB)/, ''), 10);
       return num > max ? num : max;
     }, 0);
-    return `MB${String(maxNum + 1).padStart(3, '0')}`;
+    return `PP${String(maxNum + 1).padStart(3, '0')}`;
   }
 
   window.ProcessingTemplateService = {

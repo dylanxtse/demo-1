@@ -1,4 +1,5 @@
 (function () {
+  const isSupplierProductPage = document.body?.dataset.userEnd === 'supplier';
   const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   const addIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   const categoryIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
@@ -7,9 +8,7 @@
     <div class="page-card product-list-page">
       <div class="workspace-grid">
         <section class="category-panel">
-          <button class="btn btn-sm btn-blue category-edit-btn" type="button" data-action="edit-category">
-            ${categoryIcon}编辑商品分类
-          </button>
+          ${isSupplierProductPage ? '' : `<button class="btn btn-sm btn-blue category-edit-btn" type="button" data-action="edit-category">${categoryIcon}编辑商品分类</button>`}
           <div class="category-tree">
             <div class="category-filter">
               <label class="filter-label" for="categorySearch">商品分类</label>
@@ -35,18 +34,19 @@
                   <label class="filter-label" for="statusFilter">上架状态</label>
                   <select class="filter-select" id="statusFilter"><option>全部</option><option>已上架</option><option>已下架</option></select>
                 </div>
-                <div class="filter-group">
+                ${isSupplierProductPage ? '' : `<div class="filter-group">
                   <label class="filter-label" for="purchaseTypeFilter">采购类型</label>
                   <select class="filter-select" id="purchaseTypeFilter"><option>全部</option><option>供应商送货</option><option>市场自采</option><option>企业自加工</option></select>
-                </div>
+                </div>`}
                 <div class="filter-group">
                   <label class="filter-label" for="sourceFilter">商品来源</label>
                   <select class="filter-select" id="sourceFilter"><option>全部</option><option>平台添加</option><option>供应商添加</option></select>
                 </div>
+                ${isSupplierProductPage ? '' : `
                 <div class="filter-group">
                   <label class="filter-label" for="netVegetableFilter">是否净菜</label>
                   <select class="filter-select" id="netVegetableFilter"><option>全部</option><option>净菜</option><option>非净菜</option></select>
-                </div>
+                </div>`}
               </div>
               <div class="action-controls">
                 <button class="btn btn-primary btn-sm btn-fixed" type="button" data-action="query">查询</button>
@@ -58,20 +58,15 @@
           <div class="action-bar">
             <div class="action-main">
               <button class="btn btn-primary btn-sm btn-action" type="button" data-action="add-product">${addIcon}添加商品</button>
-              <button class="btn btn-sm btn-action btn-blue" type="button" data-action="import-products">导入商品信息</button>
-              <button class="btn btn-sm btn-action btn-blue" type="button" data-action="import-product-images">导入商品图片</button>
-              <button class="btn btn-sm btn-action btn-blue" type="button" data-action="import-market-prices">导入市场价</button>
-              <button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchShelfBtn" type="button" disabled>批量上架</button>
-              <button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchUnshelfBtn" type="button" disabled>批量下架</button>
+              <button id="supplierImportInfoBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品信息</button>
+              <button id="supplierImportImageBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品图片</button>
+              ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue" type="button">导入市场价</button>'}
+              ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchShelfBtn" type="button" disabled>批量上架</button>'}
+              ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchUnshelfBtn" type="button" disabled>批量下架</button>'}
               <button class="btn btn-danger btn-sm btn-action btn-disabled" id="batchDeleteBtn" type="button" disabled>批量删除</button>
             </div>
-            <div class="action-controls">
-              <button class="btn btn-sm btn-fixed" type="button" data-action="export-products">${downloadIcon}导出</button>
-            </div>
+            ${isSupplierProductPage ? '' : `<div class="action-controls"><button class="btn btn-sm btn-fixed" type="button">${downloadIcon}导出</button></div>`}
           </div>
-
-          <div class="product-page-notice" id="productPageNotice" role="status" aria-live="polite"></div>
-          <input type="file" id="productImportInput" accept=".xlsx,.xls,.csv" hidden>
 
           <div class="table-container">
             <div class="table-wrapper">
@@ -90,7 +85,7 @@
                     <th>别名</th>
                     <th>产地</th>
                     <th>保质期</th>
-                    <th>采购类型</th>
+                    ${isSupplierProductPage ? '' : '<th>采购类型</th>'}
                     <th>商品来源</th>
                     <th>添加时间</th>
                     <th>操作</th>
@@ -129,18 +124,18 @@
 
   const treeData = [
     { name: '全部', selected: false },
-      { name: '主食（米面粉点心类）', expanded: true, children: [
-        { name: '新增二级分类' },
-        { name: '新增三级分类' },
-        { name: '粮食类', children: [{ name: '米类' }, { name: '面类' }] }
+    { name: '主食（米面粉点心类）', expanded: true, children: [
+      { name: '新增二级分类' },
+      { name: '新增三级分类' },
+      { name: '粮食类', children: [{ name: '米类' }, { name: '面类' }] }
     ]},
     { name: '食油', expanded: true, children: [{ name: '食油二级' }, { name: '食油三级' }, { name: '花生油' }] },
     { name: '果蔬', expanded: true, children: [{ name: '果蔬二级' }, { name: '果蔬三级' }] },
     { name: '肉（豆）制品', expanded: true, children: [{ name: '肉（豆）制品二级' }, { name: '肉（豆）制品三级' }] },
-    { name: '水产品', expanded: true, children: [{ name: '水产品二级' }, { name: '水产品三级' }] },
-    { name: '蛋奶类', children: [{ name: '蛋奶类二级' }, { name: '蛋奶类三级' }] },
-    { name: '调料', children: [{ name: '调料二级' }, { name: '调料三级' }] },
-    { name: '其他材料', children: [{ name: '其他二级' }, { name: '其他三级' }] }
+    { name: '水产品', expanded: true, children: [{ name: '水产品二级' }] },
+    { name: '蛋奶类', children: [{ name: '蛋奶类二级' }] },
+    { name: '调味品', children: [{ name: '调味品二级' }] },
+    { name: '其他材料', children: [{ name: '其他二级' }] }
   ];
 
   const state = {
@@ -152,8 +147,7 @@
     total: 0,
     pagination: null,
     tree: JSON.parse(JSON.stringify(treeData)),
-    treeSearch: '',
-    category: ''
+    treeSearch: ''
   };
 
   function getNodeByPath(path) {
@@ -184,7 +178,7 @@
       const path = node.__path.join('-');
       return `
         <div class="tree-node ${node.expanded ? 'expanded' : ''}">
-          <div class="tree-node-header ${node.selected || state.category === node.name ? 'selected' : ''}" data-tree-node="${path}" data-tree-category="${window.DomUtils.escapeHtml(node.name)}">
+          <div class="tree-node-header ${node.selected ? 'selected' : ''}" data-tree-node="${path}">
             <span class="tree-arrow">${node.children ? '▶' : ''}</span>
             <span class="tree-label">${window.DomUtils.escapeHtml(node.name)}</span>
             <div class="tree-actions"><button class="tree-action-btn" type="button" data-action="add-category">+</button></div>
@@ -194,11 +188,11 @@
               ${node.children.map((child, childIndex) => {
                 const childPath = [...node.__path, childIndex].join('-');
                 return `
-                  <div class="tree-child ${state.category === child.name ? 'selected' : ''}" data-tree-child="${childPath}" data-tree-category="${window.DomUtils.escapeHtml(child.name)}">
+                  <div class="tree-child" data-tree-child="${childPath}">
                     <span class="tree-arrow">${child.children ? '▶' : ''}</span>
                     <span class="tree-label">${window.DomUtils.escapeHtml(child.name)}</span>
                   </div>
-                  ${child.children ? child.children.map((grandchild) => `<div class="tree-grandchild ${state.category === grandchild.name ? 'selected' : ''}" data-tree-category="${window.DomUtils.escapeHtml(grandchild.name)}">${window.DomUtils.escapeHtml(grandchild.name)}</div>`).join('') : ''}
+                  ${child.children ? child.children.map((grandchild) => `<div class="tree-grandchild">${window.DomUtils.escapeHtml(grandchild.name)}</div>`).join('') : ''}
                 `;
               }).join('')}
             </div>
@@ -220,9 +214,10 @@
         ? '--'
         : window.DomUtils.escapeHtml(product.shelfLife);
       const nextAction = isEnabled ? '下架' : '上架';
-      const netVegetableTag = product.isNetVegetable
+      const netVegetableTag = !isSupplierProductPage && product.isNetVegetable
         ? '<span class="net-vegetable-tag">净菜</span>'
         : '';
+      const productDisplay = window.DomUtils.formatProductDisplay(product);
       const editDisabled = isEnabled;
       return `
         <tr>
@@ -230,7 +225,7 @@
           <td class="seq-cell">${safe.seq}</td>
           <td class="img-cell"><div class="product-img">图片</div></td>
           <td class="code-cell"><button class="btn-text code-link" type="button" data-row-action="detail" data-code="${safe.code}">${safe.code}</button></td>
-          <td class="name-cell"><div class="name-main">${netVegetableTag}${safe.name}</div><div class="name-sub">${safe.unit}/${safe.brand}/${safe.spec}</div></td>
+          <td class="name-cell"><span class="product-display-text" title="${window.DomUtils.escapeHtml(productDisplay)}">${netVegetableTag}${window.DomUtils.escapeHtml(productDisplay)}</span></td>
           <td>${safe.category}</td>
           <td>${safe.unit}</td>
           <td>${safe.marketPrice}</td>
@@ -238,14 +233,14 @@
           <td>${safe.alias || '--'}</td>
           <td>${safe.origin || '--'}</td>
           <td>${shelfLife}</td>
-          <td>${purchaseType}</td>
+          ${isSupplierProductPage ? '' : `<td>${purchaseType}</td>`}
           <td>${safe.source}</td>
           <td>${safe.addTime}</td>
-          <td class="action-cell">
-            <button class="btn-text" type="button" data-row-action="status" data-code="${safe.code}">${nextAction}</button>
+          <td class="action-cell"><div class="operation-actions">
+            ${isSupplierProductPage ? '' : `<button class="btn-text" type="button" data-row-action="status" data-code="${safe.code}">${nextAction}</button>`}
             <button class="btn-text ${editDisabled ? 'disabled' : ''}" type="button" data-row-action="edit" data-code="${safe.code}" ${editDisabled ? 'disabled' : ''}>编辑</button>
             <button class="btn-text danger" type="button" data-row-action="delete" data-code="${safe.code}">删除</button>
-          </td>
+          </div></td>
         </tr>
       `;
     }).join('');
@@ -254,8 +249,12 @@
 
   function updateBatchButtons() {
     const enabled = document.querySelectorAll('#tableBody .custom-checkbox.checked').length > 0;
-    ['batchShelfBtn', 'batchUnshelfBtn', 'batchDeleteBtn'].forEach((id) => {
+    const buttonIds = isSupplierProductPage
+      ? ['supplierImportInfoBtn', 'supplierImportImageBtn', 'batchDeleteBtn']
+      : ['batchShelfBtn', 'batchUnshelfBtn', 'batchDeleteBtn'];
+    buttonIds.forEach((id) => {
       const button = document.getElementById(id);
+      if (!button) return;
       button.disabled = !enabled;
       button.classList.toggle('btn-disabled', !enabled);
     });
@@ -275,17 +274,16 @@
     const nameOrCode = value('productNameFilter').toLowerCase();
     const brand = value('brandFilter').toLowerCase();
     const status = value('statusFilter');
-    const purchaseType = value('purchaseTypeFilter');
+    const purchaseType = isSupplierProductPage ? '全部' : value('purchaseTypeFilter');
     const source = value('sourceFilter');
-    const netVegetable = value('netVegetableFilter');
+    const netVegetable = isSupplierProductPage ? '全部' : value('netVegetableFilter');
     const result = state.products.filter((product) => (
-      (!state.category || state.category === '全部' || String(product.category || '').split('-').includes(state.category)) &&
       (!nameOrCode || `${product.name} ${product.code}`.toLowerCase().includes(nameOrCode)) &&
       (!brand || product.brand.toLowerCase().includes(brand)) &&
       (status === '全部' || window.BusinessRules.statusLabel('products', product.status) === status) &&
       (purchaseType === '全部' || product.purchaseType === purchaseType) &&
       (source === '全部' || product.source === source) &&
-      (netVegetable === '全部' || (netVegetable === '净菜' && product.isNetVegetable) || (netVegetable === '非净菜' && !product.isNetVegetable))
+      (isSupplierProductPage || netVegetable === '全部' || (netVegetable === '净菜' && product.isNetVegetable) || (netVegetable === '非净菜' && !product.isNetVegetable))
     ));
     state.filteredProducts = result;
     state.total = result.length;
@@ -295,38 +293,10 @@
 
   function resetFilters() {
     ['productNameFilter', 'brandFilter'].forEach((id) => { document.getElementById(id).value = ''; });
-    ['statusFilter', 'purchaseTypeFilter', 'sourceFilter', 'netVegetableFilter'].forEach((id) => { document.getElementById(id).value = '全部'; });
-    state.category = '';
-    state.tree.forEach((node) => { node.selected = false; });
-    renderTree();
+    ['statusFilter', 'sourceFilter'].forEach((id) => { document.getElementById(id).value = '全部'; });
+    if (!isSupplierProductPage) document.getElementById('purchaseTypeFilter').value = '全部';
+    if (!isSupplierProductPage) document.getElementById('netVegetableFilter').value = '全部';
     filterProducts(true);
-  }
-
-  function showNotice(message, type = 'success') {
-    const notice = document.getElementById('productPageNotice');
-    if (!notice) return;
-    notice.textContent = message;
-    notice.className = `product-page-notice is-visible ${type}`;
-    window.clearTimeout(showNotice.timer);
-    showNotice.timer = window.setTimeout(() => {
-      notice.className = 'product-page-notice';
-    }, 2800);
-  }
-
-  function exportProducts() {
-    const rows = state.filteredProducts.map((product) => [
-      product.code, product.name, product.category, product.unit, product.marketPrice,
-      window.BusinessRules.statusLabel('products', product.status), product.purchaseType, product.source
-    ]);
-    const csv = [['商品编号', '商品名称', '分类', '计量单位', '市场价', '状态', '采购类型', '商品来源'], ...rows]
-      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }));
-    link.download = '商品信息.csv';
-    link.click();
-    URL.revokeObjectURL(link.href);
-    showNotice(`已导出 ${rows.length} 条商品信息`);
   }
 
   function updateProductStatus(product, status, reason = '') {
@@ -384,6 +354,16 @@
 
   function bindEvents() {
     const root = document.querySelector('.product-list-page');
+    const navigateToProductForm = (mode = '', code = '') => {
+      const params = new URLSearchParams();
+      if (isSupplierProductPage) params.set('from', 'supplier');
+      if (mode) params.set('mode', mode);
+      if (code) params.set('id', code);
+      const query = params.toString();
+      const target = `./goodsAdd.html${query ? `?${query}` : ''}`;
+      if (window.AppNavigation?.navigate) window.AppNavigation.navigate(target);
+      else window.location.href = target;
+    };
     root.addEventListener('click', (event) => {
       const action = event.target.closest('[data-action]')?.dataset.action;
       const selectedCodes = () => [...document.querySelectorAll('#tableBody .custom-checkbox.checked')]
@@ -420,17 +400,11 @@
       }
       if (action === 'query') filterProducts(true);
       if (action === 'reset') resetFilters();
-      if (action === 'add-product') window.AppNavigation?.navigate?.('./goodsAdd.html');
-      if (action === 'edit-category') showNotice('商品分类编辑功能已保留在本地演示版本中', 'info');
+      if (action === 'add-product') navigateToProductForm();
+      if (action === 'edit-category') window.alert('编辑商品分类');
       if (action === 'add-category') {
         event.stopPropagation();
-        showNotice('新增分类功能已保留在本地演示版本中', 'info');
-      }
-      if (action === 'export-products') exportProducts();
-      if (action === 'import-products' || action === 'import-product-images' || action === 'import-market-prices') {
-        const input = document.getElementById('productImportInput');
-        input.dataset.importType = action;
-        input.click();
+        window.alert('新增子分类');
       }
       if (action === 'close-unshelf-modal' || action === 'cancel-unshelf') closeUnshelfModal();
       if (action === 'confirm-unshelf') confirmUnshelf();
@@ -452,14 +426,6 @@
       }
 
       const treeNode = event.target.closest('[data-tree-node]');
-      const treeCategory = event.target.closest('[data-tree-category]');
-      if (treeCategory && !event.target.closest('[data-action="add-category"]')) {
-        state.category = treeCategory.dataset.treeCategory === '全部' ? '' : treeCategory.dataset.treeCategory;
-        state.tree.forEach((item) => { item.selected = item.name === treeCategory.dataset.treeCategory; });
-        renderTree();
-        filterProducts(true);
-        return;
-      }
       if (treeNode && action !== 'add-category') {
         const node = getNodeByPath(treeNode.dataset.treeNode.split('-').map(Number));
         if (node) {
@@ -474,8 +440,8 @@
       if (rowAction) {
         const product = state.products.find((item) => item.code === rowAction.dataset.code);
         if (!product) return;
-        if (rowAction.dataset.rowAction === 'edit') window.AppNavigation?.navigate?.(`./goodsAdd.html?mode=edit&id=${encodeURIComponent(product.code)}`);
-        if (rowAction.dataset.rowAction === 'detail') window.AppNavigation?.navigate?.(`./goodsAdd.html?mode=view&id=${encodeURIComponent(product.code)}`);
+        if (rowAction.dataset.rowAction === 'edit') navigateToProductForm('edit', product.code);
+        if (rowAction.dataset.rowAction === 'detail') navigateToProductForm('view', product.code);
         if (rowAction.dataset.rowAction === 'status') {
           if (product.status === 'ENABLE') openUnshelfModal(product);
           else updateProductStatus(product, 'ENABLE');
@@ -504,17 +470,6 @@
       state.treeSearch = event.target.value || '';
       renderTree();
     });
-    document.getElementById('productImportInput').addEventListener('change', (event) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      const labels = {
-        'import-products': '商品信息',
-        'import-product-images': '商品图片',
-        'import-market-prices': '市场价'
-      };
-      showNotice(`已选择${labels[event.target.dataset.importType] || '商品'}文件：${file.name}`);
-      event.target.value = '';
-    });
     document.querySelectorAll('#productNameFilter, #brandFilter').forEach((input) => {
       input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') filterProducts(true);
@@ -522,7 +477,7 @@
     });
   }
 
-  window.AppShell.mount({ title: '商品管理', content: pageContent });
+  window.AppShell.mount({ title: '商品管理', content: pageContent, variant: isSupplierProductPage ? 'supplier' : 'enterprise' });
   state.filteredProducts = [...state.products];
   state.total = state.filteredProducts.length;
   state.pagination = window.Pagination.create({

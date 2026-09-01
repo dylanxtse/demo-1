@@ -16,10 +16,9 @@
   const defaultDate = todayStr();
 
   function renderGoodsName(item) {
-    const name = escapeHtml(item.goodsName || '--');
-    return item.isNetVegetable
-      ? `<span class="net-vegetable-tag">净菜</span>${name}`
-      : name;
+    const name = escapeHtml(window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || '--');
+    const marker = item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
+    return `<span class="product-display-text">${marker}${name}</span>`;
   }
 
   function renderProgress(item) {
@@ -75,6 +74,7 @@
   window.RecordPageConfig = {
     title: '分拣管理',
     pageClass: 'sorting-module-page sorting-status-boxed',
+    usePagination: true,
     statusActionsInline: true,
     showSelectionSummary: false,
     resource: 'sortingItems',
@@ -126,8 +126,8 @@
             ]
           },
           { key: 'batchShortage', label: '批量标记缺货', batchTransition: 'markShortage', message: '确定标记选中商品为缺货？', visibleStatuses: ['PENDING', ''] },
-          { key: 'export', label: '导出' },
-          { key: 'printDocument', label: '打印', side: true, toast: '已生成分拣单据打印预览' }
+          { key: 'export', label: '导出', icon: 'supplier-purchase-export' },
+          { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, toast: '已生成分拣单据打印预览' }
         ],
         rowActions: [
           { key: 'sort', label: '分拣', transition: 'sort', visible: ['PENDING', 'PARTIAL'], disabled: isShortage, message: '确定分拣该商品吗？' },
@@ -149,8 +149,8 @@
         ],
         toolbar: [
           { key: 'batchSort', label: '一键分拣', primary: true, batchTransition: 'sort', message: '确定一键分拣选中客户的商品吗？', visibleStatuses: ['PENDING', 'PARTIAL', ''] },
-          { key: 'print', label: '一键打印', toast: '已生成客户分拣打印预览', visibleStatuses: ['SORTED'] },
-          { key: 'export', label: '导出' }
+          { key: 'print', label: '一键打印', icon: 'supplier-purchase-print', toast: '已生成客户分拣打印预览', visibleStatuses: ['SORTED'] },
+          { key: 'export', label: '导出', icon: 'supplier-purchase-export' }
         ],
         rowActions: [
           {

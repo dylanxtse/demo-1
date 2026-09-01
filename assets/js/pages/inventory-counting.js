@@ -13,12 +13,18 @@
   window.RecordPageConfig = {
     title: '库存盘点',
     pageClass: 'order-module-page inventory-counting-page',
+    useDemoListLayout: true,
+    usePagination: true,
     showSelectionSummary: false,
     resource: 'inventoryCounts',
     filters: [
       { key: 'dateRange', label: '添加日期', type: 'dateRange' },
       { key: 'category', label: '商品分类', options: ['果蔬', '蛋奶类', '水产品', '主食'] },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入名称/编号' },
+      { key: 'isNetVegetable', label: '是否净菜', options: [
+        { label: '净菜', value: 'true' },
+        { label: '非净菜', value: 'false' }
+      ] },
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'status', label: '单据状态', options: [
         { label: '待审核', value: 'PENDING_AUDIT' },

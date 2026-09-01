@@ -2,6 +2,7 @@
   window.RecordPageConfig = {
     title: '实收变更',
     pageClass: 'order-module-page',
+    useDemoListLayout: true,
     showSelectionSummary: false,
     resource: 'receiptChanges',
     addHref: './receipt-change-form.html?mode=add',

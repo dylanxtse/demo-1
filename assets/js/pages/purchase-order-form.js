@@ -39,7 +39,7 @@
   function text(value) { return utils.escapeHtml(value == null ? '' : value); }
   function fixed(value) { return Number(value || 0).toFixed(2); }
   function productDisplay(line) {
-    return line.productCode ? (line.productName || '') + '(' + (line.unit || '--') + '/' + (line.brand || '--') + '/' + (line.spec || '--') + ')' : '';
+    return line.productCode ? window.DomUtils.formatProductDisplay(line) : '';
   }
   function productForInput(value) {
     var sourceValue = String(value || '').trim();
@@ -50,10 +50,12 @@
 
   var title = mode === 'edit' ? '编辑采购单' : '添加采购单';
   var expectedAt = source.expectedAt || '2026-08-27 00:00:00';
+  var enterpriseAt = source.enterpriseExpectedAt || utils.shiftDate(expectedAt, -2);
   var purchaseType = source.purchaseType || '供应商送货';
   var manager = source.manager || '杨采';
   var warehouse = source.warehouse || '东南区域仓库';
   var readonlyBase = mode === 'edit';
+  var purchasePriceReadonly = readonlyBase ? ' disabled' : '';
   var productOptions = service.products().map(function (item) { return '<option value="' + text(item.code) + '">' + text(item.name) + '（' + text(item.unit) + '）</option>'; }).join('');
 
   var content = [
@@ -62,12 +64,13 @@
       '<div class="purchase-form-scroll">',
         '<div class="purchase-basic-form">',
           '<div class="purchase-basic-field"><label class="field-label required" for="purchaseType">采购类型</label><div class="purchase-composite-select"><select class="form-control" id="purchaseType"' + (readonlyBase ? ' disabled' : '') + '><option value="联营供应商采购"' + (purchaseType === '联营供应商采购' ? ' selected' : '') + '>联营供应商采购 / ' + text(supplier) + '</option><option value="市场自采"' + (purchaseType === '市场自采' ? ' selected' : '') + '>市场自采 / ' + text(supplier) + '</option><option value="供应商送货"' + (purchaseType === '供应商送货' ? ' selected' : '') + '>供应商送货 / ' + text(supplier) + '</option></select></div></div>',
-          '<div class="purchase-basic-field"><label class="field-label required" for="purchaseExpectedAt">期望送达时间</label><input class="form-control" id="purchaseExpectedAt" type="text" placeholder="请选择日期" readonly value="' + text(expectedAt) + '"></div>',
+          '<div class="purchase-basic-field"><label class="field-label required" for="purchaseEnterpriseExpectedAt">企业期望送达时间</label><input class="form-control" id="purchaseEnterpriseExpectedAt" type="text" placeholder="请选择日期" readonly value="' + text(enterpriseAt) + '"></div>',
+          '<div class="purchase-basic-field"><label class="field-label required" for="purchaseExpectedAt">学校期望送达时间</label><input class="form-control" id="purchaseExpectedAt" type="text" placeholder="请选择日期" readonly' + (readonlyBase ? ' disabled' : '') + ' value="' + text(expectedAt) + '"></div>',
           '<div class="purchase-basic-field"><label class="field-label required" for="purchaseManager">采购负责人</label><select class="form-control" id="purchaseManager"' + (readonlyBase ? ' disabled' : '') + '><option value="杨采"' + (manager === '杨采' ? ' selected' : '') + '>杨采</option><option value="杨无缺"' + (manager === '杨无缺' ? ' selected' : '') + '>杨无缺</option></select></div>',
           '<div class="purchase-basic-field"><label class="field-label required" for="purchaseWarehouse">仓库</label><select class="form-control" id="purchaseWarehouse"' + (readonlyBase ? ' disabled' : '') + '><option value="公司市区仓库"' + (warehouse === '公司市区仓库' ? ' selected' : '') + '>公司市区仓库</option><option value="东南区域仓库"' + (warehouse === '东南区域仓库' ? ' selected' : '') + '>东南区域仓库</option><option value="生鲜仓库"' + (warehouse === '生鲜仓库' ? ' selected' : '') + '>生鲜仓库</option></select></div>',
         '</div>',
         '<section class="purchase-form-section">',
-          '<div class="purchase-section-heading"><button class="btn btn-primary btn-sm" type="button" data-action="batch-add">批量添加商品</button></div>',
+          '<div class="purchase-section-heading">' + (mode === 'edit' ? '' : '<button class="btn btn-primary btn-sm" type="button" data-action="batch-add">批量添加商品</button>') + '</div>',
           '<div class="purchase-form-table-container"><table class="purchase-table purchase-form-table"><thead><tr><th>序号</th><th>图片</th><th class="required-head">商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th class="required-head">待采购量</th><th class="required-head">采购单价</th><th>采购小计</th><th>供应商报价</th><th>协议价</th><th>近一次采购价</th><th>市场价</th><th>备注</th></tr></thead><tbody id="purchaseFormRows"></tbody><tfoot><tr><td colspan="6">合计金额：<span id="purchaseFormTotal">0.00</span></td><td colspan="6"></td></tr></tfoot></table></div>',
           '<div class="purchase-form-note"><label class="field-label" for="purchaseRemark">备注：</label><div class="purchase-note-control"><textarea id="purchaseRemark" maxlength="100" placeholder="请输入内容">' + text(source.remark || '') + '</textarea><div class="purchase-text-counter" aria-live="polite"><span id="purchaseRemarkCount">' + String(source.remark || '').length + '</span>/100</div></div></div>',
         '</section>',
@@ -79,6 +82,7 @@
   var root = window.AppShell.mount({ title: title, content: content });
   document.title = title + ' - 集采企业版企业端';
   var page = root.querySelector('.purchase-form-page');
+  var enterpriseDatePicker = utils.mountDate(page.querySelector('#purchaseEnterpriseExpectedAt'), enterpriseAt, false);
   var datePicker = utils.mountDate(page.querySelector('#purchaseExpectedAt'), expectedAt, false);
 
   function renderRows() {
@@ -92,7 +96,7 @@
         '<td><input class="product-search" list="purchaseProductOptions" data-field="product" value="' + text(product) + '" placeholder="搜索商品名称或编号"></td>' +
         '<td><span class="purchase-product-display" data-display="unit">' + text(line.unit || '--') + '</span></td>' +
         '<td><input data-field="quantity" type="number" min="0" step="0.01" value="' + fixed(line.quantity) + '" placeholder="请输入"></td>' +
-        '<td><input data-field="purchasePrice" type="number" min="0" step="0.01" value="' + fixed(line.purchasePrice) + '" placeholder="请输入"></td>' +
+        '<td><input data-field="purchasePrice" type="number" min="0" step="0.01" value="' + fixed(line.purchasePrice) + '" placeholder="请输入"' + purchasePriceReadonly + '></td>' +
         '<td><span data-display="subtotal">' + fixed(line.quantity * line.purchasePrice) + '</span></td>' +
         '<td><span>' + (hasProduct ? fixed(line.supplierQuote) : '--') + '</span></td>' +
         '<td><span>' + (line.agreementPrice == null ? '--' : fixed(line.agreementPrice)) + '</span></td>' +
@@ -123,11 +127,12 @@
 
   function save(status) {
     var type = page.querySelector('#purchaseType').value;
+    var enterpriseExpected = page.querySelector('#purchaseEnterpriseExpectedAt').value.trim();
     var expected = page.querySelector('#purchaseExpectedAt').value.trim();
     var managerValue = page.querySelector('#purchaseManager').value;
     var warehouseValue = page.querySelector('#purchaseWarehouse').value;
     var items = lines.filter(function (line) { return line.productCode && Number(line.quantity) > 0; });
-    if (!type || !expected || !managerValue || !warehouseValue) {
+    if (!type || !enterpriseExpected || !expected || !managerValue || !warehouseValue) {
       utils.toast('请完善采购单基本信息', 'error');
       return;
     }
@@ -140,6 +145,7 @@
       supplier: supplier,
       purchaseType: type,
       expectedAt: expected,
+      enterpriseExpectedAt: enterpriseExpected,
       manager: managerValue,
       warehouse: warehouseValue,
       remark: page.querySelector('#purchaseRemark').value,
@@ -148,7 +154,7 @@
       items: items
     });
     if (result && result.ok === false) {
-      utils.toast(result.message || '保存失败', 'error');
+      utils.toast(result.message || '企业期望送达时间不能晚于学校期望送达时间', 'error');
       return;
     }
     utils.toast(status === '草稿' ? '暂存成功' : '保存成功');

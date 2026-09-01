@@ -48,6 +48,7 @@
   width: 120px;
   flex-basis: 120px;
   margin-right: 12px;
+  text-align: right;
 }
 
 .purchase-field > .filter-input,
@@ -205,13 +206,34 @@
   justify-content: flex-end;
 }
 
-.purchase-order-toolbar .purchase-toolbar-side .btn {
-  width: 76px;
-  min-width: 76px;
+.purchase-order-page .purchase-order-toolbar .purchase-toolbar-side .purchase-export-button,
+.purchase-order-page .purchase-order-toolbar .purchase-toolbar-side .purchase-print-button {
+  display: inline-flex;
+  width: auto;
+  min-width: 0;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-.purchase-order-toolbar .purchase-export-button {
-  gap: 4px;
+.purchase-order-page .purchase-order-toolbar .purchase-toolbar-side .purchase-export-button:hover,
+.purchase-order-page .purchase-order-toolbar .purchase-toolbar-side .purchase-print-button:hover {
+  color: var(--primary);
+}
+
+.purchase-order-page .purchase-order-toolbar .purchase-toolbar-side .purchase-export-button .icon-svg,
+.purchase-order-page .purchase-order-toolbar .purchase-toolbar-side .purchase-print-button .icon-svg {
+  width: 15px !important;
+  height: 15px !important;
 }
 
 .purchase-toolbar-side {
@@ -340,143 +362,6 @@
   z-index: 5;
   background: #fafafa;
 }
-
-.purchase-task-table th.purchase-expand-cell,
-.purchase-task-table td.purchase-expand-cell {
-  width: 42px;
-  min-width: 42px;
-  padding: 0;
-  background: #fff;
-}
-
-.purchase-task-table th.purchase-expand-cell {
-  position: sticky;
-  left: 0;
-  z-index: 6;
-  background: #fafafa;
-}
-
-.purchase-task-table td.purchase-expand-cell {
-  position: sticky;
-  left: 0;
-  z-index: 4;
-}
-
-.purchase-task-table th.purchase-sticky-select,
-.purchase-task-table td.purchase-sticky-select {
-  left: 42px;
-}
-
-.purchase-table tbody tr:hover td.purchase-expand-cell {
-  background: #f5f9ff;
-}
-
-.purchase-expand-button {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.purchase-expand-button:hover {
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
-.purchase-expand-chevron {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-  transition: transform .2s ease;
-}
-
-.purchase-expand-button[aria-expanded='true'] .purchase-expand-chevron {
-  transform: rotate(90deg);
-}
-
-.purchase-task-expanded-row:hover {
-  background: transparent;
-}
-
-.purchase-task-expanded-row > td {
-  height: auto !important;
-  padding: 0 !important;
-  background: #fbfcfe;
-  text-align: left;
-  white-space: normal;
-}
-
-.purchase-task-expanded-wrap {
-  padding: 0;
-  background: #fbfcfe;
-}
-
-.purchase-task-nested-table-wrap {
-  overflow-x: auto;
-  padding: 0;
-}
-
-.purchase-task-nested-table {
-  width: 100%;
-  min-width: 1120px;
-  border-collapse: collapse;
-  table-layout: fixed;
-  color: #222;
-  font-size: 14px;
-}
-
-.purchase-task-nested-table th,
-.purchase-task-nested-table td {
-  height: 54px;
-  padding: 0 10px;
-  overflow: hidden;
-  border-right: 1px solid var(--border-light);
-  border-bottom: 1px solid var(--border-light);
-  color: #222;
-  font-size: 14px;
-  text-align: center;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.purchase-task-nested-table th {
-  height: 40px;
-  background: #f8f9fb;
-  color: #6a7380;
-  font-weight: 500;
-}
-
-.purchase-task-nested-table td {
-  height: 48px;
-  font-size: 13px;
-}
-
-.purchase-task-nested-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.purchase-task-nested-table th:last-child,
-.purchase-task-nested-table td:last-child {
-  border-right: 0;
-}
-
-.purchase-task-nested-table .nested-order-col { width: 182px; }
-.purchase-task-nested-table .nested-customer-col { width: 128px; }
-.purchase-task-nested-table .nested-canteen-col { width: 96px; }
-.purchase-task-nested-table .nested-warehouse-col { width: 148px; }
-.purchase-task-nested-table .nested-number-col { width: 112px; }
-.purchase-task-nested-table .nested-allocation-col { width: 190px; }
 
 .purchase-cell-link {
   display: inline-flex;

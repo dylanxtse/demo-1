@@ -1,8 +1,13 @@
 (function () {
   const addIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  const searchIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>';
   const backIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg>';
   const settingsIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
   const recordIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>';
+  const coefficientHints = Object.freeze({
+    materialDemand: '生产 1 个单位成品预计需要消耗的原料数量，用于按成品需求量倒推原料需求量。例如：生产 1kg 成品需 1.2kg 原料，填写 1.2。',
+    outputCoefficient: '投入 1 个单位原料预计可加工产出的成品数量，用于按原料投入量计算成品参考产出量。例如：投入 1kg 原料可产出 0.8kg 成品，填写 0.8。'
+  });
 
   const warehouses = (window.DemoStore?.get('warehouses') || []).map((warehouse) => warehouse.warehouseName || warehouse.name).filter(Boolean);
   const defaultWarehouse = warehouses[0] || '';
@@ -15,7 +20,29 @@
   }
 
   function getDefaultExpectedDeliveryDate() {
-    return getLocalDateString(1);
+    return '';
+  }
+
+  function isDateWithinRange(date, startDate, endDate) {
+    return Boolean(date)
+      && (!startDate || date >= startDate)
+      && (!endDate || date <= endDate);
+  }
+
+  function hasExpectedDeliveryRange() {
+    return Boolean(state.expectedDeliveryStart && state.expectedDeliveryEnd);
+  }
+
+  function isOrderDemandQueryActive() {
+    return state.operationMode === 'order'
+      && state.orderDemandQueryActive
+      && hasExpectedDeliveryRange();
+  }
+
+  function clearOrderDemandFilter() {
+    state.orderDemandQueryActive = false;
+    state.orderDemandProducts = [];
+    state.missingOrderDemandProducts = [];
   }
 
   function getSortingRecords() {
@@ -43,7 +70,7 @@
     const products = new Map();
     getSortingRecords().forEach((record) => {
       const deliveryDate = String(record.expectedAt || record.expectedDeliveryDate || record.deliveryDate || '').slice(0, 10);
-      if (!deliveryDate || deliveryDate < startDate || deliveryDate > endDate) return;
+      if (!isDateWithinRange(deliveryDate, startDate, endDate)) return;
       if (state.customer !== '全部'
         && record.customer !== state.customer
         && record.customerName !== state.customer) return;
@@ -55,31 +82,61 @@
       if (!(Number(record.orderQty ?? record.quantity) > 0)) return;
 
       const productName = product?.name || normalizeGoodsName(record.goodsName) || productCode;
+      const sortedQty = Number(record.orderSortingQty ?? record.actualQty);
+      const demandQty = sortedQty > 0 ? sortedQty : Number(record.orderQty ?? record.quantity) || 0;
+      const unit = record.unit || product?.unit || '--';
       const key = productCode || productName;
-      if (!products.has(key)) products.set(key, { code: productCode, name: productName });
+      const current = products.get(key);
+      if (current) {
+        current.quantity += demandQty;
+      } else {
+        products.set(key, { code: productCode, name: productName, quantity: demandQty, unit });
+      }
     });
     return [...products.values()];
   }
 
-  function templateMatchesOrderDemand(template, demandProducts) {
+  function formatDemandQuantity(product) {
+    const quantity = Number(product.quantity);
+    const quantityText = Number.isFinite(quantity)
+      ? (Number.isInteger(quantity) ? String(quantity) : String(Number(quantity.toFixed(2))))
+      : '--';
+    return `${quantityText}${product.unit || ''}`;
+  }
+
+  function templateMatchesDemandProduct(template, demandProduct) {
     return (template.outputs || []).some((output) => {
       const outputName = normalizeGoodsName(output.productName);
-      return demandProducts.some((product) =>
-        (product.code && output.productCode === product.code)
-        || (product.name && outputName === product.name)
-      );
+      return (demandProduct.code && output.productCode === demandProduct.code)
+        || (demandProduct.name && outputName === demandProduct.name);
     });
   }
 
+  function templateMatchesOrderDemand(template, demandProducts) {
+    return demandProducts.some((product) => templateMatchesDemandProduct(template, product));
+  }
+
+  function getTemplateDemandDisplay(template) {
+    if (!isOrderDemandQueryActive()) return { label: '', tooltip: '', extraCount: 0 };
+    const demands = state.orderDemandProducts
+      .filter((product) => templateMatchesDemandProduct(template, product))
+      .map((product) => product.name);
+    return {
+      label: demands[0] || '',
+      tooltip: demands.length > 1 ? demands.join('；') : '',
+      extraCount: Math.max(0, demands.length - 1)
+    };
+  }
+
   function getOrderDemandNotice() {
-    if (!state.orderDemandQueryActive) return '';
+    if (!isOrderDemandQueryActive()) return '';
     if (state.orderDemandProducts.length === 0) {
       return '<div class="template-demand-notice is-empty">当前查询条件下暂无净菜订单需求</div>';
     }
     if (state.missingOrderDemandProducts.length === 0) return '';
     return `<div class="template-demand-notice">${state.missingOrderDemandProducts.map((product) => `
       <div class="template-demand-notice-row">
-        <span>${escapeHtml(product.name)}没有加工方案</span>
+        <span>${escapeHtml(product.name)} ${escapeHtml(formatDemandQuantity(product))}</span>
         <button class="btn btn-sm btn-blue" type="button" data-action="create-template-for-demand" data-product-code="${escapeHtml(product.code)}" data-product-name="${escapeHtml(product.name)}">新增方案</button>
       </div>
     `).join('')}</div>`;
@@ -93,7 +150,9 @@
         if (order.status !== 'COMPLETED') return false;
         const orderStart = String(order.expectedDeliveryStart || '').slice(0, 10);
         const orderEnd = String(order.expectedDeliveryEnd || '').slice(0, 10);
-        if (!orderStart || !orderEnd || orderEnd < startDate || orderStart > endDate) return false;
+        if (!orderStart || !orderEnd) return false;
+        if (startDate && orderEnd < startDate) return false;
+        if (endDate && orderStart > endDate) return false;
         const customerMatch = state.customer === '全部'
           || !order.customer
           || order.customer === state.customer;
@@ -110,11 +169,11 @@
   function getOrderLineRefs(productCode) {
     const startDate = state.expectedDeliveryStart;
     const endDate = state.expectedDeliveryEnd;
-    if (state.operationMode !== 'order' || !startDate || !endDate) return [];
+    if (state.operationMode !== 'order') return [];
     return getSortingRecords()
       .filter((record) => {
         const deliveryDate = String(record.expectedAt || record.expectedDeliveryDate || record.deliveryDate || '').slice(0, 10);
-        if (!deliveryDate || deliveryDate < startDate || deliveryDate > endDate) return false;
+        if (!isDateWithinRange(deliveryDate, startDate, endDate)) return false;
         if (record.goodsCode !== productCode && record.productCode !== productCode) return false;
         const orderProduct = findProduct(record.goodsCode || record.productCode);
         if (record.isNetVegetable === false && !orderProduct?.isNetVegetable) return false;
@@ -144,7 +203,8 @@
           <button class="btn btn-sm btn-blue" type="button" data-action="create-template">${addIcon}新增方案</button>
         </div>
         <div class="template-search">
-          <input class="template-search-input" id="templateSearch" placeholder="搜索加工方案" type="text">
+          <input class="template-search-input" id="templateSearch" placeholder="搜索加工方案名称/编号" type="text">
+          <span class="template-search-icon" aria-hidden="true">${searchIcon}</span>
         </div>
         <div class="template-list" id="templateList"></div>
       </div>
@@ -193,12 +253,14 @@
     missingOrderDemandProducts: [],
     costMode: 'auto',
     materials: [],
+    manyToOneBaseMaterialIndex: null,
     outputs: [],
     // 方案编辑器
     templateEditMode: null,    // 'create' | 'edit'
     templateEditData: null,
     pendingSubmitData: null
   };
+  const MATERIAL_LIMIT = 20;
   const OUTPUT_LIMIT = 200;
   let orderDatePicker = null;
   let processingDatePicker = null;
@@ -206,6 +268,14 @@
   /* ===== 工具函数 ===== */
   function escapeHtml(value) {
     return window.DomUtils.escapeHtml(value);
+  }
+
+  function renderCoefficientHint(text) {
+    return `<span class="processing-header-help" tabindex="0" role="img" aria-label="查看字段说明" data-tooltip="${escapeHtml(text)}"><svg class="processing-header-help-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.2 5.7c.1-1.4 1.2-2.3 2.8-2.3 1.7 0 2.8 1 2.8 2.5 0 1.1-.6 1.8-1.7 2.5-.9.6-1.3 1.1-1.3 2.1" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/><circle cx="7.9" cy="12.7" r=".75" fill="currentColor"/></svg></span>`;
+  }
+
+  function renderCoefficientHeader(label, text) {
+    return `<span class="processing-header-content"><span>${label}</span>${renderCoefficientHint(text)}</span>`;
   }
 
   function findProduct(code) {
@@ -228,6 +298,30 @@
     return `${name}（${unit}/${brand}/${spec}）`;
   }
 
+  function getProductSearchText(product = {}) {
+    return [product.code, product.name, product.unit, product.brand, product.spec]
+      .filter((value) => value !== undefined && value !== null && String(value).trim())
+      .join(' ')
+      .toLowerCase();
+  }
+
+  function filterProductSelectOptions(select, searchValue = '') {
+    if (!select) return;
+    const keyword = String(searchValue || '').trim().toLowerCase();
+    let visibleCount = 0;
+    select.querySelectorAll('.custom-select-option').forEach((option) => {
+      const searchableText = String(option.dataset.searchText || option.textContent || '').toLowerCase();
+      const isVisible = !keyword || searchableText.includes(keyword);
+      option.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCount += 1;
+    });
+    const emptyState = select.querySelector('.product-select-empty');
+    if (emptyState) {
+      emptyState.textContent = visibleCount > 0 ? '' : (keyword ? '暂无匹配商品' : '暂无商品');
+      emptyState.style.display = visibleCount > 0 ? 'none' : 'block';
+    }
+  }
+
   function productNetTag(productCode) {
     const product = findProduct(productCode);
     return product?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
@@ -236,22 +330,39 @@
   function renderProductSelect(fieldType, selectedCode, isTemplateProduct = false, outputIndex = null) {
     const selectedProduct = selectedCode ? findProduct(selectedCode) : null;
     const netTag = selectedProduct?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-    const displayText = selectedProduct ? escapeHtml(formatProductDisplay(selectedProduct)) : '请选择';
+    const displayText = selectedProduct ? escapeHtml(formatProductDisplay(selectedProduct)) : '';
+    const closedDisplayText = selectedProduct ? displayText : '请选择';
+    const isManyToOneMaterial = fieldType === 'material'
+      && state.templateEditData?.relationType === 'many-to-one';
     const selectedOutputCodes = fieldType === 'output'
       ? (state.templateEditData?.outputs || []).map((output) => output.productCode).filter(Boolean)
+      : [];
+    const selectedMaterialCodes = isManyToOneMaterial
+      ? (state.templateEditData?.materials || []).map((material) => material.productCode).filter(Boolean)
       : [];
     return `
       <div class="custom-select ${isTemplateProduct ? 'template-product-select' : ''}" data-select-type="${fieldType}">
         <div class="custom-select-trigger" data-action="toggle-select">
-          <span class="template-product-label">${netTag}<span class="custom-select-text ${!selectedProduct ? 'is-placeholder' : ''}">${displayText}</span></span>
+          <span class="template-product-label">
+            ${netTag}
+            <span class="custom-select-text ${!selectedProduct ? 'is-placeholder' : ''}">${closedDisplayText}</span>
+            <input class="product-combobox-input" type="text" value="${displayText}" data-display-value="${displayText}" placeholder="搜索商品名称/编码" autocomplete="off" aria-label="搜索并选择商品" aria-autocomplete="list" aria-expanded="false" data-action="product-combobox-input">
+          </span>
           <svg class="custom-select-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="custom-select-dropdown">
-          ${state.products.map((p) => {
-            const tag = p.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-            const isDuplicate = fieldType === 'output' && p.code !== selectedCode && selectedOutputCodes.includes(p.code);
-            return `<div class="custom-select-option ${p.code === selectedCode ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.code)}" data-disabled="${isDuplicate}" data-action="select-product">${tag}${escapeHtml(formatProductDisplay(p))}</div>`;
-          }).join('')}
+          <div class="product-select-options">
+            ${state.products.map((p) => {
+              const tag = p.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
+              const isDuplicate = fieldType === 'output'
+                ? p.code !== selectedCode && selectedOutputCodes.includes(p.code)
+                : isManyToOneMaterial
+                  ? p.code !== selectedCode && selectedMaterialCodes.includes(p.code)
+                  : false;
+              return `<div class="custom-select-option ${p.code === selectedCode ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.code)}" data-search-text="${escapeHtml(getProductSearchText(p))}" data-disabled="${isDuplicate}" data-action="select-product">${tag}${escapeHtml(formatProductDisplay(p))}</div>`;
+            }).join('')}
+            ${isTemplateProduct ? '<div class="product-select-empty">暂无商品</div>' : ''}
+          </div>
         </div>
       </div>
     `;
@@ -321,7 +432,10 @@
               ${getCanteenOptions().map((canteen) => `<option value="${escapeHtml(canteen)}" ${canteen === state.canteen ? 'selected' : ''}>${escapeHtml(canteen)}</option>`).join('')}
             </select>
           </div>
-          <button class="btn btn-primary btn-sm order-processing-query-button" type="button" data-action="query-order-demand">查询</button>
+          <div class="order-processing-query-actions">
+            <button class="btn btn-primary btn-sm order-processing-query-button" type="button" data-action="query-order-demand">查询</button>
+            <button class="btn btn-sm order-processing-reset-button" type="button" data-action="reset-order-demand">重置</button>
+          </div>
         </div>
       </div>
     `;
@@ -338,6 +452,10 @@
       onChange: ({ startDate, endDate }) => {
         state.expectedDeliveryStart = startDate;
         state.expectedDeliveryEnd = endDate;
+        if (!hasExpectedDeliveryRange()) {
+          clearOrderDemandFilter();
+          renderTemplateList();
+        }
         renderOpOutputTable();
       }
     });
@@ -346,12 +464,13 @@
   /* ===== 左侧：模版列表渲染 ===== */
   function renderTemplateList() {
     const searchValue = (document.getElementById('templateSearch')?.value || '').trim().toLowerCase();
-    if (state.operationMode === 'order' && state.orderDemandQueryActive) {
+    const demandQueryActive = isOrderDemandQueryActive();
+    if (demandQueryActive) {
       state.missingOrderDemandProducts = state.orderDemandProducts.filter((product) =>
         !state.templates.some((template) => templateMatchesOrderDemand(template, [product]))
       );
     }
-    const sourceTemplates = state.operationMode === 'order' && state.orderDemandQueryActive
+    const sourceTemplates = demandQueryActive
       ? state.templates.filter((template) => templateMatchesOrderDemand(template, state.orderDemandProducts))
       : state.templates;
     state.filteredTemplates = sourceTemplates.filter((t) =>
@@ -370,10 +489,15 @@
       const isSelected = tpl.id === state.selectedTemplateId;
       const materialNames = (tpl.materials || []).map((m) => escapeHtml(formatProductDisplay(m))).join('、');
       const outputNames = (tpl.outputs || []).map((o) => escapeHtml(formatProductDisplay(o))).join('、');
+      const demandDisplay = getTemplateDemandDisplay(tpl);
+      const demandBadge = demandDisplay.label
+        ? `<span class="template-demand-badge${demandDisplay.tooltip ? ' has-tooltip' : ''}"${demandDisplay.tooltip ? ` data-tooltip="${escapeHtml(demandDisplay.tooltip)}" aria-label="${escapeHtml(demandDisplay.tooltip)}"` : ''}><span class="template-demand-label">${escapeHtml(demandDisplay.label)}</span>${demandDisplay.extraCount ? `<span class="template-demand-more">等${demandDisplay.extraCount + 1}项</span>` : ''}</span>`
+        : '';
       return `
         <div class="template-card ${isSelected ? 'selected' : ''}" data-template-id="${escapeHtml(tpl.id)}" data-action="select-template">
           <div class="template-card-header">
             <span class="template-card-name">${escapeHtml(tpl.name)}</span>
+            ${demandBadge}
           </div>
           <div class="template-card-desc">${escapeHtml(tpl.description || '')}</div>
           <div class="template-card-flow">
@@ -384,9 +508,12 @@
             <span class="flow-label">成品：</span>
             <span class="flow-content">${outputNames || '--'}</span>
           </div>
-          <div class="template-card-actions">
-            <button class="btn-text" type="button" data-action="edit-template" data-tpl-id="${escapeHtml(tpl.id)}">编辑</button>
-            <button class="btn-text danger" type="button" data-action="delete-template" data-tpl-id="${escapeHtml(tpl.id)}">删除</button>
+          <div class="template-card-bottom">
+            <span class="template-card-id">${escapeHtml(tpl.id || '--')}</span>
+            <div class="template-card-actions">
+              <button class="btn-text" type="button" data-action="edit-template" data-tpl-id="${escapeHtml(tpl.id)}">编辑</button>
+              <button class="btn-text danger" type="button" data-action="delete-template" data-tpl-id="${escapeHtml(tpl.id)}">删除</button>
+            </div>
           </div>
         </div>
       `;
@@ -394,6 +521,13 @@
   }
 
   function applyOrderDemandQuery() {
+    if (!hasExpectedDeliveryRange()) {
+      clearOrderDemandFilter();
+      const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
+      if (selectedTemplate) renderOpOutputTable();
+      renderTemplateList();
+      return;
+    }
     state.orderDemandQueryActive = true;
     state.orderDemandProducts = getOrderDemandProducts();
     state.missingOrderDemandProducts = state.orderDemandProducts
@@ -409,6 +543,19 @@
     } else if (selectedTemplate) {
       renderOpOutputTable();
     }
+    renderTemplateList();
+  }
+
+  function resetOrderDemandQuery() {
+    clearOrderDemandFilter();
+    state.expectedDeliveryStart = '';
+    state.expectedDeliveryEnd = '';
+    state.customer = '全部';
+    state.canteen = '全部';
+    orderCalendarState.startDate = '';
+    orderCalendarState.endDate = '';
+    hideOrderDatePicker();
+    renderOperationForm();
     renderTemplateList();
   }
 
@@ -431,6 +578,8 @@
     form.style.display = 'flex';
     form.classList.toggle('is-order-mode', state.operationMode === 'order');
     hideOrderDatePicker();
+    const isManyToOne = tpl.relationType === 'many-to-one';
+    const showOrderDemandColumns = state.operationMode === 'order';
     form.innerHTML = `
       ${renderOperationModeTabs()}
       ${state.operationMode === 'order' ? renderOrderProcessingContext() : ''}
@@ -472,7 +621,9 @@
         </div>
 
         <div class="form-section">
-          <div class="form-section-header"><span class="section-title-mark">加工原料</span></div>
+          <div class="form-section-header">
+            <span class="section-title-mark">加工原料</span>
+          </div>
           <div class="form-section-body" style="padding:0">
             <table class="processing-sub-table">
               <thead>
@@ -481,6 +632,7 @@
                   <th style="width:80px">单位</th>
                   <th style="width:90px">当前库存</th>
                   <th style="width:90px">库存均价</th>
+                  ${isManyToOne ? '<th style="width:140px">单位成品需求系数</th>' : ''}
                   <th style="width:120px">消耗量</th>
                 </tr>
               </thead>
@@ -510,10 +662,10 @@
                 <tr>
                   <th style="width:180px">成品商品</th>
                   <th style="width:70px">单位</th>
-                  <th style="width:80px">参考系数</th>
+                  <th style="width:100px;display:${tpl.relationType === 'many-to-one' ? 'none' : 'table-cell'}">参考加工系数</th>
                   <th style="width:90px">参考获得量</th>
                   <th style="width:90px">实际获得量</th>
-                  ${state.operationMode === 'order' ? '<th style="width:90px">订单分拣量</th><th style="width:90px">剩余量</th>' : ''}
+                  ${showOrderDemandColumns ? '<th style="width:90px">订单分拣量</th><th style="width:90px">剩余量</th>' : ''}
                   <th style="width:130px">成品入库单价</th>
                 </tr>
               </thead>
@@ -596,6 +748,8 @@
 
   function renderOpMaterialTable() {
     const tbody = document.getElementById('opMaterialBody');
+    const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
+    const isManyToOne = selectedTemplate?.relationType === 'many-to-one';
     tbody.innerHTML = state.materials.map((item, index) => {
       const product = findProduct(item.productCode);
       const unit = product ? product.unit : (item.unit || '--');
@@ -605,20 +759,51 @@
           <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
           <td><span class="sub-table-readonly">${item.stock !== '' && item.stock != null ? item.stock : '--'}</span></td>
           <td><span class="sub-table-readonly">${item.avgPrice !== '' && item.avgPrice != null ? item.avgPrice : '--'}</span></td>
+          ${isManyToOne ? `<td><span class="sub-table-readonly">${item.refConsumeQty || '--'}</span></td>` : ''}
           <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-op-material-field="consumeQty" value="${item.consumeQty || ''}"></td>
         </tr>
       `;
     }).join('');
   }
 
+  function syncManyToOneMaterialQuantities(baseIndex) {
+    const baseMaterial = state.materials[baseIndex];
+    const baseConsumeQty = Number(baseMaterial?.consumeQty);
+    const baseRefConsumeQty = Number(baseMaterial?.refConsumeQty);
+    if (!(baseConsumeQty > 0) || !(baseRefConsumeQty > 0)) return;
+
+    const outputQty = baseConsumeQty / baseRefConsumeQty;
+    state.materials.forEach((material, index) => {
+      if (index === baseIndex) return;
+      const refConsumeQty = Number(material.refConsumeQty);
+      material.consumeQty = refConsumeQty > 0
+        ? Number((outputQty * refConsumeQty).toFixed(2))
+        : '';
+    });
+  }
+
+  function updateManyToOneMaterialInputs(skipIndex = null) {
+    document.querySelectorAll('#opMaterialBody [data-op-material-index]').forEach((row) => {
+      const index = Number(row.dataset.opMaterialIndex);
+      if (index === skipIndex) return;
+      const input = row.querySelector('[data-op-material-field="consumeQty"]');
+      if (!input || !state.materials[index]) return;
+      input.value = state.materials[index].consumeQty == null ? '' : state.materials[index].consumeQty;
+    });
+  }
+
   function renderOpOutputTable() {
     const tbody = document.getElementById('opOutputBody');
+    if (!tbody) return;
+    const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
+    const isManyToOne = selectedTemplate?.relationType === 'many-to-one';
+    const showOrderDemandColumns = state.operationMode === 'order';
     tbody.innerHTML = state.outputs.map((item, index) => {
       const product = findProduct(item.productCode);
       const unit = product ? product.unit : (item.unit || '--');
       const allocation = state.costMode === 'auto' ? calculateAutoCostAllocations()[index] : null;
       const unitPrice = state.costMode === 'auto' ? allocation?.costPrice || '' : (item.costPrice || '');
-      const orderOutputFields = state.operationMode === 'order' ? `
+      const orderOutputFields = showOrderDemandColumns ? `
           <td><span class="sub-table-readonly" data-op-output-sorting>${getSortingQty(item)}</span></td>
           <td><span class="sub-table-readonly" data-op-output-remaining>${calculateRemainingQty(item)}</span></td>
         ` : '';
@@ -633,7 +818,7 @@
         <tr data-op-output-index="${index}">
           <td><span class="sub-table-readonly">${productNetTag(item.productCode)}${escapeHtml(formatProductDisplay(item))}</span></td>
           <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
-          <td><span class="sub-table-readonly">${item.refCoefficient || '--'}</span></td>
+          <td style="display:${isManyToOne ? 'none' : 'table-cell'}"><span class="sub-table-readonly">${item.refCoefficient || '--'}</span></td>
           <td><span class="sub-table-readonly">${item.refQty || '--'}</span></td>
           <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-op-output-field="actualQty" value="${item.actualQty || ''}"></td>
           ${orderOutputFields}
@@ -649,17 +834,18 @@
     const sortingQty = getSortingQty(item);
     if (item.actualQty === '' || item.actualQty == null) return '--';
     if (!Number.isFinite(actualQty)) return '--';
+    if (sortingQty === '--') return '--';
     return (actualQty - sortingQty).toFixed(2);
   }
 
   function getSortingQty(item) {
     const startDate = state.expectedDeliveryStart;
     const endDate = state.expectedDeliveryEnd;
-    if (state.operationMode !== 'order' || !startDate || !endDate) return 0;
+    if (state.operationMode !== 'order' || !startDate || !endDate) return '--';
     const actualSortingQty = getSortingRecords()
       .filter((record) => {
         const deliveryDate = String(record.expectedAt || record.expectedDeliveryDate || record.deliveryDate || '').slice(0, 10);
-        if (!deliveryDate || deliveryDate < startDate || deliveryDate > endDate) return false;
+        if (!isDateWithinRange(deliveryDate, startDate, endDate)) return false;
         if (record.goodsCode !== item.productCode && record.productCode !== item.productCode) return false;
         const orderProduct = findProduct(record.goodsCode || record.productCode);
         if (record.isNetVegetable === false && !orderProduct?.isNetVegetable) return false;
@@ -759,6 +945,21 @@
   }
 
   function calculateRefQty() {
+    const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
+    if (selectedTemplate?.relationType === 'many-to-one') {
+      const possibleOutputQty = state.materials.map((material) => {
+        const consumeQty = Number(material.consumeQty);
+        const refConsumeQty = Number(material.refConsumeQty);
+        return consumeQty > 0 && refConsumeQty > 0 ? consumeQty / refConsumeQty : null;
+      });
+      const refQty = possibleOutputQty.length > 0 && possibleOutputQty.every((qty) => Number.isFinite(qty))
+        ? Math.min(...possibleOutputQty)
+        : 0;
+      state.outputs.forEach((output) => {
+        output.refQty = refQty > 0 ? refQty.toFixed(2) : '';
+      });
+      return;
+    }
     const totalConsume = state.materials.reduce((sum, m) => sum + (Number(m.consumeQty) || 0), 0);
     state.outputs.forEach((output) => {
       const coefficient = Number(output.refCoefficient) || 0;
@@ -781,17 +982,22 @@
     const tpl = state.templates.find((t) => t.id === templateId);
     if (!tpl) return;
 
+    const preserveOrderDemandContext = state.operationMode === 'order' && hasExpectedDeliveryRange();
     state.selectedTemplateId = templateId;
     state.costMode = tpl.costMode || 'auto';
     state.processingDate = getLocalDateString();
-    state.expectedDeliveryStart = getDefaultExpectedDeliveryDate();
-    state.expectedDeliveryEnd = getDefaultExpectedDeliveryDate();
-    state.customer = '全部';
-    state.canteen = '全部';
+    if (!preserveOrderDemandContext) {
+      state.expectedDeliveryStart = getDefaultExpectedDeliveryDate();
+      state.expectedDeliveryEnd = getDefaultExpectedDeliveryDate();
+      clearOrderDemandFilter();
+      state.customer = '全部';
+      state.canteen = '全部';
+    }
     state.materialWarehouse = tpl.materialWarehouse || tpl.materials?.[0]?.warehouse || '';
     state.outputWarehouse = tpl.outputWarehouse || tpl.outputs?.[0]?.warehouse || state.materialWarehouse;
     state.remark = '';
     state.attachments = [];
+    state.manyToOneBaseMaterialIndex = null;
 
     // 从模版填充原料
     state.materials = (tpl.materials || []).map((m) => {
@@ -802,7 +1008,8 @@
         unit: product?.unit || m.unit,
         stock: Math.floor(Math.random() * 200 + 20),
         avgPrice: product?.marketPrice || '',
-        consumeQty: m.refConsumeQty || ''
+        consumeQty: tpl.relationType === 'many-to-one' ? '' : (m.refConsumeQty || ''),
+        refConsumeQty: m.refConsumeQty || ''
       };
     });
 
@@ -838,6 +1045,7 @@
     state.outputWarehouse = tpl.outputWarehouse || tpl.outputs?.[0]?.warehouse || state.materialWarehouse;
     state.remark = '';
     state.attachments = [];
+    state.manyToOneBaseMaterialIndex = null;
     state.costMode = tpl.costMode || 'auto';
     state.materials = (tpl.materials || []).map((m) => {
       const product = findProduct(m.productCode);
@@ -847,7 +1055,8 @@
         unit: product?.unit || m.unit,
         stock: Math.floor(Math.random() * 200 + 20),
         avgPrice: product?.marketPrice || '',
-        consumeQty: m.refConsumeQty || ''
+        consumeQty: tpl.relationType === 'many-to-one' ? '' : (m.refConsumeQty || ''),
+        refConsumeQty: m.refConsumeQty || ''
       };
     });
     state.outputs = (tpl.outputs || []).map((o) => {
@@ -1009,6 +1218,10 @@
         applyOrderDemandQuery();
         return;
       }
+      if (action === 'reset-order-demand') {
+        resetOrderDemandQuery();
+        return;
+      }
       if (action === 'switch-operation-mode') {
         state.operationMode = event.target.closest('[data-action]')?.dataset.mode || 'plan';
         if (state.operationMode !== 'order') {
@@ -1082,6 +1295,24 @@
         const row = consumeInput.closest('[data-op-material-index]');
         const index = Number(row.dataset.opMaterialIndex);
         state.materials[index].consumeQty = consumeInput.value;
+        const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
+        const isManyToOne = selectedTemplate?.relationType === 'many-to-one';
+        if (isManyToOne) {
+          if (state.manyToOneBaseMaterialIndex == null && Number(consumeInput.value) > 0) {
+            state.manyToOneBaseMaterialIndex = index;
+          }
+          if (state.manyToOneBaseMaterialIndex === index) {
+            if (Number(consumeInput.value) > 0) {
+              syncManyToOneMaterialQuantities(index);
+            } else {
+              state.manyToOneBaseMaterialIndex = null;
+              state.materials.forEach((material, materialIndex) => {
+                if (materialIndex !== index) material.consumeQty = '';
+              });
+            }
+            updateManyToOneMaterialInputs(index);
+          }
+        }
         calculateRefQty();
         renderOpOutputTable();
         updateOpCostModeVisibility();
@@ -1303,6 +1534,8 @@
     const data = state.templateEditData;
     const description = String(data.description || '').slice(0, 200);
     const page = document.getElementById('templateEditorPage');
+    page.classList.toggle('is-one-to-many', data.relationType !== 'many-to-one');
+    page.classList.toggle('is-many-to-one', data.relationType === 'many-to-one');
 
     page.innerHTML = `
       <div class="template-editor-header">
@@ -1315,6 +1548,7 @@
       <div class="template-editor-body" id="templateModalBody">
         <div class="template-editor-section">
           <div class="basic-info-grid">
+            ${isEdit ? `<div class="basic-info-field" style="grid-column: 1 / -1"><label class="field-label">方案编号</label><div class="template-editor-readonly-id">${escapeHtml(data.id || '--')}</div></div>` : ''}
             <div class="basic-info-field">
               <label class="field-label required" for="tplName">方案名称</label>
               <input class="form-control" id="tplName" placeholder="请输入" value="${escapeHtml(data.name || '')}">
@@ -1331,6 +1565,22 @@
 
         <div class="template-editor-section">
           <div class="form-section-header">
+            <span class="section-title-mark">加工类型</span>
+          </div>
+          <div class="cost-mode-row template-relation-type-row">
+            <label class="radio-option">
+              <input type="radio" name="tplRelationType" value="one-to-many" ${data.relationType !== 'many-to-one' ? 'checked' : ''} ${isEdit ? 'disabled' : ''}>
+                一种原料加工为多种成品
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tplRelationType" value="many-to-one" ${data.relationType === 'many-to-one' ? 'checked' : ''} ${isEdit ? 'disabled' : ''}>
+              多种原料加工为一种成品
+            </label>
+          </div>
+        </div>
+
+        <div class="template-editor-section" id="tplMaterialSection">
+          <div class="form-section-header">
             <span class="section-title-mark">原料商品</span>
           </div>
           <div class="form-section-body template-single-warehouse-field">
@@ -1342,15 +1592,17 @@
           <table class="processing-sub-table">
             <thead>
               <tr>
-                <th style="width:240px">原料商品</th>
-                <th style="width:80px">单位</th>
+                <th class="template-product-column">原料商品</th>
+                <th class="template-unit-column">单位</th>
+                <th class="template-detail-column" id="tplMaterialDemandHeader" style="display:none">${renderCoefficientHeader('单位成品需求系数', coefficientHints.materialDemand)}</th>
+                <th class="template-action-column" id="tplMaterialActionHeader" style="display:none">操作</th>
               </tr>
             </thead>
             <tbody id="tplMaterialBody"></tbody>
           </table>
         </div>
 
-        <div class="template-editor-section">
+        <div class="template-editor-section" id="tplOutputSection">
           <div class="form-section-header">
             <span class="section-title-mark">成品商品</span>
           </div>
@@ -1363,26 +1615,28 @@
           <table class="processing-sub-table">
             <thead>
               <tr>
-                <th style="width:180px">成品商品</th>
-                <th style="width:70px">单位</th>
-                <th style="width:100px">转换系数</th>
-                <th style="width:60px">操作</th>
+                <th class="template-product-column">成品商品</th>
+                <th class="template-unit-column">单位</th>
+                <th class="template-detail-column" id="tplOutputCoefficientHeader">${renderCoefficientHeader('加工系数', coefficientHints.outputCoefficient)}</th>
+                <th class="template-action-column" id="tplOutputActionHeader">操作</th>
               </tr>
             </thead>
             <tbody id="tplOutputBody"></tbody>
           </table>
         </div>
       </div>
-      <div class="processing-form-footer">
+      <div class="processing-form-footer template-editor-footer">
+        <button class="btn" type="button" data-action="close-template-modal">返回</button>
         <button class="btn btn-primary" type="button" data-action="save-template">保存方案</button>
-        <button class="btn" type="button" data-action="close-template-modal">取消</button>
       </div>
     `;
 
+    reorderTemplateRelationSections();
     renderTplMaterialTable();
     renderTplOutputTable();
     renderTplMaterialWarehouseField();
     renderTplOutputWarehouseField();
+    syncTemplateDescriptionWidth();
     bindTemplateEditorEvents();
   }
 
@@ -1390,78 +1644,250 @@
     const container = document.getElementById('tplMaterialWarehouseField');
     if (!container) return;
     const isEdit = state.templateEditMode === 'edit';
-    const item = state.templateEditData.materials[0] || {};
-    container.innerHTML = isEdit
-      ? `<span class="template-warehouse-readonly">${escapeHtml(item.warehouse || '--')}</span>`
-      : renderWarehouseSelect(item.warehouse);
+    const isManyToOne = getTemplateRelationType() === 'many-to-one';
+    const item = state.templateEditData.materials?.find((material) => material.warehouse)
+      || state.templateEditData.materials?.[0]
+      || {};
+    container.innerHTML = isEdit && !isManyToOne
+      ? `<span class="template-warehouse-readonly">${escapeHtml(state.templateEditData.materialWarehouse || item.warehouse || '--')}</span>`
+      : renderWarehouseSelect(state.templateEditData.materialWarehouse || item.warehouse || '');
   }
 
   function renderTplOutputWarehouseField() {
     const container = document.getElementById('tplOutputWarehouseField');
     if (!container) return;
+    const isEdit = state.templateEditMode === 'edit';
+    const isManyToOne = getTemplateRelationType() === 'many-to-one';
     const outputs = Array.isArray(state.templateEditData.outputs) ? state.templateEditData.outputs : [];
     const selectedWarehouse = state.templateEditData.outputWarehouse
       || outputs.find((item) => item.warehouse)?.warehouse
       || state.templateEditData.materials?.[0]?.warehouse
       || '';
-    container.innerHTML = renderWarehouseSelect(selectedWarehouse, 'output');
+    container.innerHTML = isEdit && isManyToOne
+      ? `<span class="template-warehouse-readonly">${escapeHtml(selectedWarehouse || '--')}</span>`
+      : renderWarehouseSelect(selectedWarehouse, 'output');
+  }
+
+  function reorderTemplateRelationSections() {
+    const body = document.getElementById('templateModalBody');
+    const materialSection = document.getElementById('tplMaterialSection');
+    const outputSection = document.getElementById('tplOutputSection');
+    if (!body || !materialSection || !outputSection) return;
+    if (getTemplateRelationType() === 'many-to-one') {
+      body.insertBefore(outputSection, materialSection);
+    } else {
+      body.insertBefore(materialSection, outputSection);
+    }
+  }
+
+  function createBlankTemplateMaterial(warehouse = '') {
+    return { warehouse, productCode: '', productName: '', unit: '', refConsumeQty: '' };
+  }
+
+  function createBlankTemplateOutput(warehouse = '') {
+    return { warehouse, productCode: '', productName: '', unit: '', refCoefficient: '' };
+  }
+
+  function getTemplateRelationType() {
+    return state.templateEditData?.relationType === 'many-to-one' ? 'many-to-one' : 'one-to-many';
+  }
+
+  function normalizeTemplateRows() {
+    const data = state.templateEditData;
+    if (!data) return;
+    const relationType = data.relationType === 'many-to-one' ? 'many-to-one' : 'one-to-many';
+    const sourceMaterials = Array.isArray(data.materials) ? data.materials : [];
+    const sourceOutputs = Array.isArray(data.outputs) ? data.outputs : [];
+    const materialWarehouse = data.materialWarehouse || sourceMaterials.find((item) => item.warehouse)?.warehouse || '';
+    const outputWarehouse = data.outputWarehouse
+      || sourceOutputs.find((item) => item.warehouse)?.warehouse
+      || materialWarehouse;
+    data.materialWarehouse = materialWarehouse;
+    data.outputWarehouse = outputWarehouse;
+    data.relationType = relationType;
+
+    const selectedMaterials = sourceMaterials
+      .filter((item) => item.productCode)
+      .slice(0, relationType === 'many-to-one' ? MATERIAL_LIMIT : 1)
+      .map((item) => ({ ...item, warehouse: materialWarehouse }));
+    const blankMaterials = sourceMaterials.filter((item) => !item.productCode);
+    if (relationType === 'many-to-one') {
+      data.materials = selectedMaterials.concat(
+        blankMaterials.length ? blankMaterials : [createBlankTemplateMaterial(materialWarehouse)]
+      );
+      if (selectedMaterials.length >= MATERIAL_LIMIT) data.materials = selectedMaterials;
+    } else {
+      data.materials = [selectedMaterials[0] || createBlankTemplateMaterial(materialWarehouse)];
+    }
+
+    const selectedOutputs = sourceOutputs
+      .filter((item) => item.productCode)
+      .slice(0, relationType === 'many-to-one' ? 1 : OUTPUT_LIMIT)
+      .map((item) => ({ ...item, warehouse: outputWarehouse }));
+    const blankOutput = sourceOutputs.find((item) => !item.productCode);
+    data.outputs = relationType === 'many-to-one'
+      ? [selectedOutputs[0] || blankOutput || createBlankTemplateOutput(outputWarehouse)]
+      : selectedOutputs.concat(selectedOutputs.length < OUTPUT_LIMIT
+        ? [blankOutput || createBlankTemplateOutput(outputWarehouse)]
+        : []);
   }
 
   function renderTplMaterialTable() {
     const tbody = document.getElementById('tplMaterialBody');
     if (!tbody) return;
+    normalizeTemplateRows();
     const isEdit = state.templateEditMode === 'edit';
-    const item = state.templateEditData.materials[0] || { warehouse: '', productCode: '', productName: '', unit: '', refConsumeQty: '' };
-    const displayData = getProductDisplayData(item);
-    const unit = displayData.unit;
-    const netTag = displayData.product?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-    const materialDisplay = item.productCode ? `${netTag}<span>${escapeHtml(formatProductDisplay(item))}</span>` : '';
-    tbody.innerHTML = `
-      <tr data-tpl-material-index="0">
-        <td>
-          ${isEdit
-            ? `<span class="sub-table-readonly template-product-display">${materialDisplay || '--'}</span>`
-            : (item.warehouse
-                ? renderProductSelect('material', item.productCode, true)
-                : `<span class="sub-table-readonly sub-table-placeholder">请先选择仓库</span>`)
-          }
-        </td>
-        <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
-      </tr>
-    `;
-  }
-
-  function renderTplOutputTable() {
-    const tbody = document.getElementById('tplOutputBody');
-    if (!tbody) return;
-    normalizeOutputRows();
-    tbody.innerHTML = state.templateEditData.outputs.map((item, index) => {
-      const product = item.productCode ? findProduct(item.productCode) : null;
-      const unit = product ? product.unit : (item.unit || '--');
+    const isManyToOne = getTemplateRelationType() === 'many-to-one';
+    const demandHeader = document.getElementById('tplMaterialDemandHeader');
+    const actionHeader = document.getElementById('tplMaterialActionHeader');
+    if (demandHeader) demandHeader.style.display = isManyToOne ? '' : 'none';
+    if (actionHeader) actionHeader.style.display = isManyToOne ? '' : 'none';
+    tbody.innerHTML = state.templateEditData.materials.map((item, index) => {
+      const displayData = getProductDisplayData(item);
+      const materialDisplay = item.productCode
+        ? `${displayData.product?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span>${escapeHtml(formatProductDisplay(item))}</span>`
+        : '';
+      const materialReadonly = isEdit && !isManyToOne;
+      const productCell = materialReadonly
+        ? `<span class="sub-table-readonly template-product-display">${materialDisplay || '--'}</span>`
+        : item.warehouse
+          ? renderProductSelect('material', item.productCode, true, index)
+          : '<span class="sub-table-readonly sub-table-placeholder">请先选择仓库</span>';
       return `
-        <tr data-tpl-output-index="${index}">
-          <td>
-            ${renderProductSelect('output', item.productCode, true, index)}
+        <tr data-tpl-material-index="${index}">
+          <td>${productCell}</td>
+          <td><span class="sub-table-readonly">${escapeHtml(displayData.unit)}</span></td>
+          <td style="display:${isManyToOne ? 'table-cell' : 'none'}">
+            ${isManyToOne
+              ? `<input class="sub-table-input" type="number" min="0" step="0.0001" placeholder="请输入" data-tpl-material-field="refConsumeQty" value="${escapeHtml(item.refConsumeQty || '')}">`
+              : ''}
           </td>
-          <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
-          <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-tpl-output-field="refCoefficient" value="${item.refCoefficient || ''}"></td>
-          <td><button class="row-delete-btn" type="button" data-action="tpl-delete-output" data-index="${index}">删除</button></td>
+          <td style="display:${isManyToOne ? 'table-cell' : 'none'}">
+            ${isManyToOne && item.productCode ? `<button class="row-delete-btn" type="button" data-action="tpl-delete-material" data-index="${index}">删除</button>` : ''}
+          </td>
         </tr>
       `;
     }).join('');
   }
 
-  function normalizeOutputRows() {
-    const outputs = Array.isArray(state.templateEditData.outputs) ? state.templateEditData.outputs : [];
-    const materialWarehouse = state.templateEditData.materialWarehouse || state.templateEditData.materials?.[0]?.warehouse || '';
-    const outputWarehouse = state.templateEditData.outputWarehouse || outputs.find((item) => item.warehouse)?.warehouse || materialWarehouse;
-    state.templateEditData.materialWarehouse = materialWarehouse;
-    state.templateEditData.outputWarehouse = outputWarehouse;
-    const selected = outputs.filter((item) => item.productCode).slice(0, OUTPUT_LIMIT)
-      .map((item) => ({ ...item, warehouse: outputWarehouse }));
-    state.templateEditData.outputs = selected;
-    if (selected.length < OUTPUT_LIMIT) {
-      state.templateEditData.outputs.push({ warehouse: outputWarehouse, productCode: '', productName: '', unit: '', refCoefficient: '' });
+  function renderTplOutputTable() {
+    const tbody = document.getElementById('tplOutputBody');
+    if (!tbody) return;
+    normalizeTemplateRows();
+    const data = state.templateEditData;
+    const isManyToOne = getTemplateRelationType() === 'many-to-one';
+    const coefficientHeader = document.getElementById('tplOutputCoefficientHeader');
+    const actionHeader = document.getElementById('tplOutputActionHeader');
+    if (coefficientHeader) coefficientHeader.style.display = isManyToOne ? 'none' : '';
+    if (actionHeader) actionHeader.style.display = isManyToOne ? 'none' : '';
+    tbody.innerHTML = data.outputs.map((item, index) => {
+      const product = item.productCode ? findProduct(item.productCode) : null;
+      const unit = product ? product.unit : (item.unit || '--');
+      const outputProductCell = state.templateEditMode === 'edit' && isManyToOne
+        ? `<span class="sub-table-readonly template-product-display">${item.productCode ? escapeHtml(formatProductDisplay(item)) : '--'}</span>`
+        : renderProductSelect('output', item.productCode, true, index);
+      return `
+        <tr data-tpl-output-index="${index}">
+          <td>${outputProductCell}</td>
+          <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
+          <td style="display:${isManyToOne ? 'none' : 'table-cell'}"><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-tpl-output-field="refCoefficient" value="${escapeHtml(item.refCoefficient || '')}"></td>
+          <td style="display:${isManyToOne ? 'none' : 'table-cell'}">${!isManyToOne && item.productCode
+            ? `<button class="row-delete-btn" type="button" data-action="tpl-delete-output" data-index="${index}">删除</button>`
+            : ''}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function syncTemplateDescriptionWidth() {
+    const control = document.querySelector('.template-description-control');
+    const isManyToOne = getTemplateRelationType() === 'many-to-one';
+    const topTable = document.querySelector(isManyToOne
+      ? '#tplOutputSection .processing-sub-table'
+      : '#tplMaterialSection .processing-sub-table');
+    if (!control || !topTable) return;
+
+    const controlLeft = control.getBoundingClientRect().left;
+    const topTableRight = topTable.getBoundingClientRect().right;
+    const width = topTableRight - controlLeft;
+    if (width <= 0) return;
+    control.style.flex = '0 0 auto';
+    control.style.width = `${Math.round(width)}px`;
+    control.style.maxWidth = '100%';
+  }
+
+  function closeCustomSelect(select) {
+    if (!select) return;
+    select.classList.remove('is-open', 'is-drop-up', 'is-searching');
+    const dropdown = select.querySelector('.custom-select-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    const input = select.querySelector('.product-combobox-input');
+    if (input) {
+      input.value = input.dataset.displayValue || '';
+      input.placeholder = '请选择';
+      input.setAttribute('aria-expanded', 'false');
+      filterProductSelectOptions(select);
+    }
+  }
+
+  function positionCustomSelectDropdown(select) {
+    const dropdown = select?.querySelector('.custom-select-dropdown');
+    const trigger = select?.querySelector('.custom-select-trigger');
+    if (!dropdown || !trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    dropdown.style.display = 'block';
+    dropdown.style.position = 'fixed';
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.width = rect.width + 'px';
+    dropdown.style.zIndex = '100';
+
+    const viewportH = window.innerHeight;
+    const viewportPadding = 12;
+    const dropdownMaxHeight = 280;
+    const footer = document.querySelector('#templateEditorPage > .processing-form-footer');
+    const footerRect = footer?.getBoundingClientRect();
+    const viewportBottom = viewportH - viewportPadding;
+    const footerBoundary = footerRect
+      && footerRect.top > rect.bottom
+      && footerRect.top < viewportH
+      ? footerRect.top - 8
+      : viewportBottom;
+    const lowerBoundary = Math.min(viewportBottom, footerBoundary);
+    const spaceBelow = Math.max(0, lowerBoundary - rect.bottom);
+    const spaceAbove = Math.max(0, rect.top - viewportPadding);
+    dropdown.style.maxHeight = '';
+    const desiredHeight = Math.min(dropdownMaxHeight, dropdown.scrollHeight || dropdownMaxHeight);
+    const openUpward = spaceBelow < desiredHeight && spaceAbove > spaceBelow;
+    const availableHeight = openUpward ? spaceAbove : spaceBelow;
+    select.classList.toggle('is-drop-up', openUpward);
+    dropdown.style.maxHeight = Math.min(desiredHeight, availableHeight) + 'px';
+    if (openUpward) {
+      dropdown.style.top = 'auto';
+      dropdown.style.bottom = (viewportH - rect.top) + 'px';
+    } else {
+      dropdown.style.top = rect.bottom + 'px';
+      dropdown.style.bottom = 'auto';
+    }
+    dropdown.scrollTop = 0;
+  }
+
+  function openCustomSelect(select, { selectInput = true } = {}) {
+    if (!select) return;
+    document.querySelectorAll('.custom-select.is-open').forEach((current) => {
+      if (current !== select) closeCustomSelect(current);
+    });
+    select.classList.add('is-open');
+    const input = select.querySelector('.product-combobox-input');
+    if (input) {
+      input.placeholder = '搜索商品名称/编码';
+      input.setAttribute('aria-expanded', 'true');
+      filterProductSelectOptions(select);
+    }
+    positionCustomSelectDropdown(select);
+    if (input && selectInput) {
+      input.focus({ preventScroll: true });
+      input.select();
     }
   }
 
@@ -1473,47 +1899,44 @@
 
     body.addEventListener('click', (event) => {
       const action = event.target.closest('[data-action]')?.dataset.action;
+      if (action === 'tpl-delete-material') {
+        if (getTemplateRelationType() !== 'many-to-one') return;
+        normalizeTemplateRows();
+        const selectedCount = state.templateEditData.materials.filter((material) => material.productCode).length;
+        if (selectedCount <= 1) {
+          showTemplateToast('至少保留1条原料');
+          return;
+        }
+        const index = Number(event.target.closest('[data-action]').dataset.index);
+        state.templateEditData.materials.splice(index, 1);
+        renderTplMaterialTable();
+        return;
+      }
       if (action === 'tpl-delete-output') {
-        if (state.templateEditData.outputs.length <= 1) return;
+        if (getTemplateRelationType() === 'many-to-one') return;
+        normalizeTemplateRows();
+        const selectedCount = state.templateEditData.outputs.filter((output) => output.productCode).length;
+        if (selectedCount <= 1) {
+          showTemplateToast('至少保留1条成品');
+          return;
+        }
         const index = Number(event.target.closest('[data-action]').dataset.index);
         state.templateEditData.outputs.splice(index, 1);
         renderTplOutputTable();
         return;
       }
+      if (action === 'product-combobox-input') {
+        const select = event.target.closest('.custom-select');
+        if (!select.classList.contains('is-open')) openCustomSelect(select);
+        event.stopPropagation();
+        return;
+      }
       if (action === 'toggle-select') {
         const select = event.target.closest('.custom-select');
-        document.querySelectorAll('.custom-select.is-open').forEach((s) => {
-          if (s !== select) {
-            s.classList.remove('is-open');
-            const dd = s.querySelector('.custom-select-dropdown');
-            if (dd) dd.style.display = 'none';
-          }
-        });
-        const dropdown = select.querySelector('.custom-select-dropdown');
         if (select.classList.contains('is-open')) {
-          select.classList.remove('is-open');
-          dropdown.style.display = 'none';
+          closeCustomSelect(select);
         } else {
-          select.classList.add('is-open');
-          // 用 fixed 定位脱离弹窗 overflow 裁剪
-          const trigger = select.querySelector('.custom-select-trigger');
-          const rect = trigger.getBoundingClientRect();
-          dropdown.style.display = 'block';
-          dropdown.style.position = 'fixed';
-          dropdown.style.left = rect.left + 'px';
-          dropdown.style.width = rect.width + 'px';
-          dropdown.style.zIndex = '100';
-          // 优先在下方显示，空间不足时在上方
-          const viewportH = window.innerHeight;
-          const spaceBelow = viewportH - rect.bottom - 10;
-          const spaceAbove = rect.top - 10;
-          if (spaceBelow >= 120) {
-            dropdown.style.top = rect.bottom + 'px';
-            dropdown.style.maxHeight = Math.min(240, spaceBelow) + 'px';
-          } else {
-            dropdown.style.top = (rect.top - Math.min(240, spaceAbove)) + 'px';
-            dropdown.style.maxHeight = Math.min(240, spaceAbove) + 'px';
-          }
+          openCustomSelect(select);
         }
         event.stopPropagation();
         return;
@@ -1527,14 +1950,15 @@
         const select = option.closest('.custom-select');
         const fieldType = select.dataset.selectType;
         const product = findProduct(option.dataset.value);
-        select.classList.remove('is-open');
-        const dd = select.querySelector('.custom-select-dropdown');
-        if (dd) dd.style.display = 'none';
+        closeCustomSelect(select);
         if (fieldType === 'material') {
-          if (product) {
-            state.templateEditData.materials[0].productCode = product.code;
-            state.templateEditData.materials[0].productName = product.name;
-            state.templateEditData.materials[0].unit = product.unit;
+          const row = option.closest('[data-tpl-material-index]');
+          const index = Number(row?.dataset.tplMaterialIndex);
+          const target = state.templateEditData.materials[index];
+          if (product && target) {
+            target.productCode = product.code;
+            target.productName = product.name;
+            target.unit = product.unit;
           }
           renderTplMaterialTable();
         } else if (fieldType === 'output') {
@@ -1555,24 +1979,27 @@
         const select = option.closest('.custom-select');
         const warehouse = option.dataset.value;
         const warehouseScope = option.closest('.custom-select')?.dataset.warehouseScope || '';
-        select.classList.remove('is-open');
-        const dd = select.querySelector('.custom-select-dropdown');
-        if (dd) dd.style.display = 'none';
+        closeCustomSelect(select);
         if (warehouseScope === 'output') {
           state.templateEditData.outputWarehouse = warehouse;
           state.templateEditData.outputs.forEach((output) => { output.warehouse = warehouse; });
           renderTplOutputTable();
           renderTplOutputWarehouseField();
         } else {
-          // 原料仓库选择，保留原有清空商品并重置成品仓库的逻辑
-          state.templateEditData.materials[0].warehouse = warehouse;
+          const isManyToOne = getTemplateRelationType() === 'many-to-one';
+          // 多对一的原料端可换仓库，但不能因为换仓库破坏已有原料配置。
+          state.templateEditData.materials.forEach((material) => { material.warehouse = warehouse; });
           state.templateEditData.materialWarehouse = warehouse;
-          state.templateEditData.materials[0].productCode = '';
-          state.templateEditData.materials[0].productName = '';
-          state.templateEditData.materials[0].unit = '';
-          // 清空所有成品的仓库，让它们回显原料仓库
-          state.templateEditData.outputWarehouse = '';
-          state.templateEditData.outputs.forEach((o) => { o.warehouse = ''; });
+          if (!isManyToOne) {
+            // 一对多创建时更换原料仓库，需要重新选择原料，并重置成品仓库回显。
+            state.templateEditData.materials.forEach((material) => {
+              material.productCode = '';
+              material.productName = '';
+              material.unit = '';
+            });
+            state.templateEditData.outputWarehouse = '';
+            state.templateEditData.outputs.forEach((output) => { output.warehouse = ''; });
+          }
           renderTplMaterialTable();
           renderTplOutputTable();
           renderTplMaterialWarehouseField();
@@ -1584,9 +2011,28 @@
     });
 
     body.addEventListener('input', (event) => {
+      const productInput = event.target.closest('.product-combobox-input');
+      if (productInput) {
+        const select = productInput.closest('.custom-select');
+        if (!select.classList.contains('is-open')) {
+          openCustomSelect(select, { selectInput: false });
+        }
+        select.classList.add('is-searching');
+        filterProductSelectOptions(select, productInput.value);
+        return;
+      }
       if (event.target.id === 'tplDesc') {
         const counter = document.getElementById('tplDescCounter');
         if (counter) counter.textContent = `${event.target.value.length}/200`;
+        return;
+      }
+      const refConsumeInput = event.target.closest('[data-tpl-material-field="refConsumeQty"]');
+      if (refConsumeInput) {
+        const row = refConsumeInput.closest('[data-tpl-material-index]');
+        const index = Number(row?.dataset.tplMaterialIndex);
+        if (state.templateEditData.materials[index]) {
+          state.templateEditData.materials[index].refConsumeQty = refConsumeInput.value;
+        }
         return;
       }
       const refCoeffInput = event.target.closest('[data-tpl-output-field="refCoefficient"]');
@@ -1603,6 +2049,20 @@
         state.templateEditData.outputs[index].refCostPrice = refCostInput.value;
         return;
       }
+    });
+
+    body.addEventListener('change', (event) => {
+      const relationTypeInput = event.target.closest('input[name="tplRelationType"]');
+      if (!relationTypeInput) return;
+      state.templateEditData.relationType = relationTypeInput.value;
+      const editorPage = document.getElementById('templateEditorPage');
+      editorPage?.classList.toggle('is-one-to-many', relationTypeInput.value !== 'many-to-one');
+      editorPage?.classList.toggle('is-many-to-one', relationTypeInput.value === 'many-to-one');
+      normalizeTemplateRows();
+      reorderTemplateRelationSections();
+      renderTplMaterialTable();
+      renderTplOutputTable();
+      syncTemplateDescriptionWidth();
     });
   }
 
@@ -1629,14 +2089,27 @@
     const description = document.getElementById('tplDesc').value.trim();
     if (!name) { alert('请输入方案名称'); return; }
 
-    normalizeOutputRows();
+    normalizeTemplateRows();
+    const relationType = getTemplateRelationType();
     const validMaterials = state.templateEditData.materials.filter((m) => m.productCode);
-    if (state.templateEditData.materials.length !== 1 || validMaterials.length !== 1) {
-      alert('原料只能设置1条且不能为空');
+    if (validMaterials.length === 0) {
+      alert('至少配置1条原料');
       return;
     }
-    if (!validMaterials[0].warehouse) { alert('请选择原料仓库'); return; }
-    const materialWarehouse = validMaterials[0].warehouse;
+    if (validMaterials.length > MATERIAL_LIMIT) { alert(`原料最多添加${MATERIAL_LIMIT}条`); return; }
+    if (relationType === 'many-to-one') {
+      const materialCodes = validMaterials.map((material) => material.productCode);
+      if (new Set(materialCodes).size !== materialCodes.length) {
+        alert('原料商品不能重复');
+        return;
+      }
+      if (validMaterials.some((material) => !Number.isFinite(Number(material.refConsumeQty)) || Number(material.refConsumeQty) <= 0)) {
+        alert('请填写每种原料的单位成品需求系数，且必须大于0');
+        return;
+      }
+    }
+    const materialWarehouse = state.templateEditData.materialWarehouse || validMaterials[0].warehouse;
+    if (!materialWarehouse) { alert('请选择原料仓库'); return; }
     const outputWarehouse = state.templateEditData.outputWarehouse || materialWarehouse;
     const validOutputs = state.templateEditData.outputs
       .filter((o) => o.productCode)
@@ -1646,6 +2119,10 @@
       }));
     if (validOutputs.length === 0) {
       alert('成品商品不能为空');
+      return;
+    }
+    if (relationType === 'many-to-one' && validOutputs.length !== 1) {
+      alert('多对一关系只能设置1条成品');
       return;
     }
     if (validOutputs.length > OUTPUT_LIMIT) { alert(`成品最多添加${OUTPUT_LIMIT}条`); return; }
@@ -1658,28 +2135,31 @@
       alert('请选择成品入库仓库');
       return;
     }
-    if (validOutputs.some((output) => !Number.isFinite(Number(output.refCoefficient)) || Number(output.refCoefficient) <= 0)) {
-      alert('转换系数不能为空且必须大于0');
+    if (relationType === 'one-to-many'
+      && validOutputs.some((output) => !Number.isFinite(Number(output.refCoefficient)) || Number(output.refCoefficient) <= 0)) {
+      alert('加工系数不能为空且必须大于0');
       return;
     }
 
     const payload = {
       name,
       description,
+      relationType,
       materialWarehouse,
       outputWarehouse,
       materials: validMaterials.map((m) => ({
         warehouse: materialWarehouse,
         productCode: m.productCode,
         productName: m.productName,
-        unit: m.unit
+        unit: m.unit,
+        refConsumeQty: relationType === 'many-to-one' ? m.refConsumeQty : ''
       })),
       outputs: validOutputs.map((o) => ({
         warehouse: outputWarehouse,
         productCode: o.productCode,
         productName: o.productName,
         unit: o.unit,
-        refCoefficient: o.refCoefficient
+        refCoefficient: relationType === 'one-to-many' ? o.refCoefficient : ''
       }))
     };
 
@@ -1740,15 +2220,15 @@
     state.templateEditData = {
       name: '',
       description: '',
-      materials: [{ warehouse: defaultWarehouse, productCode: '', productName: '', unit: '', refConsumeQty: '' }],
+      relationType: 'one-to-many',
+      materials: [createBlankTemplateMaterial(defaultWarehouse)],
       materialWarehouse: defaultWarehouse,
       outputWarehouse: '',
       outputs: [{
-        warehouse: '',
+        ...createBlankTemplateOutput(''),
         productCode: outputProduct?.code || '',
         productName: outputProduct?.name || '',
-        unit: outputProduct?.unit || '',
-        refCoefficient: ''
+        unit: outputProduct?.unit || ''
       }]
     };
     showTemplateEditorPage();
@@ -1834,12 +2314,9 @@
   bindGlobalEvents();
   bindTemplateEditorPageEvents();
   bindSubmitConfirmEvents();
+  window.addEventListener('resize', syncTemplateDescriptionWidth);
 
   document.addEventListener('click', () => {
-    document.querySelectorAll('.custom-select.is-open').forEach((s) => {
-      s.classList.remove('is-open');
-      const dd = s.querySelector('.custom-select-dropdown');
-      if (dd) dd.style.display = 'none';
-    });
+    document.querySelectorAll('.custom-select.is-open').forEach(closeCustomSelect);
   });
 })();
