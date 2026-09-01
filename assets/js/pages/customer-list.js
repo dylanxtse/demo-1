@@ -7,7 +7,7 @@
     .replace(/'/g, '&#039;');
 
   const content = `
-    <section class="page-card operations-page order-module-page" aria-label="客户档案">
+    <section class="page-card operations-page order-module-page customer-page" aria-label="客户档案">
       <div class="operations-filter filter-section">
         <div class="operations-filter-main">
           <div class="operations-filter-grid">
@@ -21,13 +21,13 @@
       <div class="operations-toolbar"><div class="operations-toolbar-main"><button class="btn btn-primary btn-sm" data-action="add">新增客户</button></div></div>
       <div class="operations-table-container">
         <div class="operations-table-wrap"><table class="operations-table"><thead><tr><th>客户编码</th><th>客户名称</th><th>客户类型</th><th>食堂数量</th><th>状态</th><th>操作</th></tr></thead><tbody id="customerBody"></tbody></table></div>
-        <div class="operations-pagination" id="customerPagination"></div>
+        <div class="pagination" id="customerPagination"></div>
       </div>
     </section>
     <div id="customerOverlay"></div>`;
 
   const root = window.AppShell.mount({ title: '客户档案', content });
-  const state = { customers: [], filter: {} };
+  const state = { customers: [], filter: {}, page: 1, pageSize: 20, pagination: null };
   const body = root.querySelector('#customerBody');
   const overlay = root.querySelector('#customerOverlay');
 
@@ -35,12 +35,13 @@
     return `<span class="operation-status ${status === 'ENABLE' ? 'success' : 'danger'}">${status === 'ENABLE' ? '启用' : '停用'}</span>`;
   }
 
-  function load() {
-    state.customers = window.MasterDataService.listCustomers(state.filter).map((customer) => ({
-      ...customer,
-      locations: window.MasterDataService.getLocations(customer.id)
-    }));
-    body.innerHTML = state.customers.length ? state.customers.map((customer) => `
+  function renderRows() {
+    const pageState = state.pagination?.getState() || { page: state.page, pageSize: state.pageSize };
+    state.page = pageState.page;
+    state.pageSize = pageState.pageSize;
+    const start = (state.page - 1) * state.pageSize;
+    const visibleCustomers = state.customers.slice(start, start + state.pageSize);
+    body.innerHTML = visibleCustomers.length ? visibleCustomers.map((customer) => `
       <tr data-id="${escapeHtml(customer.id)}">
         <td>${escapeHtml(customer.customerCode)}</td>
         <td>${escapeHtml(customer.customerName)}</td>
@@ -49,7 +50,16 @@
         <td>${statusHtml(customer.status)}</td>
         <td><button class="btn-text" data-row-action="edit">编辑</button></td>
       </tr>`).join('') : '<tr><td class="empty-cell" colspan="6">暂无数据</td></tr>';
-    root.querySelector('#customerPagination').textContent = `共 ${state.customers.length} 条数据`;
+  }
+
+  function load() {
+    state.customers = window.MasterDataService.listCustomers(state.filter).map((customer) => ({
+      ...customer,
+      locations: window.MasterDataService.getLocations(customer.id)
+    }));
+    state.page = 1;
+    state.pagination?.update({ page: 1, total: state.customers.length });
+    renderRows();
   }
 
   function closeForm() { overlay.innerHTML = ''; }
@@ -66,6 +76,19 @@
     </section></div>`;
     overlay.dataset.id = customer.id || '';
   }
+
+  state.pagination = window.Pagination?.create({
+    container: root.querySelector('#customerPagination'),
+    page: state.page,
+    pageSize: state.pageSize,
+    total: 0,
+    pageSizeOptions: [10, 20, 50],
+    onChange: ({ page, pageSize }) => {
+      state.page = page;
+      state.pageSize = pageSize;
+      renderRows();
+    }
+  }) || null;
 
   root.addEventListener('click', (event) => {
     const action = event.target.closest('[data-action]')?.dataset.action;
