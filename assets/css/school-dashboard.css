@@ -9,19 +9,20 @@
 }
 
 .school-shell .menu-item.active > .menu-item-header {
-  color: #fff;
-  background: var(--primary);
+  color: var(--primary);
+  background: transparent;
   font-weight: 500;
 }
 
 .school-shell .menu-item.active > .menu-item-header .menu-icon,
 .school-shell .menu-item.active > .menu-item-header .menu-arrow {
-  color: #fff;
+  color: var(--primary);
 }
 
 .school-shell .menu-sub-item.selected {
-  color: var(--primary);
-  background: var(--primary-light);
+  color: #fff;
+  background: var(--primary);
+  font-weight: 500;
 }
 
 .school-shell .app-header {

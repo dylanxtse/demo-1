@@ -52,7 +52,7 @@
   }
 
   function render() {
-    page.innerHTML = `<div class="sales-statement-shell"><div class="sales-statement-topbar"><button type="button" class="btn btn-text sales-back-button" data-statement-back>← 返回</button><span>|</span><h2>生成对账单</h2></div>
+    page.innerHTML = `<div class="sales-statement-shell"><div class="sales-statement-topbar"><button type="button" class="back-link sales-back-button" data-statement-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h2>生成对账单</h2></div>
       <h1 class="sales-statement-title">魏县食材供应链管理有限公司对账单</h1>
       <div class="sales-statement-meta"><span><strong>业务日期：</strong>${escapeHtml(startDate)}—${escapeHtml(endDate)}</span><span><strong>生成时间：</strong>${escapeHtml(savedStatement?.generatedAt || '2026-08-25 12:00:00')}</span><span><strong>制单人：</strong>${escapeHtml(savedStatement?.operator || '管理员')}</span><span><strong>客户名称：</strong>${escapeHtml(sourceRecords[0]?.customerName || savedStatement?.customerName || '--')}</span><span><strong>对账金额：</strong>￥${money(amount)}</span><span><strong>应收金额：</strong>￥${money(receivable)}</span></div>
       <div class="sales-statement-section-title">对账明细 <button type="button" class="sales-statement-detail-link" data-statement-products>商品明细表</button></div>

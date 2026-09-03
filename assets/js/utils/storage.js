@@ -32,6 +32,35 @@
   const previousStorageKey = 'procurement-demo-v2';
   const backupStorageKey = 'procurement-demo-v3-migration-backup';
   const schemaVersion = '20260805-flow-v3.0';
+  const warehouseMonitorPointSeed = [
+    {
+      id: 'WMP-001',
+      name: '中心仓收货区',
+      description: '真实仓储装卸口视频，覆盖卸货月台和收货通道',
+      warehouseId: 'WH-001',
+      videoAddress: 'https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_warehouse_BHX4_loading_docks_2.webm',
+      createdAt: '2026-08-12 09:00:00',
+      updatedAt: '2026-08-12 09:00:00'
+    },
+    {
+      id: 'WMP-002',
+      name: '中心仓分拣区',
+      description: '真实包裹分拣线视频，查看分拣作业现场',
+      warehouseId: 'WH-001',
+      videoAddress: 'https://commons.wikimedia.org/wiki/Special:FilePath/Robot_package_handling.webm',
+      createdAt: '2026-08-12 09:10:00',
+      updatedAt: '2026-08-12 09:10:00'
+    },
+    {
+      id: 'WMP-003',
+      name: '北区仓出库口',
+      description: '真实出库装车口视频',
+      warehouseId: 'WH-002',
+      videoAddress: 'https://commons.wikimedia.org/wiki/Special:FilePath/Plastic_Industry_%287%29_-_Loading_dock.webm',
+      createdAt: '2026-08-12 09:20:00',
+      updatedAt: '2026-08-12 09:20:00'
+    }
+  ];
   const legacyBusinessStoragePrefixes = [
     'procurement-products',
     'procurement-inbound-orders',
@@ -259,17 +288,6 @@
     sortingInventoryThresholdEnabled: true,
     outboundAuditEnabled: true,
     defaultWarehouseId: 'WH-001',
-    orderPricePriority1: '协议价',
-    orderPricePriority2: '近一次销售价',
-    orderPricePriority3: '手动定价',
-    orderPricePriority4: '市场价',
-    purchasePriceMode: '竞价模式',
-    purchasePricePriority1: '中标价',
-    purchasePricePriority2: '近一次采购价',
-    purchasePricePriority3: '近一次采购价',
-    purchasePricePriority4: '',
-    purchasePricePriority5: '',
-    purchasePricePriority6: '',
     amountDecimal: '2',
     quantityDecimal: '0',
     decimalSettingsVersion: '20260815-default-decimals'
@@ -374,10 +392,10 @@
 
   function sourceProducts() {
     const fallbackProducts = [
-      ['SP0300039', '土豆丝', '斤', 1], ['SP0300040', '土豆', '斤', 6.8], ['SP0300038', '牛奶', '瓶', 5], ['SP0300037', '牛奶', '瓶', 5],
-      ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', '斤', 10], ['SP0300031', '鲫鱼', 'L', 20], ['SP0300030', '金龙鱼5L桶装油', '瓶', 55],
+      ['SP0300039', '土豆丝', '斤', 4.8], ['SP0300040', '土豆', '斤', 3.2], ['SP0300038', '牛奶', '瓶', 5], ['SP0300037', '牛奶', '瓶', 5],
+      ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', '斤', 10], ['SP0300031', '净膛鲫鱼', '斤', 18.5], ['SP0300030', '金龙鱼5L桶装油', '瓶', 55],
       ['SP0300029', '鲫鱼', '斤', 15], ['SP0300026', '面', '瓶', 1], ['SP0300025', '大米', 'KG', 19], ['SP0300024', '三元牛奶', '瓶', 10],
-      ['SP0300023', '大饼', '斤', 1], ['SP0300020', '西红柿', 'KG', 20], ['SP0300019', '大白菜', '斤', 8], ['SP0300018', '鸡蛋', '斤', 22],
+      ['SP0300023', '大饼', '斤', 1], ['SP0300020', '西红柿', 'KG', 5.6], ['SP0300019', '大白菜', '斤', 2.2], ['SP0300018', '鸡蛋', '斤', 22],
       ['SP0300017', '金龙鱼豆油', '斤', 50], ['SP0300016', '面粉', '斤', 30], ['SP0300015', '香蕉', '斤', 30], ['SP0300014', '苹果', '斤', 23],
       ['SP0300050', '土豆块', '斤', 5.2], ['SP0300051', '白菜段', '斤', 3.2], ['SP0300052', '白菜丝', '斤', 3.4],
       ['SP0300053', '胡萝卜', '斤', 2.8], ['SP0300054', '胡萝卜丝', '斤', 4.8], ['SP0300055', '胡萝卜片', '斤', 4.6],
@@ -505,6 +523,18 @@
     const result = clone(records || []);
     while (result.length < minimum) result.push(factory(result.length, result));
     return result;
+  }
+
+  const orderTagSeedRevision = 'order-tags-v2';
+  const legacyOrderTagNames = new Set(['营养餐', '普通餐', '应急保供', '节日餐']);
+  function normalizeOrderTags(state) {
+    if (state.orderTagSeedRevision === orderTagSeedRevision) return false;
+    const tags = Array.isArray(state.tags) ? state.tags : [];
+    const isLegacySeed = tags.length === 0
+      || tags.every((tag) => legacyOrderTagNames.has(String(tag?.tagName || '').trim()));
+    if (isLegacySeed) state.tags = clone(window.MockOperations?.tags || []);
+    state.orderTagSeedRevision = orderTagSeedRevision;
+    return true;
   }
 
   function sourceCustomers(extraOrders = []) {
@@ -754,8 +784,11 @@
             marketPrice: number(sourceProduct.marketPrice),
             isNetVegetable: sourceProduct.isNetVegetable === true
           };
-          if (!existing) state.products.push(normalized);
-          else Object.assign(existing, normalized);
+          if (!existing) {
+            state.products.push(normalized);
+          } else {
+            Object.assign(existing, normalized);
+          }
           changed = true;
         });
     }
@@ -807,72 +840,26 @@
     return changed;
   }
 
+  function resetProcessingModuleData(state) {
+    const revision = 'processing-module-v1';
+    if (state.processingModuleSeedRevision === revision) return false;
+    state.processingTemplates = clone(window.MockProcessingTemplates || []);
+    state.processingOrders = clone(window.MockProcessingOrders || []);
+    state.processingModuleSeedRevision = revision;
+    return true;
+  }
+
   function normalizeProcessingOutputs(state) {
-    const outputPlan = {
-      JGD20260727002: ['SP0300034', 'SP0300025'],
-      JGD20260726003: ['SP0300014', 'SP0300020'],
-      JGD20260725004: ['SP0300029', 'SP0300018']
-    };
+    const revision = 'processing-outputs-v5';
+    if (state.processingOutputSeedRevision === revision) return false;
     let changed = false;
     (state.processingOrders || []).forEach((record) => {
       if (!/^JG(?!D)/.test(String(record.id || ''))) return;
       record.id = `JGD${String(record.id).slice(2)}`;
       changed = true;
     });
-    Object.entries(outputPlan).forEach(([processingId, productCodes]) => {
-      const processingOrder = (state.processingOrders || []).find((record) => record.id === processingId);
-      if (!processingOrder) return;
-      const materialQty = number(processingOrder.materials?.[0]?.consumeQty, 10);
-      const outputs = Array.isArray(processingOrder.outputs) ? processingOrder.outputs : [];
-      productCodes.forEach((productCode, index) => {
-        if (outputs.some((output) => output.productCode === productCode)) return;
-        const product = (state.products || []).find((item) => (item.code || item.id) === productCode);
-        if (!product) return;
-        const coefficient = [0.8, 0.5][index] || 0.5;
-        const refQty = Number((materialQty * coefficient).toFixed(2));
-        outputs.push({
-          productCode,
-          productName: product.name,
-          unit: product.unit,
-          refCoefficient: coefficient,
-          refQty,
-          actualQty: refQty,
-          costPrice: number(product.marketPrice).toFixed(2)
-        });
-        changed = true;
-      });
-      if (processingOrder.outputs !== outputs) {
-        processingOrder.outputs = outputs;
-        changed = true;
-      }
-    });
-    (state.processingOrders || []).forEach((processingOrder, index) => {
-      if (!String(processingOrder.id || '').startsWith('JGD20260805')) return;
-      if (![1, 4, 7, 10, 13].includes(index % 15)) return;
-      const outputs = Array.isArray(processingOrder.outputs) ? processingOrder.outputs : [];
-      const usedCodes = new Set(outputs.map((output) => output.productCode));
-      const candidates = (state.products || []).filter((product) => !usedCodes.has(product.code));
-      const materialQty = number(processingOrder.materials?.[0]?.consumeQty, 10);
-      candidates.slice(0, 2).forEach((product, candidateIndex) => {
-        const coefficient = candidateIndex ? 0.6 : 0.8;
-        const refQty = Number((materialQty * coefficient).toFixed(2));
-        outputs.push({
-          productCode: product.code,
-          productName: product.name,
-          unit: product.unit,
-          refCoefficient: coefficient,
-          refQty,
-          actualQty: refQty,
-          costPrice: number(product.marketPrice).toFixed(2)
-        });
-        changed = true;
-      });
-      processingOrder.outputs = outputs;
-    });
-    if (state.processingOutputSeedRevision !== 'processing-outputs-v4') {
-      state.processingOutputSeedRevision = 'processing-outputs-v4';
-      changed = true;
-    }
+    state.processingOutputSeedRevision = revision;
+    changed = true;
     return changed;
   }
 
@@ -883,15 +870,6 @@
     const source = (window.MockProcessingOrders || []).find((record) => record.id === demoId);
     if (!source) return false;
     state.processingOrders.push(clone(source));
-    return true;
-  }
-
-  function resetProcessingModuleData(state) {
-    const revision = 'processing-module-v2';
-    if (state.processingModuleSeedRevision === revision) return false;
-    state.processingTemplates = clone(window.MockProcessingTemplates || []);
-    state.processingOrders = clone(window.MockProcessingOrders || []);
-    state.processingModuleSeedRevision = revision;
     return true;
   }
 
@@ -931,15 +909,6 @@
     return changed;
   }
 
-  function resetStatisticsData(state) {
-    const revision = 'statistics-module-v1';
-    if (state.statisticsSeedRevision === revision) return false;
-    state.productSales = clone(window.MockOperations?.productSales || []);
-    state.goodsProfitStatistics = clone(window.MockOperations?.goodsProfitStatistics || []);
-    state.statisticsSeedRevision = revision;
-    return true;
-  }
-
   function normalizeProcessingIds(state) {
     let changed = false;
     (state.processingOrders || []).forEach((record) => {
@@ -957,6 +926,26 @@
       state.processingIdSeedRevision = 'processing-ids-v2';
       changed = true;
     }
+    return changed;
+  }
+
+  function normalizeProcessingRelations(state) {
+    const revision = 'processing-relations-v2';
+    if (state.processingRelationSeedRevision === revision) return false;
+    const seedOrders = window.MockProcessingOrders || [];
+    let changed = false;
+    (state.processingOrders || []).forEach((record) => {
+      const source = seedOrders.find((seed) => (
+        seed.id === record.id
+        || canonicalProcessingId(seed.id, record.customerCode || seed.customerCode || '03') === record.id
+      ));
+      if (!source || !Array.isArray(source.materials) || source.materials.length < 2 || source.outputs?.length !== 1) return;
+      record.materials = clone(source.materials);
+      record.outputs = clone(source.outputs);
+      changed = true;
+    });
+    state.processingRelationSeedRevision = revision;
+    changed = true;
     return changed;
   }
 
@@ -1001,6 +990,10 @@
     }
     if (!Array.isArray(state.processingTemplates)) {
       state.processingTemplates = clone(window.MockProcessingTemplates || []);
+      changed = true;
+    }
+    if (!Array.isArray(state.warehouseMonitorPoints)) {
+      state.warehouseMonitorPoints = clone(warehouseMonitorPointSeed);
       changed = true;
     }
 
@@ -1574,6 +1567,7 @@
       customers,
       customerLocations: sourceLocations(rawOrders, customers),
       warehouses: sourceWarehouses(),
+      warehouseMonitorPoints: clone(warehouseMonitorPointSeed),
       orders,
       orderLines: orders.flatMap((order) => order.items.map((line) => clone(line))),
       sortingTasks,
@@ -1607,7 +1601,7 @@
         const order = orders[index % orders.length]; const line = order.items[0];
         return { id: `RET-${String(index + 1).padStart(3, '0')}`, returnNo: `THD2026080503${String(index + 1).padStart(5, '0')}`, customerName: order.customerName, canteen: order.canteen, orderNo: order.orderNo, inboundNo: `RKD2026080503${String(index + 1).padStart(5, '0')}`, goodsName: line.goodsName, warehouse: order.warehouse, status: ['PENDING_AUDIT', 'APPROVED', 'CLOSED'][index % 3], creator: '管理员', createdAt: '2026-08-05 10:00:00', reason: ['商品破损', '数量多发', '质量不符合要求'][index % 3], refundAmount: number(line.unitPrice) * 2, items: [{ id: `RL-${index + 1}`, goodsName: line.goodsName, unit: line.unit, orderPrice: number(line.unitPrice), shippedQty: number(line.quantity), returnedQty: 0, applyQty: 2, applyPrice: number(line.unitPrice), applyAmount: number(line.unitPrice) * 2, damageQty: 1, remark: '按订单明细退货' }] };
       }),
-      tags: padRecords(window.MockOperations?.tags || [], 20, (index) => ({ id: `TAG-${String(index + 1).padStart(3, '0')}`, tagName: ['营养餐', '普通餐', '应急保供', '节日餐'][index % 4], status: 'ENABLE', createdAt: '2026-08-05 09:00:00' })),
+      tags: clone(window.MockOperations?.tags || []),
       receiptChanges: padRecords(window.MockOperations?.receiptChanges || [], 20, (index) => { const order = orders[index % orders.length]; return { id: `CHANGE-${String(index + 1).padStart(3, '0')}`, changeNo: `BG2026080503${String(index + 1).padStart(5, '0')}`, status: 'PENDING_AUDIT', customerName: order.customerName, canteen: order.canteen, orderNo: order.orderNo, items: order.items, createdAt: '2026-08-05 11:00:00' }; }),
       sortingProgress: padRecords(window.MockOperations?.sortingProgress || [], 20, (index) => { const order = orders[index % orders.length]; return { id: `PROGRESS-${String(index + 1).padStart(3, '0')}`, customerName: order.customerName, canteen: order.canteen, sortedCount: index % 3, orderCount: order.items.length, progress: `${index % 3}/${order.items.length}`, status: index % 3 ? 'PARTIAL' : 'PENDING', warehouse: order.warehouse, expectedAt: order.expectedAt, route: order.route }; }),
       shortageItems: padRecords(window.MockOperations?.shortageItems || [], 20, (index) => { const task = sortingTasks[index % sortingTasks.length]; return { ...clone(task), id: `SHORTAGE-${String(index + 1).padStart(3, '0')}`, shortage: '是', status: 'SHORTAGE', shortageQty: 1 }; }),
@@ -1619,6 +1613,17 @@
       productSales: clone(window.MockOperations?.productSales || []),
       goodsProfitStatistics: clone(window.MockOperations?.goodsProfitStatistics || [])
     };
+  }
+
+  function ensureStatisticsResources(current) {
+    let changed = false;
+    ['productSales', 'goodsProfitStatistics'].forEach((resource) => {
+      if (!Array.isArray(current[resource])) {
+        current[resource] = clone(window.MockOperations?.[resource] || []);
+        changed = true;
+      }
+    });
+    return changed;
   }
 
   function ensure() {
@@ -1650,14 +1655,16 @@
       const productMetadataNormalized = normalizeProductMetadata(state);
       const orderNumbersNormalized = normalizeOrderNumbers(state);
       const processingModuleReset = resetProcessingModuleData(state);
-      const statisticsModuleReset = resetStatisticsData(state);
       const processingIdsNormalized = normalizeProcessingIds(state);
+      const processingRelationsNormalized = normalizeProcessingRelations(state);
       const processingOutputsNormalized = normalizeProcessingOutputs(state);
       const contractsNormalized = normalizeStateContracts(state);
+      const orderTagsNormalized = normalizeOrderTags(state);
       const warehouseCodesNormalized = normalizeWarehouseCodes(state);
       const settingsNormalized = normalizeSettings(state);
       const decimalsNormalized = normalizeStateDecimals(state);
-      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingModuleReset || statisticsModuleReset || processingIdsNormalized || processingOutputsNormalized || contractsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized) persist();
+      const statisticsResourcesNormalized = ensureStatisticsResources(state);
+      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingModuleReset || processingIdsNormalized || processingRelationsNormalized || processingOutputsNormalized || contractsNormalized || orderTagsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized || statisticsResourcesNormalized) persist();
     }
     else {
       state = buildSeed();
@@ -1668,10 +1675,11 @@
       normalizeProductMetadata(state);
       normalizeOrderNumbers(state);
       resetProcessingModuleData(state);
-      resetStatisticsData(state);
       normalizeProcessingIds(state);
+      normalizeProcessingRelations(state);
       normalizeProcessingOutputs(state);
       normalizeStateContracts(state);
+      normalizeOrderTags(state);
       normalizeWarehouseCodes(state);
       normalizeSettings(state);
       normalizeStateDecimals(state);

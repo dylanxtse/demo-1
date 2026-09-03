@@ -124,6 +124,7 @@
             ${infoItem('食堂', order.canteen)}
             ${infoItem('采购类型', order.purchaseType || '销售订单')}
             ${infoItem('订单标签', order.orderTag)}
+            ${order.recipeTag ? infoItem('食谱Tag', order.recipeTag) : ''}
             ${infoItem('期望送达时间', order.expectedAt)}
             ${infoItem('单据来源', order.source)}
             ${infoItem('添加时间', order.createdAt)}

@@ -254,6 +254,7 @@
     costMode: 'auto',
     materials: [],
     manyToOneBaseMaterialIndex: null,
+    manyToOneAutoFillLocked: false,
     outputs: [],
     // 方案编辑器
     templateEditMode: null,    // 'create' | 'edit'
@@ -777,7 +778,7 @@
       if (index === baseIndex) return;
       const refConsumeQty = Number(material.refConsumeQty);
       material.consumeQty = refConsumeQty > 0
-        ? Number((outputQty * refConsumeQty).toFixed(2))
+        ? (outputQty * refConsumeQty).toFixed(2)
         : '';
     });
   }
@@ -952,8 +953,12 @@
         const refConsumeQty = Number(material.refConsumeQty);
         return consumeQty > 0 && refConsumeQty > 0 ? consumeQty / refConsumeQty : null;
       });
-      const refQty = possibleOutputQty.length > 0 && possibleOutputQty.every((qty) => Number.isFinite(qty))
-        ? Math.min(...possibleOutputQty)
+      const hasCompleteMaterialQuantities = possibleOutputQty.length > 0
+        && possibleOutputQty.every((qty) => Number.isFinite(qty) && qty > 0);
+      const baseMaterial = state.materials[state.manyToOneBaseMaterialIndex];
+      const baseRefQty = Number(baseMaterial?.consumeQty) / Number(baseMaterial?.refConsumeQty);
+      const refQty = hasCompleteMaterialQuantities
+        ? (state.manyToOneAutoFillLocked ? Math.min(...possibleOutputQty) : baseRefQty)
         : 0;
       state.outputs.forEach((output) => {
         output.refQty = refQty > 0 ? refQty.toFixed(2) : '';
@@ -998,6 +1003,7 @@
     state.remark = '';
     state.attachments = [];
     state.manyToOneBaseMaterialIndex = null;
+    state.manyToOneAutoFillLocked = false;
 
     // 从模版填充原料
     state.materials = (tpl.materials || []).map((m) => {
@@ -1046,6 +1052,7 @@
     state.remark = '';
     state.attachments = [];
     state.manyToOneBaseMaterialIndex = null;
+    state.manyToOneAutoFillLocked = false;
     state.costMode = tpl.costMode || 'auto';
     state.materials = (tpl.materials || []).map((m) => {
       const product = findProduct(m.productCode);
@@ -1289,6 +1296,30 @@
       }
     });
 
+    form.addEventListener('focusin', (event) => {
+      const consumeInput = event.target.closest('[data-op-material-field="consumeQty"]');
+      if (!consumeInput) return;
+      consumeInput.dataset.manyToOneValueOnFocus = Number(consumeInput.value) > 0 ? 'true' : 'false';
+    });
+
+    form.addEventListener('focusout', (event) => {
+      const consumeInput = event.target.closest('[data-op-material-field="consumeQty"]');
+      if (!consumeInput) return;
+      const rawValue = consumeInput.value.trim();
+      const quantity = Number(rawValue);
+      if (!rawValue || !Number.isFinite(quantity)) return;
+
+      const normalizedValue = quantity.toFixed(2);
+      consumeInput.value = normalizedValue;
+      const row = consumeInput.closest('[data-op-material-index]');
+      const index = Number(row?.dataset.opMaterialIndex);
+      if (!state.materials[index]) return;
+      state.materials[index].consumeQty = normalizedValue;
+      calculateRefQty();
+      renderOpOutputTable();
+      updateOpCostModeVisibility();
+    });
+
     form.addEventListener('input', (event) => {
       const consumeInput = event.target.closest('[data-op-material-field="consumeQty"]');
       if (consumeInput) {
@@ -1298,18 +1329,28 @@
         const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
         const isManyToOne = selectedTemplate?.relationType === 'many-to-one';
         if (isManyToOne) {
-          if (state.manyToOneBaseMaterialIndex == null && Number(consumeInput.value) > 0) {
+          const previousBaseIndex = state.manyToOneBaseMaterialIndex;
+          const isPositiveConsumeQty = Number(consumeInput.value) > 0;
+          const isInitialBaseEntry = previousBaseIndex === index
+            && consumeInput.dataset.manyToOneValueOnFocus === 'false'
+            && !state.manyToOneAutoFillLocked;
+          let shouldSync = false;
+
+          if (previousBaseIndex == null && isPositiveConsumeQty) {
             state.manyToOneBaseMaterialIndex = index;
+            state.manyToOneAutoFillLocked = false;
+            shouldSync = true;
+          } else if (!isInitialBaseEntry) {
+            state.manyToOneAutoFillLocked = true;
           }
-          if (state.manyToOneBaseMaterialIndex === index) {
-            if (Number(consumeInput.value) > 0) {
-              syncManyToOneMaterialQuantities(index);
-            } else {
-              state.manyToOneBaseMaterialIndex = null;
-              state.materials.forEach((material, materialIndex) => {
-                if (materialIndex !== index) material.consumeQty = '';
-              });
-            }
+
+          if (!state.manyToOneAutoFillLocked
+            && state.manyToOneBaseMaterialIndex === index
+            && isPositiveConsumeQty) {
+            shouldSync = true;
+          }
+          if (shouldSync) {
+            syncManyToOneMaterialQuantities(index);
             updateManyToOneMaterialInputs(index);
           }
         }

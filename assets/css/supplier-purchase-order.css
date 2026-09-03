@@ -1,4 +1,5 @@
 .supplier-purchase-order-page {
+  --supplier-purchase-filter-actions-width: 240px;
   min-width: 0;
   padding: 16px;
   overflow: hidden;
@@ -6,26 +7,33 @@
 }
 
 .supplier-purchase-filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px 24px;
-  align-items: start;
+  display: block;
   flex-shrink: 0;
-  padding: 2px 0 8px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.supplier-purchase-filter-main {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) var(--supplier-purchase-filter-actions-width);
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .supplier-purchase-basic-fields,
 .supplier-purchase-advanced-fields {
   display: grid;
   min-width: 0;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 14px 26px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 28px;
 }
 
 .supplier-purchase-advanced-fields {
-  grid-column: 1 / -1;
-  padding-top: 2px;
-  border-top: 1px solid #f0f1f4;
+  margin-top: 12px;
+  padding-right: calc(var(--supplier-purchase-filter-actions-width) + 12px);
+  padding-top: 0;
+  border-top: 0;
 }
 
 .supplier-purchase-advanced-fields[hidden] { display: none; }
@@ -34,13 +42,14 @@
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 10px;
 }
 
 .supplier-purchase-filter-item-wide { min-width: 0; }
 
 .supplier-purchase-filter-item > label {
-  flex: 0 0 88px;
+  width: 120px;
+  flex: 0 0 120px;
+  margin-right: 12px;
   color: rgba(0, 0, 0, .72);
   font-size: 14px;
   line-height: 32px;
@@ -52,7 +61,8 @@
 .supplier-purchase-filter-item > select,
 .supplier-purchase-date-range {
   min-width: 0;
-  width: 100%;
+  width: 0;
+  flex: 1 1 0;
   height: 32px;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
@@ -120,15 +130,15 @@
 
 .supplier-purchase-filter-actions {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  min-height: 32px;
+  gap: 8px;
   white-space: nowrap;
 }
 
 .supplier-purchase-filter-actions .btn {
-  min-width: 60px;
+  width: var(--query-action-width);
   justify-content: center;
 }
 
@@ -177,7 +187,7 @@
   align-items: center;
   gap: 5px;
   padding: 0 12px;
-  border: 1px solid #dcdfe6;
+  border: 0;
   border-radius: 4px;
   background: #fff;
   color: var(--text-secondary);
@@ -186,7 +196,7 @@
   cursor: pointer;
 }
 
-.supplier-purchase-outline-button:hover { border-color: var(--primary); color: var(--primary); }
+.supplier-purchase-outline-button:hover { color: var(--primary); }
 .supplier-purchase-outline-button .icon-svg { width: 15px; height: 15px; }
 
 .supplier-purchase-table-wrap {
@@ -195,117 +205,6 @@
   overflow: auto;
   border: 1px solid #e1e4eb;
   border-radius: 3px;
-}
-
-/* 采购单列表复用统一数字分页结构，避免组件的块级容器把统计、页码和跳转拆成多行。 */
-.supplier-purchase-pagination {
-  display: flex !important;
-  min-height: 54px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 12px 0;
-  box-sizing: border-box;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.supplier-purchase-pagination > .page-total {
-  flex: 0 0 auto;
-  margin-right: auto;
-  white-space: nowrap;
-}
-
-.supplier-purchase-pagination > .page-size-select,
-.supplier-purchase-pagination > .page-btns,
-.supplier-purchase-pagination > .page-jump {
-  flex: 0 0 auto;
-  width: auto;
-}
-
-.supplier-purchase-pagination .page-size-select {
-  min-width: 88px;
-  height: 32px;
-  padding: 0 28px 0 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
-  color: var(--text-primary);
-  font: inherit;
-  appearance: none;
-  cursor: pointer;
-}
-
-.supplier-purchase-pagination .page-btns {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.supplier-purchase-pagination .page-btn {
-  display: inline-flex;
-  min-width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: #fff;
-  color: var(--text-secondary);
-  font: inherit;
-  cursor: pointer;
-  transition: all .2s ease;
-}
-
-.supplier-purchase-pagination .page-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.supplier-purchase-pagination .page-btn.active {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: #fff;
-}
-
-.supplier-purchase-pagination .page-btn:disabled {
-  border-color: transparent;
-  background: transparent;
-  color: #c4cbd5;
-  cursor: not-allowed;
-}
-
-.supplier-purchase-pagination .page-ellipsis {
-  min-width: 20px;
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.supplier-purchase-pagination .page-jump {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.supplier-purchase-pagination .pagination-jump-input {
-  width: 48px;
-  height: 32px;
-  box-sizing: border-box;
-  padding: 0 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: #fff;
-  color: var(--text-primary);
-  font: inherit;
-  text-align: center;
-  outline: none;
-}
-
-.supplier-purchase-pagination .pagination-jump-input:focus {
-  border-color: var(--primary);
 }
 
 .supplier-purchase-table,
@@ -477,6 +376,310 @@
 .supplier-purchase-nested-table .nested-col-report { width: 100px; }
 .supplier-purchase-nested-table .nested-col-action { width: 110px; }
 .supplier-purchase-product-cell { text-align: left !important; }
+.supplier-purchase-product-cell .product-display-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.supplier-purchase-report-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.supplier-purchase-report-link:hover,
+.supplier-purchase-report-link:focus-visible {
+  color: #003b9f;
+  text-decoration: underline;
+}
+
+.supplier-purchase-report-dialog {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, .58);
+}
+
+.supplier-purchase-report-dialog[hidden] { display: none; }
+
+.supplier-purchase-report-panel {
+  display: flex;
+  position: relative;
+  width: min(720px, calc(100vw - 48px));
+  max-height: min(560px, calc(100vh - 48px));
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(22, 34, 58, .24);
+}
+
+.supplier-purchase-report-panel .supplier-purchase-dialog-header {
+  height: 56px;
+  flex: 0 0 56px;
+  padding: 0 22px;
+  border-bottom: 0;
+}
+
+.supplier-purchase-report-panel .supplier-purchase-dialog-header h2 {
+  color: #1f2a44;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.supplier-purchase-report-panel .supplier-purchase-dialog-close {
+  width: 30px;
+  height: 30px;
+  color: #7c8491;
+  font-size: 26px;
+  line-height: 30px;
+}
+
+.supplier-purchase-report-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 20px 24px 0;
+}
+
+.supplier-purchase-report-list {
+  display: flex;
+  min-height: 100px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.supplier-purchase-report-add,
+.supplier-purchase-report-file {
+  display: flex;
+  width: 100px;
+  height: 100px;
+  box-sizing: border-box;
+  flex: 0 0 100px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 2px solid #cfd6e2;
+  border-radius: 10px;
+  background: #fbfcfe;
+  color: #8a96a6;
+  font: inherit;
+  cursor: pointer;
+}
+
+.supplier-purchase-report-add {
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.supplier-purchase-report-add:hover,
+.supplier-purchase-report-add:focus-visible,
+.supplier-purchase-report-file:hover,
+.supplier-purchase-report-file:focus-visible {
+  border-color: #b6c1d1;
+  background: #f6f8fb;
+}
+
+.supplier-purchase-report-add-icon {
+  color: #8a96a6;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 28px;
+}
+
+.supplier-purchase-report-file {
+  position: relative;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  color: #3d4757;
+}
+
+.supplier-purchase-report-file-preview {
+  display: flex;
+  width: 100%;
+  min-height: 62px;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #f1f4f8;
+  overflow: hidden;
+}
+
+.supplier-purchase-report-file-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.supplier-purchase-report-file-kind {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #eaf2ff;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.supplier-purchase-report-file-name {
+  width: 100%;
+  overflow: hidden;
+  color: #525d6d;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supplier-purchase-report-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 24px 20px;
+}
+
+.supplier-purchase-report-footer .btn {
+  min-width: 72px;
+  height: 28px;
+  padding: 0 12px;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.supplier-purchase-report-footer .btn:not(.btn-primary) {
+  border: 1px solid #d9dde5;
+  background: #fff;
+  color: #4b5563;
+}
+
+.supplier-purchase-report-preview {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, .98);
+}
+
+.supplier-purchase-report-preview[hidden] { display: none; }
+
+.supplier-purchase-report-preview-panel {
+  position: relative;
+  display: flex;
+  width: min(900px, 100%);
+  height: min(640px, 100%);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 28px;
+  border: 1px solid #e1e4eb;
+  border-radius: 6px;
+  background: #f7f8fa;
+}
+
+.supplier-purchase-report-preview-panel [data-report-preview-content] {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.supplier-purchase-report-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 390px;
+  object-fit: contain;
+}
+
+.supplier-purchase-report-preview-pdf {
+  width: 100%;
+  height: 390px;
+  border: 0;
+  background: #fff;
+}
+
+.supplier-purchase-report-preview-placeholder {
+  display: flex;
+  max-width: 320px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #6b7380;
+  text-align: center;
+}
+
+.supplier-purchase-report-preview-placeholder .supplier-purchase-report-file-kind {
+  width: 56px;
+  height: 56px;
+  flex-basis: 56px;
+  font-size: 13px;
+}
+
+.supplier-purchase-report-preview-placeholder strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: #252d3d;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supplier-purchase-report-preview-placeholder p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.supplier-purchase-report-preview-close {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: #666;
+  font-size: 24px;
+  line-height: 30px;
+  cursor: pointer;
+}
 
 .supplier-purchase-production-date {
   width: 142px;
@@ -714,15 +917,29 @@
 .supplier-purchase-toast.is-visible { display: block; }
 .supplier-purchase-toast.is-error { background: #c0392b; }
 
-@media (max-width: 1300px) {
+@media (max-width: 1200px) {
+  .supplier-purchase-order-page {
+    --supplier-purchase-filter-actions-width: 0px;
+  }
+
   .supplier-purchase-basic-fields,
-  .supplier-purchase-advanced-fields { grid-template-columns: repeat(2, minmax(230px, 1fr)); }
+  .supplier-purchase-advanced-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .supplier-purchase-filter-main {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .supplier-purchase-basic-fields,
+  .supplier-purchase-filter-actions { width: 100%; }
+
+  .supplier-purchase-advanced-fields { padding-right: 0; }
 }
 
 @media (max-width: 900px) {
-  .supplier-purchase-filters { grid-template-columns: 1fr; }
-  .supplier-purchase-filter-actions { justify-content: flex-end; }
-  .supplier-purchase-advanced-fields { grid-column: 1; }
+  .supplier-purchase-basic-fields,
+  .supplier-purchase-advanced-fields { grid-template-columns: 1fr; }
+  .supplier-purchase-advanced-fields { margin-top: 12px; }
 }
 
 @media (max-width: 600px) {
@@ -730,9 +947,33 @@
   .supplier-purchase-advanced-fields,
   .supplier-purchase-detail-grid,
   .supplier-purchase-shipping-fields { grid-template-columns: 1fr; }
-  .supplier-purchase-advanced-fields { grid-column: 1; }
   .supplier-purchase-shipping-fields .shipping-field-wide { grid-column: 1; }
   .supplier-purchase-detail-grid > div { grid-template-columns: 150px minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .supplier-purchase-report-dialog { padding: 12px; }
+  .supplier-purchase-report-panel {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+  .supplier-purchase-report-panel .supplier-purchase-dialog-header {
+    height: 56px;
+    flex-basis: 56px;
+    padding: 0 20px;
+  }
+  .supplier-purchase-report-panel .supplier-purchase-dialog-header h2 { font-size: 18px; }
+  .supplier-purchase-report-body { padding: 20px 20px 0; }
+  .supplier-purchase-report-list { gap: 12px; }
+  .supplier-purchase-report-footer { gap: 8px; padding: 14px 20px 20px; }
+  .supplier-purchase-report-footer .btn {
+    min-width: 72px;
+    height: 28px;
+    font-size: 13px;
+  }
+  .supplier-purchase-report-preview { padding: 12px; }
+  .supplier-purchase-report-preview-panel { padding: 20px; }
+  .supplier-purchase-report-preview-pdf { height: 100%; }
 }
 
 @media print {
@@ -740,6 +981,7 @@
   .supplier-purchase-filters,
   .supplier-purchase-toolbar,
   .supplier-purchase-detail-dialog,
+  .supplier-purchase-report-dialog,
   .supplier-purchase-shipping-dialog { display: none !important; }
   .supplier-purchase-table-wrap { overflow: visible; border: 0; }
   .supplier-purchase-table { min-width: 0; }

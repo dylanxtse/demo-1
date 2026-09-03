@@ -1,0 +1,172 @@
+.school-recipe-attendance-page { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; overflow: hidden; }
+.school-recipe-canteen-switch { display: flex; min-width: 0; min-height: 50px; flex-shrink: 0; align-items: center; gap: 12px; padding: 0 22px; overflow: hidden; border-bottom: 1px solid var(--border-light); background: #fff; }
+.school-recipe-canteen-switch-label { flex: 0 0 auto; color: #687486; font-size: 13px; line-height: 20px; white-space: nowrap; }
+.school-recipe-canteen-tabs { display: flex; min-width: 0; align-items: center; gap: 8px; overflow-x: auto; padding: 2px 0; scrollbar-width: none; }
+.school-recipe-canteen-tabs::-webkit-scrollbar { display: none; }
+.school-recipe-canteen-tab { display: inline-flex; min-height: 30px; flex: 0 0 auto; align-items: center; justify-content: center; padding: 0 14px; border: 1px solid #d9e1eb; border-radius: 4px; color: #687486; background: #fff; font: inherit; font-size: 13px; line-height: 28px; white-space: nowrap; cursor: pointer; }
+.school-recipe-canteen-tab:hover { border-color: #a9c8fa; color: var(--primary); background: #f4f8ff; }
+.school-recipe-canteen-tab.is-active { border-color: var(--primary); color: var(--primary); background: #edf5ff; font-weight: 500; box-shadow: 0 0 0 1px rgba(43, 116, 191, .08); }
+.school-recipe-canteen-tab:focus-visible { outline: 2px solid rgba(43, 116, 191, .28); outline-offset: 1px; }
+.school-recipe-attendance-overview { display: flex; align-items: stretch; min-height: 50px; flex-shrink: 0; overflow: hidden; border-bottom: 1px solid var(--border-light); background: #fff; }
+.school-recipe-attendance-overview-fields { display: flex; min-width: 0; flex: 1 1 auto; align-items: stretch; gap: 52px; overflow: hidden; }
+.school-recipe-attendance-overview-item { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 0; padding: 8px 16px; line-height: 20px; text-align: left; }
+.school-recipe-attendance-overview-item span { color: #7d8998; font-size: 13px; white-space: nowrap; }
+.school-recipe-attendance-overview-item strong { color: #273346; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.school-recipe-attendance-overview-total strong { color: #273346; font-weight: 400; }
+.school-recipe-attendance-date strong { font-weight: 500; }
+.school-recipe-attendance-name { min-width: 0; }
+.school-recipe-attendance-name strong { overflow: hidden; max-width: 230px; text-overflow: ellipsis; }
+.school-recipe-attendance-body { display: grid; min-width: 0; min-height: 0; flex: 1; grid-template-columns: 280px minmax(0, 1fr); gap: var(--content-gap); margin-top: 0; overflow: hidden; }
+.school-recipe-attendance-date-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fafbfc; }
+.school-recipe-attendance-panel-heading { display: flex; height: 50px; min-height: 50px; align-items: center; justify-content: center; padding: 0 16px; border-bottom: 1px solid var(--border-light); }
+.school-recipe-attendance-calendar-actions { display: flex; flex-direction: row; align-items: center; gap: 6px; }
+.school-recipe-attendance-calendar-actions button { display: inline-flex; width: 32px; height: 32px; flex: 0 0 32px; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); background: #fff; cursor: pointer; }
+.school-recipe-attendance-calendar-actions button:hover { border-color: #a9c8fa; color: var(--primary); background: #f4f8ff; }
+.school-recipe-attendance-calendar-icon { width: 15px; height: 15px; }
+.school-recipe-attendance-current-month { color: #8994a4; font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.school-recipe-attendance-calendar-caption { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 4px; }
+.school-recipe-attendance-calendar-caption span { color: #354052; font-size: 14px; font-weight: 500; }
+.school-recipe-attendance-calendar-actions button:disabled { border-color: #e1e5eb; color: #c2c8d0; background: #f7f8fa; cursor: not-allowed; }
+.school-recipe-attendance-calendar-actions button:disabled:hover { border-color: #e1e5eb; color: #c2c8d0; background: #f7f8fa; }
+.school-recipe-attendance-calendar-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 6px 8px 4px; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); background: #fafbfc; }
+.school-recipe-attendance-calendar-weekdays span { color: #7d8998; font-size: 13px; line-height: 18px; text-align: center; }
+.school-recipe-attendance-date-list { display: grid; min-height: 0; flex: 1; grid-template-columns: repeat(7, minmax(0, 1fr)); align-content: start; gap: 4px; overflow-y: auto; padding: 8px; }
+.school-recipe-attendance-date-item,
+.school-recipe-attendance-date-placeholder { display: flex; min-width: 0; min-height: 56px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 5px 2px; border: 1px solid transparent; border-radius: 4px; }
+.school-recipe-attendance-date-item { background: #fff; color: #3e4652; font: inherit; cursor: pointer; }
+.school-recipe-attendance-date-item:hover { background: #f4f8ff; }
+.school-recipe-attendance-date-item.is-empty { border-color: transparent; background: #fff; }
+.school-recipe-attendance-date-item.is-no-menu { border-color: transparent; background: #f3f5f7; }
+.school-recipe-attendance-date-item.is-partial { border-color: #e8c27f; background: #fff4db; }
+.school-recipe-attendance-date-item.is-complete { border-color: #a9d3b6; background: #eaf7ee; }
+.school-recipe-attendance-date-item.is-selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.school-recipe-attendance-date-number { color: #354052; font-size: 14px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+.school-recipe-attendance-date-item.is-selected .school-recipe-attendance-date-number,
+.school-recipe-attendance-date-item.is-selected .school-recipe-attendance-date-week { color: var(--primary); }
+.school-recipe-attendance-date-week { color: #8994a4; font-size: 13px; line-height: 18px; white-space: nowrap; }
+.school-recipe-attendance-date-week.is-hidden { display: none; }
+.school-recipe-attendance-date-item.is-no-menu .school-recipe-attendance-date-number,
+.school-recipe-attendance-date-item.is-no-menu .school-recipe-attendance-date-week { color: #8994a4; }
+.school-recipe-attendance-detail-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
+.school-recipe-attendance-detail-scroll { min-height: 0; flex: 1; overflow: auto; padding: 16px 22px 20px; }
+.school-recipe-attendance-section-heading,
+.school-recipe-attendance-demand-section > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.school-recipe-attendance-section-heading p,
+.school-recipe-attendance-demand-section > header p { margin: 6px 0 0; color: #9aa4b2; font-size: 13px; line-height: 18px; }
+.school-recipe-attendance-demand-summary { flex: 0 0 auto; padding-top: 2px; color: #8994a4; font-size: 13px; white-space: nowrap; }
+.school-recipe-attendance-notice { display: flex; align-items: flex-start; gap: 9px; margin: 14px 0 12px; padding: 10px 12px; border: 1px solid #dbe8f8; border-radius: 4px; background: #f6faff; }
+.school-recipe-attendance-notice.is-warning { border-color: #f3ddbb; background: #fffaf1; }
+.school-recipe-attendance-notice-icon { display: inline-flex; width: 18px; height: 18px; flex: 0 0 18px; align-items: center; justify-content: center; border-radius: 50%; color: #477fca; background: #e2efff; font-size: 13px; font-weight: 600; }
+.school-recipe-attendance-notice.is-warning .school-recipe-attendance-notice-icon { color: #d58b26; background: #ffedc9; }
+.school-recipe-attendance-notice strong { color: #526073; font-size: 13px; font-weight: 500; }
+.school-recipe-attendance-notice p { margin: 3px 0 0; color: #8994a4; font-size: 13px; line-height: 18px; }
+.school-recipe-attendance-meal-grid { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 12px; }
+.school-recipe-attendance-meal-card { min-width: 0; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
+.school-recipe-attendance-meal-header { display: flex; min-height: 60px; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border-light); background: #fbfcfe; }
+.school-recipe-attendance-meal-header h3 { margin: 0 0 3px; color: #354052; font-size: 14px; font-weight: 600; }
+.school-recipe-attendance-meal-header span { color: #9aa4b2; font-size: 13px; }
+.school-recipe-attendance-meal-header em { color: #9aa4b2; font-size: 13px; font-style: normal; }
+.school-recipe-attendance-meal-dishes { display: flex; min-height: 49px; align-items: flex-start; gap: 8px; padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); }
+.school-recipe-attendance-meal-dishes span { flex: 0 0 auto; color: #9aa4b2; font-size: 13px; line-height: 18px; }
+.school-recipe-attendance-meal-dishes strong { min-width: 0; overflow: hidden; color: #5c6878; font-size: 13px; font-weight: 400; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.school-recipe-attendance-meal-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 100px; gap: 10px; padding: 12px 14px 14px; }
+.school-recipe-attendance-meal-fields label { min-width: 0; }
+.school-recipe-attendance-meal-fields label > span,
+.school-recipe-attendance-meal-total > span { display: block; margin-bottom: 6px; color: #7d8998; font-size: 13px; line-height: 18px; }
+.school-recipe-attendance-input-wrap { position: relative; }
+.school-recipe-attendance-input-wrap input { width: 100%; height: 32px; box-sizing: border-box; padding: 0 28px 0 10px; border: 1px solid var(--border-color); border-radius: 4px; color: #354052; font: inherit; font-size: 13px; outline: none; }
+.school-recipe-attendance-input-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(23, 104, 229, .08); }
+.school-recipe-attendance-input-wrap input::placeholder { color: #b1b9c5; }
+.school-recipe-attendance-input-wrap i { position: absolute; top: 50%; right: 9px; color: #a2acb9; font-size: 13px; font-style: normal; transform: translateY(-50%); pointer-events: none; }
+.school-recipe-attendance-meal-total { padding-left: 10px; border-left: 1px solid var(--border-light); }
+.school-recipe-attendance-meal-total strong { color: #526073; font-size: 13px; font-weight: 400; line-height: 32px; }
+.school-recipe-attendance-meal-total i { margin-left: 3px; color: #9aa4b2; font-size: 13px; font-style: normal; }
+.school-recipe-attendance-meal-table-wrap { overflow: auto; border: 1px solid var(--border-light); border-radius: 6px; }
+.school-recipe-attendance-meal-table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.school-recipe-attendance-meal-table th,
+.school-recipe-attendance-meal-table td { height: 54px; padding: 7px 12px; border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); color: #526073; text-align: center; vertical-align: middle; }
+.school-recipe-attendance-meal-table th { height: 36px; color: #687486; background: #fafbfc; font-weight: 500; white-space: nowrap; }
+.school-recipe-attendance-meal-table thead tr:first-child th { height: 32px; background: #f7f9fc; }
+.school-recipe-attendance-meal-table tbody tr:last-child td { border-bottom: 0; }
+.school-recipe-attendance-meal-table th:last-child,
+.school-recipe-attendance-meal-table td:last-child { border-right: 0; }
+.school-recipe-attendance-meal-table tbody tr:hover td { background: #f8fbff; }
+.school-recipe-attendance-meal-table .col-meal { width: 112px; }
+.school-recipe-attendance-meal-table .col-dishes { width: 250px; }
+.school-recipe-attendance-meal-table .col-person { width: 152px; }
+.school-recipe-attendance-meal-table .col-meal-total { width: 108px; }
+.school-recipe-attendance-meal-name { text-align: left !important; }
+.school-recipe-attendance-meal-name strong,
+.school-recipe-attendance-meal-name span { display: block; }
+.school-recipe-attendance-meal-name strong { color: #354052; font-size: 13px; font-weight: 600; }
+.school-recipe-attendance-meal-name span { margin-top: 3px; color: #9aa4b2; font-size: 13px; }
+.school-recipe-attendance-dish-cell { overflow: hidden; color: #5c6878 !important; text-align: left !important; text-overflow: ellipsis; white-space: nowrap; }
+.school-recipe-attendance-table-input { position: relative; width: 128px; margin: 0 auto; }
+.school-recipe-attendance-table-input input { width: 100%; height: 32px; box-sizing: border-box; padding: 0 28px 0 10px; border: 1px solid var(--border-color); border-radius: 4px; color: #354052; font: inherit; font-size: 13px; outline: none; text-align: center; }
+.school-recipe-attendance-table-input input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(23, 104, 229, .08); }
+.school-recipe-attendance-table-input input::placeholder { color: #b1b9c5; }
+.school-recipe-attendance-table-input i { position: absolute; top: 50%; right: 9px; color: #a2acb9; font-size: 13px; font-style: normal; transform: translateY(-50%); pointer-events: none; }
+.school-recipe-attendance-meal-total-cell strong { color: #526073; font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.school-recipe-attendance-meal-total-cell i { margin-left: 3px; color: #9aa4b2; font-size: 13px; font-style: normal; }
+.school-recipe-attendance-demand-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+.school-recipe-attendance-demand-section > header { margin-bottom: 12px; }
+.school-recipe-attendance-table-wrap { overflow: auto; border: 1px solid var(--border-light); border-radius: 4px; }
+.school-recipe-attendance-table { width: 100%; min-width: 880px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.school-recipe-attendance-table th,
+.school-recipe-attendance-table td { height: 42px; padding: 6px 8px; border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); color: #526073; text-align: center; vertical-align: middle; }
+.school-recipe-attendance-table th { height: 38px; color: #687486; background: #fafbfc; font-weight: 500; white-space: nowrap; }
+.school-recipe-attendance-table tr:last-child td { border-bottom: 0; }
+.school-recipe-attendance-table th:last-child,
+.school-recipe-attendance-table td:last-child { border-right: 0; }
+.school-recipe-attendance-table td.is-number { color: #3d4a5c; font-variant-numeric: tabular-nums; text-align: center; }
+.school-recipe-attendance-table td.is-total { color: #526073; font-weight: 400; }
+.school-recipe-attendance-product-name,
+.school-recipe-attendance-ingredient-name { overflow: hidden; color: #3d4a5c !important; text-align: center !important; text-overflow: ellipsis; white-space: nowrap; }
+.school-recipe-attendance-product-name { color: #3d4a5c !important; font-weight: 500; }
+.school-recipe-attendance-ingredient-name { font-size: 13px; }
+.school-recipe-attendance-dish-tooltip { position: fixed; z-index: 1300; max-width: 360px; padding: 8px 10px; border: 1px solid rgba(23, 38, 63, .14); border-radius: 4px; color: #fff; background: rgba(39, 52, 70, .94); box-shadow: 0 5px 16px rgba(31, 43, 67, .22); font-size: 13px; line-height: 18px; white-space: normal; word-break: break-all; opacity: 0; visibility: hidden; transition: opacity .12s ease; pointer-events: none; }
+.school-recipe-attendance-dish-tooltip.is-visible { opacity: 1; visibility: visible; }
+.school-recipe-attendance-table .col-index { width: 48px; }
+.school-recipe-attendance-table .col-product { width: 170px; }
+.school-recipe-attendance-table .col-ingredient { width: 170px; }
+.school-recipe-attendance-table .col-code { width: 112px; }
+.school-recipe-attendance-table .col-unit { width: 54px; }
+.school-recipe-attendance-table .col-quantity { width: 92px; }
+.school-recipe-attendance-table .col-total { width: 92px; }
+.school-recipe-attendance-empty,
+.school-recipe-attendance-detail-empty { display: flex; min-height: 220px; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 13px; }
+.school-recipe-attendance-detail-empty { flex: 1; flex-direction: column; gap: 12px; }
+.school-recipe-attendance-detail-empty .operation-empty-icon { display: flex; opacity: .4; }
+.school-recipe-attendance-detail-empty p { margin: 0; white-space: nowrap; }
+.school-recipe-attendance-actions { display: flex; min-height: 62px; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 16px; padding: 0 22px; border-top: 1px solid var(--border-light); background: #fff; }
+.school-recipe-attendance-actions > span { color: #9aa4b2; font-size: 13px; }
+.school-recipe-attendance-actions > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.school-recipe-attendance-confirm-action { margin-left: auto; justify-content: flex-end; }
+.school-recipe-attendance-actions .btn { min-width: 84px; justify-content: center; }
+@media (max-width: 1320px) {
+  .school-recipe-attendance-overview-fields { gap: 20px; }
+  .school-recipe-attendance-meal-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 980px) {
+  .school-recipe-attendance-body { grid-template-columns: 210px minmax(0, 1fr); }
+  .school-recipe-attendance-overview-fields { gap: 0; }
+  .school-recipe-attendance-meal-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .school-recipe-attendance-meal-total { grid-column: 1 / -1; padding-top: 8px; padding-left: 0; border-top: 1px solid var(--border-light); border-left: 0; }
+  .school-recipe-attendance-actions { align-items: center; }
+  .school-recipe-attendance-confirm-action { margin-left: auto; }
+}
+@media (max-width: 760px) {
+  .school-recipe-attendance-overview { flex-wrap: wrap; }
+  .school-recipe-attendance-overview-fields { width: 100%; flex: 0 0 100%; flex-wrap: wrap; }
+  .school-recipe-attendance-overview-item { flex: 1 1 50%; }
+  .school-recipe-attendance-overview-action { width: 100%; flex: 0 0 100%; padding: 8px 12px; border-top: 1px solid var(--border-light); }
+  .school-recipe-attendance-body { display: flex; flex-direction: column; overflow: auto; }
+  .school-recipe-attendance-date-panel { max-height: 354px; flex: 0 0 354px; }
+  .school-recipe-attendance-detail-panel { min-height: 640px; overflow: visible; }
+  .school-recipe-canteen-switch { min-height: 48px; gap: 8px; padding: 0 12px; }
+  .school-recipe-canteen-tab { padding-right: 11px; padding-left: 11px; }
+  .school-recipe-attendance-detail-scroll { overflow: visible; padding: 12px 16px 16px; }
+  .school-recipe-attendance-section-heading,
+  .school-recipe-attendance-demand-section > header { flex-direction: column; gap: 4px; }
+  .school-recipe-attendance-actions { padding-right: 16px; padding-left: 16px; }
+}

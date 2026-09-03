@@ -173,6 +173,24 @@
   display: block;
 }
 
+.order-module-page .operations-toolbar {
+  display: flex;
+  min-height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.order-module-page .operations-toolbar-main,
+.order-module-page .operations-toolbar-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .shipping-management-page .operations-toolbar [data-toolbar-action="print"],
 .shipping-management-page .operations-toolbar [data-toolbar-action="export"] {
   display: inline-flex;
@@ -201,24 +219,6 @@
 .shipping-management-page .operations-toolbar [data-toolbar-action="export"] .icon-svg {
   width: 15px !important;
   height: 15px !important;
-}
-
-.order-module-page .operations-toolbar {
-  display: flex;
-  min-height: 32px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 0;
-}
-
-.order-module-page .operations-toolbar-main,
-.order-module-page .operations-toolbar-side {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .order-module-page .operations-toolbar-main .btn {
@@ -292,8 +292,40 @@
 .order-module-page .operations-table td:nth-child(25) { min-width: 190px; }
 
 .order-module-page.order-tag-page .operations-table {
-  min-width: 720px;
+  min-width: 1140px;
   table-layout: fixed;
+}
+
+/* 订单标签列按参考页放宽，避免标签名称和表头被固定布局挤压。 */
+.order-module-page.order-tag-page .operations-table th:nth-child(1),
+.order-module-page.order-tag-page .operations-table td:nth-child(1) {
+  min-width: 72px;
+  width: 72px;
+}
+.order-module-page.order-tag-page .operations-table th:nth-child(2),
+.order-module-page.order-tag-page .operations-table td:nth-child(2) {
+  min-width: 260px;
+  width: 260px;
+}
+.order-module-page.order-tag-page .operations-table th:nth-child(3),
+.order-module-page.order-tag-page .operations-table td:nth-child(3) {
+  min-width: 220px;
+  width: 220px;
+}
+.order-module-page.order-tag-page .operations-table th:nth-child(4),
+.order-module-page.order-tag-page .operations-table td:nth-child(4) {
+  min-width: 220px;
+  width: 220px;
+}
+.order-module-page.order-tag-page .operations-table th:nth-child(5),
+.order-module-page.order-tag-page .operations-table td:nth-child(5) {
+  min-width: 150px;
+  width: 150px;
+}
+.order-module-page.order-tag-page .operations-table th:nth-child(6),
+.order-module-page.order-tag-page .operations-table td:nth-child(6) {
+  min-width: 220px;
+  width: 220px;
 }
 
 .order-module-page .operations-table th,
@@ -338,95 +370,69 @@
   justify-content: center;
 }
 
-.order-module-page .pagination {
-  min-height: 52px;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  padding: 0 16px;
-  border-top: 1px solid var(--border-light);
-}
-
-.order-module-page .pagination > span:first-child {
-  margin-right: auto;
-}
-
-.order-module-page .operation-actions {
-  display: inline-flex;
-  align-items: center;
+/* 订单标签操作项按产品参考页使用竖线分隔。 */
+.order-module-page.order-tag-page .operations-table .operation-actions {
   gap: 0;
-  white-space: nowrap;
+}
+.order-module-page.order-tag-page .operations-table .operation-actions .btn-text + .btn-text::before {
+  content: '|';
+  display: inline-block;
+  margin: 0 8px 0 4px;
+  color: #d9dee8;
+  font-weight: 400;
 }
 
-.order-module-page .operation-actions > * + * {
-  position: relative;
-  margin-left: 22px;
-}
-
-.order-module-page .operation-actions > * + *::before {
-  position: absolute;
-  top: 50%;
-  left: -11px;
-  width: 1px;
-  height: 14px;
-  background: var(--border-color);
-  content: '';
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-/* 仓库档案按内容自适应列宽，超出内容区时通过横向滚动查看。 */
+/* 仓库档案字段较多，保持可读列宽，超出容器时通过横向滚动查看。 */
 .warehouse-archive-page .operations-table-wrap {
-  width: 100%;
-  min-width: 0;
   overflow-x: auto;
 }
 
 .warehouse-archive-page .operations-table {
-  width: max(100%, 1146px);
-  min-width: 1146px;
-  table-layout: auto;
+  width: 100%;
+  min-width: 1280px;
+  table-layout: fixed;
 }
 
 .warehouse-archive-page .operations-table th,
 .warehouse-archive-page .operations-table td {
   min-width: 0;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .warehouse-archive-page .operations-table th:nth-child(1),
 .warehouse-archive-page .operations-table td:nth-child(1) {
-  min-width: 64px;
+  width: 6%;
 }
 
 .warehouse-archive-page .operations-table th:nth-child(2),
 .warehouse-archive-page .operations-table td:nth-child(2) {
-  min-width: 150px;
+  width: 16%;
 }
 
 .warehouse-archive-page .operations-table th:nth-child(3),
 .warehouse-archive-page .operations-table td:nth-child(3) {
-  min-width: 160px;
+  width: 17%;
 }
 
 .warehouse-archive-page .operations-table th:nth-child(4),
 .warehouse-archive-page .operations-table td:nth-child(4) {
-  min-width: 220px;
+  width: 17%;
 }
 
 .warehouse-archive-page .operations-table th:nth-child(5),
 .warehouse-archive-page .operations-table td:nth-child(5) {
-  min-width: 240px;
+  width: 18%;
 }
 
 .warehouse-archive-page .operations-table th:nth-child(6),
 .warehouse-archive-page .operations-table td:nth-child(6) {
-  min-width: 180px;
+  width: 16%;
 }
 
 .warehouse-archive-page .operations-table th:last-child,
 .warehouse-archive-page .operations-table td:last-child {
+  width: 10%;
   min-width: 132px;
 }
 

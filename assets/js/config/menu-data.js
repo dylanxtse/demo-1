@@ -11,6 +11,7 @@
     users: '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     wallet: '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
     chart: '<svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+    notice: '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>',
     settings: '<svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33A1.65 1.65 0 0 0 14 20.91V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.12.61.66 1.05 1.29 1.05H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15z"/></svg>'
   };
 
@@ -22,16 +23,9 @@
       { name: '计量单位', href: './unit-measurement.html' }
     ]},
     { name: '价格管理', icon: 'tag', children: [
-      { name: '采购价', children: [
-        { name: '询价报价', href: './purchase-inquiry-quote.html' },
-        { name: '采购协议价', href: './purchase-agreement-price.html' }
-      ] },
+      { name: '采购价', children: ['询价报价', '采购协议价'] },
       { name: '价格执行清单', href: './price-execution-list.html' },
-      { name: '销售价', children: [
-        { name: '市场询价', href: './market-inquiry.html' },
-        { name: '销售协议价', href: './sales-agreement-price.html' },
-        { name: '结算改价', href: './settlement-price-change.html' }
-      ] }
+      { name: '销售价', children: ['市场询价', '销售协议价', '结算改价'] }
     ] },
     { name: '订单管理', icon: 'cart', children: [
       { name: '订单管理', href: './order-management.html' },
@@ -43,7 +37,7 @@
       { name: '采购任务', href: './purchase-task.html' },
       { name: '采购单', href: './purchase-order.html' },
       '采购退货',
-      { name: '供应商档案', href: './supplier-archive.html' },
+      { name: '供应商档案', available: false },
       '采购员'
     ] },
     { name: '分拣管理', icon: 'layers', children: [
@@ -69,6 +63,7 @@
         { name: '加工记录', href: './processing-record.html' }
       ] },
       { name: '仓库档案', href: './warehouse-archive.html' },
+      { name: '仓库监控', href: './warehouse-monitor.html' },
       { name: '期初库存', href: './opening-inventory.html' }
     ] },
     { name: '物流配送', icon: 'route', children: ['数据监测', '线路管理', '物流排线', '司机管理', '车辆管理', '配送地址'] },
@@ -77,10 +72,7 @@
       '客户类型'
     ] },
     { name: '财务对账', icon: 'wallet', children: [
-      { name: '销售对账', children: [
-        { name: '对账', href: './sales-reconciliation.html' },
-        { name: '销售账款', href: './sales-reconciliation.html?view=accounts' }
-      ] },
+      { name: '销售对账', children: ['对账', '销售账款'] },
       { name: '采购对账', children: ['对账', '采购账款'] }
     ] },
     { name: '数据统计', icon: 'chart', children: [
@@ -96,12 +88,12 @@
   ].map((item) => {
     const normalize = (entry) => {
       const normalized = typeof entry === 'string' ? { name: entry } : entry;
-      const children = normalized.children?.map(normalize);
+      const hasChildren = Array.isArray(normalized.children) && normalized.children.length > 0;
       return {
         ...normalized,
-        unavailable: Boolean(normalized.unavailable) || (!children?.length && !normalized.href),
+        available: normalized.available ?? Boolean(normalized.href || hasChildren),
         expanded: Boolean(normalized.expanded),
-        children
+        children: normalized.children?.map(normalize)
       };
     };
     return normalize(item);

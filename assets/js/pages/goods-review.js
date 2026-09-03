@@ -1,5 +1,5 @@
 (function () {
-  const backIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><polyline points="15 18 9 12 15 6"/></svg>';
+  const backIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg>';
 
   const pageContent = `
     <div class="page-card goods-review-page">
@@ -72,7 +72,7 @@
 
       <section class="review-detail-page" id="reviewDetailPage">
         <header class="review-detail-header">
-          <button class="review-back-button" type="button" data-action="back-to-list">${backIcon}<span>返回</span></button>
+          <button class="back-link review-back-button" type="button" data-action="back-to-list">${backIcon}<span>返回</span></button>
           <h1 id="reviewDetailTitle">商品详情</h1>
           <span class="review-detail-status" id="reviewDetailStatus"></span>
         </header>

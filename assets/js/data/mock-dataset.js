@@ -7,21 +7,21 @@
 /* 商品基础资料 */
  (function () {
   window.MockProducts = [
-    { seq: 1, code: 'SP0300039', name: '土豆丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-06-03 17:52:26' },
-    { seq: 21, code: 'SP0300040', name: '土豆', isNetVegetable: false, unit: '斤', brand: '农家优选', spec: '500g/份', category: '果蔬-果蔬二级', marketPrice: '6.80', status: '已上架', alias: '黄土豆', origin: '山东', shelfLife: '15天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-29 09:00:00' },
+    { seq: 1, code: 'SP0300039', name: '土豆丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '4.80', status: '已上架', alias: '净菜土豆丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-06-03 17:52:26' },
+    { seq: 21, code: 'SP0300040', name: '土豆', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-根茎类', marketPrice: '3.20', status: '已上架', alias: '鲜土豆', origin: '山东', shelfLife: '15天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-29 09:00:00' },
     { seq: 2, code: 'SP0300038', name: '牛奶', isNetVegetable: false, unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '5.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '市场自采', source: '平台添加', addTime: '2026-05-22 14:58:58' },
     { seq: 3, code: 'SP0300037', name: '牛奶', isNetVegetable: false, unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '5.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '市场自采', source: '平台添加', addTime: '2026-05-22 14:49:00' },
     { seq: 4, code: 'SP0300036', name: '大玉米棒子', isNetVegetable: false, unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '5.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-29 10:00:29' },
-    { seq: 5, code: 'SP0300034', name: '黑大米', isNetVegetable: true, unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '10.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-04-28 15:27:28' },
-    { seq: 6, code: 'SP0300031', name: '鲫鱼', isNetVegetable: true, unit: 'L', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '20.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 16:53:55' },
+    { seq: 5, code: 'SP0300034', name: '黑大米', isNetVegetable: false, unit: '斤', brand: '五谷优选', spec: '25kg/袋', category: '主食（米面粉点心类）-粮食类', marketPrice: '10.00', status: '已上架', alias: '黑米', origin: '东北', shelfLife: '12个月', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-28 15:27:28' },
+    { seq: 6, code: 'SP0300031', name: '净膛鲫鱼', isNetVegetable: false, unit: '斤', brand: '鲜活水产', spec: '500g左右/条', category: '水产品-淡水鱼类', marketPrice: '18.50', status: '已上架', alias: '处理鲫鱼', origin: '本地养殖', shelfLife: '1天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 16:53:55' },
     { seq: 7, code: 'SP0300030', name: '金龙鱼5L桶装油', isNetVegetable: false, unit: '瓶', brand: '金龙鱼', spec: '5L/瓶', category: '食油-食油二级', marketPrice: '55.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 13:07:25' },
     { seq: 8, code: 'SP0300029', name: '鲫鱼', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '水产品-水产品二级', marketPrice: '15.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 13:05:29' },
     { seq: 9, code: 'SP0300026', name: '面', isNetVegetable: false, unit: '瓶', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-30 16:07:10' },
     { seq: 10, code: 'SP0300025', name: '大米', isNetVegetable: false, unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '19.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-23 16:08:26' },
     { seq: 11, code: 'SP0300024', name: '三元牛奶', isNetVegetable: false, unit: '瓶', brand: '三元', spec: '10瓶1箱', category: '蛋奶类-蛋奶类二级', marketPrice: '10.00', status: '已上架', alias: '', origin: '', shelfLife: '1年', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-12 11:11:29' },
     { seq: 12, code: 'SP0300023', name: '大饼', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已上架', alias: '', origin: '', shelfLife: '1天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-09 16:32:38' },
-    { seq: 13, code: 'SP0300020', name: '西红柿', isNetVegetable: true, unit: 'KG', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: '20.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '企业自加工', source: '平台添加', addTime: '2025-12-04 16:02:21' },
-    { seq: 14, code: 'SP0300019', name: '大白菜', isNetVegetable: true, unit: '斤', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: '8.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '企业自加工', source: '平台添加', addTime: '2025-12-04 16:00:29' },
+    { seq: 13, code: 'SP0300020', name: '西红柿', isNetVegetable: false, unit: 'KG', brand: '田园直供', spec: '散装', category: '果蔬-茄果类', marketPrice: '5.60', status: '已上架', alias: '番茄', origin: '山东', shelfLife: '7天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 16:02:21' },
+    { seq: 14, code: 'SP0300019', name: '大白菜', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-叶菜类', marketPrice: '2.20', status: '已上架', alias: '白菜', origin: '河北', shelfLife: '7天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 16:00:29' },
     { seq: 15, code: 'SP0300018', name: '鸡蛋', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '22.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 16, code: 'SP0300017', name: '金龙鱼豆油', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '食油-食油二级', marketPrice: '50.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 17, code: 'SP0300016', name: '面粉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '其他材料-其他二级', marketPrice: '30.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
@@ -91,9 +91,14 @@
   ];
 
   const tags = [
-    { id: 'TAG-001', tagName: '营养餐', nutritious: '是', remark: '学校营养餐订单', status: 'ENABLE', createdAt: '2026-03-11 09:30:00' },
-    { id: 'TAG-002', tagName: '普通餐', nutritious: '否', remark: '常规订单', status: 'ENABLE', createdAt: '2026-03-11 09:31:00' },
-    { id: 'TAG-003', tagName: '应急保供', nutritious: '否', remark: '突发保供订单', status: 'DISABLE', createdAt: '2026-04-08 16:20:00' }
+    { id: 'TAG-001', tagName: '学生', nutritious: '营养餐', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:37:00' },
+    { id: 'TAG-002', tagName: '学生', nutritious: '非营养餐', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:36:00' },
+    { id: 'TAG-003', tagName: '学生', nutritious: '不区分', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:35:00' },
+    { id: 'TAG-004', tagName: '教师', nutritious: '营养餐', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:34:00' },
+    { id: 'TAG-005', tagName: '教师', nutritious: '非营养餐', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:33:00' },
+    { id: 'TAG-006', tagName: '教师', nutritious: '不区分', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:32:00' },
+    { id: 'TAG-007', tagName: '其他', nutritious: '非营养餐', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:31:00' },
+    { id: 'TAG-008', tagName: '其他', nutritious: '不区分', remark: '', status: 'ENABLE', createdAt: '2026-03-11 09:30:00' }
   ];
 
   const receiptChanges = [
@@ -312,19 +317,19 @@
     { id: 'DET-003', goodsCode: 'SP0300025', goodsName: '大米(KG/--/--)', category: '主食-粮食类', warehouse: '北区仓', documentType: '期初库存', relationNo: 'QC202607010001', occurredAt: '2026-07-01 00:00', unit: 'KG', occurredQty: 500, occurredAmount: 2100, partner: '--', productionDate: '2026-06-20', shelfLife: '12个月', expiryDate: '2027-06-20', balance: 500, qualification: '已上传', remark: '' }
   ];
 
-  // 用于验证订单加工方案缺失提示的模拟订单：鸡蛋液没有对应加工方案。
+  // 7 月 31 日订单加工演示：西兰花块暂未配置加工方案，用于验证缺失提示。
   const simulatedOrder = {
-    id: 'ORD-SIM-20260804-001',
-    orderNo: 'DD202608040100099',
+    id: 'ORD-SIM-20260731-001',
+    orderNo: 'DD202607310100099',
     customerName: '模拟测试学校',
     canteen: '模拟食堂',
     customerType: '学校',
     orderTag: '营养餐',
-    orderAmount: 240,
+    orderAmount: 156,
     shippingAmount: 0,
     returnAmount: 0,
     reconciliationAmount: 0,
-    expectedAt: '2026-08-05 07:30',
+    expectedAt: '2026-07-31 10:00',
     status: 'CONFIRMED',
     receiptStatus: '待收货',
     productCount: 1,
@@ -336,41 +341,41 @@
     source: '模拟数据',
     creator: '管理员',
     items: [{
-      goodsName: '鸡蛋液',
+      goodsName: '西兰花块',
       isNetVegetable: true,
-      goodsCode: 'SP0300043',
-      unit: 'KG',
+      goodsCode: 'SP0300061',
+      unit: '斤',
       brand: '--',
-      spec: '--',
-      unitPrice: 12,
+      spec: '散装',
+      unitPrice: 7.8,
       quantity: 20,
-      subtotal: 240,
-      shippedQty: 0,
-      actualQty: 0,
+      subtotal: 156,
+      shippedQty: 20,
+      actualQty: 20,
       remark: ''
     }]
   };
   const simulatedSortingItem = {
-    id: 'SORT-SIM-20260804-001',
+    id: 'SORT-SIM-20260731-001',
     orderId: simulatedOrder.id,
-    goodsCode: 'SP0300043',
+    goodsCode: 'SP0300061',
     isNetVegetable: true,
-    goodsName: '鸡蛋液',
+    goodsName: '西兰花块',
     customerName: simulatedOrder.customerName,
     canteen: simulatedOrder.canteen,
     orderQty: 20,
-    actualQty: 0,
-    unit: 'KG',
+    actualQty: 20,
+    unit: '斤',
     route: simulatedOrder.route,
     orderNo: simulatedOrder.orderNo,
     orderTag: simulatedOrder.orderTag,
     shipped: '否',
-    progress: '0%',
+    progress: '100%',
     remark: simulatedOrder.remark,
     stock: 0,
-    status: 'PENDING',
-    sorter: '待分配',
-    sortingAt: '待分拣',
+    status: 'SORTED',
+    sorter: '陈分拣',
+    sortingAt: '2026-07-31 08:30',
     warehouse: simulatedOrder.warehouse,
     category: '净菜加工',
     shortage: '否',
@@ -1080,221 +1085,6 @@
 (function () {
   window.MockProcessingOrders = [
     {
-      id: 'JGD20260728001',
-      processingDate: '2026-07-28',
-      warehouse: '主仓库',
-      status: '已加工',
-      operator: '管理员',
-      remark: '日常净菜加工',
-      costMode: 'auto',
-      materials: [
-        { productCode: 'SP0300036', productName: '大玉米棒子', unit: 'KG', stock: 120, avgPrice: 5.00, consumeQty: 50 }
-      ],
-      outputs: [
-        { productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 1.2, refQty: 60, actualQty: 58, allocatedCost: '15.18', costPrice: '0.26' },
-        { productCode: 'SP0300014', productName: '苹果', unit: '斤', refCoefficient: 0.8, refQty: 40, actualQty: 39, allocatedCost: '234.82', costPrice: '6.02' }
-      ],
-      createTime: '2026-07-28 09:30:00',
-      attachments: [
-        { name: '加工现场照片.jpg', format: 'jpg', size: '1.2MB' },
-        { name: '原料检验报告.pdf', format: 'pdf', size: '256KB' }
-      ],
-      operationLogs: [
-        { action: '创建', desc: '管理员 创建加工单 2026-07-28 09:30:00' },
-        { action: '提交审核', desc: '管理员 提交审核 2026-07-28 09:31:00' },
-        { action: '审核通过', desc: '管理员 审核通过 2026-07-28 10:00:00' },
-        { action: '加工完成', desc: '管理员 加工完成 2026-07-28 14:30:00' }
-      ]
-    },
-    {
-      id: 'JGD202608120300006',
-      processingDate: '2026-08-12',
-      customerCode: '03',
-      warehouse: '中心仓',
-      materialWarehouse: '中心仓',
-      outputWarehouse: '北区仓',
-      status: '待审核',
-      operator: '杨师傅',
-      remark: '演示待审核加工单',
-      costMode: 'auto',
-      materials: [
-        { productCode: 'SP0300036', productName: '大玉米棒子', unit: 'KG', stock: 120, avgPrice: 5.00, consumeQty: 30 }
-      ],
-      outputs: [
-        { productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 1.2, refQty: 36, actualQty: 35, allocatedCost: '14.00', costPrice: '0.40' },
-        { productCode: 'SP0300020', productName: '西红柿', unit: 'KG', refCoefficient: 0.6, refQty: 18, actualQty: 17, allocatedCost: '136.00', costPrice: '8.00' }
-      ],
-      createTime: '2026-08-12 09:20:00',
-      submittedAt: '2026-08-12 09:25:00',
-      auditedAt: '',
-      auditResult: '',
-      attachments: [],
-      operationLogs: [
-        { action: '创建', operator: '杨师傅', desc: '杨师傅 创建加工单 2026-08-12 09:20:00' },
-        { action: '提交审核', operator: '杨师傅', desc: '杨师傅 提交审核 2026-08-12 09:25:00' }
-      ]
-    },
-    {
-      id: 'JGD20260727002',
-      processingDate: '2026-07-27',
-      warehouse: '主仓库',
-      status: '已加工',
-      operator: '管理员',
-      remark: '',
-      costMode: 'manual',
-      materials: [
-        { productCode: 'SP0300025', productName: '大米', unit: 'KG', stock: 200, avgPrice: 19.00, consumeQty: 30 }
-      ],
-      outputs: [
-        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', refCoefficient: 1.0, refQty: 30, actualQty: 30, costPrice: 19.00 },
-        { productCode: 'SP0300034', productName: '黑大米', unit: '斤', refCoefficient: 0.8, refQty: 24, actualQty: 23, costPrice: 15.20 },
-        { productCode: 'SP0300025', productName: '大米', unit: 'KG', refCoefficient: 0.5, refQty: 15, actualQty: 15, costPrice: 9.50 }
-      ],
-      createTime: '2026-07-27 14:20:00',
-      attachments: [],
-      operationLogs: [
-        { action: '创建', desc: '管理员 创建加工单 2026-07-27 14:20:00' },
-        { action: '提交审核', desc: '管理员 提交审核 2026-07-27 14:21:00' },
-        { action: '审核通过', desc: '管理员 审核通过 2026-07-27 15:00:00' },
-        { action: '加工完成', desc: '管理员 加工完成 2026-07-27 17:00:00' }
-      ]
-    },
-    {
-      id: 'JGD20260726003',
-      processingDate: '2026-07-26',
-      warehouse: '分仓库A',
-      status: '已加工',
-      operator: '管理员',
-      remark: '待确认成品获得量',
-      costMode: 'auto',
-      materials: [
-        { productCode: 'SP0300014', productName: '苹果', unit: '斤', stock: 80, avgPrice: 23.00, consumeQty: 20 }
-      ],
-      outputs: [
-        { productCode: 'SP0300015', productName: '香蕉', unit: '斤', refCoefficient: 1.0, refQty: 20, actualQty: 20, costPrice: 23.00 },
-        { productCode: 'SP0300014', productName: '苹果', unit: '斤', refCoefficient: 0.7, refQty: 14, actualQty: 13, costPrice: 23.00 },
-        { productCode: 'SP0300020', productName: '西红柿', unit: 'KG', refCoefficient: 0.4, refQty: 8, actualQty: 8, costPrice: 20.00 }
-      ],
-      createTime: '2026-07-26 16:45:00',
-      attachments: [
-        { name: '加工说明.txt', format: 'txt', size: '4KB' }
-      ],
-      operationLogs: [
-        { action: '创建', desc: '管理员 创建加工单 2026-07-26 16:45:00' }
-      ]
-    },
-    {
-      id: 'JGD20260725004',
-      processingDate: '2026-07-25',
-      warehouse: '主仓库',
-      status: '已作废',
-      operator: '管理员',
-      remark: '原料库存不足，作废重建',
-      costMode: 'auto',
-      materials: [
-        { productCode: 'SP0300029', productName: '鲫鱼', unit: '斤', stock: 15, avgPrice: 15.00, consumeQty: 10 }
-      ],
-      outputs: [
-        { productCode: 'SP0300031', productName: '鲫鱼', unit: 'L', refCoefficient: 1.0, refQty: 10, actualQty: 10, costPrice: 15.00 },
-        { productCode: 'SP0300029', productName: '鲫鱼', unit: '斤', refCoefficient: 0.6, refQty: 6, actualQty: 6, costPrice: 15.00 },
-        { productCode: 'SP0300018', productName: '鸡蛋', unit: '斤', refCoefficient: 0.3, refQty: 3, actualQty: 3, costPrice: 22.00 }
-      ],
-      createTime: '2026-07-25 10:00:00',
-      attachments: [],
-      operationLogs: [
-        { action: '创建', desc: '管理员 创建加工单 2026-07-25 10:00:00' },
-        { action: '作废', desc: '管理员 作废加工单 2026-07-25 11:30:00' }
-      ]
-    },
-    {
-      id: 'JGD20260724005',
-      processingDate: '2026-07-24',
-      warehouse: '主仓库',
-      status: '已加工',
-      operator: '管理员',
-      remark: '',
-      costMode: 'auto',
-      materials: [
-        { productCode: 'SP0300018', productName: '鸡蛋', unit: '斤', stock: 50, avgPrice: 22.00, consumeQty: 15 }
-      ],
-      outputs: [
-        { productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 1.5, refQty: 23, actualQty: 22, allocatedCost: '25.74', costPrice: '1.17' },
-        { productCode: 'SP0300020', productName: '西红柿', unit: 'KG', refCoefficient: 0.9, refQty: 14, actualQty: 13, allocatedCost: '304.26', costPrice: '23.40' }
-      ],
-      createTime: '2026-07-24 11:15:00',
-      attachments: [
-        { name: '成品检验照片.png', format: 'png', size: '892KB' },
-        { name: '加工记录单.docx', format: 'docx', size: '48KB' }
-      ],
-      operationLogs: [
-        { action: '创建', desc: '管理员 创建加工单 2026-07-24 11:15:00' },
-        { action: '提交审核', desc: '管理员 提交审核 2026-07-24 11:16:00' },
-        { action: '审核通过', desc: '管理员 审核通过 2026-07-24 14:00:00' },
-        { action: '加工完成', desc: '管理员 加工完成 2026-07-24 18:00:00' }
-      ]
-    }
-  ];
-})();
-
-/* 净菜加工方案资料 */
-(function () {
-  window.MockProcessingTemplates = [
-    {
-      id: 'MB001',
-      name: '玉米加工方案',
-      description: '大玉米棒子加工为净菜成品',
-      materials: [
-        { warehouse: '中心仓', productCode: 'SP0300036', productName: '大玉米棒子', unit: 'KG' }
-      ],
-      outputs: [
-        { warehouse: '中心仓', productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 1.2 }
-      ],
-      createTime: '2026-07-20 10:00:00'
-    },
-    {
-      id: 'MB002',
-      name: '复合果蔬加工',
-      description: '苹果原料复合加工',
-      materials: [
-        { warehouse: '北区仓', productCode: 'SP0300014', productName: '苹果', unit: '斤' }
-      ],
-      outputs: [
-        { warehouse: '北区仓', productCode: 'SP0300039', productName: '土豆丝', unit: '斤', refCoefficient: 1.5 },
-        { warehouse: '北区仓', productCode: 'SP0300020', productName: '西红柿', unit: 'KG', refCoefficient: 0.9 }
-      ],
-      createTime: '2026-07-22 14:30:00'
-    },
-    {
-      id: 'MB003',
-      name: '鲫鱼加工',
-      description: '鲫鱼清洗分拣',
-      materials: [
-        { warehouse: '临时仓', productCode: 'SP0300029', productName: '鲫鱼', unit: '斤' }
-      ],
-      outputs: [
-        { warehouse: '临时仓', productCode: 'SP0300031', productName: '鲫鱼', unit: 'L', refCoefficient: 0.85 }
-      ],
-      createTime: '2026-07-25 09:15:00'
-    },
-    {
-      id: 'MB004',
-      name: '大米分装',
-      description: '大包装大米分装成小份',
-      materials: [
-        { warehouse: '中心仓', productCode: 'SP0300025', productName: '大米', unit: 'KG' }
-      ],
-      outputs: [
-        { warehouse: '中心仓', productCode: 'SP0300034', productName: '黑大米', unit: '斤', refCoefficient: 1.0 }
-      ],
-      createTime: '2026-07-26 16:00:00'
-    }
-  ];
-})();
-
-/* 净菜加工方案与加工单同步演示资料（PP 编号、关系类型及多物料数据） */
-(function () {
-  window.MockProcessingOrders = [
-    {
       id: 'JGD202608300300005',
       processingDate: '2026-08-30',
       customerCode: '03',
@@ -1479,7 +1269,10 @@
       ]
     }
   ];
+})();
 
+/* 净菜加工方案资料 */
+(function () {
   window.MockProcessingTemplates = [
     {
       id: 'PP001',

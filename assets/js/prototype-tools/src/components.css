@@ -1,0 +1,978 @@
+.filter-label {
+  width: var(--query-label-width);
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.filter-input {
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  width: var(--query-control-width);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.filter-input:focus { border-color: var(--primary); }
+.filter-input::placeholder { color: var(--text-tertiary); }
+.filter-select {
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0 28px 0 12px;
+  font-size: 14px;
+  width: var(--query-control-width);
+  outline: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
+  appearance: none;
+  cursor: pointer;
+}
+.filter-select:focus { border-color: var(--primary); }
+
+/* ===== 全局区块标题标记 =====
+   用法：<span class="section-title-mark">区块标题</span> */
+.section-title-mark {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 20px;
+  min-height: 20px;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--primary); color: var(--primary); }
+.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-primary:hover { background: #035ee0; border-color: #035ee0; color: #fff; }
+.btn-blue { color: var(--primary); border-color: var(--primary); background: #fff; }
+.btn-blue:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-text {
+  border: none;
+  background: none;
+  padding: 0 4px;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-text:hover { opacity: 0.8; }
+.btn-text.danger { color: var(--danger); }
+.btn-text.disabled { color: var(--text-tertiary); cursor: not-allowed; }
+
+/* 统一列表操作项之间的分隔线 */
+.operation-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0 !important;
+  white-space: nowrap;
+}
+.operation-actions > * + * {
+  position: relative;
+  margin-left: 22px;
+}
+.operation-actions > * + *::before {
+  position: absolute;
+  top: 50%;
+  left: -11px;
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  content: "";
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* ===== 统一页面标注覆盖层 =====
+   页面内只保留零尺寸定位锚点；编号按钮和提示气泡统一挂到 body 的全屏覆盖层，完全不参与业务布局。 */
+.record-annotation-placeholder {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  pointer-events: none;
+  vertical-align: middle;
+}
+
+.record-annotation-placeholder.is-code {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+/* 防止旧缓存或旧模板把实体标注按钮重新渲染回业务页面层。 */
+.record-annotation-anchor {
+  display: none;
+}
+
+.record-annotation-entry {
+  position: relative;
+  display: contents;
+}
+
+.record-annotation-overlay {
+  --annotation-accent: var(--prototype-accent, #e67d14);
+  --annotation-accent-strong: var(--prototype-accent-strong, #cf6c0c);
+  --annotation-accent-contrast: var(--prototype-accent-contrast, #fff);
+  --annotation-accent-rgb: var(--prototype-accent-rgb, 230, 125, 20);
+  --annotation-accent-light: var(--prototype-accent-soft, rgba(230, 125, 20, .1));
+  --annotation-accent-faint: var(--prototype-accent-faint, rgba(230, 125, 20, .06));
+  --annotation-accent-border: var(--prototype-accent-border, rgba(230, 125, 20, .32));
+  --annotation-accent-shadow: var(--prototype-accent-shadow, rgba(230, 125, 20, .16));
+  --annotation-text: #172033;
+  --annotation-secondary: #334155;
+  --annotation-muted: #64748b;
+  --annotation-border: rgba(15, 23, 42, .13);
+  --annotation-border-light: rgba(15, 23, 42, .08);
+  --annotation-surface: rgba(255, 255, 255, .72);
+  position: fixed;
+  inset: 0;
+  /* 迭代面板使用更高层级；标注覆盖层始终位于其下方。 */
+  z-index: 2147483000;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.record-annotation-overlay .record-annotation-anchor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  pointer-events: auto;
+}
+
+/* 作用域不满足时由标注引擎设置 hidden，覆盖层定位样式不能把它重新显示出来。 */
+.record-annotation-overlay .record-annotation-anchor[hidden] {
+  display: none !important;
+}
+
+/* 弹窗作用域标注在桌面状态强制不可见，只能随可见弹窗进入标注层。 */
+.record-annotation-overlay:not(.is-modal-open) .record-annotation-anchor[data-annotation-scope="modal"],
+.record-annotation-overlay:not(.is-modal-open) .record-annotation-popover[data-annotation-scope="modal"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.record-annotation-overlay .record-annotation-anchor.is-open {
+  z-index: 20;
+}
+
+/* 原型标注编辑器固定在覆盖层内，不参与任何页面组件布局。 */
+.record-annotation-editor {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--annotation-border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .68);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .82), 0 12px 30px rgba(15, 23, 42, .1);
+  color: var(--annotation-secondary);
+  font-size: 12px;
+  pointer-events: auto;
+  -webkit-backdrop-filter: blur(16px) saturate(165%);
+  backdrop-filter: blur(16px) saturate(165%);
+}
+
+.record-annotation-editor[hidden] {
+  display: none !important;
+}
+
+.record-annotation-overlay.is-readonly .record-annotation-editor {
+  display: none !important;
+}
+
+.record-annotation-editor button {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--annotation-accent);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--annotation-accent);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.record-annotation-editor button:hover,
+.record-annotation-editor button:focus-visible {
+  border-color: var(--annotation-accent);
+  color: var(--annotation-accent);
+  background: var(--annotation-accent-light);
+  outline: none;
+}
+
+.record-annotation-editor .record-annotation-mode-toggle {
+  position: relative;
+  border-color: rgba(var(--annotation-accent-rgb), .72);
+  color: var(--annotation-accent);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* 标注模式提示使用工具包统一的浅色主题，不调用浏览器原生黑色 title 提示。 */
+.record-annotation-editor .record-annotation-mode-toggle::after {
+  position: absolute;
+  right: auto;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 50;
+  display: block;
+  max-width: min(280px, 60vw);
+  padding: 7px 10px;
+  border: 1px solid var(--annotation-accent-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 8px 20px var(--annotation-accent-shadow);
+  color: var(--annotation-secondary);
+  content: attr(data-annotation-tooltip);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 4px);
+  transition: opacity .12s ease, transform .12s ease, visibility 0s linear .12s;
+}
+
+.record-annotation-editor .record-annotation-mode-toggle[data-annotation-tooltip]:not([data-annotation-tooltip=""]):hover::after,
+.record-annotation-editor .record-annotation-mode-toggle[data-annotation-tooltip]:not([data-annotation-tooltip=""]):focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition-delay: 0s;
+}
+
+.record-annotation-editor .record-annotation-mode-toggle:hover,
+.record-annotation-editor .record-annotation-mode-toggle:focus-visible {
+  border-color: var(--annotation-accent);
+  color: var(--annotation-accent-strong);
+  background: var(--annotation-accent-faint);
+}
+
+.record-annotation-editor-hint { white-space: nowrap; }
+
+.record-annotation-overlay.is-editing .record-annotation-marker {
+  cursor: grab;
+  box-shadow: 0 0 0 4px var(--annotation-accent-light);
+}
+
+.record-annotation-overlay.is-editing .record-annotation-anchor.is-dragging .record-annotation-marker {
+  cursor: grabbing;
+  opacity: .86;
+}
+
+.record-annotation-overlay.is-editing .record-annotation-popover {
+  cursor: move;
+}
+
+.record-annotation-overlay.is-editing .record-annotation-popover.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.record-annotation-overlay.is-editing .record-annotation-popover input,
+.record-annotation-overlay.is-editing .record-annotation-popover textarea {
+  cursor: text;
+}
+
+.record-annotation-overlay.is-editing .record-annotation-popover button {
+  cursor: pointer;
+}
+
+.record-annotation-draft-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.record-annotation-draft-field input,
+.record-annotation-draft-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, .14);
+  border-radius: 14px;
+  padding: 7px 9px;
+  background: rgba(255, 255, 255, .86);
+  color: var(--annotation-text);
+  font: inherit;
+}
+
+.record-annotation-draft-field input:focus,
+.record-annotation-draft-field textarea:focus {
+  border-color: var(--annotation-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--annotation-accent-faint) !important;
+}
+
+.record-annotation-draft-field input::selection,
+.record-annotation-draft-field textarea::selection {
+  background: var(--annotation-accent);
+  color: var(--annotation-accent-contrast);
+}
+
+.record-annotation-draft-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.record-annotation-edit-header {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding-right: 94px;
+}
+
+.record-annotation-edit-header .record-annotation-popover-title {
+  flex: 0 0 auto;
+}
+
+.record-annotation-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--annotation-accent);
+  cursor: pointer;
+}
+
+.record-annotation-muted-toggle {
+  position: absolute;
+  top: 1px;
+  right: 38px;
+  min-width: 48px;
+  height: 30px;
+  padding: 0 7px;
+  border: 1px solid var(--annotation-border);
+  border-radius: 15px;
+  background: transparent;
+  color: var(--annotation-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.record-annotation-muted-toggle:hover,
+.record-annotation-muted-toggle:focus-visible,
+.record-annotation-muted-toggle.is-muted {
+  border-color: var(--annotation-muted);
+  background: rgba(100, 116, 139, .1);
+  color: var(--annotation-muted);
+  outline: none;
+}
+
+.record-annotation-muted-toggle:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.record-annotation-delete svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.record-annotation-popover.is-editable {
+  border-color: var(--annotation-accent-border);
+}
+
+.record-annotation-delete:hover,
+.record-annotation-delete:focus-visible,
+.record-annotation-delete.is-delete-armed {
+  background: var(--annotation-accent-light);
+  color: var(--annotation-accent-strong);
+  outline: none;
+}
+
+.record-annotation-delete-hint {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--annotation-accent);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.record-annotation-draft-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.record-annotation-overlay .record-annotation-draft-actions .btn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  font-size: 12px;
+}
+
+.record-annotation-overlay .record-annotation-draft-actions .btn-primary {
+  border-color: rgba(var(--annotation-accent-rgb), .72);
+  color: var(--annotation-accent);
+  background: transparent;
+  box-shadow: none;
+}
+
+.record-annotation-overlay .record-annotation-draft-actions .btn-primary:hover,
+.record-annotation-overlay .record-annotation-draft-actions .btn-primary:focus-visible {
+  border-color: var(--annotation-accent);
+  color: var(--annotation-accent-strong);
+  background: var(--annotation-accent-faint);
+}
+
+.record-annotation-overlay .record-annotation-draft-actions .btn:not(.btn-primary) {
+  border-color: var(--annotation-border);
+  color: var(--annotation-secondary);
+  background: transparent;
+}
+
+.record-annotation-overlay .record-annotation-draft-actions .btn:not(.btn-primary):hover,
+.record-annotation-overlay .record-annotation-draft-actions .btn:not(.btn-primary):focus-visible {
+  border-color: var(--annotation-border);
+  color: var(--annotation-secondary);
+  background: rgba(15, 23, 42, .04);
+}
+
+.record-annotation-draft-error {
+  color: #c0392b;
+  font-size: 12px;
+}
+
+.record-annotation-overlay.is-modal-open .record-annotation-editor {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.record-annotation-overlay.is-markers-hidden .record-annotation-anchor,
+.record-annotation-overlay.is-markers-hidden .record-annotation-popover {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* 弹窗打开时，页面级标注保持页面归属并暂时隐藏，避免被定位到弹窗内容上。 */
+.record-annotation-overlay.is-modal-open .record-annotation-anchor[data-annotation-scope="page"],
+.record-annotation-overlay.is-modal-open .record-annotation-popover[data-annotation-scope="page"] {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.record-annotation-marker {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px dashed var(--annotation-accent);
+  border-radius: 50%;
+  background-color: #fff;
+  background-image: linear-gradient(
+    rgba(var(--annotation-accent-rgb), .2),
+    rgba(var(--annotation-accent-rgb), .2)
+  );
+  color: var(--annotation-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72), 0 2px 8px var(--annotation-accent-shadow);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 26px;
+  cursor: pointer;
+}
+
+.record-annotation-marker:hover,
+.record-annotation-marker:focus-visible,
+.record-annotation-anchor.is-open .record-annotation-marker {
+  border-color: var(--annotation-accent-strong);
+  background-color: #fff;
+  background-image: linear-gradient(
+    rgba(var(--annotation-accent-rgb), .2),
+    rgba(var(--annotation-accent-rgb), .2)
+  );
+  color: var(--annotation-accent-strong);
+  outline: none;
+  box-shadow: 0 0 0 4px var(--annotation-accent-faint), 0 2px 8px var(--annotation-accent-shadow);
+}
+
+.record-annotation-anchor.is-muted .record-annotation-marker {
+  border-color: var(--annotation-muted);
+  background-color: #f3f5f8;
+  background-image: none;
+  color: var(--annotation-muted);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72), 0 2px 8px rgba(100, 116, 139, .14);
+}
+
+.record-annotation-anchor.is-muted .record-annotation-marker:hover,
+.record-annotation-anchor.is-muted .record-annotation-marker:focus-visible,
+.record-annotation-anchor.is-muted.is-open .record-annotation-marker {
+  border-color: var(--annotation-secondary);
+  background-color: #fff;
+  background-image: none;
+  color: var(--annotation-secondary);
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, .1), 0 2px 8px rgba(100, 116, 139, .14);
+  outline: none;
+}
+
+.record-annotation-popover {
+  position: fixed;
+  top: -10000px;
+  left: -10000px;
+  z-index: 100;
+  display: flex;
+  width: 380px;
+  max-width: min(380px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 32px));
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--annotation-border);
+  border-radius: 20px;
+  background: var(--annotation-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .82), 0 10px 24px rgba(15, 23, 42, .1);
+  color: var(--annotation-text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.55;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility .15s ease;
+  visibility: hidden;
+  white-space: normal;
+  text-align: left;
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+
+.record-annotation-anchor:hover + .record-annotation-popover,
+.record-annotation-anchor:focus-within + .record-annotation-popover,
+.record-annotation-anchor.is-open + .record-annotation-popover,
+.record-annotation-popover:hover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.record-annotation-popover-title {
+  display: block;
+  color: var(--annotation-accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-annotation-popover-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--annotation-text);
+}
+
+.record-annotation-popover-list li + li {
+  margin-top: 4px;
+}
+
+.record-annotation-popover-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.record-annotation-action {
+  position: relative;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--annotation-accent);
+  border-radius: 14px;
+  color: var(--annotation-accent);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.record-annotation-action:hover,
+.record-annotation-action:focus-visible {
+  border-color: var(--annotation-accent);
+  color: var(--annotation-accent);
+  background: var(--annotation-accent-light);
+  outline: none;
+}
+
+.record-annotation-overlay .record-annotation-popover-actions .record-annotation-action.btn-primary {
+  border-color: rgba(var(--annotation-accent-rgb), .72);
+  color: var(--annotation-accent);
+  background: transparent;
+  box-shadow: none;
+}
+
+.record-annotation-overlay .record-annotation-popover-actions .record-annotation-action.btn-primary:hover,
+.record-annotation-overlay .record-annotation-popover-actions .record-annotation-action.btn-primary:focus-visible {
+  border-color: var(--annotation-accent);
+  color: var(--annotation-accent-strong);
+  background: var(--annotation-accent-faint);
+}
+
+.record-annotation-demo-action {
+  border: 1px dashed var(--annotation-accent-border);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--annotation-accent);
+}
+
+.record-annotation-demo-action:hover {
+  border-color: var(--annotation-accent);
+  background: var(--annotation-accent-light);
+  color: var(--annotation-accent-strong);
+}
+
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.status-tag.online { background: #e8f8f0; color: var(--success); }
+.status-tag.offline { background: #f5f5f5; color: var(--text-tertiary); }
+
+.custom-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: #fff;
+}
+.custom-checkbox:hover { border-color: var(--primary); }
+.custom-checkbox.checked { background: var(--primary); border-color: var(--primary); }
+.custom-checkbox.checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+
+.switch-control {
+  width: 100px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.switch-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #cfd5df;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.switch-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease;
+}
+
+.switch-input:checked + .switch-slider {
+  background: var(--primary);
+}
+
+.switch-input:checked + .switch-slider::after {
+  transform: translateX(16px);
+}
+
+.switch-input:focus-visible + .switch-slider {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+.number-stepper {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.number-stepper .form-control {
+  width: 100%;
+  padding-right: 34px;
+  appearance: textfield;
+}
+
+.number-stepper .form-control::-webkit-inner-spin-button,
+.number-stepper .form-control::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.number-stepper-buttons {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 30px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.number-stepper:hover .number-stepper-buttons,
+.number-stepper:focus-within .number-stepper-buttons {
+  opacity: 1;
+}
+
+.number-stepper-button {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: #eef0f4;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.number-stepper-button + .number-stepper-button {
+  border-top: 1px solid #fff;
+}
+
+.number-stepper-button:hover {
+  background: #dfe4ec;
+}
+
+/* Shared calendar used by list filters across business modules. */
+.calendar-panel {
+  position: fixed;
+  z-index: 1001;
+  display: none;
+  width: 280px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+.calendar-panel.is-visible { display: block; }
+.calendar-panel.single-calendar-panel.with-time { width: 520px; padding: 14px; }
+.calendar-panel.cal-dual { width: 600px; padding: 16px; }
+.cal-dual-body { display: flex; align-items: flex-start; }
+.cal-panel { flex: 1; min-width: 0; }
+.cal-divider { width: 1px; align-self: stretch; margin: 0 12px; background: var(--border-light); }
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-nav {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+}
+.cal-nav:hover { background: var(--primary-light); color: var(--primary); }
+.cal-title { color: var(--text-primary); font-size: 14px; font-weight: 500; }
+.cal-time-panel { width: 174px; box-sizing: border-box; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border-light); }
+.cal-current-time { margin: 2px 0 14px; color: var(--text-primary); font-size: 22px; font-weight: 400; letter-spacing: 1px; text-align: center; }
+.cal-time-scrolls { display: flex; justify-content: center; gap: 8px; }
+.cal-time-column-wrap { display: flex; align-items: center; gap: 4px; }
+.cal-time-label { display: none; }
+.cal-time-column { width: 48px; height: 180px; box-sizing: border-box; overflow-y: auto; padding: 72px 0; border: 1px solid var(--border-color); border-radius: 5px; scroll-snap-type: y mandatory; scrollbar-width: none; }
+.cal-time-column::-webkit-scrollbar { display: none; }
+.cal-time-option { display: block; width: 100%; height: 36px; box-sizing: border-box; padding: 0; border: 0; background: #fff; color: var(--text-secondary); font-size: 14px; line-height: 36px; text-align: center; scroll-snap-align: center; cursor: pointer; }
+.cal-time-option:hover { background: var(--primary-light); color: var(--primary); }
+.cal-time-option.is-selected { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.cal-table { width: 100%; border-collapse: collapse; }
+.cal-table th { height: 30px; color: var(--text-tertiary); font-size: 12px; font-weight: 400; text-align: center; }
+.cal-table td { height: 32px; border-radius: 4px; color: var(--text-primary); font-size: 13px; text-align: center; cursor: pointer; }
+.cal-empty { cursor: default; }
+.cal-day:hover { background: var(--primary-light); color: var(--primary); }
+.cal-today { font-weight: 600; }
+.cal-start, .cal-end { background: var(--primary); color: #fff; }
+.cal-start:hover, .cal-end:hover { background: var(--primary); color: #fff; }
+.cal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+.cal-hint { color: var(--text-tertiary); font-size: 12px; }
+.cal-btns { display: flex; gap: 6px; }
+
+/* 全局输入控件聚焦态统一使用系统蓝色，避免浏览器默认高亮颜色干扰页面样式。 */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary) !important;
+  outline: none !important;
+}
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  border-color: var(--danger) !important;
+}
+
+/* 企业端统一分页规范，供各端列表页复用。 */
+.pagination {
+  display: flex;
+  box-sizing: border-box;
+  min-height: 56px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-white);
+}
+.pagination .page-total { margin-right: auto; white-space: nowrap; }
+.pagination .page-size-select {
+  height: 32px;
+  min-width: 92px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0 28px 0 8px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.pagination .page-btns { display: flex; gap: 4px; }
+.pagination .page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  transition: all 0.2s;
+}
+.pagination .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+.pagination .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pagination .page-ellipsis { min-width: 20px; text-align: center; color: var(--text-tertiary); }
+.pagination .page-jump { display: flex; align-items: center; gap: 4px; }
+.pagination .page-jump input,
+.pagination .pagination-jump-input {
+  width: 48px;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: center;
+  font-size: 14px;
+  outline: none;
+}

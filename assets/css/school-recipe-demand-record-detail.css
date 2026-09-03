@@ -1,0 +1,290 @@
+.school-recipe-demand-record-detail-page {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.school-recipe-demand-record-detail-page .school-recipe-demand-detail-info {
+  --detail-grid-columns: 4;
+  --detail-field-label-width: 104px;
+}
+
+.school-recipe-demand-detail-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.school-recipe-demand-detail-section-heading h3 {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.school-recipe-demand-date-detail-section .school-recipe-demand-detail-section-heading h3 {
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
+.school-recipe-demand-date-detail-section .school-recipe-demand-detail-table td.is-number {
+  text-align: center;
+}
+
+.school-recipe-demand-detail-table .col-expand { width: 44px; }
+
+.school-recipe-demand-date-expand-cell {
+  padding: 0 !important;
+}
+
+.school-recipe-demand-date-expand-button {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  color: var(--text-tertiary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.school-recipe-demand-date-expand-button:hover {
+  color: var(--primary);
+  background: #eef5ff;
+  border-radius: 3px;
+}
+
+.school-recipe-demand-date-expand-button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition: transform 160ms ease;
+}
+
+.school-recipe-demand-date-row.is-expanded td {
+  background: #f8fbff;
+}
+
+.school-recipe-demand-date-row.is-expanded .school-recipe-demand-date-expand-button svg {
+  transform: rotate(90deg);
+}
+
+.school-recipe-demand-date-detail-row[hidden] {
+  display: none;
+}
+
+.school-recipe-demand-date-detail-row > td {
+  padding: 0 !important;
+  background: #fbfcfe;
+}
+
+.school-recipe-demand-attendance-detail {
+  padding: 0;
+}
+
+.school-recipe-demand-attendance-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.school-recipe-demand-attendance-detail-table th,
+.school-recipe-demand-attendance-detail-table td {
+  height: 32px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-light);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.school-recipe-demand-attendance-detail-table th {
+  color: var(--text-tertiary);
+  background: #fff;
+  font-weight: 500;
+}
+
+.school-recipe-demand-attendance-detail-table td {
+  color: var(--text-primary);
+  background: #fff;
+}
+
+.school-recipe-demand-attendance-detail-table td.is-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.school-recipe-demand-attendance-detail-table td.is-total {
+  font-weight: 600;
+}
+
+.school-recipe-demand-attendance-detail-table .col-meal { width: 180px; }
+.school-recipe-demand-attendance-detail-table .col-person { width: 140px; }
+.school-recipe-demand-attendance-detail-table .col-total { width: 140px; }
+
+.school-recipe-demand-detail-section-heading > span {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.school-recipe-demand-detail-notice {
+  margin: -4px 0 20px;
+  padding: 10px 12px;
+  border: 1px solid #f3ddbb;
+  border-radius: 4px;
+  color: #b66a12;
+  background: #fffaf1;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.school-recipe-demand-detail-table-wrap {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+}
+
+.school-recipe-demand-detail-table {
+  width: 100%;
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.school-recipe-demand-detail-table td.is-number {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.school-recipe-demand-detail-table td.is-total {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.school-recipe-demand-detail-table .col-date { width: 120px; }
+.school-recipe-demand-detail-table .col-version { width: 220px; }
+.school-recipe-demand-detail-table .col-person { width: 88px; }
+.school-recipe-demand-detail-table .col-total { width: 84px; }
+.school-recipe-demand-detail-table .col-product { width: 84px; }
+
+.school-recipe-demand-detail-product-table {
+  min-width: 980px;
+}
+
+.school-recipe-demand-detail-product-table th,
+.school-recipe-demand-detail-product-table td,
+.school-recipe-demand-detail-product-table td.is-number {
+  text-align: center;
+}
+
+.school-recipe-demand-detail-product-table .col-index { width: 48px; }
+.school-recipe-demand-detail-product-table .col-product { width: 180px; }
+.school-recipe-demand-detail-product-table .col-ingredient { width: 180px; }
+.school-recipe-demand-detail-product-table .col-code { width: 110px; }
+.school-recipe-demand-detail-product-table .col-unit { width: 56px; }
+.school-recipe-demand-detail-product-table .col-quantity { width: 94px; }
+.school-recipe-demand-detail-product-table .col-total { width: 96px; }
+
+.school-recipe-demand-order-table {
+  min-width: 660px;
+}
+
+.school-recipe-demand-order-table .col-order-no { width: 220px; }
+.school-recipe-demand-order-table .col-date { width: 140px; }
+.school-recipe-demand-order-table .col-participant { width: 120px; }
+.school-recipe-demand-order-table .col-tag { width: 180px; }
+
+.school-recipe-demand-detail-product-name,
+.school-recipe-demand-detail-ingredient-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center !important;
+}
+
+.school-recipe-demand-detail-product-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.school-recipe-demand-detail-ingredient-name {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.school-recipe-demand-order-link {
+  padding: 0;
+  border: 0;
+  color: var(--primary);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.school-recipe-demand-order-link:hover {
+  text-decoration: underline;
+}
+
+.school-recipe-demand-record-detail-empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--text-tertiary);
+}
+
+.school-recipe-demand-record-detail-empty p {
+  margin: 0;
+}
+
+.school-recipe-demand-record-detail-empty-cell {
+  height: 130px !important;
+  color: var(--text-tertiary) !important;
+  text-align: center !important;
+}
+
+.school-recipe-demand-trace-section {
+  padding-bottom: 12px;
+}
+
+/* 需求提交记录详情页统一使用常规字重。 */
+.school-recipe-demand-record-detail-page :is(h1, h2, h3, h4, h5, h6, strong, b, th, .is-total, .school-recipe-demand-detail-product-name) {
+  font-weight: 400 !important;
+}
+
+@media (max-width: 1100px) {
+  .school-recipe-demand-record-detail-page .school-recipe-demand-detail-info {
+    --detail-grid-columns: 3;
+  }
+}
+
+@media (max-width: 760px) {
+  .school-recipe-demand-record-detail-page .processing-detail-page-body {
+    padding: 14px 14px 30px;
+  }
+
+  .school-recipe-demand-record-detail-page .school-recipe-demand-detail-info {
+    --detail-grid-columns: 1;
+    --detail-field-label-width: 92px;
+  }
+
+  .school-recipe-demand-detail-section-heading {
+    align-items: flex-start;
+  }
+
+  .school-recipe-demand-attendance-detail {
+    padding: 0;
+  }
+}

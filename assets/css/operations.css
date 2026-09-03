@@ -1,4 +1,4 @@
-.operations-page { min-width: 0; padding: 16px; color: var(--text-primary); }
+.operations-page { min-width: 0; min-height: 0; padding: 16px; color: var(--text-primary); }
 
 .operations-tabs {
   display: flex;
@@ -78,7 +78,23 @@
   content: "";
 }
 
-.operations-filter { padding: 18px 18px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; }
+.operations-filter { position: relative; padding: 18px 18px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; }
+
+.record-filter-annotation-corner {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 100;
+  display: flex;
+  gap: 4px;
+}
+
+.record-filter-annotation-corner.is-left {
+  right: auto;
+  left: 4px;
+}
+
+.record-filter-annotation-corner.is-right { right: 4px; }
 
 .operations-filter-grid {
   display: grid;
@@ -140,6 +156,7 @@
   gap: 10px;
   padding: 10px 0 6px;
 }
+.operations-toolbar[hidden] { display: none !important; }
 
 .operations-toolbar .toolbar-spacer { flex: 1; }
 
@@ -160,6 +177,39 @@
   overflow: auto;
   border: 1px solid var(--border-color);
   background: #fff;
+}
+
+/* 企业端普通列表统一参与页面 flex 高度计算，避免多行数据把分页撑出 content-area。 */
+.operations-page > .operations-table-container {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.operations-page > .operations-table-container > .operations-table-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* record-page 会在列表容器外包一层标注宿主；宿主必须参与同一条 flex 链，
+   否则表格会把页面撑高，内部滚动条和底部分页会被 content-area 截断。 */
+.operations-page .record-table-annotation-surface {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.operations-page .record-table-annotation-surface > .operations-table-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 .operations-table {
@@ -189,6 +239,55 @@
   font-weight: 500;
 }
 
+/* 表格勾选框统一使用项目通用的 16px 自定义样式，避免原生控件在不同页面出现尺寸差异。 */
+.operations-table input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  background: #fff;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: border-color .2s, background-color .2s;
+}
+
+.operations-table input[type='checkbox']:hover {
+  border-color: var(--primary);
+}
+
+.operations-table input[type='checkbox']:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.5 8.5 2.5' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.operations-table input[type='checkbox']:indeterminate {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  background-image: linear-gradient(#fff, #fff);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 8px 2px;
+}
+
+.operations-table input[type='checkbox']:focus-visible {
+  outline: 2px solid rgba(2, 73, 196, .2);
+  outline-offset: 2px;
+}
+
+.operations-table input[type='checkbox']:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
 .operations-table tbody tr:hover { background: #f7fbff; }
 
 .operations-table .cell-link {
@@ -204,10 +303,6 @@
   gap: 4px;
 }
 
-.operations-table .cell-actions .divider {
-  color: var(--border-color);
-}
-
 .operations-table .quantity-input {
   width: 84px;
   height: 28px;
@@ -221,6 +316,16 @@
   height: 160px;
   color: var(--text-tertiary);
   text-align: center;
+}
+
+.product-display-text {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .operation-status {
@@ -250,31 +355,6 @@
 .operation-status.info {
   background: #eaf3ff;
   color: var(--primary);
-}
-
-.operations-pagination {
-  display: flex;
-  min-height: 54px;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.operations-pagination select,
-.operations-pagination input {
-  height: 30px;
-  box-sizing: border-box;
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  background: #fff;
-}
-
-.operations-pagination input {
-  width: 48px;
-  padding: 0 6px;
-  text-align: center;
 }
 
 .operations-modal-backdrop {
@@ -337,7 +417,7 @@
   font-weight: 500;
 }
 
-.operations-modal-header button {
+.operations-modal-header button:not(.record-annotation-marker) {
   border: 0;
   background: transparent;
   color: var(--text-tertiary);
@@ -361,10 +441,6 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px 28px;
-}
-
-.operations-detail-grid.single-column {
-  grid-template-columns: 1fr;
 }
 
 .operations-form-item {
@@ -615,8 +691,6 @@
   width: 15px !important;
   height: 15px !important;
 }
-.sorting-module-page .operations-table .operation-actions,
-.sorting-customer-table .operation-actions { gap: 0; }
 .sorting-module-page .operations-table-container {
   display: flex;
   flex: 1;
@@ -627,6 +701,18 @@
   border: 1px solid var(--border-light);
   border-radius: 6px;
   background: #fff;
+}
+.sorting-module-page .record-table-annotation-surface {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.sorting-module-page .record-table-annotation-surface > .operations-table-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 .sorting-module-page .operations-table-wrap { flex: 1; min-height: 0; overflow: auto; border: 0; }
 .sorting-module-page .operations-table { min-width: 1720px; font-size: 14px; }
@@ -660,8 +746,6 @@
 }
 .sorting-module-page .operations-table th:last-child { z-index: 3; background: #fafafa; }
 .sorting-module-page .operations-table tbody tr:hover td:last-child { background: #f5f7fa; }
-.sorting-module-page .operations-pagination { min-height: 52px; flex-shrink: 0; padding: 0 16px; border-top: 1px solid var(--border-light); }
-.sorting-module-page .operations-pagination > span:first-child { margin-right: auto; }
 
 .sorting-module-page.has-inline-status-actions .operations-status-row {
   min-height: 34px;
@@ -672,6 +756,11 @@
   width: auto;
   flex: 0 0 auto;
   padding: 0;
+}
+.sorting-status-boxed .operations-status-row {
+  min-height: 32px;
+  flex-shrink: 0;
+  margin: 0 0 12px;
 }
 .sorting-status-boxed .operations-status-tabs {
   height: 32px;
@@ -786,7 +875,6 @@
   box-shadow: -4px 0 8px rgba(31, 35, 41, 0.06);
 }
 .sorting-customer-table th:last-child { z-index: 3; background: #f7f9fc; }
-.sorting-customer-table-container .operations-pagination { flex-shrink: 0; padding: 0 16px; border-top: 1px solid var(--border-light); }
 
 .sorting-customer-page {
   display: flex;
@@ -819,8 +907,6 @@
 .sorting-customer-page .operations-table th,
 .sorting-customer-page .operations-table td { text-align: center; }
 .sorting-customer-page .operations-table .cell-actions { justify-content: center; }
-.sorting-customer-page .operations-pagination { flex-shrink: 0; padding: 0 16px; border-top: 1px solid var(--border-light); }
-.sorting-customer-page .operations-pagination > span:first-child { margin-right: auto; }
 
 @media (max-width: 1200px) {
   .operations-filter-grid {
@@ -857,7 +943,10 @@
 
 .inventory-document-title h2 {
   margin: 0;
-  font-size: 16px;
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 600;
 }
 

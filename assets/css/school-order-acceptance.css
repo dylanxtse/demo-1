@@ -1,0 +1,238 @@
+.school-order-acceptance-page {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.school-order-acceptance-header {
+  display: flex;
+  min-height: 50px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.school-order-acceptance-header h1 {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid #dfe3eb;
+  color: #222b3a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.school-order-acceptance-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: #5b6473;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.school-order-acceptance-back:hover { color: var(--primary); }
+.school-order-acceptance-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 22px 24px 90px;
+}
+
+.school-order-acceptance-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 0 28px;
+  margin-bottom: 26px;
+}
+
+.school-order-acceptance-summary dl {
+  display: flex;
+  min-width: 0;
+  min-height: 36px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.school-order-acceptance-summary dt {
+  width: 88px;
+  flex: 0 0 88px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.school-order-acceptance-summary dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-order-acceptance-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 12px;
+}
+
+.school-order-acceptance-section-title h2 {
+  margin: 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.school-order-acceptance-table-wrap {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid #e1e4eb;
+}
+
+.school-order-acceptance-table {
+  width: 100%;
+  min-width: 1540px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.school-order-acceptance-table col:nth-child(1) { width: 48px; }
+.school-order-acceptance-table col:nth-child(2) { width: 250px; }
+.school-order-acceptance-table col:nth-child(3) { width: 100px; }
+.school-order-acceptance-table col:nth-child(4) { width: 110px; }
+.school-order-acceptance-table col:nth-child(5) { width: 112px; }
+.school-order-acceptance-table col:nth-child(6) { width: 112px; }
+.school-order-acceptance-table col:nth-child(7) { width: 110px; }
+.school-order-acceptance-table col:nth-child(8) { width: 190px; }
+.school-order-acceptance-table col:nth-child(9) { width: 110px; }
+.school-order-acceptance-table col:nth-child(10) { width: 150px; }
+.school-order-acceptance-table col:nth-child(11) { width: 170px; }
+
+.school-order-acceptance-table th,
+.school-order-acceptance-table td {
+  height: 48px;
+  box-sizing: border-box;
+  padding: 6px 9px;
+  overflow: hidden;
+  border-right: 1px solid #e5e8ed;
+  border-bottom: 1px solid #e5e8ed;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.school-order-acceptance-table th {
+  background: #fafafa;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: normal;
+  line-height: 18px;
+}
+
+.school-order-acceptance-table .acceptance-goods-name { text-align: left; }
+
+.school-order-acceptance-table .acceptance-input {
+  width: 100%;
+  height: 30px;
+  box-sizing: border-box;
+  border: 1px solid #d9dee8;
+  border-radius: 3px;
+  padding: 0 7px;
+  outline: none;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.school-order-acceptance-table .acceptance-input:focus { border-color: var(--primary); }
+.school-order-acceptance-table .acceptance-input[type="number"] { text-align: right; }
+
+.school-order-acceptance-table tfoot td {
+  background: #fafbfc;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.school-order-acceptance-table .acceptance-upload {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px dashed #b9c4d4;
+  border-radius: 3px;
+  background: #fff;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.school-order-acceptance-error {
+  min-height: 20px;
+  margin-top: 8px;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.school-order-acceptance-remark {
+  margin-top: 20px;
+}
+
+.school-order-acceptance-remark label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.school-order-acceptance-remark textarea {
+  width: 100%;
+  min-height: 72px;
+  box-sizing: border-box;
+  border: 1px solid #cfd5df;
+  border-radius: 3px;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  font: inherit;
+}
+
+.school-order-acceptance-actions {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-top: 1px solid #edf0f5;
+  background: #fff;
+}
+
+.school-order-acceptance-actions .btn { min-width: 90px; justify-content: center; }
+
+@media (max-width: 1180px) {
+  .school-order-acceptance-summary { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .school-order-acceptance-header { padding: 0 12px; }
+  .school-order-acceptance-body { padding: 16px 12px 84px; }
+  .school-order-acceptance-summary { grid-template-columns: 1fr; }
+}

@@ -92,15 +92,15 @@
 }
 .menu-item-header:hover { background: var(--primary-light); color: var(--primary); }
 .menu-item.active > .menu-item-header { color: var(--primary); background: transparent; font-weight: 500; }
-.menu-item.unavailable > .menu-item-header,
-.menu-sub-group.unavailable > .menu-sub-item {
+.menu-item-disabled > .menu-item-header,
+.menu-sub-item.menu-item-disabled {
   color: var(--text-tertiary);
   cursor: not-allowed;
 }
-.menu-item.unavailable > .menu-item-header:hover,
-.menu-sub-group.unavailable > .menu-sub-item:hover {
-  color: var(--text-tertiary);
+.menu-item-disabled > .menu-item-header:hover,
+.menu-sub-item.menu-item-disabled:hover {
   background: transparent;
+  color: var(--text-tertiary);
 }
 .menu-item-header .menu-icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .menu-item-header .menu-icon svg { width: 16px; height: 16px; }
@@ -278,6 +278,105 @@
   overflow: hidden;
 }
 .icon-svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* 项目级查询区：默认两行，超过两行时由 QueryFilterLayout 折叠。 */
+[data-query-filter-field][hidden],
+.operations-field[hidden],
+.operations-filter-toggle[hidden],
+.query-filter-toggle[hidden],
+.operations-filter-advanced[hidden],
+.filter-advanced[hidden] {
+  display: none !important;
+}
+
+.query-filter-actions {
+  width: auto !important;
+  min-width: max-content;
+}
+
+.query-filter-toggle {
+  display: inline-flex;
+  height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 32px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.query-filter-toggle:hover { opacity: .82; }
+.query-filter-toggle-arrow {
+  display: inline-flex;
+  transition: transform .2s ease;
+}
+.query-filter-toggle.is-active .query-filter-toggle-arrow { transform: rotate(180deg); }
+
+/* 统一所有下钻页头：返回按钮右侧标题统一为 14px，并只保留一根短分隔线。 */
+.product-form-header,
+.order-form-header,
+.processing-form-header,
+.processing-detail-page-header,
+.warehouse-form-header,
+.template-editor-header,
+.processing-record-edit-page .operation-form-header,
+.review-detail-header,
+.sorting-customer-detail-header,
+.bidding-form-title-row,
+.bidding-detail-heading,
+.inventory-document-title,
+.notice-form-heading,
+.notice-preview-heading,
+.notice-recipient-detail-heading {
+  gap: 12px !important;
+}
+
+.product-form-header h1,
+.order-form-header h1,
+.processing-form-header h1,
+.processing-detail-page-header h1,
+.warehouse-form-header h1,
+.template-editor-header h1,
+.processing-record-edit-page .operation-form-header h1,
+.review-detail-header h1,
+.sorting-customer-detail-header h1,
+.bidding-form-title-row h2,
+.bidding-detail-heading h2,
+.inventory-document-title h2,
+.notice-form-heading h2,
+.notice-preview-heading h2,
+.notice-recipient-detail-heading h2 {
+  display: inline-flex !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 0 0 12px !important;
+  border: 0 !important;
+  border-left: 1px solid #dfe3eb !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  white-space: nowrap;
+}
+
+.bidding-form-page .bidding-back-button,
+.bidding-detail-page .bidding-back-button {
+  padding-right: 0 !important;
+  border-right: 0 !important;
+}
+
+.bidding-detail-heading-divider,
+.notice-detail-heading-divider {
+  display: none !important;
+}
 
 @media (max-width: 1100px) {
   :root { --sidebar-width: 200px; }

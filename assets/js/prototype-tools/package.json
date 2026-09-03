@@ -1,0 +1,21 @@
+{
+  "name": "prototype-tools",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Reusable annotation overlay and project iteration panel toolkit",
+  "main": "dist/prototype-tools.js",
+  "style": "dist/prototype-tools.css",
+  "scripts": {
+    "build": "node build.cjs",
+    "export": "node export.cjs",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "files": [
+    "dist",
+    "src",
+    "*.js",
+    "*.cjs",
+    "tests",
+    "README.md"
+  ]
+}

@@ -154,20 +154,32 @@
     var total = Number(state.total) || 0;
     var pages = Math.max(1, Math.ceil(total / pageSize));
     var page = Math.min(pages, Math.max(1, Number(state.page) || 1));
-    container.innerHTML = '<span class="purchase-pagination-total">共 ' + total + ' 条数据</span>' +
-      '<label class="purchase-page-size"><select data-page-size><option value="10"' + (pageSize === 10 ? ' selected' : '') + '>10 条/页</option><option value="20"' + (pageSize === 20 ? ' selected' : '') + '>20 条/页</option><option value="50"' + (pageSize === 50 ? ' selected' : '') + '>50 条/页</option></select></label>' +
-      '<button type="button" class="purchase-page-arrow" data-page-prev ' + (page <= 1 ? 'disabled' : '') + '>‹</button>' +
-      '<span class="purchase-page-current">' + page + '</span>' +
-      '<button type="button" class="purchase-page-arrow" data-page-next ' + (page >= pages ? 'disabled' : '') + '>›</button>' +
-      '<span class="purchase-jump">跳至 <input data-page-jump value="' + page + '"> / ' + pages + ' 页</span>';
+    container.classList.add('pagination');
+    container.dataset.paginationComponent = 'true';
+    container.__purchasePaginationOnChange = onChange;
+    if (window.Pagination?.create) {
+      if (!container.__purchasePaginationController) {
+        container.__purchasePaginationController = window.Pagination.create({
+          container: container,
+          page: page,
+          pageSize: pageSize,
+          total: total,
+          pageSizeOptions: [10, 20, 50],
+          onChange: function (next) {
+            container.__purchasePaginationOnChange?.({ page: next.page, pageSize: next.pageSize });
+          }
+        });
+      } else {
+        container.__purchasePaginationController.update({ page: page, pageSize: pageSize, total: total });
+      }
+      return;
+    }
+    container.innerHTML = '<span class="page-total purchase-pagination-total">共 ' + total + ' 条数据</span>' +
+      '<select class="page-size-select" data-page-size aria-label="每页条数"><option value="10"' + (pageSize === 10 ? ' selected' : '') + '>10 条/页</option><option value="20"' + (pageSize === 20 ? ' selected' : '') + '>20 条/页</option><option value="50"' + (pageSize === 50 ? ' selected' : '') + '>50 条/页</option></select>' +
+      '<div class="page-btns"><button type="button" class="page-btn active" aria-current="page">' + page + '</button></div>' +
+      '<span class="page-jump purchase-jump"><span>跳至</span><input class="pagination-jump-input" data-page-jump value="' + page + '"><span>页</span></span>';
     container.querySelector('[data-page-size]').addEventListener('change', function (event) {
       onChange({ page: 1, pageSize: Number(event.target.value) });
-    });
-    container.querySelector('[data-page-prev]').addEventListener('click', function () {
-      onChange({ page: page - 1, pageSize: pageSize });
-    });
-    container.querySelector('[data-page-next]').addEventListener('click', function () {
-      onChange({ page: page + 1, pageSize: pageSize });
     });
     container.querySelector('[data-page-jump]').addEventListener('change', function (event) {
       onChange({ page: Number(event.target.value) || 1, pageSize: pageSize });

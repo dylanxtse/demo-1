@@ -1,0 +1,527 @@
+.school-order-page {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 0;
+  background: #fff;
+}
+
+.school-order-page .school-order-filter {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 0 14px;
+  padding: 6px 0 4px;
+  border: 0;
+  background: transparent;
+}
+
+.school-order-filter-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 18px 28px;
+}
+
+.school-order-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 28px;
+}
+
+.school-order-filter .operations-field {
+  min-width: 0;
+  min-height: 34px;
+}
+
+.school-order-filter .operations-field .filter-label {
+  width: 92px;
+  flex: 0 0 92px;
+  margin-right: 8px;
+  color: #3f4650;
+  white-space: nowrap;
+}
+
+.school-order-filter .filter-input,
+.school-order-filter .filter-select {
+  width: 0;
+  min-width: 0;
+  flex: 1 1 0;
+  box-sizing: border-box;
+}
+
+.school-order-date-range {
+  position: relative;
+  width: 0;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.school-order-date-range .date-range-display {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+  padding: 0 32px 0 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.school-order-date-range .date-range-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  color: var(--text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.school-order-date-range .date-range-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.school-order-date-range input[type="hidden"] {
+  display: none;
+}
+
+/* 日期区间面板由项目通用 DateRangePicker 渲染。 */
+body > #schoolOrderDateRangePanel {
+  z-index: 1200;
+}
+
+@media (max-width: 760px) {
+  body > #schoolOrderDateRangePanel {
+    width: calc(100vw - 16px);
+  }
+}
+
+.school-order-filter-actions {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0;
+}
+
+.school-order-filter-supplement { grid-column: 1; grid-row: 2; }
+.school-order-filter-status { grid-column: 2; grid-row: 2; }
+.school-order-filter-order-no { grid-column: 3; grid-row: 2; }
+.school-order-filter-source { grid-column: 1; grid-row: 3; }
+.school-order-filter-receipt { grid-column: 2; grid-row: 3; }
+.school-order-filter-net-vegetable { grid-column: 3; grid-row: 3; }
+
+.school-order-filter-actions .btn {
+  min-width: 52px;
+  height: 32px;
+  justify-content: center;
+}
+
+.school-order-toolbar {
+  display: flex;
+  min-height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.school-order-toolbar .btn {
+  min-width: 96px;
+  justify-content: center;
+}
+
+.school-order-toolbar .btn[data-action="batch-tag"] {
+  min-width: 112px;
+}
+
+.school-order-toolbar-help {
+  color: #8a929d;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.school-order-export {
+  min-width: auto !important;
+  border-color: transparent;
+  background: transparent;
+  color: #2b74bf;
+  gap: 5px;
+  padding-right: 2px;
+  padding-left: 8px;
+}
+
+.school-order-export:hover {
+  border-color: transparent;
+  background: #f2f7fd;
+  color: #1d63aa;
+}
+
+.school-order-export-icon {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+}
+
+.school-order-export-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.school-order-toolbar .toolbar-spacer {
+  flex: 1;
+}
+
+.school-order-table-container {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e1e4eb;
+  background: #fff;
+}
+
+.school-order-table-wrap {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.school-order-table {
+  width: 100%;
+  min-width: 2260px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  color: #333;
+  font-size: 13px;
+}
+
+.school-order-table col.col-select { width: 44px; }
+.school-order-table col.col-order-no { width: 192px; }
+.school-order-table col.col-supplier { width: 150px; }
+.school-order-table col.col-canteen { width: 150px; }
+.school-order-table col.col-tag { width: 132px; }
+.school-order-table col.col-money { width: 100px; }
+.school-order-table col.col-date { width: 154px; }
+.school-order-table col.col-status { width: 92px; }
+.school-order-table col.col-receipt { width: 92px; }
+.school-order-table col.col-count { width: 92px; }
+.school-order-table col.col-supplement { width: 78px; }
+.school-order-table col.col-remark { width: 118px; }
+.school-order-table col.col-accepted-at { width: 132px; }
+.school-order-table col.col-driver { width: 88px; }
+.school-order-table col.col-source { width: 102px; }
+.school-order-table col.col-creator { width: 78px; }
+.school-order-table col.col-action { width: 300px; }
+
+.school-order-table th,
+.school-order-table td {
+  height: 46px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  overflow: hidden;
+  border-right: 1px solid #e5e8ed;
+  border-bottom: 1px solid #e5e8ed;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.school-order-table tbody td {
+  height: 68px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.school-order-date-cell {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 19px;
+  white-space: nowrap;
+}
+
+.school-order-table th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 44px;
+  background: #fafafa;
+  color: var(--text-secondary);
+  font-weight: 500;
+  box-shadow: 0 2px 5px -5px rgba(31, 43, 67, .45);
+}
+
+.school-order-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.school-order-table th:first-child,
+.school-order-table td:first-child {
+  position: sticky;
+  left: 0;
+  box-shadow: 4px 0 6px -6px rgba(31, 43, 67, .45);
+}
+
+.school-order-table th:first-child {
+  z-index: 5;
+  background: #fafafa;
+}
+
+.school-order-table td:first-child {
+  z-index: 4;
+  background: #fff;
+}
+
+.school-order-table tbody tr:hover td:first-child {
+  background: #f8fbff;
+}
+
+.school-order-table th:last-child,
+.school-order-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  border-left: 1px solid #e5e8ed;
+  background: #fff;
+  box-shadow: -4px 0 6px -6px rgba(31, 43, 67, .45);
+}
+
+.school-order-table th:last-child {
+  z-index: 6;
+  background: #fafafa;
+}
+
+.school-order-table tbody tr:hover td:last-child {
+  background: #f8fbff;
+}
+
+.school-order-number {
+  display: inline-flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  max-width: 100%;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: #2b74bf;
+  font: inherit;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.school-order-number-main,
+.school-order-created-at {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-order-number-main { line-height: 17px; }
+.school-order-created-at {
+  color: #2b74bf;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.school-order-number:hover {
+  text-decoration: underline;
+}
+
+.school-order-table .cell-muted {
+  color: #9aa4b2;
+}
+
+.school-order-tag-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-order-tag-cell > span {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.school-order-recipe-tag-link {
+  display: inline-block;
+  max-width: 100%;
+  margin-left: 6px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  color: #2b74bf;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.school-order-recipe-tag-link:hover { text-decoration: underline; }
+
+.school-order-table .school-order-action-cell {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.school-order-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.school-order-actions > * + * {
+  position: relative;
+  margin-left: 20px;
+}
+
+.school-order-actions > * + *::before {
+  position: absolute;
+  top: 50%;
+  left: -10px;
+  width: 1px;
+  height: 14px;
+  background: #dfe3e9;
+  content: '';
+  transform: translateY(-50%);
+}
+
+.school-order-actions .btn-text {
+  padding: 0;
+  color: #2b74bf;
+  font-size: 13px;
+}
+
+.school-order-actions .btn-text.danger {
+  color: #e5484d;
+}
+
+.school-order-actions .btn-text:disabled,
+.school-order-actions .btn-text.danger:disabled {
+  color: #b9c1cc;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.school-order-empty {
+  height: 180px !important;
+  color: var(--text-tertiary) !important;
+  text-align: center !important;
+}
+
+.school-order-pagination {
+  display: flex;
+  min-height: 48px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 0 12px;
+  border-top: 1px solid #e5e8ed;
+  background: #fff;
+}
+
+.school-order-batch-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 3px;
+  background: #fff8e8;
+  color: #9b6a15;
+  font-size: 13px;
+}
+
+.school-order-modal-form {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px 12px;
+}
+
+.school-order-modal-form label {
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.school-order-modal-form select {
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 0 10px;
+  background: #fff;
+  font: inherit;
+}
+
+@media (max-width: 900px) {
+  .school-order-filter-layout {
+    grid-template-columns: 1fr;
+  }
+  .school-order-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .school-order-filter-supplement,
+  .school-order-filter-status,
+  .school-order-filter-order-no,
+  .school-order-filter-source,
+  .school-order-filter-receipt,
+  .school-order-filter-net-vegetable {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .school-order-filter-actions {
+    position: static;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .school-order-page {
+    padding: 12px;
+  }
+  .school-order-filter-grid {
+    grid-template-columns: 1fr;
+  }
+  .school-order-toolbar {
+    flex-wrap: wrap;
+    min-height: auto;
+  }
+  .school-order-toolbar-help {
+    order: 3;
+    width: 100%;
+  }
+}

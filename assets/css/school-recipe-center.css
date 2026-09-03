@@ -1,0 +1,181 @@
+.school-recipe-center-page {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.operation-mode-tabs { display: flex; height: 42px; flex-shrink: 0; align-items: flex-end; gap: 28px; padding: 0 24px; border-bottom: 1px solid var(--border-light); background: #fff; }
+.operation-mode-tab { position: relative; height: 42px; padding: 0 2px; border: 0; color: var(--text-secondary); background: transparent; font-size: 14px; cursor: pointer; }
+.operation-mode-tab.active { color: var(--primary); font-weight: 500; }
+.operation-mode-tab.active::after { content: ''; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--primary); }
+.operation-mode-tab:hover { color: var(--primary); }
+
+.school-recipe-sync-icon { margin-right: 5px; font-size: 16px; line-height: 1; }
+
+.school-recipe-overview {
+  display: flex;
+  align-items: stretch;
+  min-height: 50px;
+  flex-shrink: 0;
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 0;
+  background: #fff;
+}
+
+.school-recipe-overview-fields { display: flex; min-width: 0; flex: 1 1 auto; align-items: stretch; justify-content: flex-start; gap: var(--school-recipe-overview-gap, 100px); overflow: hidden; }
+.school-recipe-overview-item { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; justify-content: center; gap: 0; overflow: visible; padding: 8px 16px; line-height: 20px; text-align: left; }
+.school-recipe-overview-item:first-child { min-width: 0; align-items: center; text-align: left; }
+.school-recipe-overview-date { width: auto; min-width: 0; max-width: none; box-sizing: border-box; }
+.school-recipe-overview-name { min-width: 0; }
+.school-recipe-overview-item span { display: block; width: max-content; min-width: max-content; color: #97a1af; font-size: 13px; line-height: 18px; white-space: nowrap; }
+.school-recipe-overview-item .school-recipe-overview-label { display: inline; width: auto; min-width: 0; flex: 0 0 auto; color: #7d8998; font-size: 13px; line-height: 20px; }
+.school-recipe-overview-item strong { display: block; width: max-content; min-width: 0; max-width: none; overflow: visible; color: #273346; font-size: 14px; font-weight: 600; line-height: 20px; text-overflow: clip; white-space: nowrap; }
+.school-recipe-overview-name strong { max-width: none; overflow: visible; text-overflow: clip; }
+.school-recipe-overview-date strong { font-weight: 500; }
+.school-recipe-overview-ingredients strong { color: #273346; font-size: 14px; font-weight: 600; }
+.school-recipe-overview-fields.is-truncated { gap: 0; }
+.school-recipe-overview-fields.is-truncated .school-recipe-overview-item { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.school-recipe-overview-fields.is-truncated .school-recipe-overview-item strong { width: auto; max-width: none; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.school-recipe-overview-action { display: flex; min-width: max-content; flex: 0 0 auto; align-items: center; justify-content: center; padding: 0 14px; }
+.school-recipe-overview-sync-button { min-width: 96px; justify-content: center; border: 1px solid #477fca; color: #477fca; background: #fff; box-shadow: none; }
+.school-recipe-overview-sync-button:hover { border-color: #477fca; color: #477fca; background: #f4f8ff; }
+.school-recipe-overview-sync-button:disabled { opacity: .72; cursor: default; }
+.school-recipe-center-body { display: grid; min-width: 0; min-height: 0; flex: 1; grid-template-columns: 280px minmax(0, 1fr); gap: var(--content-gap); margin-top: 0; overflow: hidden; }
+.school-recipe-center-body.is-demand-records { display: block; overflow: hidden; }
+.school-recipe-demand-records-embedded-panel { display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
+.school-recipe-demand-records-embedded-panel > .operation-mode-tabs { flex-shrink: 0; }
+.school-recipe-demand-records-embedded-panel .school-recipe-demand-records-page { min-height: 0; padding: 16px 22px 18px; }
+.school-recipe-date-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fafbfc; }
+.school-recipe-panel-heading { display: flex; height: 50px; min-height: 50px; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--border-light); }
+.school-recipe-panel-heading div { display: flex; flex-direction: column; gap: 4px; }
+.school-recipe-panel-heading strong { color: #354052; font-size: 14px; font-weight: 500; }
+.school-recipe-panel-heading span { color: #9aa4b2; font-size: 13px; line-height: 18px; }
+.school-recipe-panel-heading .school-recipe-calendar-actions { display: flex; flex-direction: row; align-items: center; gap: 6px; }
+.school-recipe-calendar-actions button { display: inline-flex; width: 32px; height: 32px; flex: 0 0 32px; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); background: #fff; cursor: pointer; }
+.school-recipe-calendar-actions button .school-recipe-calendar-icon { width: 15px; height: 15px; }
+.school-recipe-calendar-actions button:hover { border-color: #a9c8fa; color: var(--primary); background: #f4f8ff; }
+.school-recipe-calendar-actions button:disabled { border-color: #e1e5eb; color: #c2c8d0; background: #f7f8fa; cursor: not-allowed; }
+.school-recipe-calendar-actions button:disabled:hover { border-color: #e1e5eb; color: #c2c8d0; background: #f7f8fa; }
+.school-recipe-panel-heading .school-recipe-current-month { color: #8994a4; font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.school-recipe-calendar-caption { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 4px; }
+.school-recipe-calendar-caption span { color: #354052; font-size: 14px; font-weight: 500; }
+.school-recipe-calendar-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 6px 8px 4px; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); background: #fafbfc; }
+.school-recipe-calendar-weekdays span { color: #7d8998; font-size: 13px; line-height: 18px; text-align: center; }
+.school-recipe-date-list { display: grid; min-height: 0; flex: 1; grid-template-columns: repeat(7, minmax(0, 1fr)); align-content: start; gap: 4px; overflow-y: auto; padding: 8px; }
+.school-recipe-date-item,
+.school-recipe-date-placeholder { display: flex; min-width: 0; min-height: 56px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 5px 2px; border: 1px solid transparent; border-radius: 4px; }
+.school-recipe-date-item { background: #fff; color: #3e4652; font: inherit; cursor: pointer; }
+.school-recipe-date-item:hover { background: #f4f8ff; }
+.school-recipe-date-item.is-empty { border-color: transparent; background: #fff; }
+.school-recipe-date-item.is-no-menu { border-color: transparent; background: #f3f5f7; }
+.school-recipe-date-item.is-partial { border-color: #e8c27f; background: #fff4db; }
+.school-recipe-date-item.is-complete { border-color: #a9d3b6; background: #eaf7ee; }
+.school-recipe-date-item.is-selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.school-recipe-date-number { color: #354052; font-size: 14px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+.school-recipe-date-item.is-selected .school-recipe-date-number,
+.school-recipe-date-item.is-selected .school-recipe-date-week { color: var(--primary); }
+.school-recipe-date-week { color: #8994a4; font-size: 13px; line-height: 18px; white-space: nowrap; }
+.school-recipe-date-week.is-hidden { display: none; }
+.school-recipe-date-item.is-empty .school-recipe-date-number { color: #8994a4; font-weight: 500; }
+.school-recipe-date-item.is-no-menu .school-recipe-date-number,
+.school-recipe-date-item.is-no-menu .school-recipe-date-week { color: #8994a4; }
+
+.school-recipe-detail-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
+.school-recipe-canteen-switch { display: flex; min-width: 0; min-height: 50px; flex-shrink: 0; align-items: center; gap: 12px; padding: 0 22px; overflow: hidden; border-bottom: 1px solid var(--border-light); background: #fff; }
+.school-recipe-canteen-switch-label { flex: 0 0 auto; color: #687486; font-size: 13px; line-height: 20px; white-space: nowrap; }
+.school-recipe-canteen-tabs { display: flex; min-width: 0; align-items: center; gap: 8px; overflow-x: auto; padding: 2px 0; scrollbar-width: none; }
+.school-recipe-canteen-tabs::-webkit-scrollbar { display: none; }
+.school-recipe-canteen-tab { display: inline-flex; min-height: 30px; flex: 0 0 auto; align-items: center; justify-content: center; padding: 0 14px; border: 1px solid #d9e1eb; border-radius: 4px; color: #687486; background: #fff; font: inherit; font-size: 13px; line-height: 28px; white-space: nowrap; cursor: pointer; }
+.school-recipe-canteen-tab:hover { border-color: #a9c8fa; color: var(--primary); background: #f4f8ff; }
+.school-recipe-canteen-tab.is-active { border-color: var(--primary); color: var(--primary); background: #edf5ff; font-weight: 500; box-shadow: 0 0 0 1px rgba(43, 116, 191, .08); }
+.school-recipe-canteen-tab:focus-visible { outline: 2px solid rgba(43, 116, 191, .28); outline-offset: 1px; }
+.school-recipe-meal-grid { display: grid; min-height: 0; flex: 1 1 auto; grid-template-columns: repeat(3, minmax(240px, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 12px; overflow: hidden; padding: 16px 22px 20px; }
+.school-recipe-meal-card { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
+.school-recipe-meal-header { display: flex; min-height: 62px; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border-light); background: #fbfcfe; }
+.school-recipe-meal-title { display: flex; align-items: center; gap: 9px; }
+.school-recipe-meal-badge { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 50%; color: #fff; background: #4c8eef; font-size: 13px; }
+.school-recipe-meal-card:nth-child(2) .school-recipe-meal-badge { background: #f0a347; }
+.school-recipe-meal-card:nth-child(3) .school-recipe-meal-badge { background: #8774df; }
+.school-recipe-meal-card:nth-child(4) .school-recipe-meal-badge { background: #40b596; }
+.school-recipe-meal-title h3 { margin: 0; color: #354052; font-size: 14px; font-weight: 600; }
+.school-recipe-meal-header em { color: #9aa4b2; font-size: 13px; font-style: normal; }
+.school-recipe-dish-list { min-height: 0; flex: 1 1 auto; overflow-x: hidden; overflow-y: auto; padding: 4px 0; scrollbar-color: #c7d0dc transparent; scrollbar-width: thin; }
+.school-recipe-dish-list::-webkit-scrollbar { width: 4px; height: 4px; }
+.school-recipe-dish-list::-webkit-scrollbar-track { background: transparent; }
+.school-recipe-dish-list::-webkit-scrollbar-thumb { border-radius: 999px; background: #c7d0dc; }
+.school-recipe-dish-row { display: grid; width: 100%; min-height: 52px; grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-rows: 1fr 1fr; column-gap: 8px; align-items: center; padding: 6px 14px; border: 0; border-bottom: 1px solid var(--border-light); background: #fff; color: #344052; font: inherit; text-align: left; cursor: pointer; }
+.school-recipe-dish-row:last-child { border-bottom: 0; }
+.school-recipe-dish-row:hover { background: #f5f9ff; }
+.school-recipe-dish-index { grid-row: 1 / 3; color: #a2acb9; font-size: 13px; }
+.school-recipe-dish-row strong { grid-column: 2; grid-row: 1; overflow: hidden; color: #3a4657; font-size: 13px; font-weight: 500; text-overflow: ellipsis; text-align: left; white-space: nowrap; }
+.school-recipe-dish-note { grid-column: 2; grid-row: 2; overflow: hidden; color: #a0a9b5; font-size: 13px; text-overflow: ellipsis; text-align: left; white-space: nowrap; }
+.school-recipe-dish-action { grid-column: 3; grid-row: 1 / 3; justify-self: end; color: #477fca; font-size: 13px; white-space: nowrap; }
+.school-recipe-dish-action b { margin-left: 2px; font-size: 16px; font-weight: 400; vertical-align: -1px; }
+.school-recipe-empty { display: flex; min-height: 120px; align-items: center; justify-content: center; color: #9aa4b2; font-size: 13px; }
+.school-recipe-detail-empty { display: flex; min-height: 360px; flex: 1; align-items: center; flex-direction: column; justify-content: center; gap: 12px; color: var(--text-tertiary); }
+.school-recipe-detail-empty .operation-empty-icon { display: flex; opacity: .4; }
+.school-recipe-detail-empty .operation-empty-icon svg { display: block; }
+.school-recipe-detail-empty p { margin: 0; color: var(--text-tertiary); font-size: 14px; line-height: 22px; white-space: nowrap; }
+
+.school-recipe-toast { position: fixed; z-index: 120; bottom: 30px; left: 50%; display: none; transform: translateX(-50%); padding: 9px 16px; border-radius: 3px; color: #fff; background: rgba(39, 52, 70, .9); box-shadow: 0 4px 14px rgba(31, 43, 67, .18); font-size: 13px; }
+.school-recipe-toast.is-visible { display: block; }
+.school-recipe-modal-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(19, 31, 49, .42); }
+.school-recipe-modal { display: flex; width: min(1060px, 100%); max-height: min(680px, 90vh); flex-direction: column; overflow: hidden; border-radius: 4px; background: #fff; box-shadow: 0 14px 38px rgba(31, 43, 67, .25); }
+.school-recipe-modal > header { display: flex; min-height: 78px; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid #edf0f5; }
+.school-recipe-modal > header h3 { margin: 7px 0 4px; color: #283548; font-size: 18px; font-weight: 600; }
+.school-recipe-modal > header p { margin: 0; color: #9aa4b2; font-size: 13px; }
+.school-recipe-modal > header button { width: 30px; height: 30px; border: 0; background: transparent; color: #8a95a4; font-size: 22px; cursor: pointer; }
+.school-recipe-modal > header button:hover { color: #3b4656; }
+.school-recipe-modal-body { min-height: 0; flex: 1; overflow: auto; padding: 16px 22px; }
+.school-recipe-modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.school-recipe-modal table { table-layout: fixed; }
+.school-recipe-modal th,
+.school-recipe-modal td { height: 42px; padding: 6px 10px; border: 1px solid #e7ebf0; line-height: 20px; text-align: center; white-space: normal; word-break: break-all; }
+.school-recipe-modal th { background: #fafbfc; color: #687486; font-weight: 500; }
+.school-recipe-modal td { color: #3f4b5b; }
+.school-recipe-modal-col-index { width: 8%; }
+.school-recipe-modal-col-ingredient { width: 14%; }
+.school-recipe-modal-col-product { width: 34%; }
+.school-recipe-modal-col-code { width: 16%; }
+.school-recipe-modal-col-quantity { width: 15%; }
+.school-recipe-modal-col-unit { width: 13%; }
+.school-recipe-modal .is-number { font-variant-numeric: tabular-nums; text-align: center; }
+.school-recipe-modal > footer { display: flex; min-height: 62px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 22px; border-top: 1px solid #edf0f5; color: #8d98a8; font-size: 13px; }
+.school-recipe-modal > footer .btn { min-width: 70px; justify-content: center; }
+
+@media (max-width: 1320px) {
+  .school-recipe-meal-grid { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+}
+
+@media (max-width: 980px) {
+  .school-recipe-overview-action { padding-right: 10px; padding-left: 10px; }
+  .school-recipe-overview-sync-button { min-width: 96px; width: auto; padding-right: 8px; padding-left: 8px; }
+  .school-recipe-center-body { grid-template-columns: 210px minmax(0, 1fr); }
+  .school-recipe-meal-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .school-recipe-overview { flex-wrap: wrap; }
+  .school-recipe-overview-fields { width: 100%; flex: 0 0 100%; flex-wrap: wrap; gap: 0; }
+  .school-recipe-overview-item { flex: 1 1 50%; }
+  .school-recipe-overview-fields.is-truncated .school-recipe-overview-item { flex: 1 1 50%; }
+  .school-recipe-overview-action { width: 100%; flex: 0 0 100%; border-top: 1px solid var(--border-light); }
+  .school-recipe-overview-sync-button { width: auto; min-width: 96px; }
+  .school-recipe-center-body { display: flex; flex-direction: column; overflow: auto; padding: 0; }
+  .school-recipe-date-panel { max-height: 354px; flex: 0 0 354px; }
+  .school-recipe-panel-heading { padding: 0 12px; }
+  .school-recipe-canteen-switch { min-height: 48px; gap: 8px; padding: 0 12px; }
+  .school-recipe-canteen-tab { padding-right: 11px; padding-left: 11px; }
+  .school-recipe-date-list { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .school-recipe-detail-panel { min-height: 420px; overflow: hidden; }
+  .school-recipe-meal-grid { padding: 12px 16px 16px; }
+  .school-recipe-modal-backdrop { padding: 12px; }
+  .school-recipe-modal > footer { align-items: flex-start; flex-direction: column; justify-content: center; padding: 10px 16px; }
+}

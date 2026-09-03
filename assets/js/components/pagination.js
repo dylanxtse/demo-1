@@ -36,6 +36,8 @@
   function create(config = {}) {
     const root = resolveElement(config.container);
     if (!root) throw new Error('分页容器不存在');
+    root.classList.add('pagination');
+    root.dataset.paginationComponent = 'true';
 
     const mode = config.mode === 'compact' ? 'compact' : 'numeric';
     const pageSizeOptions = uniquePageSizes(config.pageSizeOptions, [10, 20, 50]);

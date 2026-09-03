@@ -1,0 +1,841 @@
+/* 学校端缺失页共用视觉：沿用项目变量、AppShell、按钮和分页控件。 */
+.school-missing-page {
+  min-width: 0;
+  min-height: 0;
+  margin: 12px;
+  padding: 24px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.school-shell .menu-item-header {
+  width: calc(100% - 16px);
+  margin: 0 8px;
+  padding-right: 24px;
+  padding-left: 24px;
+  gap: 16px;
+  border-radius: 4px;
+}
+
+.school-shell .menu-item-header .menu-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.school-shell .menu-item-header .menu-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.school-missing-page .school-page-filter {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.school-missing-page .school-filter-grid {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 16px 28px;
+}
+
+.school-missing-page .school-filter-field {
+  display: flex;
+  min-width: 0;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.school-missing-page .school-filter-field > label {
+  width: 84px;
+  flex: 0 0 84px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.school-missing-page .school-filter-field > input,
+.school-missing-page .school-filter-field > select,
+.school-missing-page .school-filter-field > .school-date-range {
+  width: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.school-missing-page .school-filter-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding-top: 0;
+}
+
+.school-missing-page .school-filter-actions .btn {
+  min-width: 76px;
+  justify-content: center;
+}
+
+.school-missing-page .school-control,
+.school-missing-page .school-filter-field > input,
+.school-missing-page .school-filter-field > select,
+.school-missing-page .school-form-control {
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  outline: none;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.school-missing-page .school-filter-field > select,
+.school-missing-page .school-form-control[type="date"] {
+  cursor: pointer;
+}
+
+.school-missing-page .school-control:focus,
+.school-missing-page .school-filter-field > input:focus,
+.school-missing-page .school-filter-field > select:focus,
+.school-missing-page .school-form-control:focus {
+  border-color: var(--primary);
+}
+
+.school-missing-page .school-date-range {
+  display: flex;
+  height: 32px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.school-missing-page .school-date-range input {
+  width: 0;
+  min-width: 0;
+  height: 30px;
+  flex: 1 1 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.school-missing-page .school-date-range span {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+}
+
+.school-missing-page .school-page-toolbar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 32px;
+  margin-bottom: 8px;
+}
+
+.school-missing-page .school-toolbar-left,
+.school-missing-page .school-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.school-missing-page .school-toolbar-tip {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.school-missing-page .school-advanced-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.school-missing-page .school-advanced-toggle::after {
+  display: inline-block;
+  margin-left: 4px;
+  content: '⌄';
+  transition: transform .15s ease;
+}
+
+.school-missing-page .school-advanced-toggle.is-open::after {
+  transform: rotate(180deg);
+}
+
+.school-missing-page .school-advanced-panel {
+  display: none;
+  flex-shrink: 0;
+  margin: -4px 0 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.school-missing-page .school-advanced-panel.is-open {
+  display: block;
+}
+
+.school-missing-page .school-table-container {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #edf0f5;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.school-missing-page .school-table-wrap {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.school-missing-page .school-data-table {
+  width: 100%;
+  min-width: 1000px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.school-missing-page .school-data-table th,
+.school-missing-page .school-data-table td {
+  height: 48px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  overflow: hidden;
+  border-right: 1px solid #edf0f5;
+  border-bottom: 1px solid #edf0f5;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-missing-page .school-data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 54px;
+  background: #f7f8fb;
+  color: #4e5969;
+  font-weight: 500;
+}
+
+.school-missing-page .school-data-table tbody tr:hover td {
+  background: #f7fbff;
+}
+
+.school-missing-page .school-data-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.school-missing-page .school-data-table tbody tr:nth-child(even):hover td {
+  background: #f7fbff;
+}
+
+.school-missing-page .school-data-table tfoot td {
+  height: 44px;
+  background: #f7f8fb;
+  font-weight: 400;
+}
+
+.school-missing-page .school-data-table th:last-child,
+.school-missing-page .school-data-table td:last-child {
+  border-right: 0;
+}
+
+.school-missing-page .school-data-table .school-number-cell {
+  width: 70px;
+}
+
+.school-missing-page .school-data-table .school-checkbox-cell {
+  width: 50px;
+}
+
+.school-missing-page .school-data-table input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+  vertical-align: middle;
+}
+
+.school-missing-page .school-table-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.school-missing-page .school-table-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.school-canteen-phone {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.school-canteen-phone:hover {
+  color: var(--primary);
+}
+
+.school-product-thumb {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #edf0f5;
+  border-radius: 2px;
+  background: #f3f5f8;
+  color: #a6afbf;
+  font-size: 11px;
+}
+
+.school-plus-button {
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid #dfe3eb;
+  border-radius: 2px;
+  background: #fff;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.school-plus-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.school-finance-page .school-table-container {
+  min-height: 260px;
+}
+
+.school-reconciliation-page .school-data-table {
+  min-width: 2020px;
+}
+
+.school-accounts-page .school-data-table {
+  min-width: 900px;
+}
+
+.school-finance-overlay[hidden] {
+  display: none;
+}
+
+.school-finance-overlay {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+}
+
+.school-finance-dialog-backdrop {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 32, 56, .35);
+}
+
+.school-finance-dialog {
+  width: min(520px, calc(100vw - 48px));
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(24, 40, 72, .2);
+}
+
+.school-finance-dialog header,
+.school-finance-dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.school-finance-dialog header h2 {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.school-finance-dialog header button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.school-finance-dialog-body {
+  padding: 18px 20px;
+}
+
+.school-finance-dialog-body p {
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.school-finance-dialog-body label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.school-finance-dialog-body textarea {
+  width: 100%;
+  min-height: 100px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  resize: vertical;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+}
+
+.school-finance-dialog footer {
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #edf0f5;
+  border-bottom: 0;
+}
+
+.school-missing-page .school-table-subline {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.school-missing-page .school-status {
+  display: inline-flex;
+  min-width: 48px;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: #e8f8f0;
+  color: #2ba471;
+  font-size: 13px;
+}
+
+.school-missing-page .school-status.is-warning {
+  background: #fff3e8;
+  color: #d46b08;
+}
+
+.school-missing-page .school-status.is-danger {
+  background: #fff0f0;
+  color: #d54941;
+}
+
+.school-missing-page .school-status.is-neutral {
+  background: #f2f3f5;
+  color: #86909c;
+}
+
+.school-missing-page .school-action-link {
+  padding: 0 5px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.school-missing-page .school-action-link:hover {
+  color: #035ee0;
+}
+
+.school-missing-page .school-action-link.danger {
+  color: var(--danger);
+}
+
+.school-missing-page .school-action-link:disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.school-missing-page .school-empty-cell {
+  height: 160px !important;
+  color: var(--text-tertiary);
+}
+
+.school-missing-page .school-page-pagination {
+  display: flex;
+  flex: 0 0 58px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.school-missing-page .school-page-pagination .pagination {
+  padding: 0;
+}
+
+.school-missing-page .school-toast {
+  position: fixed;
+  z-index: 1200;
+  top: 86px;
+  left: 50%;
+  display: none;
+  min-width: 180px;
+  padding: 10px 18px;
+  border-radius: 4px;
+  background: rgba(31, 36, 48, .9);
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.school-missing-page .school-toast.is-visible {
+  display: block;
+}
+
+.school-missing-page .school-toast.is-error {
+  background: rgba(198, 54, 54, .94);
+}
+
+/* 详情/表单页 */
+.school-missing-page.school-form-page {
+  overflow: auto;
+}
+
+.school-missing-page .school-form-header,
+.school-missing-page .school-detail-header {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 16px;
+  margin: -8px 0 24px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.school-missing-page .school-form-header h1,
+.school-missing-page .school-detail-header h1 {
+  color: #111a34;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.school-missing-page .school-back-link {
+  padding: 0 16px 0 0;
+  border: 0;
+  background: transparent;
+  color: #41485d;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.school-missing-page .school-back-link:hover {
+  color: var(--primary);
+}
+
+.school-missing-page .school-form-divider {
+  width: 1px;
+  height: 14px;
+  flex: 0 0 1px;
+  background: #dfe3eb;
+}
+
+.school-missing-page .school-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 72px;
+}
+
+.school-missing-page .school-form-field {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.school-missing-page .school-form-field > label {
+  width: 112px;
+  flex: 0 0 112px;
+  padding-top: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: right;
+}
+
+.school-missing-page .school-form-field.required > label::before {
+  margin-right: 3px;
+  color: #f04438;
+  content: '*';
+}
+
+.school-missing-page .school-form-field > input,
+.school-missing-page .school-form-field > textarea,
+.school-missing-page .school-form-field > .school-form-control,
+.school-missing-page .school-form-field > .school-control-wrap {
+  width: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.school-missing-page .school-form-field textarea {
+  min-height: 76px;
+  padding: 7px 10px;
+  resize: vertical;
+}
+
+.school-missing-page .school-form-field-full {
+  grid-column: 1 / -1;
+}
+
+.school-missing-page .school-character-count {
+  margin-top: -18px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: right;
+}
+
+.school-missing-page .school-form-section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f5;
+}
+
+.school-missing-page .school-form-section-title {
+  margin: 0 0 14px 112px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.school-missing-page .school-upload-field {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.school-missing-page .school-upload-label {
+  padding-top: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: right;
+}
+
+.school-missing-page .school-upload-main {
+  min-width: 0;
+}
+
+.school-missing-page .school-upload-box {
+  position: relative;
+  display: inline-flex;
+  width: 102px;
+  height: 102px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #e2e6ed;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.school-missing-page .school-upload-box:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.school-missing-page .school-upload-box input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.school-missing-page .school-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.school-missing-page .school-upload-plus {
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 20px;
+}
+
+.school-missing-page .school-upload-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.school-missing-page .school-upload-help {
+  margin-top: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.school-missing-page .school-info-note {
+  margin: 8px 0 0;
+  padding: 7px 12px;
+  border-radius: 2px;
+  background: #eef5ff;
+  color: #4e5969;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.school-missing-page .school-info-note::before {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  content: 'i';
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.school-missing-page .school-extra-upload {
+  margin-top: 10px;
+}
+
+.school-missing-page .school-date-pair {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.school-missing-page .school-date-pair input {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.school-missing-page .school-long-term {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  padding-top: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.school-missing-page .school-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #edf0f5;
+}
+
+.school-missing-page .school-form-actions .btn {
+  min-width: 100px;
+  justify-content: center;
+}
+
+@media (max-width: 1100px) {
+  .school-missing-page .school-filter-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+
+  .school-missing-page .school-page-filter {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 760px) {
+  .school-missing-page {
+    margin: 8px;
+    padding: 16px;
+  }
+
+  .school-missing-page .school-filter-grid,
+  .school-missing-page .school-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .school-missing-page .school-form-field-full {
+    grid-column: auto;
+  }
+
+  .school-missing-page .school-form-section-title {
+    margin-left: 0;
+  }
+
+  .school-missing-page .school-upload-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .school-missing-page .school-upload-label {
+    padding-top: 0;
+    text-align: left;
+  }
+}

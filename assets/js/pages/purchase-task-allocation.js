@@ -37,7 +37,7 @@
 
   var content = [
     '<section class="page-card purchase-page purchase-detail-page purchase-task-allocation-page" aria-label="采购任务分配">',
-      '<div class="purchase-detail-header"><button class="purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>采购任务分配</h1></div>',
+      '<div class="purchase-detail-header"><button class="back-link purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>采购任务分配</h1></div>',
       '<div class="purchase-product-card">',
         '<div class="purchase-product-main">',
           '<div class="purchase-product-cover">' + (task.image ? '<img src="' + text(task.image) + '" alt="' + text(task.productName) + '">' : '暂无图片') + '</div>',

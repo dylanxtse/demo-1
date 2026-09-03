@@ -1,0 +1,265 @@
+/*
+ * 项目级业务组件规范。
+ * demo 企业端商品列表作为分页唯一基准，所有业务端复用同一套分页组件。
+ */
+:root {
+  --common-pagination-height: 56px;
+  --common-pagination-gap: 12px;
+  --common-pagination-control-size: 32px;
+  --common-pagination-border: var(--border-light);
+}
+
+.app-layout :is(
+  .pagination,
+  .operations-pagination,
+  .official-pagination,
+  .purchase-pagination,
+  .price-pagination,
+  .price-management-pagination,
+  .bidding-pagination,
+  .school-page-pagination,
+  .sales-pagination,
+  .bidding-quote-modal-pagination,
+  .bidding-batch-pagination
+) {
+  display: flex !important;
+  box-sizing: border-box !important;
+  min-width: 0;
+  min-height: var(--common-pagination-height) !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: var(--common-pagination-gap) !important;
+  padding: 12px 24px !important;
+  border-top: 1px solid var(--common-pagination-border) !important;
+  background: var(--bg-white) !important;
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  line-height: 20px;
+}
+
+.app-layout :is(
+  .pagination,
+  .operations-pagination,
+  .official-pagination,
+  .purchase-pagination,
+  .price-pagination,
+  .price-management-pagination,
+  .bidding-pagination,
+  .school-page-pagination,
+  .sales-pagination,
+  .bidding-quote-modal-pagination,
+  .bidding-batch-pagination
+) :is(.page-total, .purchase-pagination-total),
+.app-layout :is(.data-statistics, .data-summary, .operations-summary) {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.app-layout :is(
+  .pagination,
+  .operations-pagination,
+  .official-pagination,
+  .purchase-pagination,
+  .price-pagination,
+  .price-management-pagination,
+  .bidding-pagination,
+  .school-page-pagination,
+  .sales-pagination,
+  .bidding-quote-modal-pagination,
+  .bidding-batch-pagination
+) > :is(.page-total, .purchase-pagination-total) {
+  flex: 0 0 auto !important;
+  margin-right: auto !important;
+}
+
+.app-layout .pagination .page-size-select,
+.app-layout .pagination .purchase-page-size select,
+.app-layout .pagination > select {
+  width: auto !important;
+  min-width: 92px !important;
+  height: var(--common-pagination-control-size) !important;
+  box-sizing: border-box;
+  flex: 0 0 auto !important;
+  padding: 0 28px 0 8px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 4px !important;
+  outline: none;
+  background-color: #fff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  color: var(--text-primary) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  appearance: none;
+  cursor: pointer;
+}
+
+.app-layout .pagination .page-btns {
+  display: flex !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  align-items: center;
+  gap: 4px !important;
+}
+
+.app-layout .pagination :is(.page-btn, .purchase-page-arrow) {
+  display: inline-flex !important;
+  width: auto !important;
+  min-width: var(--common-pagination-control-size) !important;
+  height: var(--common-pagination-control-size) !important;
+  box-sizing: border-box;
+  flex: 0 0 auto !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  color: var(--text-secondary) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+}
+
+.app-layout .pagination :is(.page-btn, .purchase-page-arrow):hover:not(:disabled) {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+.app-layout .pagination .page-btn:is(.active, .is-active),
+.app-layout .pagination .page-btn[aria-current="page"] {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  color: #fff !important;
+}
+
+.app-layout .pagination :is(.page-btn, .purchase-page-arrow):disabled {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #c4cbd5 !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.app-layout .pagination .page-ellipsis {
+  min-width: 20px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.app-layout .pagination :is(.page-jump, .purchase-jump) {
+  display: flex !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  align-items: center;
+  gap: 4px !important;
+  white-space: nowrap;
+}
+
+.app-layout .pagination :is(.pagination-jump-input, .page-jump input, .purchase-jump input),
+.app-layout .pagination > input {
+  width: 48px !important;
+  height: var(--common-pagination-control-size) !important;
+  box-sizing: border-box;
+  padding: 0 6px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 4px !important;
+  outline: none;
+  background: #fff !important;
+  color: var(--text-primary) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  text-align: center;
+}
+
+.app-layout .pagination :is(.page-size-select, .pagination-jump-input):focus {
+  border-color: var(--primary) !important;
+}
+
+/* 表格中的当前页/全部数据合计继续使用项目统一统计行。 */
+.app-layout .content-area table > tfoot > tr > td {
+  background: #fafbfc;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 顶部返回按钮规范：以商品详情页左上角的 .back-link 为唯一视觉基准。 */
+.app-layout .back-link {
+  display: inline-flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 18px !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #5b6473 !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+  white-space: nowrap;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.app-layout .back-link:hover {
+  background: transparent !important;
+  color: #2f3a4d !important;
+}
+
+.app-layout .back-link:focus-visible {
+  outline: 2px solid rgba(23, 104, 229, .35);
+  outline-offset: 2px;
+}
+
+.app-layout .back-link > svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2 !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 与商品详情页保持一致：标题左侧保留短分隔线，不在返回按钮右侧重复绘制。 */
+.app-layout :is(.official-form-heading, .school-form-header, .school-order-detail-header, .sales-statement-topbar) {
+  gap: 12px !important;
+}
+
+.app-layout :is(.official-form-heading h1, .school-form-header h1, .school-order-detail-header h1, .sales-statement-topbar h2) {
+  display: inline-flex !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 0 0 12px !important;
+  border: 0 !important;
+  border-left: 1px solid #dfe3eb !important;
+  color: #222b3a !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 20px !important;
+  white-space: nowrap;
+}
+
+.app-layout .bidding-back-button::before {
+  content: none !important;
+}

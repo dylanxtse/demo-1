@@ -60,7 +60,7 @@
 
   var content = [
     '<section class="page-card purchase-page purchase-form-page" aria-label="' + title + '">',
-      '<div class="purchase-form-header"><button class="purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>' + title + '</h1></div>',
+      '<div class="purchase-form-header"><button class="back-link purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>' + title + '</h1></div>',
       '<div class="purchase-form-scroll">',
         '<div class="purchase-basic-form">',
           '<div class="purchase-basic-field"><label class="field-label required" for="purchaseType">采购类型</label><div class="purchase-composite-select"><select class="form-control" id="purchaseType"' + (readonlyBase ? ' disabled' : '') + '><option value="联营供应商采购"' + (purchaseType === '联营供应商采购' ? ' selected' : '') + '>联营供应商采购 / ' + text(supplier) + '</option><option value="市场自采"' + (purchaseType === '市场自采' ? ' selected' : '') + '>市场自采 / ' + text(supplier) + '</option><option value="供应商送货"' + (purchaseType === '供应商送货' ? ' selected' : '') + '>供应商送货 / ' + text(supplier) + '</option></select></div></div>',

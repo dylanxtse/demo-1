@@ -72,7 +72,7 @@
   var content = [
     '<section class="page-card purchase-page purchase-detail-page purchase-order-detail-page" aria-label="采购单详情">',
       '<div class="purchase-detail-header purchase-order-detail-header">',
-        '<button class="purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button>',
+        '<button class="back-link purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button>',
         '<h1>采购单详情</h1>',
       '</div>',
       '<div class="purchase-order-detail-scroll">',

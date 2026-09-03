@@ -9,13 +9,22 @@
       'order-detail': 'order-management',
       'order-add.html': 'order-management.html',
       'order-add': 'order-management',
-      'sales-reconciliation-detail.html': 'sales-reconciliation.html',
-      'sales-reconciliation-statement.html': 'sales-reconciliation.html',
+      'school-order-form.html': 'school-order-management.html',
+      'school-order-detail.html': 'school-order-management.html',
+      'school-order-acceptance.html': 'school-order-management.html',
+      'school-order-accept.html': 'school-order-management.html',
+      'school-recipe-demand-confirm.html': 'school-recipe-attendance.html',
+      'school-recipe-demand-records.html': 'school-recipe-demand-records.html',
+      'school-recipe-demand-record-detail.html': 'school-recipe-demand-records.html',
+      'school-canteen-form.html': 'school-canteen-management.html',
       'bid-management-detail.html': 'bid-management.html',
       'bid-management-detail': 'bid-management.html',
+      'supplier-bid-detail.html': 'supplier-bidding-quotation.html',
+      'supplier-bidding-quotation-form.html': 'supplier-bidding-quotation.html',
+      'supplier-bid-detail': 'supplier-bidding-quotation.html',
+      'supplier-bidding-quotation-form': 'supplier-bidding-quotation.html',
       'purchase-task-allocation.html': 'purchase-task.html',
       'purchase-task-allocation-detail.html': 'purchase-task.html',
-      'purchase-order-detail.html': 'purchase-order.html',
       'purchase-order-form.html': 'purchase-order.html',
       'purchase-order-receipt.html': 'purchase-order.html'
     };
@@ -31,37 +40,28 @@
       'segment-management': 'segment-management.html',
       'relationship-management': 'supplier-relationship-management.html',
       'supplier-management': 'supplier-archive.html',
-      'supplier-form': 'supplier-editor.html'
+      'supplier-form': 'supplier-editor.html',
+      'notice-management': 'notice-management.html'
     };
-    const targetPath = pageAliases[pageKey] || currentPath;
-    const aliasedPath = routeAliases[targetPath] || targetPath;
-    const cleanPath = aliasedPath.replace(/\.html$/, '');
-    const isAliasedRoute = aliasedPath !== targetPath;
-    const currentView = new URLSearchParams(window.location.search).get('view');
+    const targetPath = pageAliases[pageKey] || pageKey || currentPath;
+    const cleanPath = (routeAliases[targetPath] || targetPath).replace(/\.html$/, '');
     function hrefMatches(href) {
       if (!href) return false;
-      let hrefUrl;
-      try {
-        hrefUrl = new URL(href, window.location.href);
-      } catch (error) {
-        return false;
-      }
-      if (!isAliasedRoute && hrefUrl.searchParams.get('view') !== currentView) return false;
-      const cleanHref = hrefUrl.pathname.split('/').pop().replace(/\.html$/, '');
+      const cleanHref = href.replace(/^\.?\//, '').replace(/\.html$/, '');
       return cleanHref === cleanPath;
     }
     let foundPath = null;
     function findInChildren(items, path) {
       items.forEach((item, index) => {
         const currentPath = [...path, index];
-        if (!foundPath && hrefMatches(item.href)) {
+        if (hrefMatches(item.href)) {
           foundPath = currentPath;
         }
         if (item.children) findInChildren(item.children, currentPath);
       });
     }
     menu.forEach((item, index) => {
-      if (!foundPath && hrefMatches(item.href)) foundPath = [index];
+      if (hrefMatches(item.href)) foundPath = [index];
       if (item.children) findInChildren(item.children, [index]);
     });
     if (!foundPath) return;
@@ -96,11 +96,11 @@
     return items.map((child, childIndex) => {
       const path = `${parentPath}:${childIndex}`;
       const hasChildren = Array.isArray(child.children) && child.children.length > 0;
-      const unavailable = Boolean(child.unavailable) || (!hasChildren && !child.href);
+      const isDisabled = child.available === false || (!child.href && !hasChildren);
       return `
-        <div class="menu-sub-group ${child.expanded ? 'expanded' : ''} ${unavailable ? 'unavailable' : ''}" style="--menu-level:${level}">
-          <button class="menu-sub-item ${child.selected ? 'selected' : ''}" type="button"
-            data-menu-item="${path}" ${hasChildren ? `data-menu-toggle-path="${path}" aria-expanded="${child.expanded}"` : ''} ${unavailable ? 'data-menu-unavailable="true" aria-disabled="true"' : ''}>
+        <div class="menu-sub-group ${child.expanded ? 'expanded' : ''}" style="--menu-level:${level}">
+          <button class="menu-sub-item ${child.selected ? 'selected' : ''} ${isDisabled ? 'menu-item-disabled' : ''}" type="button"
+            data-menu-item="${path}" ${isDisabled ? 'aria-disabled="true" data-menu-disabled="true"' : ''} ${hasChildren ? `data-menu-toggle-path="${path}" aria-expanded="${child.expanded}"` : ''}>
             <span>${child.name}</span>
             ${hasChildren ? '<svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' : ''}
           </button>
@@ -112,16 +112,17 @@
 
   function renderMenu(menu, icons) {
     return menu.map((item, itemIndex) => {
-      const unavailable = Boolean(item.unavailable) || (!item.children && !item.href);
+      const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+      const isDisabled = item.available === false || (!item.href && !hasChildren);
       return `
-      <div class="menu-item ${item.active ? 'active' : ''} ${item.expanded ? 'expanded' : ''} ${item.children ? '' : 'menu-leaf'} ${unavailable ? 'unavailable' : ''}" data-menu-index="${itemIndex}">
+      <div class="menu-item ${item.active ? 'active' : ''} ${item.expanded ? 'expanded' : ''} ${hasChildren ? '' : 'menu-leaf'} ${isDisabled ? 'menu-item-disabled' : ''}" data-menu-index="${itemIndex}">
         <button class="menu-item-header" type="button" data-menu-toggle="${itemIndex}"
-          ${item.children ? `aria-expanded="${item.expanded}"` : ''} ${item.href && !unavailable ? `data-menu-link="${item.href}"` : ''} ${unavailable ? 'data-menu-unavailable="true" aria-disabled="true"' : ''}>
+          ${hasChildren ? `aria-expanded="${item.expanded}"` : ''} ${item.href ? `data-menu-link="${item.href}"` : ''} ${isDisabled ? 'aria-disabled="true" data-menu-disabled="true"' : ''}>
           <span class="menu-icon">${icons[item.icon] || ''}</span>
           <span>${item.name}</span>
-          ${item.children ? '<svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' : ''}
+          ${hasChildren ? '<svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' : ''}
         </button>
-        ${item.children ? `
+        ${hasChildren ? `
           <div class="menu-sub">
             ${renderSubItems(item.children, String(itemIndex))}
           </div>
@@ -175,14 +176,8 @@
     };
 
     sidebar.addEventListener('click', (event) => {
-      const unavailable = event.target.closest('[data-menu-unavailable]');
-      if (unavailable) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
       const toggle = event.target.closest('[data-menu-toggle]');
-      if (toggle && menu[Number(toggle.dataset.menuToggle)]?.children) {
+      if (toggle && toggle.dataset.menuDisabled !== 'true' && menu[Number(toggle.dataset.menuToggle)]?.children) {
         const index = Number(toggle.dataset.menuToggle);
         const expanded = !menu[index].expanded;
         const container = sidebar.querySelector(`[data-menu-index="${index}"]`);
@@ -191,13 +186,14 @@
       }
 
       const topLevelLink = event.target.closest('[data-menu-link]');
-      if (topLevelLink) {
-        window.AppNavigation?.navigate?.(topLevelLink.dataset.menuLink);
+      if (topLevelLink && topLevelLink.dataset.menuDisabled !== 'true') {
+        if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(topLevelLink.dataset.menuLink);
+        else window.location.href = topLevelLink.dataset.menuLink;
         return;
       }
 
       const nestedToggle = event.target.closest('[data-menu-toggle-path]');
-      if (nestedToggle && nestedToggle.querySelector('.menu-arrow')) {
+      if (nestedToggle && nestedToggle.dataset.menuDisabled !== 'true' && nestedToggle.querySelector('.menu-arrow')) {
         const path = nestedToggle.dataset.menuTogglePath.split(':').map(Number);
         const current = getMenuNode(path);
         if (current?.children) {
@@ -208,6 +204,7 @@
 
       const subItem = event.target.closest('[data-menu-item]');
       if (subItem) {
+        if (subItem.dataset.menuDisabled === 'true') return;
         const path = subItem.dataset.menuItem.split(':').map(Number);
         const itemIndex = path[0];
         const clearSelected = (children) => children?.forEach((child) => {
@@ -230,9 +227,10 @@
           const ancestorPath = path.slice(0, index + 2).join(':');
           sidebar.querySelector(`[data-menu-toggle-path="${ancestorPath}"]`)?.parentElement.classList.add('expanded');
         });
-        if (selected?.href) {
+        if (selected?.href && selected.available !== false) {
           event.preventDefault();
-          window.AppNavigation?.navigate?.(selected.href);
+          if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(selected.href);
+          else window.location.href = selected.href;
         }
         return;
       }
@@ -244,20 +242,29 @@
   }
 
   window.AppSidebar = {
-    getConfig({ variant = 'enterprise' } = {}) {
-      if (variant === 'education') return window.EducationMenuConfig;
-      if (variant === 'supplier') return window.SupplierMenuConfig;
-      if (variant === 'operations') return window.OperationsMenuConfig;
-      if (variant === 'school') return window.SchoolMenuConfig;
-      return window.AppMenuConfig;
-    },
     getVisibleMenu({ variant = 'enterprise' } = {}) {
-      const config = this.getConfig({ variant });
+      const config = variant === 'education'
+        ? window.EducationMenuConfig
+        : variant === 'supplier'
+          ? window.SupplierMenuConfig
+        : variant === 'operations'
+          ? window.OperationsMenuConfig
+          : variant === 'school'
+            ? window.SchoolMenuConfig
+          : window.AppMenuConfig;
       return config?.menu || [];
     },
     render(options = {}) {
       const menu = this.getVisibleMenu(options);
-      const config = this.getConfig(options);
+      const config = options.variant === 'education'
+        ? window.EducationMenuConfig
+        : options.variant === 'supplier'
+          ? window.SupplierMenuConfig
+        : options.variant === 'operations'
+          ? window.OperationsMenuConfig
+          : options.variant === 'school'
+            ? window.SchoolMenuConfig
+          : window.AppMenuConfig;
       const { icons } = config;
       const isOperations = options.variant === 'operations';
       const logoSrc = isOperations ? './assets/images/operations-logo.png' : './sidebar-logo.png';
@@ -277,9 +284,17 @@
     bind(root, options = {}) {
       const sidebar = root.querySelector('.sidebar');
       const menu = this.getVisibleMenu(options);
-      const config = this.getConfig(options);
+      const config = options.variant === 'education'
+        ? window.EducationMenuConfig
+        : options.variant === 'supplier'
+          ? window.SupplierMenuConfig
+        : options.variant === 'operations'
+          ? window.OperationsMenuConfig
+          : options.variant === 'school'
+            ? window.SchoolMenuConfig
+          : window.AppMenuConfig;
       const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-      const pageKey = root.querySelector('#app')?.dataset.page || '';
+      const pageKey = root.dataset?.page || root.querySelector('#app')?.dataset.page || '';
       autoSelectByHref(menu, currentPath, pageKey);
       if (sidebar) {
         const isOperations = options.variant === 'operations';

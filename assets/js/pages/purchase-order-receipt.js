@@ -28,7 +28,7 @@
 
   var content = [
     '<section class="page-card purchase-page purchase-receipt-page" aria-label="收货">',
-      '<div class="purchase-form-header"><button class="purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>收货</h1></div>',
+      '<div class="purchase-form-header"><button class="back-link purchase-back" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>收货</h1></div>',
       '<div class="purchase-receipt-summary">',
         '<div>采购单号：<span>' + text(order.purchaseOrderNo) + '</span></div><div>仓库：<span>' + text(order.warehouse) + '</span></div><div>商品种类数：<span>' + order.productCount + '</span></div><div>已收种类数：<span>0</span></div>',
         '<div>学校期望送达时间：<span>' + text(order.expectedAt) + '</span></div><div>企业期望送达时间：<span>' + text(order.enterpriseExpectedAt || '--') + '</span></div><div>添加时间：<span>' + text(order.addedAt) + '</span></div><div>单据来源：<span>' + text(order.source) + '</span></div><div>制单人：<span>' + text(order.creator) + '</span></div>',

@@ -20,6 +20,7 @@
     ['canteen', '食堂'],
     ['customerType', '客户类型'],
     ['orderTag', '订单标签'],
+    ['recipeTag', '食谱Tag'],
     ['orderAmount', '下单金额', 'money'],
     ['shippingAmount', '发货金额', 'money'],
     ['returnAmount', '退货金额', 'money'],
@@ -67,10 +68,10 @@
         <div class="operations-filter-advanced">
           <div class="operations-filter-grid">
           <div class="operations-field"><label class="filter-label" for="customerType">客户类型</label><select class="filter-select" id="customerType"><option value="">全部</option><option>学校</option><option>幼儿园</option><option>机关单位</option></select></div>
-          <div class="operations-field"><label class="filter-label" for="orderTag">订单标签</label><select class="filter-select" id="orderTag"><option value="">全部</option><option>营养餐</option><option>普通餐</option><option>应急保供</option></select></div>
+          <div class="operations-field"><label class="filter-label" for="orderTag">订单标签</label><select class="filter-select" id="orderTag"><option value="">全部</option><option>营养餐</option><option>普通餐</option><option>应急保供</option><option>学生-不区分</option><option>教师-不区分</option></select></div>
           <div class="operations-field"><label class="filter-label" for="status">单据状态</label><select class="filter-select" id="status"><option value="">全部</option><option value="DRAFT">暂存</option><option value="PENDING_CONFIRM">待确认</option><option value="PENDING_AUDIT">待审核</option><option value="READY_FOR_SORTING">待分拣</option><option value="READY_FOR_SHIPPING">待发货</option><option value="REJECTED">已驳回</option><option value="SHIPPED">已发货</option><option value="CLOSED">已关闭</option></select></div>
           <div class="operations-field"><label class="filter-label" for="warehouse">仓库</label><select class="filter-select" id="warehouse"><option value="">全部</option><option>中心仓</option><option>北区仓</option><option>临时仓</option></select></div>
-          <div class="operations-field"><label class="filter-label" for="source">单据来源</label><select class="filter-select" id="source"><option value="">全部</option><option>客户下单</option><option>平台添加</option></select></div>
+          <div class="operations-field"><label class="filter-label" for="source">单据来源</label><select class="filter-select" id="source"><option value="">全部</option><option>客户下单</option><option>平台添加</option><option>食谱下单</option></select></div>
           <div class="operations-field"><label class="filter-label" for="receiptStatus">收货状态</label><select class="filter-select" id="receiptStatus"><option value="">全部</option><option>待收货</option><option>部分收货</option><option>已收货</option><option>未收货</option></select></div>
           <div class="operations-field"><label class="filter-label" for="orderType">订单类型</label><select class="filter-select" id="orderType"><option value="">全部</option><option>销售订单</option><option>临时订单</option></select></div>
           <div class="operations-field"><label class="filter-label" for="netVegetable">是否净菜</label><select class="filter-select" id="netVegetable"><option value="">全部</option><option value="net">净菜</option><option value="non-net">非净菜</option></select></div>

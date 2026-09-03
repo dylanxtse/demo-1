@@ -1,0 +1,247 @@
+.school-order-detail-page {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.school-order-detail-header {
+  display: flex;
+  min-height: 50px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+}
+
+.school-order-detail-header h1 {
+  margin: 0;
+  color: #222b3a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.school-order-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: #5b6473;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.school-order-detail-back:hover { color: var(--primary); }
+
+.school-order-detail-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 22px 24px 86px;
+}
+
+.school-order-detail-summary {
+  margin-bottom: 26px;
+}
+
+.school-order-detail-summary.processing-detail-info {
+  --detail-grid-columns: 3;
+  --detail-field-label-width: 140px;
+}
+
+.school-order-detail-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 12px;
+}
+
+.school-order-detail-section-title h2 {
+  margin: 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.school-order-detail-table-wrap {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid #e1e4eb;
+}
+
+.school-order-detail-table {
+  width: 100%;
+  min-width: 2860px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.school-order-detail-table th,
+.school-order-detail-table td {
+  height: 46px;
+  box-sizing: border-box;
+  padding: 6px 9px;
+  overflow: hidden;
+  border-right: 1px solid #e5e8ed;
+  border-bottom: 1px solid #e5e8ed;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.school-order-detail-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 48px;
+  background: #fafafa;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: normal;
+  line-height: 18px;
+  box-shadow: 0 2px 5px -5px rgba(31, 43, 67, .45);
+}
+
+.school-order-detail-table col:nth-child(1) { width: 48px; }
+.school-order-detail-table col:nth-child(2) { width: 76px; }
+.school-order-detail-table col:nth-child(3) { width: 230px; }
+.school-order-detail-table col:nth-child(4) { width: 88px; }
+.school-order-detail-table col:nth-child(5) { width: 112px; }
+.school-order-detail-table col:nth-child(6) { width: 72px; }
+.school-order-detail-table col:nth-child(7) { width: 92px; }
+.school-order-detail-table col:nth-child(8) { width: 92px; }
+.school-order-detail-table col:nth-child(9) { width: 104px; }
+.school-order-detail-table col:nth-child(10) { width: 92px; }
+.school-order-detail-table col:nth-child(11) { width: 104px; }
+.school-order-detail-table col:nth-child(12) { width: 92px; }
+.school-order-detail-table col:nth-child(13) { width: 104px; }
+.school-order-detail-table col:nth-child(14) { width: 92px; }
+.school-order-detail-table col:nth-child(15) { width: 104px; }
+.school-order-detail-table col:nth-child(16) { width: 92px; }
+.school-order-detail-table col:nth-child(17) { width: 104px; }
+.school-order-detail-table col:nth-child(18) { width: 188px; }
+.school-order-detail-table col:nth-child(19) { width: 110px; }
+.school-order-detail-table col:nth-child(20) { width: 112px; }
+.school-order-detail-table col:nth-child(21) { width: 100px; }
+.school-order-detail-table col:nth-child(22) { width: 100px; }
+
+/* 商品明细横向滚动时固定前三列：序号、图片、商品名称。 */
+.school-order-detail-table thead th:nth-child(1),
+.school-order-detail-table tbody td:nth-child(1) {
+  position: sticky;
+  left: 0;
+}
+
+.school-order-detail-table thead th:nth-child(2),
+.school-order-detail-table tbody td:nth-child(2) {
+  position: sticky;
+  left: 48px;
+}
+
+.school-order-detail-table thead th:nth-child(3),
+.school-order-detail-table tbody td:nth-child(3) {
+  position: sticky;
+  left: 124px;
+  box-shadow: 6px 0 8px -8px rgba(31, 43, 67, .45);
+}
+
+.school-order-detail-table tbody td:nth-child(-n+3) {
+  z-index: 3;
+  background: #fff;
+}
+
+.school-order-detail-table thead th:nth-child(-n+3) {
+  z-index: 4;
+  background: #fafafa;
+}
+
+.school-order-detail-table tbody tr:hover td { background: #f8fbff; }
+.school-order-detail-table tbody tr:hover td:nth-child(-n+3) { background: #f8fbff; }
+.school-order-detail-table .detail-goods-name { text-align: left; }
+.school-order-detail-table .detail-goods-name .net-vegetable-tag { vertical-align: middle; }
+.school-order-detail-table .detail-empty { color: #9aa4b2; }
+.school-order-detail-table .detail-trace-code { color: #2b74bf; }
+
+.school-order-recipe-record-item .school-order-recipe-record-link {
+  max-width: 210px;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  color: #2b74bf;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.school-order-recipe-record-item .school-order-recipe-record-link:hover { text-decoration: underline; }
+
+.school-order-detail-page .school-order-image-placeholder {
+  display: inline-flex;
+  width: 42px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e1e4eb;
+  border-radius: 3px;
+  background: #fafbfc;
+  color: #a5adba;
+  font-size: 11px;
+}
+
+.school-order-detail-table tfoot td {
+  background: #fafbfc;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.school-order-detail-note {
+  margin: 18px 0 28px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.school-order-detail-actions {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding: 0 24px;
+  pointer-events: auto;
+  border-top: 1px solid #edf0f5;
+  background: #fff;
+}
+
+.school-order-detail-actions .btn { min-width: 84px; justify-content: center; }
+
+@media (max-width: 1180px) {
+  .school-order-detail-summary.processing-detail-info { --detail-grid-columns: 2; }
+}
+
+@media (max-width: 760px) {
+  .school-order-detail-header { padding: 0 12px; }
+  .school-order-detail-body { padding: 16px 12px 82px; }
+  .school-order-detail-summary.processing-detail-info { --detail-grid-columns: 1; }
+}

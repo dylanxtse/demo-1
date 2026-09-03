@@ -37,7 +37,22 @@
     'purchase-order-detail.html': 'enterprise',
     'purchase-order-form.html': 'enterprise',
     'purchase-order-receipt.html': 'enterprise',
-    'supplier-purchase-order.html': 'supplier'
+    'supplier-purchase-order.html': 'supplier',
+    'school-order-management.html': 'school',
+    'school-order-detail.html': 'school',
+    'school-order-form.html': 'school',
+    'school-order-acceptance.html': 'school',
+    'school-order-accept.html': 'school',
+    'school-recipe-center.html': 'school',
+    'school-recipe-attendance.html': 'school',
+    'school-recipe-demand-confirm.html': 'school',
+    'school-recipe-demand-records.html': 'school',
+    'school-recipe-demand-record-detail.html': 'school',
+    'school-canteen-management.html': 'school',
+    'school-canteen-form.html': 'school',
+    'school-product-management.html': 'school',
+    'school-purchase-reconciliation.html': 'school',
+    'school-purchase-accounts.html': 'school'
   });
 
   const validVariants = new Set(Object.keys(endpointHomes));

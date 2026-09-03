@@ -120,7 +120,7 @@
         </div>
         <div class="operations-table-container">
           <div class="operations-table-wrap"><table class="operations-table"><thead id="recordHead"></thead><tbody id="recordBody"></tbody></table></div>
-          <div class="${usePagination ? 'pagination' : 'operations-pagination'}" id="recordPagination"></div>
+          <div class="pagination" id="recordPagination"></div>
         </div>
       </section>
       <div id="recordOverlay"></div>`;
@@ -134,7 +134,7 @@
         </div>
         <div class="operations-toolbar">${legacyToolbarHtml}<span class="toolbar-spacer"></span></div>
         <div class="operations-table-wrap"><table class="operations-table"><thead id="recordHead"></thead><tbody id="recordBody"></tbody></table></div>
-        <div class="${usePagination ? 'pagination' : 'operations-pagination'}" id="recordPagination"></div>
+        <div class="pagination" id="recordPagination"></div>
       </section>
       <div id="recordOverlay"></div>`;
     const content = config.pageClass ? standardContent : legacyContent;
@@ -329,18 +329,15 @@
     }
 
     function renderPagination() {
-      if (usePagination) {
+      if (state.pagination) {
         state.pagination?.update({ page: state.page, pageSize: state.pageSize, total: state.total });
         return;
       }
-      const pages = Math.max(1, Math.ceil(state.total / state.pageSize));
       $('#recordPagination').innerHTML = `
-        <span>共 ${state.total} 条数据</span>
-        <select id="recordPageSize" aria-label="每页条数">${[10, 20, 50].map((size) => `<option value="${size}" ${size === state.pageSize ? 'selected' : ''}>${size} 条/页</option>`).join('')}</select>
-        <button class="btn btn-sm" id="recordPrev" ${state.page <= 1 ? 'disabled' : ''}>上一页</button>
-        <span>${state.page} / ${pages}</span>
-        <button class="btn btn-sm" id="recordNext" ${state.page >= pages ? 'disabled' : ''}>下一页</button>
-        <span>跳至</span><input id="recordJump" aria-label="跳转页码" value="${state.page}">`;
+        <span class="page-total">共 ${state.total} 条数据</span>
+        <select class="page-size-select" id="recordPageSize" aria-label="每页条数">${[10, 20, 50].map((size) => `<option value="${size}" ${size === state.pageSize ? 'selected' : ''}>${size} 条/页</option>`).join('')}</select>
+        <div class="page-btns"><button class="page-btn active" type="button" aria-current="page">${state.page}</button></div>
+        <div class="page-jump"><span>跳至</span><input class="pagination-jump-input" id="recordJump" aria-label="跳转页码" value="${state.page}"><span>页</span></div>`;
     }
 
     function renderToolbar() {
@@ -738,14 +735,6 @@
         state.selected.clear();
         return load();
       }
-      if (event.target.id === 'recordPrev' && state.page > 1) {
-        state.page -= 1;
-        return load();
-      }
-      if (event.target.id === 'recordNext' && state.page < Math.ceil(state.total / state.pageSize)) {
-        state.page += 1;
-        return load();
-      }
     });
 
     root.addEventListener('change', (event) => {
@@ -794,7 +783,7 @@
       if (event.key === 'Escape' && overlay.innerHTML) closeModal();
     });
 
-    if (usePagination && window.Pagination?.create) {
+    if (window.Pagination?.create) {
       state.pagination = window.Pagination.create({
         container: '#recordPagination',
         page: state.page,

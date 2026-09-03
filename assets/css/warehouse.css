@@ -12,24 +12,34 @@
 
 .warehouse-archive-page + #recordOverlay .operations-multi-select {
   border: 0;
+  max-height: 160px;
+  overflow-y: auto;
 }
 
-/* 仓库详情为基础信息单列展示，使用紧凑弹窗避免横向留白。 */
-.operations-modal.warehouse-detail-modal {
-  width: min(720px, calc(100vw - 48px));
+.warehouse-archive-page + #recordOverlay .operations-multi-option.is-locked {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
 }
 
-.warehouse-detail-modal .operations-modal-body {
-  padding: 24px 32px;
+.warehouse-archive-page + #recordOverlay .operations-multi-option.is-locked input {
+  cursor: not-allowed;
 }
 
-.warehouse-detail-modal .operations-detail-grid.single-column {
+.warehouse-archive-page + #recordOverlay .operations-modal:not(.is-detail) .operations-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.warehouse-archive-page + #recordOverlay .operations-modal:not(.is-detail) .operations-form-item.full-row {
+  grid-column: auto;
+}
+
+.operations-modal.warehouse-detail {
+  width: min(560px, calc(100vw - 48px));
+}
+
+.operations-modal.warehouse-detail .operations-detail-grid {
+  grid-template-columns: 1fr;
   gap: 16px;
-}
-
-.warehouse-detail-modal .operations-detail-item dt {
-  width: 104px;
-  flex-basis: 104px;
 }
 
 /* ===== 列表页容器（复用 .page-card 布局） ===== */
@@ -919,6 +929,133 @@
 .ob-attachment-row .form-attachment {
   flex: 1;
 }
+
+/* ===== 仓库档案勾选、导出与横向滚动 ===== */
+.warehouse-archive-page .operations-toolbar-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.warehouse-archive-page .warehouse-export-button {
+  width: var(--query-action-width);
+  justify-content: center;
+  gap: 4px;
+}
+.warehouse-archive-page .warehouse-export-button .icon-svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex: 0 0 16px;
+  display: block;
+}
+.warehouse-archive-page .warehouse-custom-checkbox {
+  flex: 0 0 16px;
+}
+.warehouse-archive-page .custom-checkbox.indeterminate {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.warehouse-archive-page .custom-checkbox.indeterminate::after {
+  width: 8px;
+  height: 2px;
+  margin: 0;
+  border: 0;
+  border-radius: 1px;
+  background: #fff;
+  transform: none;
+}
+.warehouse-archive-page .custom-checkbox.is-disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.warehouse-archive-page .operations-table-wrap {
+  overflow-x: auto;
+}
+.warehouse-archive-page .operations-table {
+  width: 100%;
+  min-width: 1700px;
+  table-layout: fixed;
+}
+.warehouse-archive-page .operations-table th,
+.warehouse-archive-page .operations-table td {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.warehouse-archive-page .record-table-annotation-surface {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+.warehouse-archive-page .record-table-annotation-surface > .operations-table-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.warehouse-archive-page .record-table-annotation-corner {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 100;
+  display: flex;
+  gap: 4px;
+}
+.warehouse-archive-page .record-table-annotation-corner.is-left { left: 0; }
+.warehouse-archive-page .record-table-annotation-corner.is-right { right: 6px; }
+.warehouse-archive-page .record-table-annotation-corner.is-right .record-annotation-popover {
+  right: 0;
+  left: auto;
+}
+.warehouse-archive-page .operations-table th:first-child,
+.warehouse-archive-page .operations-table td:first-child {
+  width: 52px;
+  min-width: 52px;
+  position: sticky;
+  left: 0;
+  border-right: 1px solid var(--border-light);
+  background: #fff;
+  box-shadow: 8px 0 8px -8px rgba(0, 0, 0, .16);
+}
+.warehouse-archive-page .operations-table th:first-child {
+  z-index: 4;
+  background: #fafafa;
+}
+.warehouse-archive-page .operations-table td:first-child { z-index: 2; }
+.warehouse-archive-page .operations-table th:nth-child(2),
+.warehouse-archive-page .operations-table td:nth-child(2) { width: 72px; min-width: 72px; }
+.warehouse-archive-page .operations-table th:nth-child(3),
+.warehouse-archive-page .operations-table td:nth-child(3) { width: 170px; min-width: 170px; }
+.warehouse-archive-page .operations-table th:nth-child(4),
+.warehouse-archive-page .operations-table td:nth-child(4) { width: 190px; min-width: 190px; }
+.warehouse-archive-page .operations-table th:nth-child(5),
+.warehouse-archive-page .operations-table td:nth-child(5) { width: 240px; min-width: 240px; }
+.warehouse-archive-page .operations-table th:nth-child(6),
+.warehouse-archive-page .operations-table td:nth-child(6) { width: 170px; min-width: 170px; }
+.warehouse-archive-page .operations-table th:nth-child(7),
+.warehouse-archive-page .operations-table td:nth-child(7) { width: 160px; min-width: 160px; }
+.warehouse-archive-page .operations-table th:nth-child(8),
+.warehouse-archive-page .operations-table td:nth-child(8) { width: 280px; min-width: 280px; }
+.warehouse-archive-page .operations-table th:nth-child(9),
+.warehouse-archive-page .operations-table td:nth-child(9) { width: 190px; min-width: 190px; }
+.warehouse-archive-page .operations-table th:last-child,
+.warehouse-archive-page .operations-table td:last-child {
+  width: 180px;
+  min-width: 180px;
+  position: sticky;
+  right: 0;
+  border-right: 0;
+  background: #fff;
+  box-shadow: -8px 0 8px -8px rgba(0, 0, 0, .18);
+}
+.warehouse-archive-page .operations-table th:last-child {
+  z-index: 4;
+  background: #fafafa;
+}
+.warehouse-archive-page .operations-table td:last-child { z-index: 3; }
+.warehouse-archive-page .operations-table tbody tr:hover td:first-child,
+.warehouse-archive-page .operations-table tbody tr:hover td:last-child { background: #f5f7fa; }
 
 /* ===== 响应式 ===== */
 @media (max-width: 1100px) {

@@ -12,7 +12,7 @@
   const content = `
     <section class="page-card order-module-page inventory-document-page">
       <div class="inventory-document-title">
-        <button class="btn btn-sm" type="button" data-action="back">← 返回</button>
+        <button class="back-link" type="button" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button>
         <h2>${mode === 'add' ? '添加' : mode === 'edit' ? '编辑' : mode === 'copy' ? '复制' : mode === 'review' ? '审核' : '查看'}${entityName}</h2>
         <span id="documentStatus"></span>
       </div>

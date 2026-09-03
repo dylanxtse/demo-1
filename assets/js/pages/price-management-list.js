@@ -318,7 +318,7 @@
     </div>`;
   const root = window.AppShell.mount({ title: config.title, content });
   state.rows = config.rows(); state.filteredRows = [...state.rows]; renderFilters();
-  state.pagination = window.Pagination.create({ container: '#priceManagementPagination', total: state.filteredRows.length, page: 1, pageSize: state.pageSize, pageSizeOptions: [20, 50, 100], maxVisiblePages: 5, showArrows: true, onChange: ({ page, pageSize }) => { state.page = page; state.pageSize = pageSize; renderTable(); } });
+  state.pagination = window.Pagination.create({ container: '#priceManagementPagination', total: state.filteredRows.length, page: 1, pageSize: state.pageSize, pageSizeOptions: [20, 50, 100], maxVisiblePages: 5, onChange: ({ page, pageSize }) => { state.page = page; state.pageSize = pageSize; renderTable(); } });
   root.addEventListener('click', (event) => {
     const tabButton = event.target.closest('[data-page-tab]');
     if (tabButton && config.tabs) {

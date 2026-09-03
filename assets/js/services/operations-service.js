@@ -294,7 +294,9 @@
     }
     if (resource === 'tags') {
       const duplicate = load(resource).some((item) =>
-        item.id !== currentId && normalize(item.tagName) === normalize(data.tagName)
+        item.id !== currentId
+        && normalize(item.tagName) === normalize(data.tagName)
+        && normalize(item.nutritious) === normalize(data.nutritious)
       );
       if (duplicate) throw error('DUPLICATE_TAG', '标签名称已存在');
     }

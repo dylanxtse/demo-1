@@ -139,6 +139,8 @@
     panel.className = `calendar-panel single-calendar-panel${options.withTime ? ' with-time' : ''}`;
     document.body.appendChild(panel);
 
+    const minDate = String(options.minDate || '').slice(0, 10);
+    const maxDate = String(options.maxDate || '').slice(0, 10);
     const initialParts = String(input.value || '').trim().split(/\s+/);
     const state = { year: 0, month: 0, date: initialParts[0] || '', time: initialParts[1] || (options.withTime ? '08:00:00' : '') };
     const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
@@ -155,7 +157,9 @@
         let className = 'cal-day';
         if (date === today) className += ' cal-today';
         if (date === state.date) className += ' cal-start';
-        cells += `<td class="${className}" data-date="${date}">${day}</td>`;
+        const disabled = (minDate && date < minDate) || (maxDate && date > maxDate);
+        if (disabled) className += ' cal-disabled';
+        cells += `<td class="${className}" data-date="${date}"${disabled ? ' aria-disabled="true"' : ''}>${day}</td>`;
       }
       const remaining = (7 - ((firstDay.getDay() + daysInMonth) % 7)) % 7;
       for (let i = 0; i < remaining; i += 1) cells += '<td class="cal-empty"></td>';
@@ -239,7 +243,7 @@
         return;
       }
       const day = event.target.closest('.cal-day');
-      if (!day) return;
+      if (!day || day.classList.contains('cal-disabled')) return;
       state.date = day.dataset.date;
       updateInput();
       if (!options.withTime) close();
