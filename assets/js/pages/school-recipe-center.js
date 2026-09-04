@@ -502,6 +502,29 @@
     showToast.timer = window.setTimeout(() => toast.remove(), 1800);
   }
 
+  function openIncompleteMealConfirm(meals, onConfirm) {
+    document.querySelector('#schoolRecipeAttendanceIncompleteMealModal')?.remove();
+    const backdrop = document.createElement('div');
+    backdrop.id = 'schoolRecipeAttendanceIncompleteMealModal';
+    backdrop.className = 'operations-modal-backdrop';
+    backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-attendance-incomplete-modal" role="dialog" aria-modal="true" aria-label="提示">
+      <header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header>
+      <div class="operations-modal-body"><p>以下餐次合计人数为0：${meals.map(escapeHtml).join('、')}，未填写学生或教职工人数，是否继续确认需求？</p></div>
+      <footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer>
+    </section>`;
+    document.body.appendChild(backdrop);
+    const modal = backdrop.querySelector('.school-recipe-attendance-incomplete-modal');
+    const close = () => backdrop.remove();
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop || event.target.closest('[data-modal-close], [data-modal-cancel]')) close();
+    });
+    modal.querySelector('[data-modal-confirm]')?.addEventListener('click', () => {
+      close();
+      onConfirm?.();
+    });
+    modal.querySelector('[data-modal-confirm]')?.focus();
+  }
+
   const content = `<section class="page-card school-recipe-center-page" id="schoolRecipeCenterPage" aria-label="营养食谱与需求">
     <div class="school-recipe-center-body" id="schoolRecipeCenterBody"></div>
   </section>`;
@@ -638,17 +661,25 @@
       return;
     }
     if (attendanceAction === 'continue') {
+      syncCurrentDraftFromInputs(page);
       const menu = menuForDate(state.selectedDate);
       const validation = attendanceService.validate(menu, state.attendance);
       if (!validation.canContinue) {
         showToast(validation.message || '请先完成当前日期填报', true);
         return;
       }
-      const saved = attendanceService.save(state.selectedDate, state.attendance.meals, menu.version || service.MENU_VERSION);
-      state.attendance = clone(saved);
-      state.attendanceByDate[state.selectedDate] = clone(saved);
-      if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
-      else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
+      const saveAndNavigate = () => {
+        const saved = attendanceService.save(state.selectedDate, state.attendance.meals, menu.version || service.MENU_VERSION);
+        state.attendance = clone(saved);
+        state.attendanceByDate[state.selectedDate] = clone(saved);
+        if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
+        else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
+      };
+      if (validation.missingMeals.length) {
+        openIncompleteMealConfirm(validation.missingMeals, saveAndNavigate);
+        return;
+      }
+      saveAndNavigate();
     }
   });
 

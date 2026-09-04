@@ -49,6 +49,19 @@
   };
 
   setVisible(true);
+
+  const annotationHiddenStyle = document.createElement('style');
+  annotationHiddenStyle.dataset.prototypeToolsAnnotationHidden = 'true';
+  annotationHiddenStyle.textContent = `
+    .record-annotation-overlay,
+    .record-annotation-marker,
+    .record-annotation-mode-toggle,
+    .project-iteration-annotation-visibility-toggle,
+    .project-iteration-annotation-mode-host {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(annotationHiddenStyle);
 })();
 
 /*
@@ -473,7 +486,7 @@ const toolkitAssets = Object.freeze({
   componentsStyles: './assets/js/prototype-tools/src/components.css?v=20260904-display-1',
   iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1',
   iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260904-display-1',
-  iterationData: './assets/js/data/project-iteration-records.js?v=20260904-ganxian-1'
+  iterationData: './assets/js/data/project-iteration-records.js?v=20260904-ganxian-2'
 });
 
 function loadToolkitScript(src, marker) {
@@ -529,7 +542,7 @@ function scheduleAnnotationOverlayMount(pageRoot) {
         if (!pageRoot.isConnected || pageRoot.__annotationOverlayController) return;
         window.AnnotationOverlay?.mount(pageRoot, [], {
           data: window.PrototypeAnnotationData || { pages: {} },
-          markersVisible: true
+          markersVisible: false
         });
       })
       .catch(() => {
@@ -550,12 +563,19 @@ function mountProjectIterationPanel() {
       projectId: 'school-procurement-new-project',
       storageKey: 'school-procurement-new-project-iteration-records-v1',
       platformStorageKey: 'school-procurement-new-project-iteration-platforms-v1',
-      persistToProjectCode: true,
-      annotationMarkersVisible: true
+      persistToProjectCode: false,
+      annotationMarkersVisible: false
     }))
     .catch(() => {
       // 工具包不可用时不阻塞业务页面。
-    });
+  });
+}
+
+try {
+  window.localStorage?.removeItem('demo-project-iteration-records-v2');
+  window.localStorage?.removeItem('demo-project-iteration-platforms-v1');
+} catch (error) {
+  // 浏览器禁用本地存储时直接使用项目数据文件。
 }
 
 mountProjectIterationPanel();
