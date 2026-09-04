@@ -3,6 +3,9 @@
   const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   const money = (value) => Number(value || 0).toFixed(2);
   const productIsNetVegetable = (line) => {
+    if (typeof window.NetVegetableService?.isNetVegetable === 'function') {
+      return window.NetVegetableService.isNetVegetable(line);
+    }
     const code = line.productId || line.productCode || line.goodsCode || line.goodsId;
     const catalogProduct = (window.DemoStore?.get('products') || window.MockProducts || []).find((product) => product.code === code || product.id === code);
     if (catalogProduct) return Boolean(catalogProduct.isNetVegetable);
@@ -45,6 +48,43 @@
     return `<div class="detail-product-img">图片</div>`;
   }
 
+  function formatReferenceNumber(value) {
+    if (value == null || value === '' || !Number.isFinite(Number(value))) return '--';
+    return Number(value).toFixed(2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+  }
+
+  function getNetProductInfo(line) {
+    const code = line.productCode || line.goodsCode || line.productId || line.goodsId || '';
+    const product = (window.NetVegetableService?.getProductCatalog?.() || []).find((item) => String(item.code || item.productCode || item.id) === String(code));
+    return {
+      code,
+      name: product?.name || line.productName || line.goodsName || '',
+      unit: product?.unit || line.unit || ''
+    };
+  }
+
+  function renderNetMaterialRows(line, columnCount) {
+    if (!productIsNetVegetable(line) || typeof window.NetVegetableService?.getMaterialPlan !== 'function') return '';
+    const plan = window.NetVegetableService.getMaterialPlan(line);
+    const headers = '<tr><th>参考原料商品</th><th>商品编号</th><th>参考采购系数</th><th>参考采购量</th></tr>';
+    let body = '';
+    if (!plan?.template || !plan.materials?.length) {
+      const productInfo = getNetProductInfo(line);
+      body = `<tr class="net-material-subtable-empty"><td colspan="4"><div class="net-material-subtable-empty-content"><span>此净菜未配置加工方案，无法计算原料采购量</span><button class="btn btn-sm btn-blue net-material-config-button" type="button" data-action="configure-net-material" data-product-code="${escapeHtml(productInfo.code)}" data-product-name="${escapeHtml(productInfo.name)}" data-product-unit="${escapeHtml(productInfo.unit)}">配置加工方案</button></div></td></tr>`;
+    } else {
+      body = plan.materials.map((material) => {
+        const coefficient = formatReferenceNumber(material.referencePurchaseCoefficient);
+        const purchaseQty = formatReferenceNumber(material.referencePurchaseQty);
+        const unit = material.unit && material.unit !== '--' ? ` ${escapeHtml(material.unit)}` : '';
+        const calculationTitle = material.calculation === 'multiply'
+          ? '净菜需求量 × 参考采购系数'
+          : '净菜需求量 ÷ 参考采购系数';
+        return `<tr><td class="net-material-subtable-product" title="${escapeHtml(material.displayName || material.productName || '--')}">${escapeHtml(material.displayName || material.productName || '--')}</td><td class="net-material-subtable-code">${escapeHtml(material.productCode || '--')}</td><td class="net-material-subtable-coefficient" title="${escapeHtml(calculationTitle)}">${coefficient}</td><td class="net-material-subtable-qty">${purchaseQty}<span class="net-material-unit">${unit}</span></td></tr>`;
+      }).join('');
+    }
+    return `<tr class="net-material-row" aria-label="净菜参考原料需求"><td aria-hidden="true"></td><td colspan="${columnCount - 1}"><table class="net-material-subtable"><colgroup><col><col><col><col></colgroup><thead>${headers}</thead><tbody>${body}</tbody></table></td></tr>`;
+  }
+
   function renderOperationLogs(logs) {
     if (!logs || !logs.length) return '<span class="detail-empty">--</span>';
     return logs.map((log) => `
@@ -76,9 +116,10 @@
     const lines = order.items && order.items.length ? order.items : [];
     const itemRows = lines.map((line, index) => {
       const productDisplay = window.DomUtils.formatProductDisplay(line);
-      const productTag = productIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : '';
+      const isNetVegetable = productIsNetVegetable(line);
+      const productTag = isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
       return `
-      <tr>
+      <tr class="${isNetVegetable ? 'net-material-parent-row' : ''}">
         <td>${index + 1}</td>
         <td>${renderProductImg()}</td>
         <td>
@@ -103,7 +144,7 @@
         <td>${(line.inspectionImages && line.inspectionImages.length) ? `${line.inspectionImages.length}张` : '--'}</td>
         <td>${(line.inspectionVideos && line.inspectionVideos.length) ? `${line.inspectionVideos.length}个` : '--'}</td>
       </tr>
-    `;
+      ${renderNetMaterialRows(line, 21)}`;
     }).join('');
 
     return `<div class="page-card processing-detail-page order-detail-page">
@@ -197,6 +238,18 @@
     document.getElementById('pageContent').addEventListener('click', (event) => {
       if (event.target.closest('[data-action="back"]')) {
         window.AppNavigation?.navigate?.('./order-management.html');
+      }
+      const configureButton = event.target.closest('[data-action="configure-net-material"]');
+      if (configureButton) {
+        const params = new URLSearchParams({
+          createTemplate: '1',
+          outputProductCode: configureButton.dataset.productCode || '',
+          outputProductName: configureButton.dataset.productName || '',
+          outputProductUnit: configureButton.dataset.productUnit || ''
+        });
+        const href = `./processing.html?${params.toString()}`;
+        if (typeof window.AppNavigation?.navigate === 'function') window.AppNavigation.navigate(href);
+        else window.location.href = href;
       }
     });
   }).catch((error) => {

@@ -2285,6 +2285,19 @@
     renderTemplateEditor();
   }
 
+  function getTemplateCreatePrefill() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('createTemplate') !== '1') return null;
+    const code = params.get('outputProductCode') || '';
+    if (!code) return null;
+    const product = findProduct(code);
+    return {
+      code,
+      name: product?.name || params.get('outputProductName') || '',
+      unit: product?.unit || params.get('outputProductUnit') || ''
+    };
+  }
+
   /* ===== 全局事件绑定 ===== */
   function bindGlobalEvents() {
     const root = document.querySelector('.processing-workspace');
@@ -2355,6 +2368,8 @@
   bindGlobalEvents();
   bindTemplateEditorPageEvents();
   bindSubmitConfirmEvents();
+  const templateCreatePrefill = getTemplateCreatePrefill();
+  if (templateCreatePrefill) startCreateTemplate(templateCreatePrefill);
   window.addEventListener('resize', syncTemplateDescriptionWidth);
 
   document.addEventListener('click', () => {

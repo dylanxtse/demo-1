@@ -293,6 +293,42 @@
   width: min(520px, calc(100vw - 40px));
 }
 
+.net-order-confirm-modal {
+  width: min(480px, calc(100vw - 40px));
+}
+
+.net-order-confirm-body {
+  padding: 26px 28px 24px;
+}
+
+.net-order-confirm-question {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+}
+
+.net-order-confirm-note {
+  margin-top: 18px;
+  padding: 10px 12px;
+  border: 1px solid #d9e8fb;
+  border-radius: 3px;
+  background: #f5f9ff;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 21px;
+  text-align: left;
+}
+
+.net-order-confirm-note.is-warning {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
 .dialog-field {
   display: grid;
   gap: 8px;

@@ -4,20 +4,62 @@
   const mode = params.get('mode') || 'add';
   const recordId = params.get('id') || '';
 
-  // 商品目录：从统一演示数据仓库读取已上架商品
-  const allProducts = (window.DemoStore?.get('products') || []).filter((product) => product.status === 'ENABLE');
-  const catalog = allProducts.map((p) => ({
-    id: p.code,
-    goodsName: `${p.name}（${p.unit}/${p.brand}/${p.spec}）`,
-    productName: p.name,
-    unit: p.unit,
-    brand: p.brand,
-    spec: p.spec,
-    isNetVegetable: !!p.isNetVegetable,
-    agreementPrice: Number(p.marketPrice || 0),
-    lastPrice: Number(p.marketPrice || 0),
-    marketPrice: Number(p.marketPrice || 0)
-  }));
+  // 商品目录：从统一演示数据仓库读取已上架商品。确认供货页需要在订单加载后再次刷新，
+  // 以兼容订单数据先于商品目录初始化的情况。
+  let catalog = [];
+
+  function refreshCatalog() {
+    const allProducts = (window.DemoStore?.get('products') || [])
+      .filter((product) => !product.status || product.status === 'ENABLE' || product.status === '已上架');
+    catalog = allProducts.map((p) => ({
+      id: String(p.code || p.id || ''),
+      goodsName: `${p.name}（${p.unit}/${p.brand}/${p.spec}）`,
+      productName: p.name,
+      unit: p.unit,
+      brand: p.brand,
+      spec: p.spec,
+      isNetVegetable: !!p.isNetVegetable,
+      agreementPrice: Number(p.marketPrice || 0),
+      lastPrice: Number(p.marketPrice || 0),
+      marketPrice: Number(p.marketPrice || 0)
+    })).filter((product) => product.id);
+  }
+
+  function resolveProductCode(item) {
+    return String(item?.goodsCode || item?.productId || item?.productCode || item?.goodsId || '').trim();
+  }
+
+  function findCatalogEntry(item) {
+    const code = resolveProductCode(item);
+    return catalog.find((entry) => entry.id === code)
+      || (item?.productName ? catalog.find((entry) => entry.productName === item.productName) : null)
+      || {};
+  }
+
+  function ensureCatalogEntry(item) {
+    const source = findCatalogEntry(item);
+    if (source.id) return source;
+
+    const code = resolveProductCode(item);
+    if (!code) return source;
+    const productName = item.productName || String(item.goodsName || code).split(/[（(]/)[0];
+    const fallback = {
+      id: code,
+      goodsName: item.goodsName || `${productName}（${item.unit || '--'}/${item.brand || '--'}/${item.spec || '--'}）`,
+      productName,
+      unit: item.unit || '--',
+      brand: item.brand || '--',
+      spec: item.spec || '--',
+      isNetVegetable: !!item.isNetVegetable,
+      agreementPrice: Number(item.agreementPrice || item.unitPrice || 0),
+      lastPrice: Number(item.lastPrice || 0),
+      marketPrice: Number(item.marketPrice || 0)
+    };
+    catalog.push(fallback);
+    return fallback;
+  }
+
+  refreshCatalog();
 
   const modeTitles = { add: '添加订单', edit: '编辑订单', audit: '审核订单', confirm: '确认供货', copy: '复制订单' };
   const readonlyMode = mode === 'audit' || mode === 'confirm';
@@ -115,12 +157,13 @@
   }
 
   function normalizedItem(item) {
-    const source = catalog.find((entry) => entry.id === (item.goodsId || item.id || item.goodsCode)) || {};
+    const source = ensureCatalogEntry(item);
+    const productCode = resolveProductCode(item) || source.id || '';
     return {
-      id: String(item.id || '').startsWith('LINE-') ? item.id : `LINE-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      goodsId: item.goodsId || source.id || item.goodsCode || '',
-      goodsCode: item.goodsCode || source.id || '',
-      goodsName: source.id ? source.goodsName : (item.goodsName || ''),
+      id: item.orderLineId || (item.id ? item.id : `LINE-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+      goodsId: productCode,
+      goodsCode: item.goodsCode || item.productId || item.productCode || source.id || '',
+      goodsName: source.id ? source.goodsName : (item.goodsName || item.productName || ''),
       productName: source.productName || item.productName || '',
       unit: source.unit || item.unit || '',
       brand: source.brand || item.brand || '',
@@ -137,7 +180,7 @@
 
   // 渲染商品选择下拉框（复用净菜加工模版的 custom-select 样式）
   function renderGoodsSelect(selectedCode, lineId) {
-    const selectedProduct = selectedCode ? catalog.find((p) => p.id === selectedCode) : null;
+    const selectedProduct = selectedCode ? catalog.find((p) => p.id === String(selectedCode)) : null;
     const netTag = selectedProduct?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
     const displayText = selectedProduct ? escapeHtml(window.DomUtils.formatProductDisplay(selectedProduct, catalog)) : '请选择';
     const selectedCodes = goodsItems.filter((item) => item.goodsId && item.id !== lineId).map((item) => item.goodsId);
@@ -151,7 +194,7 @@
           ${catalog.map((p) => {
             const isDuplicate = selectedCodes.includes(p.id);
             const tag = p.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-            return `<div class="custom-select-option ${p.id === selectedCode ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.id)}" data-disabled="${isDuplicate}" data-action="select-goods">${tag}${escapeHtml(window.DomUtils.formatProductDisplay(p, catalog))}</div>`;
+            return `<div class="custom-select-option ${p.id === String(selectedCode) ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.id)}" data-disabled="${isDuplicate}" data-action="select-goods">${tag}${escapeHtml(window.DomUtils.formatProductDisplay(p, catalog))}</div>`;
           }).join('')}
         </div>
       </div>
@@ -320,16 +363,86 @@
     };
   }
 
+  function getNetVegetableSummary(order) {
+    const lines = getOrderLines(order);
+    const netLines = lines.filter((line) => Boolean(
+      window.NetVegetableService?.isNetVegetable?.(line)
+      || service?.isNetVegetable?.(line)
+    ));
+    const configuredLines = [];
+    const missingReferenceLines = [];
+    netLines.forEach((line) => {
+      let plan = null;
+      try {
+        plan = window.NetVegetableService?.getMaterialPlan?.(line);
+      } catch (error) {
+        plan = null;
+      }
+      const configured = Boolean(
+        plan?.template
+        && Array.isArray(plan.materials)
+        && plan.materials.length
+        && plan.materials.every((material) => (
+          material.productCode
+          && Number(material.referencePurchaseCoefficient) > 0
+          && material.referencePurchaseQty != null
+          && Number(material.referencePurchaseQty) > 0
+          && Number.isFinite(Number(material.referencePurchaseQty))
+        ))
+      );
+      (configured ? configuredLines : missingReferenceLines).push(line);
+    });
+    return { netLines, configuredLines, missingReferenceLines, hasNet: netLines.length > 0 };
+  }
+
+  function getNetVegetableName(line) {
+    const rawName = line?.productName || line?.goodsName || line?.name || line?.goodsCode || line?.productCode || '未命名净菜';
+    return String(rawName).split(/[（(]/)[0].trim() || '未命名净菜';
+  }
+
+  function openConfirmSupplyModal(order) {
+    const summary = getNetVegetableSummary(order);
+    let note = '';
+    if (summary.hasNet) {
+      const total = summary.netLines.length;
+      const missing = summary.missingReferenceLines.length;
+      if (!missing) {
+        note = `<div class="net-order-confirm-note" role="note">订单包含 ${total} 个净菜商品，有有效参考采购量，确认后将自动生成原料采购任务。</div>`;
+      } else {
+        const missingNames = summary.missingReferenceLines.map(getNetVegetableName).join('、');
+        const readyCount = summary.configuredLines.length;
+        const detail = missing === total
+          ? `订单包含 ${total} 个净菜商品（${escapeHtml(missingNames)}），没有有效参考采购量，不会自动生成原料采购任务。`
+          : `订单包含 ${total} 个净菜商品，其中 ${missing} 个没有有效参考采购量（${escapeHtml(missingNames)}），不会生成对应的原料采购任务；其余 ${readyCount} 个将按参考采购量自动生成。`;
+        note = `<div class="net-order-confirm-note is-warning" role="note">${detail}</div>`;
+      }
+    }
+    overlay.innerHTML = `<div class="operations-modal-backdrop"><section class="operations-modal is-confirm net-order-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmSupplyTitle">
+      <header class="operations-modal-header"><h3 id="confirmSupplyTitle">确认供货</h3><button type="button" data-overlay-close aria-label="关闭">×</button></header>
+      <div class="operations-modal-body net-order-confirm-body"><p class="net-order-confirm-question">确认供货吗？</p>${note}</div>
+      <footer class="operations-modal-footer"><button class="btn" type="button" data-overlay-close>取消</button><button class="btn btn-primary" type="button" data-action="confirm-supply-submit">确定</button></footer>
+    </section></div>`;
+  }
+
+  function getOrderLines(order) {
+    if (Array.isArray(order?.items) && order.items.length) return order.items;
+    if (Array.isArray(order?.orderLines) && order.orderLines.length) return order.orderLines;
+    if (Array.isArray(order?.lines) && order.lines.length) return order.lines;
+    return [];
+  }
+
   function configureMode() {
     document.getElementById('draftButton').hidden = readonlyMode;
     document.getElementById('rejectButton').hidden = mode !== 'audit';
     document.getElementById('batchAddGoods').hidden = readonlyMode;
+    const footerBack = document.querySelector('.order-form-actions [data-action="back"]');
+    if (footerBack) footerBack.hidden = mode === 'confirm';
     const primary = document.getElementById('primaryButton');
     if (mode === 'audit') {
       primary.textContent = '通过';
       primary.dataset.action = 'approve';
     } else if (mode === 'confirm') {
-      primary.textContent = '确认';
+      primary.textContent = '确认供货';
       primary.dataset.action = 'confirm';
     } else {
       primary.textContent = '保存订单';
@@ -338,9 +451,10 @@
   }
 
   async function loadRecord() {
-    populateCustomers(currentRecord?.customerName || '');
+    refreshCatalog();
     if (!recordId) {
       // 添加模式：默认显示5行空商品选择框
+      populateCustomers('');
       refreshCanteens();
       goodsItems = [];
       for (let i = 0; i < DEFAULT_ROW_COUNT; i++) {
@@ -356,12 +470,13 @@
       configureMode();
       return;
     }
+    populateCustomers(currentRecord.customerName || '');
     form.elements.customerName.value = currentRecord.customerName || '';
     refreshCanteens(currentRecord.canteen);
     expectedAtPicker?.setValue(normalizeExpectedAt(currentRecord.expectedAt || ''), false);
     form.elements.orderTag.value = currentRecord.orderTag || '';
     form.elements.remark.value = currentRecord.remark || '';
-    const storedLines = currentRecord.items?.length ? currentRecord.items : [];
+    const storedLines = getOrderLines(currentRecord);
     if (storedLines.length) {
       goodsItems = storedLines.map(normalizedItem);
     } else {
@@ -524,10 +639,25 @@
       await service.transition('orders', recordId, 'approve');
       return backToList('reviewed');
     }
+    if (action === 'confirm-supply-submit') {
+      const submitButton = event.target.closest('[data-action="confirm-supply-submit"]');
+      if (submitButton) submitButton.disabled = true;
+      try {
+        const confirmedOrder = await service.transition('orders', recordId, 'confirm');
+        try {
+          window.PurchaseService?.generateNetVegetableTasks?.(confirmedOrder);
+        } catch (error) {
+          console.error('净菜原料采购任务生成失败', error);
+        }
+        closeOverlay();
+        return backToList('confirmed');
+      } catch (error) {
+        if (submitButton) submitButton.disabled = false;
+        return toast(error.message || '确认供货失败', true);
+      }
+    }
     if (action === 'confirm') {
-      if (!window.confirm('确定供货吗？')) return;
-      await service.transition('orders', recordId, 'confirm');
-      return backToList('confirmed');
+      return openConfirmSupplyModal(currentRecord);
     }
   });
 

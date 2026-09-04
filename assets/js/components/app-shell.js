@@ -7,6 +7,50 @@
   document.head.appendChild(link);
 })();
 
+/* 工具包显示状态：当前项目只启用空工具容器，不加载任何旧项目数据。 */
+(function () {
+  const styleAttribute = 'data-prototype-tools-display-style';
+  const setVisible = (visible) => {
+    const nextVisible = Boolean(visible);
+    window.PrototypeToolsConfig = {
+      ...(window.PrototypeToolsConfig || {}),
+      displayEnabled: nextVisible
+    };
+
+    let style = document.head?.querySelector(`style[${styleAttribute}]`);
+    if (nextVisible) {
+      style?.remove();
+    } else if (!style) {
+      style = document.createElement('style');
+      style.setAttribute(styleAttribute, '');
+      style.textContent = `
+        .record-annotation-overlay,
+        .project-iteration-panel-root {
+          display: none !important;
+        }
+      `;
+      (document.head || document.documentElement).appendChild(style);
+    }
+
+    document.documentElement.dataset.prototypeToolsDisplay = nextVisible ? 'visible' : 'hidden';
+    window.dispatchEvent(new CustomEvent('prototype-tools-display-change', {
+      detail: { visible: nextVisible }
+    }));
+    return nextVisible;
+  };
+
+  window.PrototypeToolsDisplay = {
+    get visible() {
+      return window.PrototypeToolsConfig?.displayEnabled === true;
+    },
+    setVisible,
+    show: () => setVisible(true),
+    hide: () => setVisible(false)
+  };
+
+  setVisible(true);
+})();
+
 /*
  * 多端导航底层约束：
  * 1. 先按页面所属端识别目标文件；
@@ -419,8 +463,97 @@
     if (queryButton) layoutScope(scope, queryButton);
   }, true);
 
-  window.QueryFilterLayout = { mount, refresh };
+window.QueryFilterLayout = { mount, refresh };
 })();
+
+const toolkitAssets = Object.freeze({
+  theme: './assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1',
+  annotation: './assets/js/prototype-tools/src/annotation-overlay.js?v=20260904-display-1',
+  componentsStyles: './assets/js/prototype-tools/src/components.css?v=20260904-display-1',
+  iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-display-1',
+  iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260904-display-1'
+});
+
+function loadToolkitScript(src, marker) {
+  return new Promise((resolve, reject) => {
+    if (marker === 'theme' && window.PrototypeToolsTheme) {
+      resolve();
+      return;
+    }
+    const existing = document.querySelector(`script[data-prototype-tools-script="${marker}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === 'true') resolve();
+      else {
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+      }
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.dataset.prototypeToolsScript = marker;
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    }, { once: true });
+    script.addEventListener('error', reject, { once: true });
+    document.body.appendChild(script);
+  });
+}
+
+function appendToolkitStyles() {
+  if (!document.querySelector('link[data-prototype-tools-style]')) {
+    const componentsLink = document.createElement('link');
+    componentsLink.rel = 'stylesheet';
+    componentsLink.href = toolkitAssets.componentsStyles;
+    componentsLink.dataset.prototypeToolsStyle = 'true';
+    document.head.appendChild(componentsLink);
+  }
+  if (!document.querySelector('link[data-project-iteration-panel-style]')) {
+    const iterationLink = document.createElement('link');
+    iterationLink.rel = 'stylesheet';
+    iterationLink.href = toolkitAssets.iterationStyles;
+    iterationLink.dataset.projectIterationPanelStyle = 'true';
+    document.head.appendChild(iterationLink);
+  }
+}
+
+function scheduleAnnotationOverlayMount(pageRoot) {
+  if (!pageRoot) return;
+  window.setTimeout(() => {
+    loadToolkitScript(toolkitAssets.annotation, 'annotation-overlay')
+      .then(() => {
+        if (!pageRoot.isConnected || pageRoot.__annotationOverlayController) return;
+        window.AnnotationOverlay?.mount(pageRoot, [], {
+          data: { pages: {} },
+          markersVisible: true
+        });
+      })
+      .catch(() => {
+        // 工具包不可用时不阻塞业务页面。
+      });
+  }, 0);
+}
+
+function mountProjectIterationPanel() {
+  appendToolkitStyles();
+  loadToolkitScript(toolkitAssets.theme, 'theme')
+    .then(() => loadToolkitScript(toolkitAssets.iteration, 'iteration'))
+    .then(() => window.ProjectIterationPanel?.mount({
+      records: [],
+      projectId: 'school-procurement-new-project',
+      storageKey: 'school-procurement-new-project-iteration-records-v1',
+      platformStorageKey: 'school-procurement-new-project-iteration-platforms-v1',
+      syncGlobalData: false,
+      persistToProjectCode: false,
+      annotationMarkersVisible: true
+    }))
+    .catch(() => {
+      // 工具包不可用时不阻塞业务页面。
+    });
+}
+
+mountProjectIterationPanel();
 
 window.AppShell = {
     mount({ title, content, emptyText = '当前没有打开的页面', variant = 'enterprise', showPageTitle = true, companyName = '' }) {
@@ -454,6 +587,7 @@ window.AppShell = {
       window.AppHeader.bind?.(root, shellOptions);
       const pageContent = root.querySelector('#pageContent');
       window.QueryFilterLayout?.mount(pageContent);
+      scheduleAnnotationOverlayMount(pageContent);
       return root;
     }
   };

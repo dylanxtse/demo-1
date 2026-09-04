@@ -581,6 +581,121 @@
     });
   }
 
+  function generateNetVegetableTasks(order) {
+    var orderData = order || {};
+    var orderId = orderData.id || orderData.orderId || orderData.orderNo || '';
+    var orderDate = datePart(orderData.expectedAt || orderData.shippingAt || today());
+    var sourceLines = Array.isArray(orderData.items) && orderData.items.length
+      ? orderData.items
+      : (Array.isArray(orderData.orderLines) ? orderData.orderLines : []);
+    var plannedLines = [];
+    sourceLines.forEach(function (line, index) {
+      var isNet = window.NetVegetableService?.isNetVegetable?.(line)
+        || line.isNetVegetable === true
+        || line.isNetVegetable === 'true'
+        || line.isNetVegetable === '是';
+      if (!isNet || typeof window.NetVegetableService?.getMaterialPlan !== 'function') return;
+      var plan = null;
+      try {
+        plan = window.NetVegetableService.getMaterialPlan(line);
+      } catch (error) {
+        plan = null;
+      }
+      var materials = Array.isArray(plan?.materials) ? plan.materials : [];
+      var valid = Boolean(
+        plan?.template
+        && materials.length
+        && materials.every(function (material) {
+          return material.productCode
+            && number(material.referencePurchaseCoefficient) > 0
+            && material.referencePurchaseQty != null
+            && number(material.referencePurchaseQty) > 0
+            && Number.isFinite(Number(material.referencePurchaseQty));
+        })
+      );
+      plannedLines.push({ line: line, index: index, plan: plan, materials: valid ? materials : [] });
+    });
+
+    var configuredLines = plannedLines.filter(function (item) { return item.materials.length > 0; });
+    var unconfiguredCount = plannedLines.filter(function (item) { return item.materials.length === 0; }).length;
+    if (!configuredLines.length) {
+      return { ok: true, generatedTaskCount: 0, generatedLineCount: 0, skippedLineCount: unconfiguredCount };
+    }
+
+    ensureSeed();
+    return window.DemoStore.transact(function (state) {
+      var tasks = Array.isArray(state.purchaseTasks) ? state.purchaseTasks : (state.purchaseTasks = []);
+      var changedTaskIds = new Set();
+      var generatedLineCount = 0;
+      configuredLines.forEach(function (planned) {
+        var line = planned.line;
+        var lineId = line.orderLineId || line.id || orderId + '-LINE-' + String(planned.index + 1).padStart(3, '0');
+        planned.materials.forEach(function (material) {
+          var materialProduct = product(material.productCode, material.productName) || {};
+          var materialCode = material.productCode || material.goodsCode || material.productId || '';
+          var materialQuantity = round(material.referencePurchaseQty);
+          if (!materialCode || materialQuantity <= 0) return;
+          var task = tasks.find(function (item) {
+            return datePart(item.date) === orderDate && String(item.productCode || item.productId) === String(materialCode);
+          });
+          if (!task) {
+            task = makeTask({
+              id: 'PT-NET-' + orderDate.replace(/-/g, '') + '-' + materialCode,
+              date: orderDate,
+              productCode: materialCode,
+              productName: material.productName || material.goodsName || materialProduct.name || '--',
+              unit: material.unit || materialProduct.unit || '--',
+              brand: material.brand || materialProduct.brand || '--',
+              spec: material.spec || materialProduct.spec || '--',
+              category: material.category || materialProduct.category || '净菜原料',
+              manager: orderData.manager || orderData.purchaser || '杨采',
+              orderLines: []
+            });
+            tasks.unshift(task);
+          }
+          if (!Array.isArray(task.orderLines)) task.orderLines = [];
+          var taskLineId = 'NV-' + orderId + '-' + lineId + '-' + materialCode;
+          if (task.orderLines.some(function (item) { return item.id === taskLineId; })) return;
+          task.orderLines.push({
+            id: taskLineId,
+            orderId: orderId,
+            orderNo: orderData.orderNo || orderId,
+            orderCreatedAt: orderData.createdAt || orderData.createTime || now(),
+            customerName: orderData.customerName || '--',
+            canteen: orderData.canteen || '--',
+            warehouse: orderData.warehouse || '中心仓',
+            orderTag: orderData.orderTag || '',
+            orderSource: orderData.source || '客户下单',
+            remark: '净菜原料参考采购量自动生成',
+            orderQty: materialQuantity,
+            stockDeduction: 0,
+            inTransitDeduction: 0,
+            toPurchaseQty: materialQuantity,
+            sourceType: 'NET_VEGETABLE',
+            sourceOrderId: orderId,
+            sourceOrderNo: orderData.orderNo || orderId,
+            sourceOrderLineId: lineId,
+            netVegetableProductCode: line.productCode || line.goodsCode || line.goodsId || '',
+            netVegetableProductName: line.productName || line.goodsName || '--',
+            referencePurchaseCoefficient: number(material.referencePurchaseCoefficient),
+            referencePurchaseQty: materialQuantity,
+            allocation: {}
+          });
+          refreshTask(task);
+          changedTaskIds.add(task.id);
+          generatedLineCount += 1;
+        });
+      });
+      return {
+        ok: true,
+        generatedTaskCount: changedTaskIds.size,
+        generatedLineCount: generatedLineCount,
+        skippedLineCount: unconfiguredCount,
+        taskIds: Array.from(changedTaskIds)
+      };
+    });
+  }
+
   window.PurchaseService = {
     ensureSeed: ensureSeed,
     products: function () { return clone(catalog); },
@@ -595,6 +710,7 @@
     receiveOrder: receiveOrder,
     saveTaskAllocation: saveTaskAllocation,
     generatePurchaseOrders: generatePurchaseOrders,
+    generateNetVegetableTasks: generateNetVegetableTasks,
     formatDate: datePart
   };
 })();
