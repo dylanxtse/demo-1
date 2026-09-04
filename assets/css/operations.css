@@ -417,7 +417,7 @@
   font-weight: 500;
 }
 
-.operations-modal-header button:not(.record-annotation-marker) {
+.operations-modal-header button {
   border: 0;
   background: transparent;
   color: var(--text-tertiary);

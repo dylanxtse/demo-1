@@ -5,6 +5,17 @@
   const RESOURCE = 'recipeDemandRecords';
   const DEMO_RECORD_DATE = '2026-09-07';
   const DEMO_RECORD_CREATED_AT = '2026-08-29 16:20:00';
+  const DEMO_ATTENDANCE = {
+    id: 'RECIPE-ATTENDANCE-DEMO-20260907',
+    date: DEMO_RECORD_DATE,
+    recipeVersion: '2026 秋季营养菜谱第 12 版',
+    updatedAt: '2026-08-29 16:20:00',
+    meals: {
+      breakfast: { student: 520, teacher: 42 },
+      lunch: { student: 680, teacher: 48 },
+      dinner: { student: 460, teacher: 36 }
+    }
+  };
   const SCHOOL_NAME = schoolOrderService?.SCHOOL_NAME || '静安第一中学';
   const CANTEEN_NAME = schoolOrderService?.CANTEEN_NAME || '第一食堂';
   const PARTICIPANTS = [
@@ -69,9 +80,9 @@
       .flatMap((record) => Array.isArray(record.dates) ? record.dates : []));
   }
 
-  function buildDateSummary(date, submittedDates) {
+  function buildDateSummary(date, submittedDates, attendanceOverride = null) {
     const menu = recipeService.getMenu(date);
-    const attendance = attendanceService.get(date);
+    const attendance = attendanceOverride ? clone(attendanceOverride) : attendanceService.get(date);
     const calculation = attendanceService.calculate(menu, attendance);
     const validation = attendanceService.validate(menu, attendance);
     return {
@@ -120,7 +131,7 @@
   }
 
   function buildDemoRecord() {
-    const dateSummaries = [buildDateSummary(DEMO_RECORD_DATE, new Set())];
+    const dateSummaries = [buildDateSummary(DEMO_RECORD_DATE, new Set(), DEMO_ATTENDANCE)];
     const summary = dateSummaries[0];
     const items = aggregateRows(dateSummaries);
     const studentPersonTimes = number(summary.calculation.totalStudentPeople);

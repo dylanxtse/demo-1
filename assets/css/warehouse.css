@@ -982,32 +982,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.warehouse-archive-page .record-table-annotation-surface {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex: 1;
-}
-.warehouse-archive-page .record-table-annotation-surface > .operations-table-container {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-}
-.warehouse-archive-page .record-table-annotation-corner {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  z-index: 100;
-  display: flex;
-  gap: 4px;
-}
-.warehouse-archive-page .record-table-annotation-corner.is-left { left: 0; }
-.warehouse-archive-page .record-table-annotation-corner.is-right { right: 6px; }
-.warehouse-archive-page .record-table-annotation-corner.is-right .record-annotation-popover {
-  right: 0;
-  left: auto;
-}
 .warehouse-archive-page .operations-table th:first-child,
 .warehouse-archive-page .operations-table td:first-child {
   width: 52px;

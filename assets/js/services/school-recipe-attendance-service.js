@@ -1,7 +1,7 @@
 (function () {
   const RESOURCE = 'recipeAttendance';
   const META_RESOURCE = 'recipeAttendanceMeta';
-  const SEED_VERSION = '20260903-attendance-seed-v1';
+  const SEED_VERSION = '20260904-attendance-seed-v2-empty';
   const MIN_COUNT = 1;
   const MAX_COUNT = 100000;
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -18,29 +18,7 @@
     { key: 'snack', name: '加餐' }
   ];
 
-  const seed = [
-    {
-      id: 'RECIPE-ATTENDANCE-20260907',
-      date: '2026-09-07',
-      recipeVersion: '2026 秋季营养菜谱第 12 版',
-      updatedAt: '2026-09-03 09:12:00',
-      meals: {
-        breakfast: { student: 520, teacher: 42 },
-        lunch: { student: 680, teacher: 48 },
-        dinner: { student: 460, teacher: 36 }
-      }
-    },
-    {
-      id: 'RECIPE-ATTENDANCE-20260908',
-      date: '2026-09-08',
-      recipeVersion: '2026 秋季营养菜谱第 12 版',
-      updatedAt: '2026-09-03 09:15:00',
-      meals: {
-        breakfast: { student: 510, teacher: 40 },
-        lunch: { student: 660, teacher: 46 }
-      }
-    }
-  ];
+  const seed = [];
   let memoryRecords = clone(seed);
 
   function hasSeedMarker() {
@@ -59,11 +37,8 @@
   function readAll() {
     if (!window.DemoStore) return clone(memoryRecords);
     const current = window.DemoStore.get(RESOURCE);
-    if (Array.isArray(current) && current.length) {
-      if (!hasSeedMarker()) window.DemoStore.replace(META_RESOURCE, [{ id: SEED_VERSION, createdAt: timestamp() }]);
-      return current;
-    }
-    if (hasSeedMarker()) return [];
+    if (hasSeedMarker()) return Array.isArray(current) ? current : [];
+    // 切换为空白初始数据时，清理旧版演示人数及其已保存的填报数据。
     window.DemoStore.replace(RESOURCE, seed);
     window.DemoStore.replace(META_RESOURCE, [{ id: SEED_VERSION, createdAt: timestamp() }]);
     return clone(seed);
@@ -180,8 +155,8 @@
       missingMeals,
       missingMappings: uniqueMissingMappings,
       people,
-      canContinue: Boolean(menu) && !errors.length && !missingMeals.length && !uniqueMissingMappings.length && people > 0,
-      message: errors[0] || (missingMeals.length ? `请至少填写${missingMeals.join('、')}的学生或教职工人数` : uniqueMissingMappings.length ? '当前食谱存在未关联采购商品' : people > 0 ? '' : '至少填写一餐的就餐人数')
+      canContinue: Boolean(menu) && !errors.length && !uniqueMissingMappings.length && people > 0,
+      message: errors[0] || (uniqueMissingMappings.length ? '当前食谱存在未关联采购商品' : people > 0 ? '' : '至少填写一餐的就餐人数')
     };
   }
 

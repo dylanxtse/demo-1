@@ -19,6 +19,11 @@
     useGrouping: false
   });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: false });
+  const purchaseQuantity = (item) => {
+    const value = item?.purchaseQty == null || item.purchaseQty === '' ? item?.totalQty : item.purchaseQty;
+    const amount = Number(value);
+    return Number.isFinite(amount) ? Math.ceil(amount) : 0;
+  };
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
   const weekday = (date) => weekdayNames[new Date(`${date}T00:00:00`).getDay()];
   const recipeName = (value) => String(value || '').replace(/\s*第\s*\d+\s*版\s*$/, '').trim();
@@ -52,7 +57,8 @@
   const menuForDate = (date) => allMenus.find((menu) => menu.date === date);
   const productForIngredient = (item) => {
     const code = item?.productCode || item?.productId || item?.goodsCode || '';
-    return (window.MockProducts || []).find((product) => (product.code || product.id) === code) || {};
+    const catalog = window.SchoolOrderService?.getProductCatalog?.() || window.MockProducts || [];
+    return catalog.find((product) => String(product.code || product.id) === String(code)) || {};
   };
   const productSummary = (item) => {
     const product = productForIngredient(item);
@@ -261,17 +267,20 @@
   function renderAttendanceDemand(menu, record) {
     if (!menu) return '<div class="school-recipe-attendance-empty">请选择有菜谱的日期</div>';
     const calculation = attendanceService.calculate(menu, record);
-    const rows = calculation.rows.map((row, index) => `<tr>
+    const rows = calculation.rows
+      .filter((row) => Number(row.studentQty || 0) > 0 || Number(row.teacherQty || 0) > 0)
+      .map((row, index) => `<tr>
       <td>${index + 1}</td>
       <td class="school-recipe-attendance-ingredient-name">${escapeHtml(row.ingredientNames.join('、'))}</td>
-      <td class="school-recipe-attendance-product-name">${escapeHtml(row.productName)}</td>
+      <td class="school-recipe-attendance-product-name">${escapeHtml(productSummary(row).label)}</td>
       <td>${escapeHtml(row.productCode || '--')}</td>
       <td>${escapeHtml(row.unit)}</td>
       <td class="is-number">${quantity(row.studentQty)}</td>
       <td class="is-number">${quantity(row.teacherQty)}</td>
       <td class="is-number is-total">${quantity(row.totalQty)}</td>
+      <td class="is-number">${quantity(purchaseQuantity(row))}</td>
     </tr>`).join('');
-    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>采购商品</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教职工需求量</th><th>需求总量</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
+    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教职工需求量</th><th>需求总量</th><th>采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
   }
 
   function renderAttendanceDetail(menu) {

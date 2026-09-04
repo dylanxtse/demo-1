@@ -178,7 +178,7 @@
 .school-recipe-demand-detail-table .col-product { width: 84px; }
 
 .school-recipe-demand-detail-product-table {
-  min-width: 980px;
+  min-width: 1080px;
 }
 
 .school-recipe-demand-detail-product-table th,
@@ -194,6 +194,7 @@
 .school-recipe-demand-detail-product-table .col-unit { width: 56px; }
 .school-recipe-demand-detail-product-table .col-quantity { width: 94px; }
 .school-recipe-demand-detail-product-table .col-total { width: 96px; }
+.school-recipe-demand-detail-product-table .col-purchase { width: 96px; }
 
 .school-recipe-demand-order-table {
   min-width: 660px;

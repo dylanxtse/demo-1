@@ -11,6 +11,13 @@
     .replace(/'/g, '&#39;');
   const number = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const productDisplay = (item) => window.DomUtils?.formatProductDisplay
+    ? window.DomUtils.formatProductDisplay(item)
+    : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
+  const purchaseQuantity = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? Math.ceil(amount).toLocaleString('zh-CN') : '--';
+  };
   const dateText = (dates = []) => dates.length > 3 ? `${dates.slice(0, 3).join('、')} 等${dates.length}天` : dates.join('、') || '--';
 
   function navigate(url) {
@@ -61,7 +68,7 @@
   }
 
   function renderProductRows() {
-    return (record.items || []).filter((row) => row.mappingStatus === '已关联').map((row, index) => `<tr><td>${index + 1}</td><td class="school-recipe-demand-detail-ingredient-name">${escapeHtml((row.ingredientNames || []).join('、') || '--')}</td><td class="school-recipe-demand-detail-product-name">${escapeHtml(row.productName || '--')}</td><td>${escapeHtml(row.productCode || '--')}</td><td>${escapeHtml(row.unit || '--')}</td><td class="is-number">${quantity(row.studentQty)}</td><td class="is-number">${quantity(row.teacherQty)}</td><td class="is-number is-total">${quantity(row.totalQty)}</td></tr>`).join('') || '<tr><td colspan="8" class="school-recipe-demand-record-detail-empty-cell">暂无商品明细</td></tr>';
+    return (record.items || []).filter((row) => row.mappingStatus === '已关联').map((row, index) => `<tr><td>${index + 1}</td><td class="school-recipe-demand-detail-ingredient-name">${escapeHtml((row.ingredientNames || []).join('、') || '--')}</td><td class="school-recipe-demand-detail-product-name">${escapeHtml(productDisplay(row))}</td><td>${escapeHtml(row.productCode || '--')}</td><td>${escapeHtml(row.unit || '--')}</td><td class="is-number">${quantity(row.studentQty)}</td><td class="is-number">${quantity(row.teacherQty)}</td><td class="is-number is-total">${quantity(row.totalQty)}</td><td class="is-number">${purchaseQuantity(row.totalQty)}</td></tr>`).join('') || '<tr><td colspan="9" class="school-recipe-demand-record-detail-empty-cell">暂无商品明细</td></tr>';
   }
 
   function renderOrderRows() {
@@ -81,7 +88,7 @@
       ${record.enterpriseSyncWarnings?.length ? `<div class="school-recipe-demand-detail-notice is-warning">企业端同步提示：${escapeHtml(record.enterpriseSyncWarnings.join('；'))}</div>` : ''}
       <div class="processing-detail-section"><div class="school-recipe-demand-detail-section-heading"><h3>关联订单</h3></div><div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-demand-order-table"><colgroup><col class="col-order-no"><col class="col-date"><col class="col-participant"><col class="col-tag"></colgroup><thead><tr><th>订单号</th><th>期望送达日期</th><th>就餐人员</th><th>订单标签</th></tr></thead><tbody>${renderOrderRows()}</tbody></table></div></div>
       <div class="processing-detail-section school-recipe-demand-date-detail-section"><div class="school-recipe-demand-detail-section-heading"><h3>用料日期明细</h3></div><div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-person"><col class="col-person"><col class="col-total"><col class="col-product"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>学生人次</th><th>教师人次</th><th>总人次</th><th>商品种数</th></tr></thead><tbody>${renderDateRows()}</tbody></table></div></div>
-      <div class="processing-detail-section"><div class="school-recipe-demand-detail-section-heading"><h3>商品需求明细</h3></div><div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-demand-detail-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>采购商品</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教师需求量</th><th>需求总量</th></tr></thead><tbody>${renderProductRows()}</tbody></table></div></div>
+      <div class="processing-detail-section"><div class="school-recipe-demand-detail-section-heading"><h3>商品需求明细</h3></div><div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-demand-detail-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教师需求量</th><th>需求总量</th><th>采购数量</th></tr></thead><tbody>${renderProductRows()}</tbody></table></div></div>
     </div>
     <footer class="processing-form-footer processing-detail-footer"><button type="button" class="btn btn-sm" data-action="back">返回</button></footer>
   </section>` : renderEmpty();

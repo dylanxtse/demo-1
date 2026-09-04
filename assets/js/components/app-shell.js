@@ -8,66 +8,6 @@
 })();
 
 /*
- * 项目工具包显示开关：
- * 仅隐藏标注覆盖层和迭代记录面板，不删除代码数据或本地存储数据。
- * 也可以通过 window.PrototypeToolsDisplay.hide() 临时隐藏，或将
- * PrototypeToolsConfig.displayEnabled 设置为 false 后重新加载页面。
- */
-(function () {
-  const styleAttribute = 'data-prototype-tools-display-style';
-  const defaultVisible = true;
-  const initialVisible = typeof window.PrototypeToolsConfig?.displayEnabled === 'boolean'
-    ? window.PrototypeToolsConfig.displayEnabled
-    : defaultVisible;
-
-  function setVisible(visible) {
-    const nextVisible = Boolean(visible);
-    window.PrototypeToolsConfig = {
-      ...(window.PrototypeToolsConfig || {}),
-      displayEnabled: nextVisible
-    };
-
-    let style = document.head?.querySelector(`style[${styleAttribute}]`);
-    if (nextVisible) {
-      style?.remove();
-    } else {
-      if (!style) {
-        style = document.createElement('style');
-        style.setAttribute(styleAttribute, '');
-        style.textContent = `
-          .record-annotation-overlay,
-          .project-iteration-panel-root {
-            display: none !important;
-          }
-        `;
-        (document.head || document.documentElement).appendChild(style);
-      }
-    }
-
-    document.documentElement.dataset.prototypeToolsDisplay = nextVisible ? 'visible' : 'hidden';
-    window.dispatchEvent(new CustomEvent('prototype-tools-display-change', {
-      detail: { visible: nextVisible }
-    }));
-    return nextVisible;
-  }
-
-  window.PrototypeToolsDisplay = {
-    get visible() {
-      return window.PrototypeToolsConfig?.displayEnabled === true;
-    },
-    setVisible,
-    show() {
-      return setVisible(true);
-    },
-    hide() {
-      return setVisible(false);
-    }
-  };
-
-  setVisible(initialVisible);
-})();
-
-/*
  * 多端导航底层约束：
  * 1. 先按页面所属端识别目标文件；
  * 2. 同一端内的菜单、页签和业务按钮正常跳转；
@@ -482,51 +422,7 @@
   window.QueryFilterLayout = { mount, refresh };
 })();
 
-(function () {
-  let annotationEnginePromise = null;
-  const toolkitAssets = Object.freeze({
-    theme: './assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260824-9',
-    annotation: './assets/js/prototype-tools/src/annotation-overlay.js?v=20260827-1',
-    iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260826-57',
-    iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260823-60',
-    annotationData: './assets/js/config/annotation-data.js?v=20260822-2',
-    iterationData: './assets/js/data/project-iteration-records.js?v=20260827-1'
-  });
-
-  function ensureAnnotationEngine() {
-    if (annotationEnginePromise) return annotationEnginePromise;
-
-    annotationEnginePromise = Promise.resolve()
-      .then(() => loadToolkitScript(toolkitAssets.theme, 'theme'))
-      .then(() => {
-        if (window.PrototypeAnnotationData) return undefined;
-        return loadToolkitScript(toolkitAssets.annotationData, 'annotation-data');
-      })
-      .then(() => {
-        if (window.AnnotationOverlay) return undefined;
-        return loadToolkitScript(toolkitAssets.annotation, 'annotation-overlay');
-      });
-
-    return annotationEnginePromise;
-  }
-
-  function scheduleAnnotationOverlayMount(pageRoot) {
-    if (!pageRoot) return;
-
-    // 让页面自己的业务脚本先完成专用标注挂载；没有专用挂载的页面再由公共壳层兜底。
-    window.setTimeout(() => {
-      ensureAnnotationEngine()
-        .then(() => {
-          if (!pageRoot.isConnected || pageRoot.__annotationOverlayController) return;
-          window.AnnotationOverlay?.mount(pageRoot, []);
-        })
-        .catch(() => {
-          // 标注工具加载失败不应阻塞业务页面。
-        });
-    }, 0);
-  }
-
-  window.AppShell = {
+window.AppShell = {
     mount({ title, content, emptyText = '当前没有打开的页面', variant = 'enterprise', showPageTitle = true, companyName = '' }) {
       const root = document.getElementById('app');
       if (!root) throw new Error('缺少 #app 页面挂载节点');
@@ -558,67 +454,6 @@
       window.AppHeader.bind?.(root, shellOptions);
       const pageContent = root.querySelector('#pageContent');
       window.QueryFilterLayout?.mount(pageContent);
-      scheduleAnnotationOverlayMount(pageContent);
       return root;
     }
   };
-
-  function appendProjectIterationStyles() {
-    if (document.querySelector('link[data-project-iteration-panel-style], link[href*="project-iteration-panel.css"]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = toolkitAssets.iterationStyles;
-    link.dataset.projectIterationPanelStyle = 'true';
-    document.head.appendChild(link);
-  }
-
-  function loadToolkitScript(src, marker) {
-    return new Promise((resolve, reject) => {
-      if (marker === 'theme' && window.PrototypeToolsTheme) {
-        resolve();
-        return;
-      }
-      const existing = document.querySelector(`script[data-project-iteration-script="${marker}"]`);
-      if (existing) {
-        if (existing.dataset.loaded === 'true') resolve();
-        else {
-          existing.addEventListener('load', resolve, { once: true });
-          existing.addEventListener('error', reject, { once: true });
-        }
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.dataset.projectIterationScript = marker;
-      script.addEventListener('load', () => {
-        script.dataset.loaded = 'true';
-        resolve();
-      }, { once: true });
-      script.addEventListener('error', reject, { once: true });
-      document.body.appendChild(script);
-    });
-  }
-
-  function mountProjectIterationPanel() {
-    appendProjectIterationStyles();
-    if (window.ProjectIterationPanel) {
-      window.ProjectIterationPanel.mount({
-        records: window.ProjectIterationData?.records || [],
-        persistToProjectCode: true
-      });
-      return;
-    }
-    loadToolkitScript(toolkitAssets.theme, 'theme')
-      .then(() => loadToolkitScript(toolkitAssets.iterationData, 'data'))
-      .then(() => loadToolkitScript(toolkitAssets.iteration, 'component'))
-      .then(() => window.ProjectIterationPanel?.mount({
-        records: window.ProjectIterationData?.records || [],
-        persistToProjectCode: true
-      }))
-      .catch(() => {
-        // 面板资源加载失败时不影响当前业务页面继续使用。
-      });
-  }
-
-  mountProjectIterationPanel();
-})();

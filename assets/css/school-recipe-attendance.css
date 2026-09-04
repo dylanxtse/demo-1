@@ -111,7 +111,7 @@
 .school-recipe-attendance-demand-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); }
 .school-recipe-attendance-demand-section > header { margin-bottom: 12px; }
 .school-recipe-attendance-table-wrap { overflow: auto; border: 1px solid var(--border-light); border-radius: 4px; }
-.school-recipe-attendance-table { width: 100%; min-width: 880px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.school-recipe-attendance-table { width: 100%; min-width: 970px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
 .school-recipe-attendance-table th,
 .school-recipe-attendance-table td { height: 42px; padding: 6px 8px; border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); color: #526073; text-align: center; vertical-align: middle; }
 .school-recipe-attendance-table th { height: 38px; color: #687486; background: #fafbfc; font-weight: 500; white-space: nowrap; }
@@ -133,6 +133,15 @@
 .school-recipe-attendance-table .col-unit { width: 54px; }
 .school-recipe-attendance-table .col-quantity { width: 92px; }
 .school-recipe-attendance-table .col-total { width: 92px; }
+.school-recipe-attendance-table .col-purchase { width: 96px; }
+.school-recipe-attendance-meal-table tbody td,
+.school-recipe-attendance-table tbody td,
+.school-recipe-attendance-meal-table tbody td strong,
+.school-recipe-attendance-table tbody td strong { font-weight: 400; text-align: center; }
+.school-recipe-attendance-meal-table .school-recipe-attendance-meal-name,
+.school-recipe-attendance-meal-table .school-recipe-attendance-dish-cell { text-align: center !important; }
+.school-recipe-attendance-meal-table .school-recipe-attendance-meal-name strong,
+.school-recipe-attendance-table .school-recipe-attendance-product-name { font-weight: 400; }
 .school-recipe-attendance-empty,
 .school-recipe-attendance-detail-empty { display: flex; min-height: 220px; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 13px; }
 .school-recipe-attendance-detail-empty { flex: 1; flex-direction: column; gap: 12px; }

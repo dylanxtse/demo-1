@@ -56,9 +56,16 @@
     if (!earliest) return '';
     const date = dateObject(earliest);
     date.setDate(date.getDate() - 1);
-    return dateValue(date);
+    return `${dateValue(date)} 07:30:00`;
   };
   const dateOnly = (value) => String(value || '').trim().slice(0, 10);
+  const normalizeExpectedAt = (value) => {
+    const text = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) return text;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(text)) return `${text}:00`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${text} 07:30:00`;
+    return '';
+  };
   const earliestDate = (dates = []) => [...new Set(dates)].sort()[0] || '';
   const expectedAtIsAllowed = (value, dates = []) => {
     const selected = dateOnly(value);
@@ -82,6 +89,14 @@
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
+  const productDisplay = (item) => window.DomUtils?.formatProductDisplay
+    ? window.DomUtils.formatProductDisplay(item)
+    : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
+  const purchaseQuantity = (item) => {
+    const value = item?.purchaseQty == null || item.purchaseQty === '' ? item?.totalQty : item.purchaseQty;
+    const amount = Number(value);
+    return Number.isFinite(amount) ? Math.ceil(amount) : 0;
+  };
   const currentCanteen = window.AppStorage?.read?.('school-recipe-current-canteen', window.SchoolOrderService?.CANTEEN_NAME || '第一食堂') || window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
   const calendarIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg>';
   const weekday = (date) => weekdayNames[dateObject(date).getDay()];
@@ -175,7 +190,7 @@
         const detailId = `schoolRecipeDemandConfirmDateDetail${index}`;
         return `<tr class="school-recipe-demand-date-row">
       <td class="school-recipe-demand-date-expand-cell"><button type="button" class="school-recipe-demand-date-expand-button" data-action="toggle-date" data-date="${escapeHtml(summary.date)}" aria-expanded="false" aria-controls="${detailId}" aria-label="展开 ${escapeHtml(summary.date)} 的餐次填报记录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button></td>
-      <td><strong>${escapeHtml(dateLabel(summary.date))}</strong></td>
+      <td>${escapeHtml(dateLabel(summary.date))}</td>
       <td>${escapeHtml(filledMealNames(summary))}</td>
       <td>${escapeHtml(recipeName(summary.menu?.name || summary.menu?.version || '--'))}</td>
       <td class="is-number">${number(summary.calculation.totalStudentPeople)}</td>
@@ -196,16 +211,16 @@
       .map((row, index) => `<tr>
         <td>${index + 1}</td>
         <td class="school-recipe-demand-ingredient-name">${escapeHtml((row.ingredientNames || []).join('、') || '--')}</td>
-        <td class="school-recipe-demand-product-name">${escapeHtml(row.productName || '--')}</td>
+        <td class="school-recipe-demand-product-name">${escapeHtml(productDisplay(row))}</td>
         <td>${escapeHtml(row.productCode || '--')}</td>
         <td>${escapeHtml(row.unit || '--')}</td>
         <td class="is-number">${quantity(row.studentQty)}</td>
         <td class="is-number">${quantity(row.teacherQty)}</td>
         <td class="is-number is-total">${quantity(row.totalQty)}</td>
-        <td>${escapeHtml((row.sourceDates || []).map((date) => date.slice(5)).join('、') || '--')}</td>
+        <td class="is-number">${quantity(purchaseQuantity(row))}</td>
       </tr>`).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"><col class="col-source-date"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>采购商品</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教职工需求量</th><th>需求总量</th><th>来源日期</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教职工需求量</th><th>需求总量</th><th>采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">当前选中日期暂无可提交的商品需求</div>';
   }
 
@@ -220,7 +235,7 @@
         <section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderDateSummaryTable(preview)}</section>
         <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>${renderProductTable(preview)}</section>
       </div>
-      <footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit" ${preview.canSubmit && expectedAtIsAllowed(state.expectedAt, preview.dates) && !state.submitting ? '' : 'disabled'}>${state.submitting ? '提交中…' : '提交需求'}</button></footer>
+      <footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit" ${preview.canSubmit && expectedAtIsAllowed(state.expectedAt, preview.dates) && !state.submitting ? '' : 'disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer>
     </main>`;
   }
 
@@ -244,9 +259,11 @@
     expectedAtPicker = window.DatePicker.mount({
       input,
       panelId: 'schoolRecipeExpectedAtPickerPanel',
+      withTime: true,
       maxDate: earliest,
       onChange(value) {
-        const selected = dateOnly(value);
+        const nextValue = normalizeExpectedAt(value);
+        const selected = dateOnly(nextValue);
         if (!selected || !expectedAtIsAllowed(selected, preview.dates)) {
           state.expectedAt = defaultExpectedAt(preview.dates);
           state.expectedAtManuallyChanged = false;
@@ -254,10 +271,55 @@
           if (selected) showToast('期望送达时间不能晚于最早用料日期', true);
           return;
         }
-        state.expectedAt = selected;
+        state.expectedAt = nextValue;
         state.expectedAtManuallyChanged = true;
       }
     });
+  }
+
+  function closeSubmitConfirm() {
+    document.querySelector('#schoolRecipeDemandSubmitModal')?.remove();
+  }
+
+  function submitFromConfirm(preview, modal) {
+    const confirmButton = modal.querySelector('[data-modal-confirm]');
+    if (!confirmButton || state.submitting) return;
+    state.submitting = true;
+    confirmButton.disabled = true;
+    confirmButton.textContent = '提交中…';
+    modal.querySelector('[data-modal-cancel]')?.setAttribute('disabled', 'disabled');
+    demandService.submit([...state.selectedDates], { expectedAt: state.expectedAt })
+      .then(() => {
+        closeSubmitConfirm();
+        showToast('操作成功');
+        window.setTimeout(() => navigate('./school-recipe-attendance.html'), 700);
+      })
+      .catch((error) => {
+        state.submitting = false;
+        closeSubmitConfirm();
+        renderBody();
+        showToast(error.message || '提交失败，请稍后重试', true);
+      });
+  }
+
+  function openSubmitConfirm(preview) {
+    closeSubmitConfirm();
+    const backdrop = document.createElement('div');
+    backdrop.id = 'schoolRecipeDemandSubmitModal';
+    backdrop.className = 'operations-modal-backdrop';
+    backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-demand-submit-modal" role="dialog" aria-modal="true" aria-label="提示">
+      <header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header>
+      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteen)}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div><div class="info-item"><span class="info-label">期望送达时间：</span><span class="info-value">${escapeHtml(state.expectedAt || '--')}</span></div></div></div></div>
+      <footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer>
+    </section>`;
+    document.body.appendChild(backdrop);
+    const modal = backdrop.querySelector('.school-recipe-demand-submit-modal');
+    const close = () => { if (!state.submitting) closeSubmitConfirm(); };
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop || event.target.closest('[data-modal-close], [data-modal-cancel]')) close();
+    });
+    modal.querySelector('[data-modal-confirm]')?.addEventListener('click', () => submitFromConfirm(preview, modal));
+    modal.querySelector('[data-modal-confirm]')?.focus();
   }
 
   function renderBody() {
@@ -339,16 +401,7 @@
       showToast('请选择不晚于最早用料日期的期望送达时间', true);
       return;
     }
-    state.submitting = true;
-    renderBody();
-    try {
-      const result = await demandService.submit([...state.selectedDates], { expectedAt: state.expectedAt });
-      navigate(`./school-recipe-demand-record-detail.html?id=${encodeURIComponent(result.record.id)}`);
-    } catch (error) {
-      state.submitting = false;
-      renderBody();
-      showToast(error.message || '提交失败，请稍后重试', true);
-    }
+    openSubmitConfirm(preview);
   });
 
   renderBody();
