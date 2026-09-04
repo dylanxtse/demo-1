@@ -57,6 +57,32 @@
           }
         }
       }
+    ],
+    "school-recipe-demand-confirm.html::schoolRecipeDemandConfirmPage": [
+      {
+        "id": "custom-1788504784231-1",
+        "target": "custom",
+        "targetSelector": "#schoolRecipeDemandConfirmPage",
+        "placement": "right",
+        "scope": "page",
+        "title": "期望送达时间",
+        "items": [
+          "默认为用料日期中最早的一天的前一天"
+        ],
+        "number": "1",
+        "positionByScope": {
+          "page": {
+            "markerPosition": {
+              "x": 560,
+              "y": 87
+            },
+            "popoverPosition": {
+              "x": 31,
+              "y": -75
+            }
+          }
+        }
+      }
     ]
   }
 };
