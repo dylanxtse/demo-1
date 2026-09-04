@@ -7,7 +7,7 @@
   document.head.appendChild(link);
 })();
 
-/* 工具包显示状态：当前项目只启用空工具容器，不加载任何旧项目数据。 */
+/* 工具包保留在项目中，但默认不展示标注和迭代面板。 */
 (function () {
   const styleAttribute = 'data-prototype-tools-display-style';
   const setVisible = (visible) => {
@@ -48,7 +48,7 @@
     hide: () => setVisible(false)
   };
 
-  setVisible(true);
+  setVisible(false);
 
   const annotationHiddenStyle = document.createElement('style');
   annotationHiddenStyle.dataset.prototypeToolsAnnotationHidden = 'true';
@@ -57,7 +57,8 @@
     .record-annotation-marker,
     .record-annotation-mode-toggle,
     .project-iteration-annotation-visibility-toggle,
-    .project-iteration-annotation-mode-host {
+    .project-iteration-annotation-mode-host,
+    .project-iteration-panel-root {
       display: none !important;
     }
   `;
