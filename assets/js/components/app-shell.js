@@ -470,8 +470,9 @@ const toolkitAssets = Object.freeze({
   theme: './assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1',
   annotation: './assets/js/prototype-tools/src/annotation-overlay.js?v=20260904-display-1',
   componentsStyles: './assets/js/prototype-tools/src/components.css?v=20260904-display-1',
-  iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-display-1',
-  iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260904-display-1'
+  iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1',
+  iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260904-display-1',
+  iterationData: './assets/js/data/project-iteration-records.js?v=20260904-ganxian-1'
 });
 
 function loadToolkitScript(src, marker) {
@@ -538,13 +539,15 @@ function scheduleAnnotationOverlayMount(pageRoot) {
 function mountProjectIterationPanel() {
   appendToolkitStyles();
   loadToolkitScript(toolkitAssets.theme, 'theme')
+    .then(() => loadToolkitScript(toolkitAssets.iterationData, 'iteration-data'))
     .then(() => loadToolkitScript(toolkitAssets.iteration, 'iteration'))
     .then(() => window.ProjectIterationPanel?.mount({
-      records: [],
+      records: window.ProjectIterationData?.records || [],
+      data: window.ProjectIterationData,
+      platforms: window.ProjectIterationData?.platforms || [],
       projectId: 'school-procurement-new-project',
       storageKey: 'school-procurement-new-project-iteration-records-v1',
       platformStorageKey: 'school-procurement-new-project-iteration-platforms-v1',
-      syncGlobalData: false,
       persistToProjectCode: false,
       annotationMarkersVisible: true
     }))

@@ -33,6 +33,10 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+  const renderDescription = (value) => escapeHtml(value)
+    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\r?\n/g, '<br>');
+
   const stripDescriptionNumbering = (value) => String(value ?? '')
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*\d+\s*[、.．)]\s*/, ''))
@@ -564,7 +568,7 @@
               ${(Array.isArray(change.items) ? change.items : []).map((item) => `
                 <div class="project-iteration-record-pair">
                   <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row><span>涉及功能</span><strong>${escapeHtml(item.feature)}</strong></div>
-                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text>${escapeHtml(item.description)}</p></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text>${renderDescription(item.description)}</p></div>
                 </div>`).join('')}
             </section>`).join('')}
           </div>
@@ -624,7 +628,7 @@
         ${readonly ? `
           <div class="project-iteration-change-pair-readonly">
             <div class="project-iteration-change-pair-readonly-row"><span>涉及功能</span><strong>${escapeHtml(item.feature || '')}</strong></div>
-            <div class="project-iteration-change-pair-readonly-row"><span>描述</span><p>${escapeHtml(item.description || '')}</p></div>
+            <div class="project-iteration-change-pair-readonly-row"><span>描述</span><p>${renderDescription(item.description || '')}</p></div>
           </div>
           <input type="hidden" data-project-iteration-platform-feature data-platform="${escapeHtml(option)}" value="${escapeHtml(item.feature || '')}">
           <input type="hidden" data-project-iteration-platform-description data-platform="${escapeHtml(option)}" value="${escapeHtml(item.description || '')}">` : `
