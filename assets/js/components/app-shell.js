@@ -469,6 +469,7 @@ window.QueryFilterLayout = { mount, refresh };
 const toolkitAssets = Object.freeze({
   theme: './assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1',
   annotation: './assets/js/prototype-tools/src/annotation-overlay.js?v=20260904-display-1',
+  annotationData: './assets/js/data/project-annotation-data.js?v=20260904-save-1',
   componentsStyles: './assets/js/prototype-tools/src/components.css?v=20260904-display-1',
   iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1',
   iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260904-display-1',
@@ -522,11 +523,12 @@ function appendToolkitStyles() {
 function scheduleAnnotationOverlayMount(pageRoot) {
   if (!pageRoot) return;
   window.setTimeout(() => {
-    loadToolkitScript(toolkitAssets.annotation, 'annotation-overlay')
+    loadToolkitScript(toolkitAssets.annotationData, 'annotation-data')
+      .then(() => loadToolkitScript(toolkitAssets.annotation, 'annotation-overlay'))
       .then(() => {
         if (!pageRoot.isConnected || pageRoot.__annotationOverlayController) return;
         window.AnnotationOverlay?.mount(pageRoot, [], {
-          data: { pages: {} },
+          data: window.PrototypeAnnotationData || { pages: {} },
           markersVisible: true
         });
       })
@@ -548,7 +550,7 @@ function mountProjectIterationPanel() {
       projectId: 'school-procurement-new-project',
       storageKey: 'school-procurement-new-project-iteration-records-v1',
       platformStorageKey: 'school-procurement-new-project-iteration-platforms-v1',
-      persistToProjectCode: false,
+      persistToProjectCode: true,
       annotationMarkersVisible: true
     }))
     .catch(() => {

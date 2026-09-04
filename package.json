@@ -3,6 +3,7 @@
   "version": "3.0.0",
   "private": true,
   "scripts": {
+    "save-server": "node scripts/project-code-save-server.cjs",
     "test": "npm run test:data && npm run test:e2e",
     "test:data": "node --test tests/data-contract.test.cjs",
     "test:e2e": "playwright test",
