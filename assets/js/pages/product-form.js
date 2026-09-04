@@ -14,6 +14,7 @@
   const isEditMode = !isViewMode && (pageMode === 'edit' || Boolean(productId));
   const pageTitle = isViewMode ? '商品详情' : (isEditMode ? '编辑商品' : '添加商品');
   const editLockedFields = ['category', 'name', 'unit', 'isNetVegetable'];
+  const enterpriseLockedFields = ['correspondingFood'];
   let previousPurchaseType = '供应商送货';
   const template = document.getElementById('productFormTemplate');
 
@@ -212,10 +213,17 @@
   }
 
   function updateEditLockedFields() {
-    editLockedFields.forEach((fieldName) => {
+    const lockedFields = isSupplierProductPage ? editLockedFields : [...editLockedFields, ...enterpriseLockedFields];
+    lockedFields.forEach((fieldName) => {
       const field = document.getElementById(fieldName);
       if (field) field.disabled = isEditMode || isViewMode;
     });
+    if (!isSupplierProductPage) {
+      enterpriseLockedFields.forEach((fieldName) => {
+        const field = document.getElementById(fieldName);
+        if (field) field.disabled = true;
+      });
+    }
     if (!isViewMode) return;
     form.querySelectorAll('input, select, textarea').forEach((field) => { field.disabled = true; });
     form.querySelectorAll('.number-stepper-button, [data-action="choose-image"]').forEach((button) => { button.disabled = true; });
