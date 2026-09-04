@@ -19,8 +19,7 @@
     useGrouping: false
   });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: false });
-  const purchaseQuantity = (item) => {
-    const value = item?.purchaseQty == null || item.purchaseQty === '' ? item?.totalQty : item.purchaseQty;
+  const purchaseQuantity = (value) => {
     const amount = Number(value);
     return Number.isFinite(amount) ? Math.ceil(amount) : 0;
   };
@@ -276,11 +275,11 @@
       <td>${escapeHtml(row.productCode || '--')}</td>
       <td>${escapeHtml(row.unit)}</td>
       <td class="is-number">${quantity(row.studentQty)}</td>
+      <td class="is-number">${purchaseQuantity(row.studentQty)}</td>
       <td class="is-number">${quantity(row.teacherQty)}</td>
-      <td class="is-number is-total">${quantity(row.totalQty)}</td>
-      <td class="is-number">${quantity(purchaseQuantity(row))}</td>
+      <td class="is-number">${purchaseQuantity(row.teacherQty)}</td>
     </tr>`).join('');
-    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教职工需求量</th><th>需求总量</th><th>采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
+    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-purchase"><col class="col-quantity"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>学生采购数量</th><th>教职工需求量</th><th>教职工采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
   }
 
   function renderAttendanceDetail(menu) {
@@ -349,7 +348,7 @@
       ${renderModeTabs()}
       ${renderCanteenTabs()}
       ${overview}
-      <div class="school-recipe-meal-grid">${meals.length ? meals.map((meal) => renderMealCard(meal, menu.date)).join('') : '<div class="school-recipe-empty">当前日期暂无餐次菜谱</div>'}</div>
+      <div class="school-recipe-meal-grid${meals.length > 3 ? ' is-scrollable' : ''}">${meals.length ? meals.map((meal) => renderMealCard(meal, menu.date)).join('') : '<div class="school-recipe-empty">当前日期暂无餐次菜谱</div>'}</div>
     </main>`;
   }
 
@@ -502,29 +501,6 @@
     showToast.timer = window.setTimeout(() => toast.remove(), 1800);
   }
 
-  function openIncompleteMealConfirm(meals, onConfirm) {
-    document.querySelector('#schoolRecipeAttendanceIncompleteMealModal')?.remove();
-    const backdrop = document.createElement('div');
-    backdrop.id = 'schoolRecipeAttendanceIncompleteMealModal';
-    backdrop.className = 'operations-modal-backdrop';
-    backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-attendance-incomplete-modal" role="dialog" aria-modal="true" aria-label="提示">
-      <header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header>
-      <div class="operations-modal-body"><p>以下餐次合计人数为0：${meals.map(escapeHtml).join('、')}，未填写学生或教职工人数，是否继续确认需求？</p></div>
-      <footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer>
-    </section>`;
-    document.body.appendChild(backdrop);
-    const modal = backdrop.querySelector('.school-recipe-attendance-incomplete-modal');
-    const close = () => backdrop.remove();
-    backdrop.addEventListener('click', (event) => {
-      if (event.target === backdrop || event.target.closest('[data-modal-close], [data-modal-cancel]')) close();
-    });
-    modal.querySelector('[data-modal-confirm]')?.addEventListener('click', () => {
-      close();
-      onConfirm?.();
-    });
-    modal.querySelector('[data-modal-confirm]')?.focus();
-  }
-
   const content = `<section class="page-card school-recipe-center-page" id="schoolRecipeCenterPage" aria-label="营养食谱与需求">
     <div class="school-recipe-center-body" id="schoolRecipeCenterBody"></div>
   </section>`;
@@ -668,18 +644,11 @@
         showToast(validation.message || '请先完成当前日期填报', true);
         return;
       }
-      const saveAndNavigate = () => {
-        const saved = attendanceService.save(state.selectedDate, state.attendance.meals, menu.version || service.MENU_VERSION);
-        state.attendance = clone(saved);
-        state.attendanceByDate[state.selectedDate] = clone(saved);
-        if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
-        else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
-      };
-      if (validation.missingMeals.length) {
-        openIncompleteMealConfirm(validation.missingMeals, saveAndNavigate);
-        return;
-      }
-      saveAndNavigate();
+      const saved = attendanceService.save(state.selectedDate, state.attendance.meals, menu.version || service.MENU_VERSION);
+      state.attendance = clone(saved);
+      state.attendanceByDate[state.selectedDate] = clone(saved);
+      if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
+      else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
     }
   });
 

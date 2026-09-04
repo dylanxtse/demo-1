@@ -74,9 +74,7 @@
   function renderOrderRows() {
     return (record.orders || []).map((order) => {
       const orderNumber = escapeHtml(order.orderNo || '--');
-      const orderCell = record.demoOnly
-        ? `<span class="school-recipe-demand-order-number">${orderNumber}</span>`
-        : `<button type="button" class="school-recipe-demand-order-link" data-action="order" data-id="${escapeHtml(order.orderId)}">${orderNumber}</button>`;
+      const orderCell = `<button type="button" class="school-recipe-demand-order-link" data-action="order" data-id="${escapeHtml(order.orderId)}">${orderNumber}</button>`;
       return `<tr><td>${orderCell}</td><td>${escapeHtml(order.date || '--')}</td><td>${escapeHtml(order.participantType || '--')}</td><td>${escapeHtml(order.orderTag || '--')}</td></tr>`;
     }).join('') || '<tr><td colspan="4" class="school-recipe-demand-record-detail-empty-cell">暂无关联订单</td></tr>';
   }

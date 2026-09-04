@@ -1093,17 +1093,17 @@
       outputWarehouse: '中心仓',
       status: '已加工',
       operator: '管理员',
-      remark: '三种净菜按5:3:2比例组合包装',
+      remark: '三种非净菜原料按5:3:2比例组合加工为什锦配菜',
       costMode: 'auto',
       templateId: 'PP005',
       templateName: '什锦配菜组合方案',
       materials: [
-        { productCode: 'SP0300050', productName: '土豆块', unit: '斤', stock: 90, avgPrice: 5.20, consumeQty: 25 },
-        { productCode: 'SP0300055', productName: '胡萝卜片', unit: '斤', stock: 75, avgPrice: 4.60, consumeQty: 15 },
-        { productCode: 'SP0300058', productName: '青椒块', unit: '斤', stock: 60, avgPrice: 6.80, consumeQty: 10 }
+        { productCode: 'SP0300040', productName: '土豆', unit: '斤', stock: 220, avgPrice: 3.20, consumeQty: 25 },
+        { productCode: 'SP0300053', productName: '胡萝卜', unit: '斤', stock: 100, avgPrice: 2.80, consumeQty: 15 },
+        { productCode: 'SP0300056', productName: '青椒', unit: '斤', stock: 120, avgPrice: 4.50, consumeQty: 10 }
       ],
       outputs: [
-        { productCode: 'SP0300059', productName: '什锦配菜', unit: '斤', refCoefficient: 1, refQty: 50, actualQty: 49, allocatedCost: '267.00', costPrice: '5.45' }
+        { productCode: 'SP0300059', productName: '什锦配菜', unit: '斤', refCoefficient: 1, refQty: 50, actualQty: 49, allocatedCost: '161.50', costPrice: '3.30' }
       ],
       createTime: '2026-08-30 14:00:00',
       attachments: [
@@ -1145,6 +1145,38 @@
       operationLogs: [
         { action: '创建', operator: '杨师傅', desc: '杨师傅 创建加工单 2026-08-30 15:00:00' },
         { action: '提交审核', operator: '杨师傅', desc: '杨师傅 提交审核 2026-08-30 15:05:00' }
+      ]
+    },
+    {
+      id: 'JGD202608300300007',
+      processingDate: '2026-08-30',
+      customerCode: '03',
+      warehouse: '中心仓',
+      materialWarehouse: '中心仓',
+      outputWarehouse: '中心仓',
+      status: '已驳回',
+      operator: '杨师傅',
+      remark: '大白菜去老叶、去根后分切，驳回后待重新提交',
+      costMode: 'auto',
+      templateId: 'PP002',
+      templateName: '大白菜切配方案',
+      materials: [
+        { productCode: 'SP0300019', productName: '大白菜', unit: '斤', stock: 180, avgPrice: 2.20, consumeQty: 60 }
+      ],
+      outputs: [
+        { productCode: 'SP0300051', productName: '白菜段', unit: '斤', refCoefficient: 0.55, refQty: 33, actualQty: 32, allocatedCost: '81.23', costPrice: '2.54' },
+        { productCode: 'SP0300052', productName: '白菜丝', unit: '斤', refCoefficient: 0.35, refQty: 21, actualQty: 20, allocatedCost: '50.77', costPrice: '2.54' }
+      ],
+      createTime: '2026-08-30 16:00:00',
+      submittedAt: '2026-08-30 16:05:00',
+      auditedAt: '2026-08-30 16:10:00',
+      auditResult: '驳回',
+      auditOperator: '管理员',
+      attachments: [],
+      operationLogs: [
+        { action: '创建', operator: '杨师傅', desc: '杨师傅 创建加工单 2026-08-30 16:00:00' },
+        { action: '提交审核', operator: '杨师傅', desc: '杨师傅 提交审核 2026-08-30 16:05:00' },
+        { action: '审核', operator: '管理员', result: '驳回', desc: '管理员 审核驳回 2026-08-30 16:10:00' }
       ]
     },
     {
@@ -1334,11 +1366,11 @@
       id: 'PP005',
       name: '什锦配菜组合方案',
       relationType: 'many-to-one',
-      description: '土豆块、胡萝卜片和青椒块按5:3:2比例组合包装为什锦配菜',
+      description: '土豆、胡萝卜和青椒按5:3:2比例加工组合为什锦配菜',
       materials: [
-        { warehouse: '中心仓', productCode: 'SP0300050', productName: '土豆块', unit: '斤', refConsumeQty: 0.5 },
-        { warehouse: '中心仓', productCode: 'SP0300055', productName: '胡萝卜片', unit: '斤', refConsumeQty: 0.3 },
-        { warehouse: '中心仓', productCode: 'SP0300058', productName: '青椒块', unit: '斤', refConsumeQty: 0.2 }
+        { warehouse: '中心仓', productCode: 'SP0300040', productName: '土豆', unit: '斤', refConsumeQty: 0.5 },
+        { warehouse: '中心仓', productCode: 'SP0300053', productName: '胡萝卜', unit: '斤', refConsumeQty: 0.3 },
+        { warehouse: '中心仓', productCode: 'SP0300056', productName: '青椒', unit: '斤', refConsumeQty: 0.2 }
       ],
       outputs: [
         { warehouse: '中心仓', productCode: 'SP0300059', productName: '什锦配菜', unit: '斤' }

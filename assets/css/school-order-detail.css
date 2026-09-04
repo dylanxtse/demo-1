@@ -9,6 +9,9 @@
   background: #fff;
 }
 
+/* 学校端订单下钻沿用原订单详情页的结构；底部返回栏仍保留学校端入口。 */
+.school-order-detail-page .processing-detail-page-body { padding-bottom: 86px; }
+
 .school-order-detail-header {
   display: flex;
   min-height: 50px;
@@ -173,23 +176,6 @@
 .school-order-detail-table .detail-goods-name .net-vegetable-tag { vertical-align: middle; }
 .school-order-detail-table .detail-empty { color: #9aa4b2; }
 .school-order-detail-table .detail-trace-code { color: #2b74bf; }
-
-.school-order-recipe-record-item .school-order-recipe-record-link {
-  max-width: 210px;
-  overflow: hidden;
-  border: 0;
-  padding: 0;
-  color: #2b74bf;
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  text-overflow: ellipsis;
-  vertical-align: middle;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.school-order-recipe-record-item .school-order-recipe-record-link:hover { text-decoration: underline; }
 
 .school-order-detail-page .school-order-image-placeholder {
   display: inline-flex;

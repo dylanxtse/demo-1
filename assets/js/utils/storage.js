@@ -841,7 +841,7 @@
   }
 
   function resetProcessingModuleData(state) {
-    const revision = 'processing-module-v1';
+    const revision = 'processing-module-v2';
     if (state.processingModuleSeedRevision === revision) return false;
     state.processingTemplates = clone(window.MockProcessingTemplates || []);
     state.processingOrders = clone(window.MockProcessingOrders || []);
@@ -863,13 +863,42 @@
     return changed;
   }
 
-  function seedProcessingAuditDemo(state) {
-    const demoId = 'JGD202608300300006';
+  function seedProcessingDemoRecords(state) {
+    const revision = 'processing-edit-demo-v2';
+    const auditDemoId = 'JGD202608300300006';
+    const editDemoId = 'JGD202608300300007';
     if (!Array.isArray(state.processingOrders)) state.processingOrders = [];
-    if (state.processingOrders.some((record) => record.id === demoId)) return false;
-    const source = (window.MockProcessingOrders || []).find((record) => record.id === demoId);
-    if (!source) return false;
-    state.processingOrders.push(clone(source));
+    const seedOrders = window.MockProcessingOrders || [];
+    const auditSource = seedOrders.find((record) => record.id === auditDemoId);
+    const editSource = seedOrders.find((record) => record.id === editDemoId);
+    if (!auditSource || !editSource) return false;
+    if (state.processingEditDemoSeedRevision === revision) return false;
+
+    state.processingOrders = state.processingOrders.filter((record) => record.demoEdit !== true);
+
+    const auditRecord = state.processingOrders.find((record) => record.id === auditDemoId);
+    if (!auditRecord) {
+      state.processingOrders.push(clone(auditSource));
+    } else {
+      auditRecord.status = auditSource.status;
+      auditRecord.auditedAt = '';
+      auditRecord.auditResult = '';
+      delete auditRecord.auditOperator;
+      auditRecord.operationLogs = clone(auditSource.operationLogs || []);
+    }
+
+    const editRecord = state.processingOrders.find((record) => record.id === editDemoId);
+    if (!editRecord) {
+      state.processingOrders.push(clone(editSource));
+    } else {
+      editRecord.status = editSource.status;
+      editRecord.auditedAt = editSource.auditedAt || '';
+      editRecord.auditResult = editSource.auditResult || '';
+      editRecord.auditOperator = editSource.auditOperator || '管理员';
+      editRecord.operationLogs = clone(editSource.operationLogs || []);
+    }
+
+    state.processingEditDemoSeedRevision = revision;
     return true;
   }
 
@@ -951,7 +980,7 @@
 
   function normalizeStateContracts(state) {
     const rules = window.BusinessRules;
-    let changed = seedProcessingAuditDemo(state);
+    let changed = seedProcessingDemoRecords(state);
     changed = ensureProcessingDemoData(state) || changed;
     const fixes = [];
     const mark = (resource, field, from, to) => {

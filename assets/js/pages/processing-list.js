@@ -197,18 +197,19 @@
   /* ===== 页面骨架 HTML ===== */
   const workspaceHTML = `
     <div class="page-card processing-workspace">
-      <div class="processing-template-panel">
-        <div class="template-panel-header">
-          <span class="template-panel-title">加工方案</span>
-          <button class="btn btn-sm btn-blue" type="button" data-action="create-template">${addIcon}新增方案</button>
-        </div>
-        <div class="template-search">
-          <input class="template-search-input" id="templateSearch" placeholder="搜索加工方案名称/编号" type="text">
-          <span class="template-search-icon" aria-hidden="true">${searchIcon}</span>
-        </div>
-        <div class="template-list" id="templateList"></div>
-      </div>
+      <div id="operationModeTabs"></div>
       <div class="processing-operation-panel" id="operationPanel">
+        <div class="processing-template-panel">
+          <div class="template-panel-header">
+            <span class="template-panel-title">加工方案</span>
+            <button class="btn btn-sm btn-blue" type="button" data-action="create-template">${addIcon}新增方案</button>
+          </div>
+          <div class="template-search">
+            <input class="template-search-input" id="templateSearch" placeholder="搜索加工方案名称/编号" type="text">
+            <span class="template-search-icon" aria-hidden="true">${searchIcon}</span>
+          </div>
+          <div class="template-list" id="templateList"></div>
+        </div>
         <div class="operation-form" id="operationForm"></div>
       </div>
     </div>
@@ -283,6 +284,13 @@
     return state.products.find((p) => p.code === code) || null;
   }
 
+  function isProductTypeAllowed(fieldType, product) {
+    if (!product) return false;
+    return fieldType === 'output'
+      ? product.isNetVegetable === true
+      : product.isNetVegetable === false;
+  }
+
   function getProductDisplayData(item = {}, code = '') {
     const product = findProduct(code || item.productCode || item.goodsCode || item.code);
     return {
@@ -332,7 +340,8 @@
     const selectedProduct = selectedCode ? findProduct(selectedCode) : null;
     const netTag = selectedProduct?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
     const displayText = selectedProduct ? escapeHtml(formatProductDisplay(selectedProduct)) : '';
-    const closedDisplayText = selectedProduct ? displayText : '请选择';
+    const closedDisplayText = selectedProduct ? displayText : (fieldType === 'output' ? '请选择净菜商品' : '请选择非净菜商品');
+    const selectableProducts = state.products.filter((product) => isProductTypeAllowed(fieldType, product));
     const isManyToOneMaterial = fieldType === 'material'
       && state.templateEditData?.relationType === 'many-to-one';
     const selectedOutputCodes = fieldType === 'output'
@@ -353,7 +362,7 @@
         </div>
         <div class="custom-select-dropdown">
           <div class="product-select-options">
-            ${state.products.map((p) => {
+            ${selectableProducts.map((p) => {
               const tag = p.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
               const isDuplicate = fieldType === 'output'
                 ? p.code !== selectedCode && selectedOutputCodes.includes(p.code)
@@ -362,7 +371,7 @@
                   : false;
               return `<div class="custom-select-option ${p.code === selectedCode ? 'selected' : ''} ${isDuplicate ? 'is-disabled' : ''}" data-value="${escapeHtml(p.code)}" data-search-text="${escapeHtml(getProductSearchText(p))}" data-disabled="${isDuplicate}" data-action="select-product">${tag}${escapeHtml(formatProductDisplay(p))}</div>`;
             }).join('')}
-            ${isTemplateProduct ? '<div class="product-select-empty">暂无商品</div>' : ''}
+            ${isTemplateProduct ? `<div class="product-select-empty">暂无${fieldType === 'output' ? '净菜' : '非净菜'}商品</div>` : ''}
           </div>
         </div>
       </div>
@@ -386,12 +395,17 @@
 
   function renderOperationModeTabs() {
     return `
-      <div class="operation-mode-tabs" role="tablist" aria-label="加工模式">
+      <div class="operation-mode-tabs" id="operationModeTabs" role="tablist" aria-label="加工模式">
         <button class="operation-mode-tab ${state.operationMode === 'plan' ? 'active' : ''}" type="button" role="tab" aria-selected="${state.operationMode === 'plan'}" data-action="switch-operation-mode" data-mode="plan">按计划加工</button>
         <button class="operation-mode-tab ${state.operationMode === 'order' ? 'active' : ''}" type="button" role="tab" aria-selected="${state.operationMode === 'order'}" data-action="switch-operation-mode" data-mode="order">按订单加工</button>
         <button class="btn btn-sm btn-fixed operation-record-button" type="button" data-action="goto-records">${recordIcon}加工记录</button>
       </div>
     `;
+  }
+
+  function refreshOperationModeTabs() {
+    const tabs = document.getElementById('operationModeTabs');
+    if (tabs) tabs.outerHTML = renderOperationModeTabs();
   }
 
   function renderOperationEmpty() {
@@ -568,8 +582,7 @@
     if (!tpl) {
       form.style.display = 'flex';
       form.classList.toggle('is-order-mode', state.operationMode === 'order');
-      form.innerHTML = renderOperationModeTabs()
-        + (state.operationMode === 'order' ? renderOrderProcessingContext() : '')
+      form.innerHTML = (state.operationMode === 'order' ? renderOrderProcessingContext() : '')
         + renderOperationEmpty();
       if (state.operationMode === 'order') mountOrderProcessingDatePicker();
       bindOperationFormEvents();
@@ -582,7 +595,6 @@
     const isManyToOne = tpl.relationType === 'many-to-one';
     const showOrderDemandColumns = state.operationMode === 'order';
     form.innerHTML = `
-      ${renderOperationModeTabs()}
       ${state.operationMode === 'order' ? renderOrderProcessingContext() : ''}
       <div class="operation-form-header">
         <div class="operation-form-title-group">
@@ -2137,6 +2149,10 @@
       alert('至少配置1条原料');
       return;
     }
+    if (validMaterials.some((material) => !isProductTypeAllowed('material', findProduct(material.productCode)))) {
+      alert('原料只能选择非净菜商品');
+      return;
+    }
     if (validMaterials.length > MATERIAL_LIMIT) { alert(`原料最多添加${MATERIAL_LIMIT}条`); return; }
     if (relationType === 'many-to-one') {
       const materialCodes = validMaterials.map((material) => material.productCode);
@@ -2160,6 +2176,10 @@
       }));
     if (validOutputs.length === 0) {
       alert('成品商品不能为空');
+      return;
+    }
+    if (validOutputs.some((output) => !isProductTypeAllowed('output', findProduct(output.productCode)))) {
+      alert('成品只能选择净菜商品');
       return;
     }
     if (relationType === 'many-to-one' && validOutputs.length !== 1) {
@@ -2309,6 +2329,26 @@
       if (!actionEl) return;
       const action = actionEl.dataset.action;
 
+      if (action === 'switch-operation-mode') {
+        state.operationMode = actionEl.dataset.mode || 'plan';
+        if (state.operationMode !== 'order') {
+          state.orderDemandQueryActive = false;
+          state.orderDemandProducts = [];
+          state.missingOrderDemandProducts = [];
+        }
+        refreshOperationModeTabs();
+        renderOperationForm();
+        renderTemplateList();
+        calculateRefQty();
+        renderOpOutputTable();
+        updateOpCostModeVisibility();
+        return;
+      }
+      if (action === 'goto-records') {
+        window.AppNavigation?.navigate?.('./processing-record.html');
+        return;
+      }
+
       // 编辑/删除按钮（阻止冒泡到卡片选中）
       if (action === 'edit-template') {
         event.stopPropagation();
@@ -2362,6 +2402,7 @@
 
   /* ===== 初始化 ===== */
   window.AppShell.mount({ title: '净菜加工', content: pageContent });
+  refreshOperationModeTabs();
   state.filteredTemplates = [...state.templates];
   renderTemplateList();
   renderOperationForm();

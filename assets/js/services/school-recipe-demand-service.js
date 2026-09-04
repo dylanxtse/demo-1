@@ -5,6 +5,7 @@
   const RESOURCE = 'recipeDemandRecords';
   const DEMO_RECORD_DATE = '2026-09-07';
   const DEMO_RECORD_CREATED_AT = '2026-08-29 16:20:00';
+  const RECORD_NO_PATTERN = /^XQ\d{8}\d{5}$/;
   const DEMO_ATTENDANCE = {
     id: 'RECIPE-ATTENDANCE-DEMO-20260907',
     date: DEMO_RECORD_DATE,
@@ -52,7 +53,7 @@
 
   function readAll() {
     const current = window.DemoStore?.get?.(RESOURCE);
-    if (Array.isArray(current) && current.length) return current;
+    if (Array.isArray(current) && current.length) return refreshRecordNumbers(current);
     if (!window.DemoStore && memoryRecords.length) return clone(memoryRecords);
     const demoRecord = buildDemoRecord();
     if (window.DemoStore?.replace) return window.DemoStore.replace(RESOURCE, [demoRecord]);
@@ -140,7 +141,7 @@
     const productCount = items.filter((row) => row.mappingStatus === '已关联').length;
     return {
       id: 'RECIPE-DEMAND-DEMO-20260829',
-      recordNo: 'XQ202608290300001',
+      recordNo: 'XQ2026082948261',
       demoOnly: true,
       schoolName: SCHOOL_NAME,
       canteen: CANTEEN_NAME,
@@ -213,11 +214,40 @@
 
   function nextRecordNo(records, createdAt) {
     const prefix = `XQ${datePart(createdAt)}`;
-    const max = records.reduce((current, record) => {
-      const match = String(record.recordNo || '').match(new RegExp(`^${prefix}(\\d{5})$`));
-      return Math.max(current, match ? Number(match[1]) : 0);
-    }, 0);
-    return `${prefix}${String(max + 1).padStart(5, '0')}`;
+    const existing = new Set((records || []).map((record) => String(record.recordNo || '')));
+    let recordNo = '';
+    do {
+      const suffix = Math.floor(10000 + Math.random() * 90000);
+      recordNo = `${prefix}${String(suffix).padStart(5, '0')}`;
+    } while (existing.has(recordNo));
+    return recordNo;
+  }
+
+  function refreshRecordNumbers(records) {
+    const next = clone(records || []);
+    const used = new Set();
+    let changed = false;
+    next.forEach((record) => {
+      if (!record || typeof record !== 'object') return;
+      const currentNo = String(record.recordNo || '');
+      if (RECORD_NO_PATTERN.test(currentNo) && !used.has(currentNo)) {
+        used.add(currentNo);
+        return;
+      }
+      const nextNo = nextRecordNo(next, record.submittedAt || record.createdAt || record.dates?.[0]);
+      record.recordNo = nextNo;
+      used.add(nextNo);
+      changed = changed || currentNo !== nextNo;
+      (record.orders || []).forEach((order) => {
+        if (String(order?.recipeDemandRecordNo || '') === currentNo) order.recipeDemandRecordNo = nextNo;
+      });
+      (record.operationLogs || []).forEach((log) => {
+        ['description', 'desc'].forEach((key) => {
+          if (typeof log?.[key] === 'string' && currentNo) log[key] = log[key].split(currentNo).join(nextNo);
+        });
+      });
+    });
+    return changed ? writeAll(next) : next;
   }
 
   function getProductMap() {

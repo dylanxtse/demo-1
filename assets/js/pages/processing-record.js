@@ -59,8 +59,8 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th class="checkbox-cell" rowspan="2"><span class="custom-checkbox" role="checkbox" aria-checked="false" data-action="toggle-all"></span></th>
-                <th rowspan="2">加工单号</th>
+                <th class="checkbox-cell processing-record-checkbox-cell" rowspan="2"><span class="custom-checkbox" role="checkbox" aria-checked="false" data-action="toggle-all"></span></th>
+                <th class="processing-record-code-cell" rowspan="2">加工单号</th>
                 <th colspan="2">加工原料</th>
                 <th colspan="2">加工成品</th>
                 <th rowspan="2">原料出库单</th>
@@ -129,7 +129,7 @@
 
   function renderProductName(productCode, productName, unit, nameSuffix = '') {
     const display = window.DomUtils.formatProductDisplay({ productCode, productName, unit });
-    return `<span class="name-cell processing-record-product-name product-display-text">${productNetTag(productCode)}${escapeHtml(display)}${nameSuffix}</span>`;
+    return `<span class="processing-record-product-line"><span class="name-cell processing-record-product-name">${productNetTag(productCode)}<span class="processing-record-product-label">${escapeHtml(display)}</span></span>${nameSuffix}</span>`;
   }
 
   function getOperationNodeType(log) {
@@ -330,8 +330,8 @@
     if (index !== 0) return '';
     const selected = state.selectedIds.has(order.id);
     return `
-      <td class="checkbox-cell" rowspan="${rowSpan}"><span class="custom-checkbox ${selected ? 'checked' : ''}" role="checkbox" aria-checked="${selected}" data-action="toggle-row" data-id="${escapeHtml(order.id)}"></span></td>
-      <td rowspan="${rowSpan}"><button class="btn-text code-link" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">${escapeHtml(order.id)}</button></td>
+      <td class="checkbox-cell processing-record-checkbox-cell" rowspan="${rowSpan}"><span class="custom-checkbox ${selected ? 'checked' : ''}" role="checkbox" aria-checked="${selected}" data-action="toggle-row" data-id="${escapeHtml(order.id)}"></span></td>
+      <td class="processing-record-code-cell" rowspan="${rowSpan}"><button class="btn-text code-link" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">${escapeHtml(order.id)}</button></td>
     `;
   }
 

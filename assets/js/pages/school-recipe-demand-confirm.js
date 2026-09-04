@@ -92,8 +92,7 @@
   const productDisplay = (item) => window.DomUtils?.formatProductDisplay
     ? window.DomUtils.formatProductDisplay(item)
     : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
-  const purchaseQuantity = (item) => {
-    const value = item?.purchaseQty == null || item.purchaseQty === '' ? item?.totalQty : item.purchaseQty;
+  const purchaseQuantity = (value) => {
     const amount = Number(value);
     return Number.isFinite(amount) ? Math.ceil(amount) : 0;
   };
@@ -201,7 +200,7 @@
     </tr><tr id="${detailId}" class="school-recipe-demand-date-detail-row" data-date-detail-row hidden><td colspan="9">${renderAttendanceDetail(summary)}</td></tr>`;
       }).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-date-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-meal"><col class="col-version"><col class="col-person"><col class="col-person"><col class="col-total"><col class="col-count"><col class="col-action"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>填报餐次</th><th>食谱名称</th><th>学生人次</th><th>教师人次</th><th>总人次</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-date-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-meal"><col class="col-version"><col class="col-person"><col class="col-person"><col class="col-total"><col class="col-count"><col class="col-action"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>填报餐次</th><th>食谱名称</th><th>学生人次</th><th>教职工人次</th><th>总人次</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">暂无已填报日期</div>';
   }
 
@@ -215,12 +214,12 @@
         <td>${escapeHtml(row.productCode || '--')}</td>
         <td>${escapeHtml(row.unit || '--')}</td>
         <td class="is-number">${quantity(row.studentQty)}</td>
+        <td class="is-number">${purchaseQuantity(row.studentQty)}</td>
         <td class="is-number">${quantity(row.teacherQty)}</td>
-        <td class="is-number is-total">${quantity(row.totalQty)}</td>
-        <td class="is-number">${quantity(purchaseQuantity(row))}</td>
+        <td class="is-number">${purchaseQuantity(row.teacherQty)}</td>
       </tr>`).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-quantity"><col class="col-total"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>教职工需求量</th><th>需求总量</th><th>采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-purchase"><col class="col-quantity"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>学生采购数量</th><th>教职工需求量</th><th>教职工采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">当前选中日期暂无可提交的商品需求</div>';
   }
 

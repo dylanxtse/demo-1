@@ -142,7 +142,6 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-product-table .col-code { width: 110px; }
 .school-recipe-demand-product-table .col-unit { width: 56px; }
 .school-recipe-demand-product-table .col-quantity { width: 94px; }
-.school-recipe-demand-product-table .col-total { width: 96px; }
 .school-recipe-demand-product-table .col-purchase { width: 96px; }
 .school-recipe-demand-ingredient-name,
 .school-recipe-demand-product-name { overflow: hidden; color: #3d4a5c !important; text-align: center !important; text-overflow: ellipsis; white-space: nowrap; }

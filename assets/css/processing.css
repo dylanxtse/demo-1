@@ -975,6 +975,51 @@
 }
 .processing-record-page .data-table th,
 .processing-record-page .data-table td { text-align: center; }
+/* 加工记录横向滚动时固定勾选框和加工单号，后续子行不参与固定定位 */
+.processing-record-page .data-table .processing-record-checkbox-cell,
+.processing-record-page .data-table .processing-record-code-cell {
+  position: sticky;
+  box-sizing: border-box;
+  background: #fff;
+  background-clip: padding-box;
+}
+.processing-record-page .data-table .processing-record-checkbox-cell {
+  left: 0;
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding-left: 0;
+  padding-right: 0;
+  z-index: 3;
+}
+.processing-record-page .data-table .processing-record-code-cell {
+  left: 40px;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  white-space: nowrap;
+  z-index: 2;
+  box-shadow: 6px 0 8px -8px rgba(0, 0, 0, 0.28);
+}
+.processing-record-page .data-table .processing-record-code-cell .code-link {
+  display: inline-block;
+  box-sizing: border-box;
+  white-space: nowrap;
+  line-height: 20px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.processing-record-page .data-table thead .processing-record-checkbox-cell,
+.processing-record-page .data-table thead .processing-record-code-cell {
+  background: #fafafa;
+  z-index: 7;
+}
+.processing-record-page .data-table tbody tr:hover .processing-record-checkbox-cell,
+.processing-record-page .data-table tbody tr:hover .processing-record-code-cell,
+.processing-record-page .data-table tbody tr.is-order-hover .processing-record-checkbox-cell,
+.processing-record-page .data-table tbody tr.is-order-hover .processing-record-code-cell {
+  background: #f5f7fa;
+}
 .processing-record-page .data-table .processing-record-material-col {
   width: 230px;
   min-width: 230px;
@@ -1021,6 +1066,30 @@
   min-width: 0;
   text-align: left;
   white-space: nowrap;
+}
+.processing-record-page .processing-record-product-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.processing-record-page .processing-record-product-line .processing-record-product-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.processing-record-page .processing-record-product-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
 }
 .processing-record-page .processing-record-material-col .processing-record-product-name {
   text-align: center;
@@ -1089,10 +1158,13 @@
 }
 .record-output-more,
 .record-material-more {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
   margin-left: 6px;
   padding: 0;
   font-size: 13px;
+  white-space: nowrap;
 }
 .processing-record-page .related-order-link {
   text-decoration: underline;
@@ -1125,9 +1197,8 @@
 
 /* ===== 加工操作面板 - 左右分栏布局 ===== */
 .processing-workspace {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  column-gap: var(--content-gap);
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -1558,6 +1629,35 @@
   border-radius: 6px;
   min-height: 0;
 }
+.processing-workspace > .processing-operation-panel {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  column-gap: var(--content-gap);
+  flex: 1 1 auto;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-sizing: border-box;
+}
+.processing-workspace > .processing-operation-panel > .processing-template-panel {
+  grid-column: 1;
+  grid-row: 1;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+.processing-workspace > .processing-operation-panel > .operation-form {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: var(--bg-white);
+}
 .operation-empty {
   flex: 1;
   display: flex;
@@ -1621,6 +1721,12 @@
   border-bottom: 1px solid var(--border-light);
   background: #fff;
   flex-shrink: 0;
+}
+.processing-workspace > .operation-mode-tabs {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-bottom: var(--content-gap);
+  box-sizing: border-box;
 }
 .operation-mode-tab {
   position: relative;
