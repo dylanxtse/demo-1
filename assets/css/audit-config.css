@@ -1,0 +1,192 @@
+.audit-config-page {
+  position: relative;
+  padding: 24px 40px 32px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.audit-config-tabs {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  border-bottom: 1px solid #e7eaf0;
+  flex: 0 0 auto;
+}
+
+.audit-config-tab {
+  position: relative;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: #666;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 44px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.audit-config-tab:hover { color: var(--primary); }
+
+.audit-config-tab.is-active {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.audit-config-tab.is-active::after {
+  position: absolute;
+  right: 8px;
+  bottom: -1px;
+  left: 8px;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--primary);
+  content: '';
+}
+
+.audit-config-panel {
+  min-height: 0;
+  margin-top: 28px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d7dce5 transparent;
+}
+
+.audit-config-panel::-webkit-scrollbar { width: 6px; }
+.audit-config-panel::-webkit-scrollbar-thumb { background: #d7dce5; border-radius: 4px; }
+
+.audit-config-table {
+  width: 100%;
+  border: 1px solid #e7eaf0;
+  border-radius: 3px;
+  border-spacing: 0;
+  border-collapse: separate;
+  table-layout: fixed;
+  overflow: hidden;
+  color: #333;
+  font-size: 14px;
+}
+
+.audit-config-table th,
+.audit-config-table td {
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.audit-config-table thead th {
+  height: 44px;
+  border-bottom: 1px solid #e7eaf0;
+  background: #f1f3f8;
+  color: #8b919e;
+  font-weight: 400;
+}
+
+.audit-config-table thead th + th,
+.audit-config-table tbody td + td { border-left: 1px solid #e7eaf0; }
+
+.audit-config-table tbody td {
+  height: 54px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.audit-config-table tbody tr:last-child td { border-bottom: 0; }
+
+.audit-config-table .audit-flow-name { font-weight: 500; }
+
+.audit-reviewer-select {
+  display: block;
+  width: calc(100% - 32px);
+  height: 32px;
+  margin: 0 16px;
+  padding: 0 30px 0 10px;
+  border: 1px solid #e1e5eb;
+  border-radius: 3px;
+  outline: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  color: #333;
+  font: inherit;
+  font-size: 14px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.audit-reviewer-select:focus { border-color: var(--primary); }
+
+.audit-reviewer-select:disabled {
+  border-color: #e7eaf0;
+  background-color: #f5f6f8;
+  color: #b4b9c2;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.audit-switch {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.audit-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.audit-switch-track {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 20px;
+  border-radius: 10px;
+  background: #dfe3ed;
+  transition: background-color .16s ease;
+}
+
+.audit-switch-track::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(25, 40, 70, .18);
+  content: '';
+  transition: transform .16s ease;
+}
+
+.audit-switch input:checked + .audit-switch-track { background: #0d5bd7; }
+.audit-switch input:checked + .audit-switch-track::after { transform: translateX(12px); }
+.audit-switch input:focus-visible + .audit-switch-track { outline: 2px solid #c8dcff; outline-offset: 2px; }
+
+.audit-config-toast {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  padding: 7px 14px;
+  border: 1px solid #cde8d9;
+  border-radius: 4px;
+  background: #f0fbf4;
+  color: #2b8a57;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.audit-config-toast[hidden] { display: none; }
+
+@media (max-width: 1100px) {
+  .audit-config-page { padding-right: 24px; padding-left: 24px; }
+  .audit-reviewer-select { width: calc(100% - 20px); margin-right: 10px; margin-left: 10px; }
+}
+
+.audit-config-page,
+.audit-config-page * { font-weight: 400 !important; }

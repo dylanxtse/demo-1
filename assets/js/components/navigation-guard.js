@@ -30,6 +30,7 @@
     'sales-reconciliation.html': 'enterprise',
     'sales-reconciliation-detail.html': 'enterprise',
     'sales-reconciliation-statement.html': 'enterprise',
+    'audit-config.html': 'enterprise',
     'purchase-task.html': 'enterprise',
     'purchase-task-allocation.html': 'enterprise',
     'purchase-task-allocation-detail.html': 'enterprise',

@@ -284,9 +284,33 @@
   }
 
   const defaultSettings = {
+    productAuditEnabled: false,
+    salesAgreementAuditEnabled: false,
+    purchaseAgreementAuditEnabled: false,
     enterpriseOrderAuditEnabled: true,
+    orderReturnAuditEnabled: false,
+    receiptChangeAuditEnabled: false,
+    purchaseOrderAuditEnabled: false,
+    purchaseReturnAuditEnabled: false,
+    inboundAuditEnabled: true,
     sortingInventoryThresholdEnabled: true,
     outboundAuditEnabled: true,
+    inventoryCountAuditEnabled: true,
+    processingAuditEnabled: false,
+    auditReviewers: {
+      product: '杨无缺',
+      salesAgreement: '小李',
+      purchaseAgreement: '杨无缺',
+      order: '杨',
+      orderReturn: '杨',
+      receiptChange: '杨',
+      purchaseOrder: '小李',
+      purchaseReturn: '杨志刚',
+      inbound: '杨采',
+      outbound: '杨采',
+      inventoryCount: '杨采',
+      processing: '杨采'
+    },
     defaultWarehouseId: 'WH-001',
     amountDecimal: '2',
     quantityDecimal: '0',
@@ -328,7 +352,14 @@
       ? JSON.stringify(current.settings)
       : '';
     const existing = current.settings && typeof current.settings === 'object' ? current.settings : {};
-    current.settings = { ...defaultSettings, ...existing };
+    current.settings = {
+      ...defaultSettings,
+      ...existing,
+      auditReviewers: {
+        ...defaultSettings.auditReviewers,
+        ...(existing.auditReviewers && typeof existing.auditReviewers === 'object' ? existing.auditReviewers : {})
+      }
+    };
 
     // 旧版配置没有精度版本，首次升级时按新的默认规则迁移；之后保留用户的切换结果。
     if (existing.decimalSettingsVersion !== defaultSettings.decimalSettingsVersion) {

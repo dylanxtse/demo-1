@@ -1,5 +1,5 @@
 (function () {
-  const defaultConfig = { auditEnabled: true };
+  const defaultConfig = { auditEnabled: false };
   const customerCodes = { 全部: '03', 客户A: '01', 客户B: '02', 客户C: '03' };
 
   function clone(value) {
