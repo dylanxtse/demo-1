@@ -4,7 +4,8 @@
     education: 'education.html',
     supplier: 'supplier.html',
     operations: 'operations.html',
-    school: 'school.html'
+    school: 'school.html',
+    mobile: 'school-mobile.html'
   });
 
   // 页面文件属于哪个用户端由这里集中维护。未知页面默认跟随当前端，避免影响端内扩展页面。
@@ -49,6 +50,7 @@
     'school-recipe-demand-confirm.html': 'school',
     'school-recipe-demand-records.html': 'school',
     'school-recipe-demand-record-detail.html': 'school',
+    'school-mobile.html': 'mobile',
     'school-canteen-management.html': 'school',
     'school-canteen-form.html': 'school',
     'school-product-management.html': 'school',

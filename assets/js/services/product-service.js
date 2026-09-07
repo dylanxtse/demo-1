@@ -3,6 +3,10 @@
     return JSON.parse(JSON.stringify(value));
   }
 
+  function flag(value) {
+    return value === true || value === 'true' || value === '是';
+  }
+
   const supplierProductsResource = 'supplierProductsBySupplier';
   const defaultSupplier = { id: 'SUP-004', name: '南皮供应商01' };
 
@@ -59,6 +63,7 @@
       ...product,
       seq: product.seq ?? index + 1,
       isNetVegetable: product.isNetVegetable ?? product.name === '土豆丝',
+      isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
       purchaseType: product.purchaseType,
       defaultSupplier: product.defaultSupplier || '平台默认供应商',
       responsible: product.responsible || '管理员',
@@ -96,6 +101,7 @@
       const now = new Date();
       const created = {
         ...data,
+        isStandardProduct: flag(data.isStandardProduct) || flag(data.isStandard),
         seq: products.length + 1,
         code: `${isSupplierContext() ? 'SSP' : 'SP'}${String(nextNumber).padStart(7, '0')}`,
         status: 'DISABLE',
@@ -118,6 +124,9 @@
         ...data,
         code: products[index].code,
         id: products[index].id || products[index].code,
+        isStandardProduct: data.isStandardProduct === undefined && data.isStandard === undefined
+          ? Boolean(products[index].isStandardProduct)
+          : flag(data.isStandardProduct) || flag(data.isStandard),
         status: window.BusinessRules.normalizeStatus('products', data.status || products[index].status)
       };
       window.BusinessRules.assertValid('products', products[index]);

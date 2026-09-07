@@ -127,16 +127,18 @@
       'school-purchase-reconciliation.html',
       'school-purchase-accounts.html',
       'school-notice-management.html'
-    ])
+    ]),
+    mobile: new Set(['school-mobile.html'])
   };
   const switchRoutes = {
     enterprise: './index.html',
     education: './education.html',
     supplier: './supplier-bidding-quotation.html',
     operations: './operations.html',
-    school: './school-product-management.html'
+    school: './school-product-management.html',
+    mobile: './school-mobile.html'
   };
-  const switchSelectors = '[data-shell-switch], [data-user-end-switch], [data-platform-switch]';
+  const switchSelectors = '[data-shell-switch], [data-user-end-switch], [data-platform-switch], [data-school-mobile-switch]';
   let mountedVariant = '';
 
   function fileNameFromPath(pathname) {

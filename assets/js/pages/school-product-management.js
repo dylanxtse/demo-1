@@ -115,6 +115,7 @@
     }
 
     const isNetVegetable = product.isNetVegetable === true;
+    const isStandardProduct = product.isStandardProduct === true;
     const isWeighed = product.isWeighed === true;
     const multiUnitEnabled = product.multiUnit === true;
     const shelfLifeEnabled = Boolean(product.shelfLife || product.shelfLifeEnabled || product.shelfLifeValue);
@@ -162,6 +163,7 @@
           ${detailField('净含量', appendUnit(product.netContent, product.netContentUnit))}
           ${detailField('上传合格证明', product.qualificationCertificate)}
           ${detailField('是否净菜', isNetVegetable ? '是' : '否')}
+          ${detailField('是否标品', isStandardProduct ? '是' : '否')}
           ${detailField('采购类型', product.purchaseType || '供应商送货', { required: true })}
           ${procurementFields}
           ${detailField('启用多单位', multiUnitEnabled ? '是' : '否')}

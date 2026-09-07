@@ -25,10 +25,10 @@
     ],
     formFields: [
       { key: 'tagName', label: '标签名称', required: true, placeholder: '请输入' },
-      { key: 'nutritious', label: '是否是营养餐', required: true, options: ['营养餐', '非营养餐', '不区分'] },
+      { key: 'nutritious', label: '是否是营养餐', required: true, placeholderOnly: true, options: ['营养餐', '非营养餐', '不区分'] },
       { key: 'remark', label: '备注', type: 'textarea' }
     ],
-    createDefaults: { status: 'ENABLE', nutritious: '不区分' },
+    createDefaults: { status: 'ENABLE', nutritious: '' },
     deleteMessage: '确认删除该订单标签吗？'
   };
 })();

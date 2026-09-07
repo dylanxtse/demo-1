@@ -113,6 +113,58 @@
     page.querySelector('#purchaseFormTotal').textContent = fixed(total);
   }
 
+  var batchPickerState = null;
+
+  function closeBatchPicker() {
+    page.querySelector('#purchaseBatchPicker')?.remove();
+    batchPickerState = null;
+  }
+
+  function renderBatchPicker() {
+    var host = page.querySelector('#purchaseBatchPicker');
+    if (!host || !batchPickerState) return;
+    var products = service.products();
+    var categories = [...new Set(products.map(function (product) { return product.category; }).filter(Boolean))];
+    var filtered = products.filter(function (product) {
+      return (!batchPickerState.purchaseType || !product.purchaseType || product.purchaseType === batchPickerState.purchaseType)
+        && (!batchPickerState.category || product.category === batchPickerState.category);
+    });
+    var pages = Math.max(1, Math.ceil(filtered.length / 20));
+    batchPickerState.page = Math.min(batchPickerState.page, pages);
+    var visible = filtered.slice((batchPickerState.page - 1) * 20, batchPickerState.page * 20);
+    var existingCodes = new Set(lines.map(function (line) { return line.productCode; }).filter(Boolean));
+    var rows = visible.length ? visible.map(function (product) {
+      var draft = batchPickerState.drafts.get(product.code) || {};
+      var image = product.image ? '<span class="product-picker-image"><img src="' + text(product.image) + '" alt="' + text(product.name) + '"></span>' : '<span class="product-picker-image">图片</span>';
+      var exists = existingCodes.has(product.code);
+      return '<tr data-purchase-picker-product="' + text(product.code) + '"><td><input type="checkbox" data-purchase-picker-check value="' + text(product.code) + '"' + (batchPickerState.selected.has(product.code) ? ' checked' : '') + (exists ? ' disabled' : '') + '></td><td>' + image + '</td><td class="product-picker-product" title="' + text(service.displayName(product)) + '">' + text(service.displayName(product)) + '</td><td>' + text(product.unit || '--') + '</td><td><input type="number" min="0.01" step="0.01" data-purchase-picker-quantity value="' + text(draft.quantity || '') + '" placeholder="' + (exists ? '已添加' : '请输入数量') + '"' + (exists ? ' disabled' : '') + '></td><td><input type="text" data-purchase-picker-remark value="' + text(draft.remark || '') + '" placeholder="请输入备注"' + (exists ? ' disabled' : '') + '></td></tr>';
+    }).join('') : '<tr><td colspan="6" style="height:180px;color:#9aa4b2">暂无符合条件的商品</td></tr>';
+    var pageButtons = Array.from({ length: pages }, function (_, index) { return index + 1; }).map(function (pageNumber) { return '<button type="button" class="product-picker-page-button ' + (pageNumber === batchPickerState.page ? 'active' : '') + '" data-purchase-picker-action="page" data-page="' + pageNumber + '">' + pageNumber + '</button>'; }).join('');
+    host.innerHTML = '<div class="product-picker-backdrop"><section class="product-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="purchaseBatchPickerTitle"><header class="product-picker-header"><h3 id="purchaseBatchPickerTitle">批量添加商品</h3><button type="button" class="product-picker-close" data-purchase-picker-action="close" aria-label="关闭">×</button></header><div class="product-picker-body"><div class="product-picker-filters"><label class="product-picker-filter"><span>采购类型</span><select data-purchase-picker-filter="purchaseType"><option value="">请选择</option><option value="供应商送货"' + (batchPickerState.purchaseType === '供应商送货' ? ' selected' : '') + '>供应商送货</option><option value="联营供应商采购"' + (batchPickerState.purchaseType === '联营供应商采购' ? ' selected' : '') + '>联营供应商采购</option><option value="市场自采"' + (batchPickerState.purchaseType === '市场自采' ? ' selected' : '') + '>市场自采</option></select></label><label class="product-picker-filter"><span>商品分类</span><select data-purchase-picker-filter="category"><option value="">请选择商品分类</option>' + categories.map(function (category) { return '<option value="' + text(category) + '"' + (batchPickerState.category === category ? ' selected' : '') + '>' + text(category) + '</option>'; }).join('') + '</select></label><div class="product-picker-filter-actions"><button type="button" class="btn btn-primary btn-sm" data-purchase-picker-action="query">查询</button><button type="button" class="btn btn-sm" data-purchase-picker-action="reset">重置</button></div></div><div class="product-picker-table-wrap"><table class="product-picker-table"><colgroup><col style="width:48px"><col style="width:110px"><col><col style="width:120px"><col style="width:180px"><col style="width:180px"></colgroup><thead><tr><th><input type="checkbox" data-purchase-picker-check-all></th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>待采购量</th><th>备注</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class="product-picker-pagination"><span class="product-picker-total">共 ' + filtered.length + ' 条数据</span><select class="product-picker-page-size" disabled><option>20 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-purchase-picker-action="page" data-page="' + Math.max(1, batchPickerState.page - 1) + '"' + (batchPickerState.page === 1 ? ' disabled' : '') + '>‹</button>' + pageButtons + '<button type="button" class="product-picker-page-button" data-purchase-picker-action="page" data-page="' + Math.min(pages, batchPickerState.page + 1) + '"' + (batchPickerState.page === pages ? ' disabled' : '') + '>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="' + batchPickerState.page + '" readonly> / ' + pages + ' 页</label></div></div><footer class="product-picker-footer"><button type="button" class="btn" data-purchase-picker-action="close">关闭</button><button type="button" class="btn btn-primary" data-purchase-picker-action="confirm">添加</button></footer></section></div>';
+  }
+
+  function openBatchPicker() {
+    batchPickerState = { purchaseType: page.querySelector('#purchaseType')?.value || purchaseType, category: '', page: 1, selected: new Set(), drafts: new Map() };
+    page.insertAdjacentHTML('beforeend', '<div id="purchaseBatchPicker"></div>');
+    renderBatchPicker();
+  }
+
+  function confirmBatchPicker() {
+    var products = service.products();
+    var additions = [...batchPickerState.selected].map(function (code) {
+      var product = products.find(function (item) { return item.code === code; });
+      var draft = batchPickerState.drafts.get(code) || {};
+      if (!product || !draft.quantity || lines.some(function (line) { return line.productCode === code; })) return null;
+      return { id: 'FORM-' + Date.now() + '-' + code, productCode: product.code, productName: product.name, unit: product.unit, brand: product.brand || '--', spec: product.spec || '--', image: product.image || '', quantity: Number(draft.quantity), purchasePrice: Number(product.purchasePrice || product.marketPrice || 0), supplierQuote: Number(product.supplierQuote || 0), agreementPrice: product.agreementPrice ?? null, lastPrice: product.lastPrice ?? null, marketPrice: product.marketPrice ?? null, remark: draft.remark || '' };
+    }).filter(Boolean);
+    if (!additions.length) { utils.toast('请勾选商品并填写待采购量', 'error'); return; }
+    lines = lines.filter(function (line) { return line.productCode; });
+    lines.push.apply(lines, additions);
+    while (lines.length < 9) lines.push(createEmptyLine());
+    closeBatchPicker();
+    renderRows();
+  }
+
   function updateLineFromInput(input) {
     var row = input.closest('tr[data-line-id]');
     var line = lines.find(function (item) { return item.id === row?.dataset.lineId; });
@@ -162,6 +214,21 @@
   }
 
   page.addEventListener('click', function (event) {
+    var pickerTarget = event.target.closest('[data-purchase-picker-action]');
+    if (pickerTarget && batchPickerState) {
+      var pickerAction = pickerTarget.dataset.purchasePickerAction;
+      if (pickerAction === 'close') closeBatchPicker();
+      if (pickerAction === 'confirm') confirmBatchPicker();
+      if (pickerAction === 'query') {
+        batchPickerState.purchaseType = page.querySelector('[data-purchase-picker-filter="purchaseType"]')?.value || '';
+        batchPickerState.category = page.querySelector('[data-purchase-picker-filter="category"]')?.value || '';
+        batchPickerState.page = 1;
+        renderBatchPicker();
+      }
+      if (pickerAction === 'reset') { batchPickerState.purchaseType = ''; batchPickerState.category = ''; batchPickerState.page = 1; renderBatchPicker(); }
+      if (pickerAction === 'page') { batchPickerState.page = Number(pickerTarget.dataset.page) || 1; renderBatchPicker(); }
+      return;
+    }
     var target = event.target.closest('[data-action]');
     if (!target || !page.contains(target)) return;
     if (target.dataset.action === 'back') {
@@ -169,14 +236,22 @@
       return;
     }
     if (target.dataset.action === 'batch-add') {
-      lines.push(createEmptyLine());
-      renderRows();
+      openBatchPicker();
     }
     if (target.dataset.action === 'draft') save('草稿');
     if (target.dataset.action === 'save') save('待收货');
   });
 
   page.addEventListener('input', function (event) {
+    var pickerRow = event.target.closest('[data-purchase-picker-product]');
+    if (batchPickerState && pickerRow && event.target.matches('[data-purchase-picker-quantity], [data-purchase-picker-remark]')) {
+      var code = pickerRow.dataset.purchasePickerProduct;
+      var draft = batchPickerState.drafts.get(code) || {};
+      if (event.target.matches('[data-purchase-picker-quantity]')) draft.quantity = event.target.value;
+      else draft.remark = event.target.value;
+      batchPickerState.drafts.set(code, draft);
+      return;
+    }
     if (event.target.matches('[data-field="product"]')) {
       var row = event.target.closest('tr[data-line-id]');
       var line = lines.find(function (item) { return item.id === row?.dataset.lineId; });
@@ -198,6 +273,15 @@
   });
 
   page.addEventListener('change', function (event) {
+    if (batchPickerState && event.target.matches('[data-purchase-picker-check]')) {
+      if (event.target.checked) batchPickerState.selected.add(event.target.value);
+      else batchPickerState.selected.delete(event.target.value);
+      return;
+    }
+    if (batchPickerState && event.target.matches('[data-purchase-picker-check-all]')) {
+      page.querySelectorAll('[data-purchase-picker-check]:not(:disabled)').forEach(function (checkbox) { checkbox.checked = event.target.checked; if (event.target.checked) batchPickerState.selected.add(checkbox.value); else batchPickerState.selected.delete(checkbox.value); });
+      return;
+    }
     if (event.target.matches('[data-field="product"]')) {
       var row = event.target.closest('tr[data-line-id]');
       var line = lines.find(function (item) { return item.id === row?.dataset.lineId; });

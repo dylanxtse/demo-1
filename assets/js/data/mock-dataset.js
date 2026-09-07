@@ -6,6 +6,10 @@
 
 /* 商品基础资料 */
  (function () {
+  const seededStandardProductNames = new Set([
+    '土豆', '牛奶', '大玉米棒子', '鲫鱼', '大米', '西红柿', '金龙鱼豆油',
+    '鸡腿肉', '土豆块', '胡萝卜丝', '胡萝卜片', '青椒丝', '什锦配菜'
+  ]);
   window.MockProducts = [
     { seq: 1, code: 'SP0300039', name: '土豆丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '4.80', status: '已上架', alias: '净菜土豆丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-06-03 17:52:26' },
     { seq: 21, code: 'SP0300040', name: '土豆', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-根茎类', marketPrice: '3.20', status: '已上架', alias: '鲜土豆', origin: '山东', shelfLife: '15天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-29 09:00:00' },
@@ -20,8 +24,8 @@
     { seq: 10, code: 'SP0300025', name: '大米', isNetVegetable: false, unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '19.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-23 16:08:26' },
     { seq: 11, code: 'SP0300024', name: '三元牛奶', isNetVegetable: false, unit: '瓶', brand: '三元', spec: '10瓶1箱', category: '蛋奶类-蛋奶类二级', marketPrice: '10.00', status: '已上架', alias: '', origin: '', shelfLife: '1年', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-12 11:11:29' },
     { seq: 12, code: 'SP0300023', name: '大饼', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已上架', alias: '', origin: '', shelfLife: '1天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-09 16:32:38' },
-    { seq: 13, code: 'SP0300020', name: '西红柿', isNetVegetable: false, unit: 'KG', brand: '田园直供', spec: '散装', category: '果蔬-茄果类', marketPrice: '5.60', status: '已上架', alias: '番茄', origin: '山东', shelfLife: '7天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 16:02:21' },
-    { seq: 14, code: 'SP0300019', name: '大白菜', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-叶菜类', marketPrice: '2.20', status: '已上架', alias: '白菜', origin: '河北', shelfLife: '7天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 16:00:29' },
+    { seq: 13, code: 'SP0300020', name: '西红柿', isNetVegetable: true, unit: 'KG', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '5.60', status: '已上架', alias: '净菜西红柿', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2025-12-04 16:02:21' },
+    { seq: 14, code: 'SP0300019', name: '大白菜', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '2.20', status: '已上架', alias: '净菜大白菜', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2025-12-04 16:00:29' },
     { seq: 15, code: 'SP0300018', name: '鸡蛋', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '22.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 16, code: 'SP0300017', name: '金龙鱼豆油', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '食油-食油二级', marketPrice: '50.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 17, code: 'SP0300016', name: '面粉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '其他材料-其他二级', marketPrice: '30.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
@@ -40,7 +44,10 @@
     { seq: 31, code: 'SP0300059', name: '什锦配菜', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜组合', marketPrice: '6.50', status: '已上架', alias: '三色什锦配菜', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:50:00' },
     { seq: 32, code: 'SP0300060', name: '西兰花', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-花菜类', marketPrice: '5.20', status: '已上架', alias: '青花菜', origin: '云南', shelfLife: '5天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-31 09:55:00' },
     { seq: 33, code: 'SP0300061', name: '西兰花块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '7.80', status: '已上架', alias: '净菜西兰花块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 10:00:00' }
-  ];
+  ].map((product) => ({
+    ...product,
+    isStandardProduct: product.isStandardProduct === true || seededStandardProductNames.has(String(product.name || '').trim())
+  }));
 })();
 
 /* 订单、分拣、出入库及库存业务资料 */

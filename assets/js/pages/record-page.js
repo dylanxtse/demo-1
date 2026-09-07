@@ -449,6 +449,12 @@
       let value = item?.[field.key] ?? defaultValue ?? '';
       if (field.type === 'datetime-local') value = String(value).replace(' ', 'T');
       const selectedValues = Array.isArray(value) ? value.map(String) : (value === '' ? [] : [String(value)]);
+      const selectPlaceholder = field.placeholderOnly
+        ? `<option value="" disabled hidden${selectedValues.length ? '' : ' selected'}>请选择</option>`
+        : field.hidePlaceholder ? '<option value=""></option>' : '<option value="">请选择</option>';
+      const selectAttributes = field.placeholderOnly
+        ? ` data-placeholder-only${selectedValues.length ? '' : ' class="is-placeholder"'}`
+        : '';
       const input = field.options
         ? field.multiple
           ? `<div class="operations-multi-select" role="group" aria-label="${escapeHtml(field.label)}">${field.options.map((option) => {
@@ -456,7 +462,7 @@
             const optionLabel = typeof option === 'string' ? option : option.label;
             return `<label class="operations-multi-option"><input type="checkbox" name="${escapeHtml(field.key)}" value="${escapeHtml(optionValue)}" ${selectedValues.includes(String(optionValue)) ? 'checked' : ''}><span>${escapeHtml(optionLabel)}</span></label>`;
           }).join('')}</div>`
-          : `<select name="${field.key}"><option value="">请选择</option>${field.options.map((option) => {
+          : `<select name="${field.key}"${selectAttributes}>${selectPlaceholder}${field.options.map((option) => {
           const optionValue = typeof option === 'string' ? option : option.value;
           const optionLabel = typeof option === 'string' ? option : option.label;
           return `<option value="${escapeHtml(optionValue)}" ${selectedValues.includes(String(optionValue)) ? 'selected' : ''}>${escapeHtml(optionLabel)}</option>`;
@@ -738,6 +744,9 @@
     });
 
     root.addEventListener('change', (event) => {
+      if (event.target.matches('select[data-placeholder-only]')) {
+        event.target.classList.toggle('is-placeholder', event.target.value === '');
+      }
       if (event.target.classList.contains('record-inline-input')) {
         const id = event.target.closest('tr[data-id]')?.dataset.id;
         const field = event.target.dataset.inlineField;

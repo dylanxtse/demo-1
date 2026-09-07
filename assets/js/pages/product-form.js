@@ -32,6 +32,7 @@
     'category',
     'name',
     'isNetVegetable',
+    'isStandardProduct',
     'correspondingFood',
     'purchaseType',
     'defaultSupplier',
@@ -73,7 +74,7 @@
     fieldNames.forEach((name) => {
       if (name === 'purchaseType') {
         data[name] = form.querySelector('[name="purchaseType"]:checked')?.value || '';
-      } else if (name === 'multiUnit' || name === 'isNetVegetable' || name === 'isWeighed' || name === 'shelfLife') {
+      } else if (name === 'multiUnit' || name === 'isNetVegetable' || name === 'isStandardProduct' || name === 'isWeighed' || name === 'shelfLife') {
         data[name] = Boolean(form.elements[name]?.checked);
       } else {
         data[name] = form.elements[name]?.value.trim() || '';
@@ -108,7 +109,7 @@
         if (radio) radio.checked = true;
         return;
       }
-      if (name === 'multiUnit' || name === 'isNetVegetable' || name === 'isWeighed' || name === 'shelfLife') {
+      if (name === 'multiUnit' || name === 'isNetVegetable' || name === 'isStandardProduct' || name === 'isWeighed' || name === 'shelfLife') {
         form.elements[name].checked = Boolean(product[name]);
         return;
       }

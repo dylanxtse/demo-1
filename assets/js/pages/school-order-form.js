@@ -17,6 +17,13 @@
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
+  const isStandardProduct = (item) => item?.isStandardProduct === true || item?.isStandardProduct === 'true' || item?.isStandardProduct === '是'
+    || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是';
+  const restrictStandardQuantity = (input, item) => {
+    if (!input || !isStandardProduct(item)) return;
+    const value = String(input.value || '');
+    if (value.includes('.')) input.value = value.split('.')[0];
+  };
   const money = (value) => number(value).toFixed(2);
   const productLabel = (product) => window.DomUtils.formatProductDisplay(product);
   const titleMap = { add: '添加订单', edit: '编辑订单', copy: '复制订单', audit: '审核订单' };
@@ -26,7 +33,7 @@
   const showFooterBack = !['add', 'edit'].includes(mode);
   const catalog = service.getProductCatalog();
   const defaultItems = mode === 'add'
-    ? Array.from({ length: 10 }, (_, index) => ({ id: `SOL-ROW-${index + 1}`, productCode: '', productName: '', unit: '', brand: '--', spec: '--', orderQty: 0, orderPrice: 0, agreementPrice: '', recentSalePrice: '', marketPrice: '', remark: '' }))
+    ? Array.from({ length: 10 }, (_, index) => ({ id: `SOL-ROW-${index + 1}`, productCode: '', productName: '', unit: '', brand: '--', spec: '--', isStandardProduct: false, orderQty: 0, orderPrice: 0, agreementPrice: '', recentSalePrice: '', marketPrice: '', remark: '' }))
     : clone(sourceOrder?.items || []);
   const state = { items: defaultItems, total: 0 };
 
@@ -74,6 +81,9 @@
     const market = line.marketPrice === '' || line.marketPrice == null ? (product?.marketPrice ?? '') : line.marketPrice;
     const qty = number(line.orderQty);
     const price = number(line.orderPrice);
+    const standardProduct = isStandardProduct(line) || isStandardProduct(product);
+    const quantityStep = standardProduct ? '1' : '0.01';
+    const quantityInputMode = standardProduct ? 'numeric' : 'decimal';
     const lockedInputs = readOnly;
     const remark = lineValue(line, 'remark', '') === '--' ? '' : lineValue(line, 'remark', '');
     return `<tr data-line-id="${escapeHtml(lineId)}">
@@ -81,7 +91,7 @@
       <td><span class="goods-thumb" aria-label="商品图片">暂无图片</span></td>
       <td class="goods-name-cell">${renderProductSelect(line.productCode, lineId)}</td>
       <td data-cell="unit">${escapeHtml(unit || '--')}</td>
-      <td><input class="table-input" data-field="orderQty" type="number" min="0.01" step="0.01" value="${qty ? escapeHtml(qty) : ''}" placeholder="请输入" aria-label="第${index + 1}行下单数量" ${lockedInputs ? 'disabled' : ''}></td>
+      <td><input class="table-input" data-field="orderQty" type="number" min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${qty ? escapeHtml(qty) : ''}" placeholder="请输入" aria-label="第${index + 1}行下单数量" ${lockedInputs ? 'disabled' : ''}></td>
       <td><input class="table-input" data-field="orderPrice" type="number" min="0" step="0.01" value="${price ? escapeHtml(money(price)) : ''}" placeholder="请输入" aria-label="第${index + 1}行下单单价" ${lockedInputs ? 'disabled' : ''}></td>
       <td class="line-subtotal" data-cell="subtotal">${money(qty * price)}</td>
       <td data-cell="agreement">${lineValue(line, 'agreementPrice', '') === '' ? '--' : money(lineValue(line, 'agreementPrice'))}</td>
@@ -97,6 +107,10 @@
       const old = state.items.find((item) => String(item.id) === String(row.dataset.lineId)) || {};
       const code = row.querySelector('.order-goods-select')?.dataset.value || old.productCode || '';
       const product = currentProduct(code);
+      const quantityInput = row.querySelector('[data-field="orderQty"]');
+      restrictStandardQuantity(quantityInput, {
+        isStandardProduct: isStandardProduct(product) || isStandardProduct(old)
+      });
       const price = Math.max(0, number(row.querySelector('[data-field="orderPrice"]')?.value ?? old.orderPrice));
       return {
         id: old.id || row.dataset.lineId || `SOL-NEW-${Date.now()}-${index}`,
@@ -106,6 +120,7 @@
         brand: product?.brand || old.brand || '--',
         spec: product?.spec || old.spec || '--',
         isNetVegetable: product?.isNetVegetable ?? old.isNetVegetable ?? false,
+        isStandardProduct: isStandardProduct(product) || isStandardProduct(old),
         orderQty: Math.max(0, number(row.querySelector('[data-field="orderQty"]')?.value ?? old.orderQty)),
         orderPrice: price,
         agreementPrice: old.agreementPrice ?? '',
@@ -191,7 +206,7 @@
     if (!number(item.orderPrice)) item.orderPrice = product.marketPrice;
     closeAllProductSelects(page);
     if (state.items[state.items.length - 1] === item) {
-      state.items.push({ id: `SOL-ROW-${Date.now()}`, productCode: '', productName: '', unit: '', brand: '--', spec: '--', orderQty: 0, orderPrice: 0, agreementPrice: '', recentSalePrice: '', marketPrice: '', remark: '' });
+      state.items.push({ id: `SOL-ROW-${Date.now()}`, productCode: '', productName: '', unit: '', brand: '--', spec: '--', isStandardProduct: false, orderQty: 0, orderPrice: 0, agreementPrice: '', recentSalePrice: '', marketPrice: '', remark: '' });
     }
     renderItems(page);
   }
@@ -202,11 +217,12 @@
 
   function openModal({ title: modalTitle, body, footer, className = '' }) {
     const backdrop = document.createElement('div');
-    backdrop.className = 'operations-modal-backdrop';
-    backdrop.innerHTML = `<div class="operations-modal ${className}" role="dialog" aria-modal="true" aria-label="${escapeHtml(modalTitle)}">
-      <div class="operations-modal-header"><h3>${escapeHtml(modalTitle)}</h3><button type="button" data-modal-close aria-label="关闭">×</button></div>
-      <div class="operations-modal-body">${body}</div>
-      <div class="operations-modal-footer">${footer}</div>
+    const isProductPicker = className === 'school-order-picker-modal';
+    backdrop.className = `operations-modal-backdrop${isProductPicker ? ' product-picker-backdrop' : ''}`;
+    backdrop.innerHTML = `<div class="operations-modal ${className}${isProductPicker ? ' product-picker-dialog' : ''}" role="dialog" aria-modal="true" aria-label="${escapeHtml(modalTitle)}">
+      <div class="operations-modal-header${isProductPicker ? ' product-picker-header' : ''}"><h3>${escapeHtml(modalTitle)}</h3><button type="button" class="${isProductPicker ? 'product-picker-close' : ''}" data-modal-close aria-label="关闭">×</button></div>
+      <div class="operations-modal-body${isProductPicker ? ' product-picker-body' : ''}">${body}</div>
+      <div class="operations-modal-footer${isProductPicker ? ' product-picker-footer' : ''}">${footer}</div>
     </div>`;
     document.body.appendChild(backdrop);
     const close = () => backdrop.remove();
@@ -225,15 +241,20 @@
     const modal = openModal({
       title: '批量添加商品',
       className: 'school-order-picker-modal',
-      body: `<div class="school-order-picker-filter"><div class="school-order-picker-filter-field"><label for="schoolOrderPickerCategory">商品分类</label><select id="schoolOrderPickerCategory"><option value="">请选择商品分类</option>${categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('')}</select></div><div class="school-order-picker-filter-actions"><button type="button" class="btn btn-primary btn-sm" data-picker-query>查询</button><button type="button" class="btn btn-sm" data-picker-reset>重置</button></div></div><div class="school-order-picker-list" id="schoolOrderPickerList"></div>`,
+      body: `<div class="school-order-picker-filter product-picker-filters"><div class="school-order-picker-filter-field product-picker-filter"><span>商品名称</span><input id="schoolOrderPickerKeyword" placeholder="请输入商品名称/编号"></div><div class="school-order-picker-filter-field product-picker-filter"><span>商品分类</span><select id="schoolOrderPickerCategory"><option value="">请选择商品分类</option>${categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('')}</select></div><div class="school-order-picker-filter-actions product-picker-filter-actions"><button type="button" class="btn btn-primary btn-sm" data-picker-query>查询</button><button type="button" class="btn btn-sm" data-picker-reset>重置</button></div></div><div class="school-order-picker-list product-picker-table-wrap" id="schoolOrderPickerList"></div><div class="product-picker-pagination" id="schoolOrderPickerPagination"></div>`,
       footer: `<button type="button" class="btn" data-modal-cancel>关闭</button><button type="button" class="btn btn-primary" data-modal-confirm>添加</button>`
     });
 
     const list = modal.backdrop.querySelector('#schoolOrderPickerList');
     const categorySelect = modal.backdrop.querySelector('#schoolOrderPickerCategory');
+    const keywordInput = modal.backdrop.querySelector('#schoolOrderPickerKeyword');
+    const pagination = modal.backdrop.querySelector('#schoolOrderPickerPagination');
+    let pickerPage = 1;
     const capturePickerValues = () => {
       list.querySelectorAll('[data-picker-code]').forEach((row) => {
         const code = row.dataset.pickerCode;
+        const quantityInput = row.querySelector('.picker-qty-input');
+        restrictStandardQuantity(quantityInput, currentProduct(code));
         pickerValues.set(code, {
           checked: Boolean(row.querySelector('.picker-product-check')?.checked),
           quantity: row.querySelector('.picker-qty-input')?.value || '',
@@ -244,32 +265,47 @@
     const renderPickerRows = () => {
       capturePickerValues();
       const category = categorySelect.value;
-      const visibleProducts = category ? catalog.filter((product) => product.category === category) : catalog;
+      const keyword = keywordInput.value.trim().toLowerCase();
+      const filteredProducts = catalog.filter((product) => (!category || product.category === category) && (!keyword || `${product.code} ${product.name}`.toLowerCase().includes(keyword)));
+      const pages = Math.max(1, Math.ceil(filteredProducts.length / 20)); pickerPage = Math.min(pickerPage, pages);
+      const visibleProducts = filteredProducts.slice((pickerPage - 1) * 20, pickerPage * 20);
       list.innerHTML = `<div class="school-order-picker-row header"><span></span><span>图片</span><span>商品名称（计量单位/品牌/规格）</span><span>计量单位</span><span>下单数量</span><span>备注</span></div>${visibleProducts.map((product) => {
         const existing = existingItems.get(product.code);
         const saved = pickerValues.get(product.code);
         const checked = saved ? saved.checked : selectedCodes.has(product.code);
         const quantity = saved ? saved.quantity : (existing && number(existing.orderQty) > 0 ? existing.orderQty : '');
         const remark = saved ? saved.remark : (existing?.remark && existing.remark !== '--' ? existing.remark : '');
-        return `<div class="school-order-picker-row" data-picker-code="${escapeHtml(product.code)}"><span><input class="picker-product-check" type="checkbox" value="${escapeHtml(product.code)}" ${checked ? 'checked' : ''} aria-label="选择${escapeHtml(productLabel(product))}"></span><span><span class="school-order-picker-image">图片</span></span><span class="school-order-picker-product" title="${escapeHtml(productLabel(product))}">${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(productLabel(product))}</span><span>${escapeHtml(product.unit || '--')}</span><span><input class="picker-qty-input" type="number" min="0.01" step="0.01" value="${escapeHtml(quantity)}" placeholder="请输入数量" aria-label="${escapeHtml(product.name)}下单数量"></span><span><input class="picker-remark-input" type="text" value="${escapeHtml(remark)}" placeholder="请输入备注" aria-label="${escapeHtml(product.name)}备注"></span></div>`;
+        const quantityStep = isStandardProduct(product) ? '1' : '0.01';
+        const quantityInputMode = isStandardProduct(product) ? 'numeric' : 'decimal';
+        return `<div class="school-order-picker-row" data-picker-code="${escapeHtml(product.code)}"><span><input class="picker-product-check" type="checkbox" value="${escapeHtml(product.code)}" ${checked ? 'checked' : ''} aria-label="选择${escapeHtml(productLabel(product))}"></span><span><span class="school-order-picker-image product-picker-image">图片</span></span><span class="school-order-picker-product product-picker-product" title="${escapeHtml(productLabel(product))}">${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(productLabel(product))}</span><span>${escapeHtml(product.unit || '--')}</span><span><input class="picker-qty-input" type="number" min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${escapeHtml(quantity)}" placeholder="请输入数量" aria-label="${escapeHtml(product.name)}下单数量"></span><span><input class="picker-remark-input" type="text" value="${escapeHtml(remark)}" placeholder="请输入备注" aria-label="${escapeHtml(product.name)}备注"></span></div>`;
       }).join('')}`;
+      const pageButtons = Array.from({ length: pages }, (_, index) => index + 1).map((pageNumber) => `<button type="button" class="product-picker-page-button ${pageNumber === pickerPage ? 'active' : ''}" data-picker-page="${pageNumber}" ${pageNumber === pickerPage ? 'aria-current="page"' : ''}>${pageNumber}</button>`).join('');
+      pagination.innerHTML = `<span class="product-picker-total">共 ${filteredProducts.length} 条数据</span><select class="product-picker-page-size" disabled><option>20 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-picker-page="${Math.max(1, pickerPage - 1)}" ${pickerPage === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="product-picker-page-button" data-picker-page="${Math.min(pages, pickerPage + 1)}" ${pickerPage === pages ? 'disabled' : ''}>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="${pickerPage}" readonly> / ${pages} 页</label>`;
     };
 
     renderPickerRows();
+    modal.backdrop.addEventListener('input', (event) => {
+      if (!event.target.matches('.picker-qty-input')) return;
+      const code = event.target.closest('[data-picker-code]')?.dataset.pickerCode;
+      restrictStandardQuantity(event.target, currentProduct(code));
+    });
     modal.backdrop.querySelector('[data-picker-query]').addEventListener('click', renderPickerRows);
     modal.backdrop.querySelector('[data-picker-reset]').addEventListener('click', () => {
+      keywordInput.value = '';
       categorySelect.value = '';
+      pickerPage = 1;
       renderPickerRows();
     });
+    pagination.addEventListener('click', (event) => { const button = event.target.closest('[data-picker-page]'); if (!button || button.disabled) return; pickerPage = Number(button.dataset.pickerPage) || 1; renderPickerRows(); });
     modal.backdrop.querySelector('[data-modal-confirm]').addEventListener('click', () => {
       capturePickerValues();
-      const codes = [...list.querySelectorAll('.picker-product-check:checked')].map((input) => input.value);
+      const codes = [...pickerValues.entries()].filter(([, value]) => value.checked).map(([code]) => code);
       const chosen = codes.map(currentProduct).filter(Boolean);
       const next = state.items.slice();
       chosen.forEach((product) => {
         const pickerValue = pickerValues.get(product.code) || {};
         const existingIndex = next.findIndex((item) => item.productCode === product.code);
-        const item = { id: `SOL-NEW-${Date.now()}-${product.code}`, productCode: product.code, productName: product.name, unit: product.unit, brand: product.brand, spec: product.spec, isNetVegetable: product.isNetVegetable === true, orderQty: 0, orderPrice: product.marketPrice, agreementPrice: '', recentSalePrice: product.marketPrice, marketPrice: product.marketPrice, remark: '' };
+        const item = { id: `SOL-NEW-${Date.now()}-${product.code}`, productCode: product.code, productName: product.name, unit: product.unit, brand: product.brand, spec: product.spec, isNetVegetable: product.isNetVegetable === true, isStandardProduct: isStandardProduct(product), orderQty: 0, orderPrice: product.marketPrice, agreementPrice: '', recentSalePrice: product.marketPrice, marketPrice: product.marketPrice, remark: '' };
         item.orderQty = number(pickerValue.quantity);
         item.remark = pickerValue.remark || '';
         if (existingIndex >= 0) next[existingIndex] = { ...next[existingIndex], orderQty: item.orderQty, remark: item.remark };
@@ -306,6 +342,12 @@
     }
     if (status !== '草稿' && !payload.items.some((item) => item.productName && item.orderQty > 0)) {
       setError(page, '请至少添加一条商品并填写下单数量');
+      return;
+    }
+    const invalidStandardItem = payload.items.find((item) => item.productName && item.orderQty > 0
+      && isStandardProduct(item) && !Number.isInteger(Number(item.orderQty)));
+    if (invalidStandardItem) {
+      setError(page, '标品下单数量必须为整数');
       return;
     }
     if (mode === 'edit') service.update(orderId, { ...payload, ...(status ? { status } : {}) });

@@ -17,6 +17,11 @@
   background: transparent;
 }
 
+.price-business-page.order-module-page > .operations-filter,
+.price-execution-source-page.order-module-page > .operations-filter {
+  margin-top: 14px;
+}
+
 .order-module-page .operations-filter-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--order-filter-actions-width);
@@ -380,6 +385,14 @@
   margin: 0 8px 0 4px;
   color: #d9dee8;
   font-weight: 400;
+}
+
+.order-module-page.order-tag-page + #recordOverlay .operations-modal:not(.is-detail) .operations-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.order-module-page.order-tag-page + #recordOverlay .operations-form-item select.is-placeholder {
+  color: var(--text-tertiary);
 }
 
 /* 仓库档案字段较多，保持可读列宽，超出容器时通过横向滚动查看。 */

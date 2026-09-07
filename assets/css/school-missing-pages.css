@@ -152,6 +152,28 @@
   margin-bottom: 8px;
 }
 
+/* 食堂管理页按参考页面将新增操作独立到筛选行下方，表格高度随内容收起。 */
+.school-missing-page.school-canteen-page .school-page-filter {
+  margin-bottom: 10px;
+}
+
+.school-missing-page.school-canteen-page .school-filter-actions {
+  gap: 16px;
+}
+
+.school-missing-page.school-canteen-page .school-filter-actions .btn {
+  min-width: 64px;
+}
+
+.school-missing-page.school-canteen-page .school-page-toolbar {
+  justify-content: flex-start;
+}
+
+.school-missing-page.school-canteen-page .school-page-toolbar .btn {
+  min-width: 96px;
+  justify-content: center;
+}
+
 .school-missing-page .school-toolbar-left,
 .school-missing-page .school-toolbar-right {
   display: flex;
@@ -210,11 +232,23 @@
   background: #fff;
 }
 
+.school-missing-page.school-canteen-page .school-table-container {
+  flex: 0 0 auto;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+}
+
 .school-missing-page .school-table-wrap {
   min-width: 0;
   min-height: 0;
   flex: 1 1 auto;
   overflow: auto;
+}
+
+.school-missing-page.school-canteen-page .school-table-wrap {
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .school-missing-page .school-data-table {
@@ -225,6 +259,13 @@
   border-spacing: 0;
   color: var(--text-primary);
   font-size: 14px;
+}
+
+.school-missing-page.school-canteen-page .school-data-table {
+  min-width: 0;
+  border: 1px solid #edf0f5;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .school-missing-page .school-data-table th,
@@ -250,12 +291,26 @@
   font-weight: 500;
 }
 
+.school-missing-page.school-canteen-page .school-data-table th {
+  height: 52px;
+  background: #f3f5fb;
+  color: #7d8798;
+}
+
+.school-missing-page.school-canteen-page .school-data-table td {
+  height: 60px;
+}
+
 .school-missing-page .school-data-table tbody tr:hover td {
   background: #f7fbff;
 }
 
 .school-missing-page .school-data-table tbody tr:nth-child(even) td {
   background: #fafbfc;
+}
+
+.school-missing-page.school-canteen-page .school-data-table tbody tr:nth-child(even) td {
+  background: #fff;
 }
 
 .school-missing-page .school-data-table tbody tr:nth-child(even):hover td {
@@ -546,8 +601,13 @@
 }
 
 /* 详情/表单页 */
-.school-missing-page.school-form-page {
-  overflow: auto;
+.school-missing-page.school-form-page:not(.school-canteen-form-page) {
+ overflow: auto;
+}
+
+.school-missing-page.school-canteen-form-page {
+  overflow: hidden;
+  padding-bottom: 0;
 }
 
 .school-missing-page .school-form-header,
@@ -786,20 +846,261 @@
   white-space: nowrap;
 }
 
-.school-missing-page .school-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+.school-missing-page:not(.school-canteen-form-page) .school-form-actions {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: 12px;
   margin-top: 28px;
   padding-top: 20px;
   border-top: 1px solid #edf0f5;
 }
 
-.school-missing-page .school-form-actions .btn {
-  min-width: 100px;
-  justify-content: center;
+.school-missing-page:not(.school-canteen-form-page) .school-form-actions .btn {
+ min-width: 100px;
+ justify-content: center;
 }
+
+.school-canteen-form-page > form#schoolCanteenForm {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.school-canteen-form-page .school-canteen-form-content {
+ min-height: 0;
+ flex: 1 1 auto;
+ box-sizing: border-box;
+ overflow-x: hidden;
+ overflow-y: auto;
+ padding-bottom: 28px;
+ scroll-padding-top: 54px;
+}
+
+.school-canteen-form-page .school-canteen-form-content::after {
+ display: block;
+ height: 20px;
+ content: '';
+ pointer-events: none;
+}
+
+.school-canteen-form-page .school-canteen-form-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  min-height: 42px;
+  margin: 0 0 24px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--border-light);
+  background: #fff;
+}
+
+.school-canteen-form-page .school-canteen-form-tab {
+  position: relative;
+  height: 42px;
+  padding: 0 2px;
+  border: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.school-canteen-form-page .school-canteen-form-tab.is-active {
+  color: var(--primary);
+}
+
+.school-canteen-form-page .school-canteen-form-tab.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--primary);
+  content: '';
+}
+
+.school-canteen-form-page .school-canteen-form-tab:hover {
+  color: var(--primary);
+}
+
+.school-canteen-form-page .school-canteen-form-panel {
+  display: block;
+  scroll-margin-top: 54px;
+}
+
+.school-canteen-form-page .school-canteen-form-panel + .school-canteen-form-panel {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f5;
+}
+
+.school-canteen-form-page .school-canteen-form-panel[data-canteen-panel="operation"] {
+  box-sizing: border-box;
+  min-height: calc(100% - 54px);
+}
+
+.school-canteen-form-page .school-form-actions {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: 12px;
+ flex: 0 0 auto;
+ z-index: 10;
+ margin: 0 -24px;
+  padding: 14px 24px;
+  background: rgba(255, 255, 255, .97);
+ border-top: 1px solid #edf0f5;
+}
+
+.school-canteen-form-page .school-form-actions .btn {
+ min-width: 100px;
+ justify-content: center;
+}
+
+.school-canteen-form-page .school-canteen-operation-intro {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.school-canteen-form-page .school-canteen-operation-intro strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.school-canteen-form-page .school-canteen-operation-intro span {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.school-canteen-settings-table-wrap {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.school-canteen-settings-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.school-canteen-settings-table th,
+.school-canteen-settings-table td {
+  height: 52px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.school-canteen-settings-table th {
+  height: 44px;
+  color: #687486;
+  background: #fafbfc;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.school-canteen-settings-table thead tr:first-child th[colspan] {
+  height: 44px;
+  background: #fafbfc;
+  color: #687486;
+  font-size: 13px;
+}
+
+.school-canteen-settings-table thead tr:nth-child(2) th {
+  height: 40px;
+  background: #fafbfc;
+  font-size: 13px;
+}
+
+.school-canteen-settings-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.school-canteen-settings-table th:last-child,
+.school-canteen-settings-table td:last-child {
+  border-right: 0;
+}
+
+/* 运营设置横向滚动时固定前四列，保留人员类型与启用状态的可见性。 */
+.school-canteen-settings-table thead tr:first-child th[rowspan="2"],
+.school-canteen-settings-table tbody td:nth-child(-n + 4) {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+
+.school-canteen-settings-table thead tr:first-child th[rowspan="2"] {
+  z-index: 5;
+  background: #fafbfc;
+}
+
+.school-canteen-settings-table thead tr:first-child th:nth-child(1),
+.school-canteen-settings-table tbody td:nth-child(1) { left: 0; }
+
+.school-canteen-settings-table thead tr:first-child th:nth-child(2),
+.school-canteen-settings-table tbody td:nth-child(2) { left: 48px; }
+
+.school-canteen-settings-table thead tr:first-child th:nth-child(3),
+.school-canteen-settings-table tbody td:nth-child(3) { left: 168px; }
+
+.school-canteen-settings-table thead tr:first-child th:nth-child(4),
+.school-canteen-settings-table tbody td:nth-child(4) {
+  left: 268px;
+  box-shadow: 2px 0 4px rgba(31, 43, 67, .08);
+}
+
+.school-canteen-settings-table tbody tr.is-disabled td:nth-child(-n + 4) { background: #fcfdfe; }
+.school-canteen-settings-table tbody tr:hover td:nth-child(-n + 4) { background: #f7fbff; }
+
+.school-canteen-settings-table .col-index { width: 48px; }
+.school-canteen-settings-table .col-person { width: 120px; }
+.school-canteen-settings-table .col-nutrition { width: 100px; }
+.school-canteen-settings-table .col-enabled { width: 84px; }
+.school-canteen-settings-table .col-default { width: 112px; }
+.school-canteen-setting-index { color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.school-canteen-setting-person { color: var(--text-primary); text-align: center !important; }
+.school-canteen-setting-person span { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; white-space: nowrap; }
+.school-canteen-nutrition { color: var(--text-secondary); }
+.school-canteen-settings-table tr.is-disabled td { color: #aeb6c2; background: #fcfdfe; }
+.school-canteen-settings-table tr.is-disabled .school-canteen-nutrition,
+.school-canteen-settings-table tr.is-disabled .school-canteen-setting-person { color: #aeb6c2; }
+.school-canteen-default-people { width: 90px; height: 30px; box-sizing: border-box; padding: 0 6px; border: 1px solid var(--border-color); border-radius: 4px; outline: none; color: var(--text-primary); background: #fff; font: inherit; font-size: 13px; text-align: center; }
+.school-canteen-default-people { appearance: textfield; }
+.school-canteen-default-people::-webkit-inner-spin-button,
+.school-canteen-default-people::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.school-canteen-default-people:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(23, 104, 229, .08); }
+.school-canteen-default-people:disabled { border-color: #edf0f5; color: #b8c0cb; background: #f7f8fa; cursor: not-allowed; }
+.school-canteen-default-people::placeholder { color: #b1b9c5; }
+
+.school-canteen-switch { position: relative; display: inline-flex; width: 38px; height: 22px; align-items: center; cursor: pointer; }
+.school-canteen-switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.school-canteen-switch span { position: relative; display: block; width: 38px; height: 22px; border-radius: 11px; background: #d9dee7; transition: background .16s ease; }
+.school-canteen-switch span::after { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(31, 43, 67, .18); content: ''; transition: transform .16s ease; }
+.school-canteen-switch input:checked + span { background: var(--primary); }
+.school-canteen-switch input:checked + span::after { transform: translateX(16px); }
+.school-canteen-switch input:focus-visible + span { outline: 2px solid rgba(23, 104, 229, .28); outline-offset: 2px; }
+
+.school-canteen-settings-empty { min-height: 180px; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 13px; }
 
 @media (max-width: 1100px) {
   .school-missing-page .school-filter-grid {
@@ -837,5 +1138,13 @@
   .school-missing-page .school-upload-label {
     padding-top: 0;
     text-align: left;
+  }
+
+  .school-canteen-form-page .school-form-actions {
+    margin-right: -16px;
+    margin-bottom: 0;
+    margin-left: -16px;
+    padding-right: 16px;
+    padding-left: 16px;
   }
 }

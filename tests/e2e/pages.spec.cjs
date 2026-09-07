@@ -20,6 +20,11 @@ for (const route of pages) {
     const response = await page.goto(`/${route}`, { waitUntil: 'networkidle' });
     expect(response?.ok(), `${route} HTTP 加载失败`).toBeTruthy();
     await expect(page.locator('body')).toBeVisible();
+    if (route === 'school-mobile.html') {
+      await expect(page.locator('.school-mobile-preview'), `${route} 原型预览容器不可见`).toBeVisible();
+      expect(errors, `${route} 存在运行时错误`).toEqual([]);
+      return;
+    }
     await expect(page.locator('.app-header'), `${route} 顶部栏不可见`).toBeVisible();
     await expect(page.locator('.breadcrumb-bar'), `${route} 页签栏不可见`).toBeVisible();
     await expect(page.locator('.sidebar-logo'), `${route} 侧边栏品牌区不可见`).toBeVisible();

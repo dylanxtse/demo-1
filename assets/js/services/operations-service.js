@@ -130,6 +130,16 @@
     return product?.isNetVegetable === true;
   }
 
+  function isStandardProduct(item) {
+    if (item?.isStandardProduct === true || item?.isStandardProduct === 'true' || item?.isStandardProduct === '是'
+      || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是') return true;
+    const products = window.DemoStore?.get('products') || window.MockProducts || [];
+    const code = item?.productId || item?.productCode || item?.goodsCode || item?.goodsId;
+    const product = products.find((entry) => String(entry.code || entry.id) === String(code));
+    return product?.isStandardProduct === true || product?.isStandardProduct === 'true' || product?.isStandardProduct === '是'
+      || product?.isStandard === true || product?.isStandard === 'true' || product?.isStandard === '是';
+  }
+
   function matches(item, conditions, resource) {
     return Object.entries(conditions || {}).every(([key, value]) => {
       if (value === '' || value == null) return true;
@@ -291,6 +301,9 @@
     }
     if (resource === 'orders' && data.items.some((item) => !(Number(item.quantity) > 0) || Number(item.unitPrice) < 0)) {
       throw error('INVALID_ORDER_GOODS', '请完整填写商品下单数量和下单单价');
+    }
+    if (resource === 'orders' && data.items.some((item) => isStandardProduct(item) && !Number.isInteger(Number(item.quantity)))) {
+      throw error('INVALID_STANDARD_PRODUCT_QUANTITY', '标品下单数量必须为整数');
     }
     if (resource === 'tags') {
       const duplicate = load(resource).some((item) =>

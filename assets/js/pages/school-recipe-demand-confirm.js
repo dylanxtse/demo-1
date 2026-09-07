@@ -87,16 +87,27 @@
   });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 12
   });
   const productDisplay = (item) => window.DomUtils?.formatProductDisplay
     ? window.DomUtils.formatProductDisplay(item)
     : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
-  const purchaseQuantity = (value) => {
+  const productForIngredient = (item) => {
+    const code = item?.productCode || item?.productId || item?.goodsCode || '';
+    const catalog = window.SchoolOrderService?.getProductCatalog?.() || window.DemoStore?.get?.('products') || window.MockProducts || [];
+    return catalog.find((product) => String(product.code || product.id) === String(code)) || {};
+  };
+  const isStandardProduct = (item) => item?.isStandardProduct === true || item?.isStandardProduct === 'true' || item?.isStandardProduct === '是'
+    || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是'
+    || productForIngredient(item).isStandardProduct === true || productForIngredient(item).isStandard === true;
+  const renderProductName = (item, display) => `${item?.isNetVegetable === true || productForIngredient(item).isNetVegetable === true ? '<span class="school-recipe-net-vegetable-tag">净菜</span>' : ''}${escapeHtml(display)}`;
+  const purchaseQuantity = (value, item) => {
     const amount = Number(value);
-    return Number.isFinite(amount) ? Math.ceil(amount) : 0;
+    return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
   };
   const currentCanteen = window.AppStorage?.read?.('school-recipe-current-canteen', window.SchoolOrderService?.CANTEEN_NAME || '第一食堂') || window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
+  const currentCanteenScope = demandService.currentCanteen?.(currentCanteen) || { id: '', name: currentCanteen };
+  const currentCanteenName = currentCanteenScope.name || currentCanteen;
   const calendarIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg>';
   const weekday = (date) => weekdayNames[dateObject(date).getDay()];
   const dateLabel = (date) => `${date.slice(5, 7)}月${date.slice(8, 10)}日 星期${weekday(date)}`;
@@ -104,7 +115,7 @@
   const filledMealNames = (summary) => (summary?.menu?.meals || [])
     .filter((meal) => {
       const values = summary?.attendance?.meals?.[meal.key] || {};
-      return Number(values.student || 0) + Number(values.teacher || 0) > 0;
+      return (summary.participants || []).some((participant) => Number(attendanceService.valueForParticipant(values, participant) || 0) > 0);
     })
     .map((meal) => meal.name)
     .join('、') || '--';
@@ -169,19 +180,30 @@
 
   function renderAttendanceDetail(summary) {
     const meals = summary?.menu?.meals?.length ? summary.menu.meals : (attendanceService.mealTypes || []);
+    const participants = summary?.participants || [];
+    const personHeaders = participants.length
+      ? participants.map((participant) => `<th>${escapeHtml(attendanceService.participantDisplayName?.(participant, participants) || `${participant.label || participant.tagName || '--'}—${participant.nutritious || '不区分'}`)}</th>`).join('')
+      : '<th>暂无人员类型</th>';
     const rows = meals.map((meal) => {
       const values = summary?.attendance?.meals?.[meal.key] || {};
-      const hasStudent = values.student !== '' && values.student != null;
-      const hasTeacher = values.teacher !== '' && values.teacher != null;
-      const total = hasStudent || hasTeacher ? Number(values.student || 0) + Number(values.teacher || 0) : '--';
-      return `<tr><td>${escapeHtml(meal.name)}</td><td class="is-number">${attendanceValue(values.student)}</td><td class="is-number">${attendanceValue(values.teacher)}</td><td class="is-number is-total">${typeof total === 'number' ? number(total) : total}</td></tr>`;
+      const hasPeople = participants.some((participant) => attendanceService.valueForParticipant(values, participant) !== '');
+      const total = hasPeople ? participants.reduce((sum, participant) => sum + Number(attendanceService.valueForParticipant(values, participant) || 0), 0) : '--';
+      const personCells = participants.length
+        ? participants.map((participant) => `<td class="is-number">${attendanceValue(attendanceService.valueForParticipant(values, participant))}</td>`).join('')
+        : '<td class="is-number">--</td>';
+      return `<tr><td>${escapeHtml(meal.name)}</td>${personCells}<td class="is-number is-total">${typeof total === 'number' ? number(total) : total}</td></tr>`;
     }).join('');
-    return `<div class="school-recipe-demand-attendance-detail"><table class="school-recipe-demand-attendance-detail-table"><colgroup><col class="col-meal"><col class="col-person"><col class="col-person"><col class="col-total"></colgroup><thead><tr><th>餐次</th><th>学生</th><th>教师</th><th>合计</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="school-recipe-demand-record-detail-empty-cell">暂无餐次填报记录</td></tr>'}</tbody></table></div>`;
+    const personColgroup = Array.from({ length: Math.max(1, participants.length) }, () => '<col class="col-person">').join('');
+    const emptyColspan = 2 + Math.max(1, participants.length);
+    return `<div class="school-recipe-demand-attendance-detail"><table class="school-recipe-demand-attendance-detail-table"><colgroup><col class="col-meal">${personColgroup}<col class="col-total"></colgroup><thead><tr><th>餐次</th>${personHeaders}<th>合计</th></tr></thead><tbody>${rows || `<tr><td colspan="${emptyColspan}" class="school-recipe-demand-record-detail-empty-cell">暂无餐次填报记录</td></tr>`}</tbody></table></div>`;
   }
 
   function renderDateSummaryTable(preview) {
     const summaries = preview.dateSummaries
       .filter((summary) => Number(summary.calculation?.totalPeople || 0) > 0);
+    const participants = preview.participants || [];
+    const participantHeaders = participants.map((participant) => `<th>${escapeHtml(attendanceService.participantDisplayName?.(participant, participants) || `${participant.label || participant.tagName || '--'}—${participant.nutritious || '不区分'}`)}人次</th>`).join('');
+    const participantColgroup = participants.map(() => '<col class="col-person">').join('');
     const rows = summaries
       .map((summary, index) => {
         const cannotDelete = summary.submitted || summaries.length <= 1;
@@ -192,34 +214,36 @@
       <td>${escapeHtml(dateLabel(summary.date))}</td>
       <td>${escapeHtml(filledMealNames(summary))}</td>
       <td>${escapeHtml(recipeName(summary.menu?.name || summary.menu?.version || '--'))}</td>
-      <td class="is-number">${number(summary.calculation.totalStudentPeople)}</td>
-      <td class="is-number">${number(summary.calculation.totalTeacherPeople)}</td>
+      ${participants.map((participant) => `<td class="is-number">${number(summary.calculation.participantPeople?.[participant.key])}</td>`).join('')}
       <td class="is-number is-total">${number(summary.calculation.totalPeople)}</td>
       <td class="is-number">${number(summary.calculation.rows.filter((row) => row.mappingStatus === '已关联').length)}</td>
       <td class="school-recipe-demand-table-action"><button type="button" class="school-recipe-demand-delete" data-action="delete-attendance" data-date="${escapeHtml(summary.date)}" title="${escapeHtml(deleteTitle)}" ${cannotDelete ? 'disabled' : ''}>删除</button></td>
-    </tr><tr id="${detailId}" class="school-recipe-demand-date-detail-row" data-date-detail-row hidden><td colspan="9">${renderAttendanceDetail(summary)}</td></tr>`;
+    </tr><tr id="${detailId}" class="school-recipe-demand-date-detail-row" data-date-detail-row hidden><td colspan="${7 + participants.length}">${renderAttendanceDetail(summary)}</td></tr>`;
       }).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-date-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-meal"><col class="col-version"><col class="col-person"><col class="col-person"><col class="col-total"><col class="col-count"><col class="col-action"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>填报餐次</th><th>食谱名称</th><th>学生人次</th><th>教职工人次</th><th>总人次</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-date-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-meal"><col class="col-version">${participantColgroup}<col class="col-total"><col class="col-count"><col class="col-action"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>填报餐次</th><th>食谱名称</th>${participantHeaders}<th>总人次</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">暂无已填报日期</div>';
   }
 
   function renderProductTable(preview) {
+    const participants = preview.participants || [];
+    const participantColumns = participants.map((participant) => {
+      const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
+      return `<th colspan="2">${escapeHtml(name)}</th>`;
+    }).join('');
+    const participantSubColumns = participants.map(() => '<th>需求量</th><th>采购数量</th>').join('');
+    const participantColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
     const rows = preview.rows
       .filter((row) => row.mappingStatus === '已关联')
       .map((row, index) => `<tr>
         <td>${index + 1}</td>
-        <td class="school-recipe-demand-ingredient-name">${escapeHtml((row.ingredientNames || []).join('、') || '--')}</td>
-        <td class="school-recipe-demand-product-name">${escapeHtml(productDisplay(row))}</td>
+        <td class="school-recipe-demand-product-name">${renderProductName(row, productDisplay(row))}</td>
         <td>${escapeHtml(row.productCode || '--')}</td>
         <td>${escapeHtml(row.unit || '--')}</td>
-        <td class="is-number">${quantity(row.studentQty)}</td>
-        <td class="is-number">${purchaseQuantity(row.studentQty)}</td>
-        <td class="is-number">${quantity(row.teacherQty)}</td>
-        <td class="is-number">${purchaseQuantity(row.teacherQty)}</td>
+        ${participants.map((participant) => `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('')}
       </tr>`).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-ingredient"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-quantity"><col class="col-purchase"><col class="col-quantity"><col class="col-purchase"></colgroup><thead><tr><th>序号</th><th>来源食材</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>学生需求量</th><th>学生采购数量</th><th>教职工需求量</th><th>教职工采购数量</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit">${participantColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${participantColumns}</tr><tr>${participantSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">当前选中日期暂无可提交的商品需求</div>';
   }
 
@@ -230,7 +254,7 @@
     return `<main class="school-recipe-demand-detail-panel" aria-label="需求确认详情">
       <header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>需求确认</h1></header>
       <div class="school-recipe-demand-detail-scroll">
-        <div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteen)}</strong></div><div class="operations-field school-recipe-demand-delivery-field"><label class="filter-label" for="schoolRecipeExpectedAt">期望送达时间</label><div class="date-input-control"><input class="filter-input" id="schoolRecipeExpectedAt" type="text" value="${escapeHtml(state.expectedAt)}" placeholder="请选择日期" readonly aria-label="期望送达时间"><span class="date-range-icon" aria-hidden="true">${calendarIcon}</span></div></div></div>
+        <div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteenName)}</strong></div><div class="operations-field school-recipe-demand-delivery-field"><label class="filter-label" for="schoolRecipeExpectedAt">期望送达时间</label><div class="date-input-control"><input class="filter-input" id="schoolRecipeExpectedAt" type="text" value="${escapeHtml(state.expectedAt)}" placeholder="请选择日期" readonly aria-label="期望送达时间"><span class="date-range-icon" aria-hidden="true">${calendarIcon}</span></div></div></div>
         <section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderDateSummaryTable(preview)}</section>
         <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>${renderProductTable(preview)}</section>
       </div>
@@ -287,7 +311,7 @@
     confirmButton.disabled = true;
     confirmButton.textContent = '提交中…';
     modal.querySelector('[data-modal-cancel]')?.setAttribute('disabled', 'disabled');
-    demandService.submit([...state.selectedDates], { expectedAt: state.expectedAt })
+    demandService.submit([...state.selectedDates], { expectedAt: state.expectedAt, canteen: currentCanteenScope })
       .then(() => {
         closeSubmitConfirm();
         showToast('操作成功');
@@ -308,7 +332,7 @@
     backdrop.className = 'operations-modal-backdrop';
     backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-demand-submit-modal" role="dialog" aria-modal="true" aria-label="提示">
       <header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header>
-      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteen)}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div><div class="info-item"><span class="info-label">期望送达时间：</span><span class="info-value">${escapeHtml(state.expectedAt || '--')}</span></div></div></div></div>
+      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteenName)}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div><div class="info-item"><span class="info-label">期望送达时间：</span><span class="info-value">${escapeHtml(state.expectedAt || '--')}</span></div></div></div></div>
       <footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer>
     </section>`;
     document.body.appendChild(backdrop);
@@ -381,7 +405,7 @@
         .filter((selectedDate) => Number(dateSummaryFor(selectedDate)?.calculation?.totalPeople || 0) > 0)
         .length;
       if (button.disabled || submittedDates.has(date) || selectedDateCount <= 1) return;
-      if (!attendanceService.remove(date)) {
+      if (!attendanceService.remove(date, currentCanteenScope)) {
         showToast('未找到该日期的填报数据', true);
         return;
       }

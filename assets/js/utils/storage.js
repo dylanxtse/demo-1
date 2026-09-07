@@ -375,6 +375,19 @@
   function normalizeStateDecimals(current) {
     const amountDecimal = decimalPlaces(current.settings?.amountDecimal, Number(defaultSettings.amountDecimal));
     const quantityDecimal = decimalPlaces(current.settings?.quantityDecimal, Number(defaultSettings.quantityDecimal));
+    const productsByCode = new Map((current.products || []).map((product) => [
+      String(product.code || product.productId || product.id),
+      product
+    ]));
+    const isFlag = (value) => value === true || value === 'true' || value === '是';
+    const preservesFractionalQuantity = (node) => {
+      const code = node?.productId || node?.productCode || node?.goodsCode || node?.goodsId;
+      if (!code) return false;
+      const hasExplicitFlag = node.isStandardProduct !== undefined || node.isStandard !== undefined;
+      if (hasExplicitFlag) return !isFlag(node.isStandardProduct) && !isFlag(node.isStandard);
+      const product = productsByCode.get(String(code));
+      return Boolean(product) && !isFlag(product.isStandardProduct) && !isFlag(product.isStandard);
+    };
     let changed = false;
 
     const walk = (node) => {
@@ -385,7 +398,8 @@
       if (!node || typeof node !== 'object') return;
       Object.entries(node).forEach(([key, value]) => {
         if (quantityFields.has(key)) {
-          const next = normalizeDecimalValue(value, quantityDecimal);
+          const decimals = preservesFractionalQuantity(node) ? Math.max(quantityDecimal, 2) : quantityDecimal;
+          const next = normalizeDecimalValue(value, decimals);
           if (next !== value) {
             node[key] = next;
             changed = true;
@@ -435,7 +449,7 @@
     ].map(([code, name, unit, marketPrice], index) => ({ code, name, unit, marketPrice, status: '已上架', brand: '--', spec: '--', category: '其他材料-其他二级', seq: index + 1 }));
     const source = Array.isArray(window.MockProducts) && window.MockProducts.length ? window.MockProducts : fallbackProducts;
     const seededNetVegetables = new Set([
-      'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
+      'SP0300019', 'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
       'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
     ]);
     return source.filter((product) => product && (product.code || product.id)).map((product, index) => ({
@@ -444,6 +458,9 @@
       productId: product.code,
       seq: product.seq || index + 1,
       isNetVegetable: product.isNetVegetable === true || seededNetVegetables.has(product.code),
+      isStandardProduct: product.isStandardProduct === true || product.isStandardProduct === 'true'
+        || product.isStandardProduct === '是' || product.isStandard === true || product.isStandard === 'true'
+        || product.isStandard === '是',
       purchaseType: product.purchaseType || '供应商送货',
       source: product.source || '平台添加',
       addTime: product.addTime || `2026-08-${String((index % 9) + 1).padStart(2, '0')} 09:00:00`,
@@ -769,9 +786,9 @@
   }
 
   function normalizeProductMetadata(state) {
-    const revision = 'products-v6';
+    const revision = 'products-v8-standard-product-demo';
     const seededNetVegetables = new Set([
-      'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
+      'SP0300019', 'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
       'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
     ]);
     const refreshedProductCodes = new Set([
@@ -829,6 +846,20 @@
       const sourceProduct = window.MockProducts?.find((item) => (item.code || item.id) === productCode);
       if (product.seq == null || product.seq === '') {
         product.seq = index + 1;
+        changed = true;
+      }
+      const isStandardProduct = product.isStandardProduct === true
+        || product.isStandardProduct === 'true'
+        || product.isStandardProduct === '是'
+        || product.isStandard === true
+        || product.isStandard === 'true'
+        || product.isStandard === '是';
+      if (product.isStandardProduct !== isStandardProduct) {
+        product.isStandardProduct = isStandardProduct;
+        changed = true;
+      }
+      if (shouldRefreshProducts && sourceProduct?.isStandardProduct === true && !isStandardProduct) {
+        product.isStandardProduct = true;
         changed = true;
       }
       if (shouldRefreshProducts && sourceProduct && product.isNetVegetable !== sourceProduct.isNetVegetable) {
@@ -1365,6 +1396,7 @@
         goodsCode: line.productId,
         goodsName: line.goodsName || '',
         isNetVegetable: line.isNetVegetable === true,
+        isStandardProduct: line.isStandardProduct === true,
         customerId: order.customerId || '',
         customerName: order.customerName || '',
         canteen: order.canteen || '',
@@ -2142,6 +2174,7 @@
       goodsCode: line.productId || line.goodsCode || '',
       goodsName: line.goodsName || '',
       isNetVegetable: line.isNetVegetable === true,
+      isStandardProduct: line.isStandardProduct === true,
       customerId: order.customerId || '',
       customerName: order.customerName || '',
       canteen: order.canteen || '',
@@ -2162,6 +2195,28 @@
       operationLogs: [{ action: '创建', operator: order.creator || '系统', createdAt: now(), desc: `${order.creator || '系统'} 创建分拣任务` }]
     }));
     state.sortingTasks = [...tasks, ...existing];
+  }
+
+  function isStandardProductFlag(value) {
+    return value === true || value === 'true' || value === '是';
+  }
+
+  function isStandardOrderLine(state, line) {
+    if (isStandardProductFlag(line?.isStandardProduct) || isStandardProductFlag(line?.isStandard)) return true;
+    const code = line?.productId || line?.productCode || line?.goodsCode || line?.goodsId;
+    const product = (state.products || []).find((item) => String(item.code || item.id) === String(code));
+    return isStandardProductFlag(product?.isStandardProduct) || isStandardProductFlag(product?.isStandard);
+  }
+
+  function assertStandardOrderQuantities(state, items) {
+    const invalid = (items || []).find((item) => {
+      const value = Number(item?.quantity ?? item?.orderQty);
+      return isStandardOrderLine(state, item) && Number.isFinite(value) && !Number.isInteger(value);
+    });
+    if (!invalid) return;
+    const error = new Error('标品下单数量必须为整数');
+    error.code = 'INVALID_STANDARD_PRODUCT_QUANTITY';
+    throw error;
   }
 
   function createShippingOrder(state, order) {
@@ -2337,6 +2392,7 @@
   window.OrderFlowService = {
     createOrder(data) {
       return window.DemoStore.transact((state) => {
+        assertStandardOrderQuantities(state, data.items);
         const sourceType = data.sourceType || (data.source === '客户下单' ? 'CUSTOMER' : 'ENTERPRISE');
         const orderId = data.orderId || `ORD-${Date.now()}`;
         const settings = state.settings;
@@ -2360,6 +2416,7 @@
           orderId,
           productId: item.productId || item.goodsCode || item.productCode || '',
           goodsCode: item.productId || item.goodsCode || item.productCode || '',
+          isStandardProduct: isStandardOrderLine(state, item),
           quantity: number(item.quantity),
           orderQty: number(item.quantity),
           subtotal: number(item.subtotal || number(item.quantity) * number(item.unitPrice))
@@ -2396,6 +2453,7 @@
       return window.DemoStore.transact((state) => {
         const order = getOrder(state, orderId);
         if (!order) return null;
+        if (Array.isArray(data.items)) assertStandardOrderQuantities(state, data.items);
         const updates = clone(data);
         if (updates.status === 'PENDING' && !['PENDING_CONFIRM', 'PENDING_AUDIT'].includes(order.status)) delete updates.status;
         Object.assign(order, updates, { id: order.id, orderId: order.id, updatedAt: now() });
@@ -2406,6 +2464,7 @@
             orderLineId: item.orderLineId || `${order.id}-LINE-${String(index + 1).padStart(3, '0')}`,
             orderId: order.id,
             productId: item.productId || item.goodsCode || item.productCode || '',
+            isStandardProduct: isStandardOrderLine(state, item),
             quantity: number(item.quantity),
             orderQty: number(item.quantity)
           }));

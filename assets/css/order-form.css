@@ -220,75 +220,6 @@
   border-color: var(--primary);
 }
 
-.goods-picker-modal {
-  width: min(760px, calc(100vw - 40px));
-}
-
-.goods-picker-list {
-  border: 1px solid #e4e8ef;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.goods-picker-row {
-  display: grid;
-  min-height: 44px;
-  grid-template-columns: 40px minmax(200px, 1fr) 60px 120px;
-  align-items: center;
-  padding: 0 14px;
-  border-bottom: 1px solid #edf0f5;
-}
-
-.goods-picker-row:last-child {
-  border-bottom: 0;
-}
-
-.goods-picker-header {
-  background: #f6f8fb;
-  font-weight: 500;
-  color: var(--text-primary);
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.goods-picker-row input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary);
-  cursor: pointer;
-}
-
-.goods-picker-row input[type="checkbox"]:disabled {
-  cursor: not-allowed;
-}
-
-.goods-picker-row .picker-qty-input {
-  width: 90px;
-  height: 30px;
-  border: 1px solid #d9dee8;
-  border-radius: 3px;
-  padding: 0 7px;
-  outline: none;
-  font-size: 13px;
-  text-align: center;
-}
-
-.goods-picker-row .picker-qty-input:focus {
-  border-color: var(--primary);
-}
-
-.goods-picker-row .picker-qty-input:disabled {
-  background: #f3f5f8;
-  color: #9aa4b2;
-  cursor: not-allowed;
-}
-
-.goods-picker-row .picker-already-tag {
-  color: var(--text-tertiary);
-  font-size: 13px;
-}
-
 .compact-modal {
   width: min(520px, calc(100vw - 40px));
 }
@@ -672,10 +603,4 @@
   min-width: 210px;
   text-align: left !important;
   padding: 6px 8px;
-}
-
-/* 批量添加商品弹窗样式修正 */
-.goods-picker-modal .operations-modal-body {
-  max-height: 60vh;
-  overflow-y: auto;
 }

@@ -429,10 +429,6 @@
 .bidding-dialog-close { border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 14px; }
 .bidding-dialog-body { flex: 1; min-height: 0; overflow: auto; padding: 18px 20px; }
 .bidding-dialog-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border-light); }
-.bidding-dialog-filter { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.bidding-dialog-filter label { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
-.bidding-dialog-filter input, .bidding-dialog-filter select { width: 210px; }
-.bidding-dialog .bidding-table { min-width: 900px; }
 .bidding-dialog .bidding-form-grid { grid-template-columns: 1fr; gap: 12px; }
 .supplier-reject-confirm-dialog { width: min(420px, 100%); }
 .supplier-reject-confirm-message,

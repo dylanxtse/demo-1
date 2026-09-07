@@ -151,32 +151,6 @@
         customerName: draft.customerName || '待选择客户', productName: draft.productName || '待选择商品', productMeta: '斤/--/--',
         category: draft.category || '果蔬', agreedPrice: money(draft.price || 0), validPeriod: '2026-08-20 至 2026-12-31', status: '待生效'
       })
-    },
-    settlementChange: {
-      title: '结算改价', mode: 'sales', addLabel: '新建改价单', importLabel: '导入改价单',
-      filters: [
-        { key: 'updatedAt', label: '改价日期', type: 'date-range', from: '2026-07-20', to: '2026-08-20' },
-        { key: 'customerName', label: '客户名称', type: 'select' },
-        { key: 'status', label: '状态', type: 'select' },
-        { key: 'productName', label: '商品名称', type: 'input', placeholder: '请输入商品名称/编号' }
-      ],
-      rows: () => salesRows().map((row, index) => ({
-        ...row, settlementNo: `JSJG202608${String(index + 1).padStart(4, '0')}`,
-        orderNo: `DD202608${String(index + 1).padStart(6, '0')}`,
-        reason: ['临时促销', '客户补差', '配送损耗'][index % 3], status: ['待审核', '已生效', '已驳回'][index % 3]
-      })),
-      columns: [
-        { key: 'settlementNo', label: '改价单号' }, { key: 'orderNo', label: '订单号' },
-        { key: 'customerName', label: '客户名称' }, { key: 'productName', label: '商品名称', product: true },
-        { key: 'originalPrice', label: '原结算价（元）', money: true }, { key: 'newPrice', label: '调整后价格（元）', money: true },
-        { key: 'reason', label: '改价原因' }, { key: 'status', label: '状态', status: true }, { key: 'updatedAt', label: '更新时间' }
-      ],
-      newRow: (draft) => ({
-        id: `SCHG-${Date.now()}`, settlementNo: `JSJG${Date.now().toString().slice(-8)}`,
-        orderNo: `DD${Date.now().toString().slice(-10)}`, customerName: draft.customerName || '待选择客户',
-        productName: draft.productName || '待选择商品', productMeta: '斤/--/--', originalPrice: money(draft.price || 0),
-        newPrice: money(Number(draft.price || 0) + 0.2), reason: draft.reason || '临时调价', status: '待审核', updatedAt: today
-      })
     }
   };
 
@@ -347,7 +321,7 @@
       if (config.rowMode === 'marketInquiry' && rowAction.dataset.rowAction === 'copy' && row) { state.rows.unshift({ ...row, id: `XJD${Date.now()}`, inquiryNo: `XJD${Date.now()}` }); state.filteredRows = [...state.rows]; renderTable(); toast('复制成功'); }
       if (config.rowMode === 'marketInquiry' && rowAction.dataset.rowAction === 'activate' && row) { row.status = '已生效'; renderTable(); toast('生效成功'); }
       if (rowAction.dataset.rowAction === 'edit') openForm(row);
-      if (rowAction.dataset.rowAction === 'view') toast(`${config.title}：${row?.productName || row?.agreementNo || row?.settlementNo || '--'}`);
+      if (rowAction.dataset.rowAction === 'view') toast(`${config.title}：${row?.productName || row?.agreementNo || '--'}`);
     }
   });
   document.getElementById('priceManagementForm').addEventListener('submit', saveForm);

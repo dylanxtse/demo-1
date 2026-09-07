@@ -40,10 +40,11 @@
           <div class="school-filter-field"><label for="schoolCanteenName">食堂名称</label><select id="schoolCanteenName" class="school-control"><option value="">全部</option></select></div>
           <div class="school-filter-field"><label for="schoolCanteenContact">食堂联系人</label><input id="schoolCanteenContact" class="school-control" placeholder="负责人/联系电话"></div>
         </div>
-        <div class="school-filter-actions"><button class="btn btn-primary" id="schoolCanteenQuery" type="button">查询</button><button class="btn" id="schoolCanteenReset" type="button">重置</button><button class="btn btn-primary" id="schoolCanteenAdd" type="button">添加食堂</button></div>
+        <div class="school-filter-actions"><button class="btn btn-primary" id="schoolCanteenQuery" type="button">查询</button><button class="btn" id="schoolCanteenReset" type="button">重置</button></div>
       </div>
+      <div class="school-page-toolbar"><div class="school-toolbar-left"><button class="btn btn-primary" id="schoolCanteenAdd" type="button">添加食堂</button></div></div>
       <div class="school-table-container">
-        <div class="school-table-wrap"><table class="school-data-table school-canteen-table"><colgroup><col style="width:80px"><col style="width:32%"><col style="width:28%"><col style="width:25%"><col style="width:180px"></colgroup><thead><tr><th>序号</th><th>食堂名称</th><th>统一社会信用代码</th><th>食堂联系人</th><th>操作</th></tr></thead><tbody id="schoolCanteenBody"></tbody></table></div>
+        <div class="school-table-wrap"><table class="school-data-table school-canteen-table"><colgroup><col style="width:4.5%"><col style="width:17%"><col style="width:17%"><col style="width:51.5%"><col style="width:10%"></colgroup><thead><tr><th>序号</th><th>食堂名称</th><th>统一社会信用代码</th><th>食堂联系人</th><th>操作</th></tr></thead><tbody id="schoolCanteenBody"></tbody></table></div>
         <div class="school-page-pagination" id="schoolCanteenPagination"></div>
       </div>
       <div class="school-toast" id="schoolCanteenToast" role="status"></div>

@@ -125,13 +125,24 @@
             <span class="field-error"></span>
           </div>
 
-          <div class="form-field standalone-switch-field net-vegetable-switch-field">
-            <label class="field-label" for="isNetVegetable">是否净菜</label>
-            <label class="switch-control">
-              <input class="switch-input" id="isNetVegetable" name="isNetVegetable" type="checkbox">
-              <span class="switch-slider" aria-hidden="true"></span>
-            </label>
-            <span class="field-error"></span>
+          <div class="product-switches">
+            <div class="form-field standalone-switch-field net-vegetable-switch-field">
+              <label class="field-label" for="isNetVegetable">是否净菜</label>
+              <label class="switch-control">
+                <input class="switch-input" id="isNetVegetable" name="isNetVegetable" type="checkbox">
+                <span class="switch-slider" aria-hidden="true"></span>
+              </label>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="form-field standalone-switch-field standard-product-switch-field">
+              <label class="field-label" for="isStandardProduct">是否标品</label>
+              <label class="switch-control">
+                <input class="switch-input" id="isStandardProduct" name="isStandardProduct" type="checkbox">
+                <span class="switch-slider" aria-hidden="true"></span>
+              </label>
+              <span class="field-error"></span>
+            </div>
           </div>
 
           <div class="procurement-row net-vegetable-procurement-row">
@@ -320,11 +331,11 @@
   <script src="./assets/js/components/number-stepper.js"></script>
   <script src="./assets/js/utils/dom.js"></script>
   <script src="./assets/js/utils/business-rules.js"></script>
-  <script src="./assets/js/utils/storage.js"></script>
-  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js"></script>
+  <script src="./assets/js/utils/storage.js?v=20260907-standard-product-seed-1"></script>
+  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js?v=20260907-standard-product-seed-1"></script>
   <script src="./assets/js/utils/validator.js"></script>
 
-  <script src="./assets/js/services/product-service.js"></script>
-  <script src="./assets/js/pages/product-form.js?v=20260819-navigation-2"></script>
+  <script src="./assets/js/services/product-service.js?v=20260907-standard-product-1"></script>
+  <script src="./assets/js/pages/product-form.js?v=20260907-standard-product-1"></script>
 </body>
 </html>

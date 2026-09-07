@@ -1,0 +1,61 @@
+/* 下拉框占位文字独立显示，不作为 option 出现在候选列表中。 */
+.price-select-shell {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+.price-select-shell > select {
+  width: 100%;
+}
+
+.price-select-shell > select.is-placeholder {
+  color: transparent !important;
+}
+
+.price-select-shell > select option {
+  color: #1d2129;
+}
+
+.price-select-placeholder {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 30px;
+  left: 10px;
+  overflow: hidden;
+  color: #9aa4b2;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.price-select-shell.has-value > .price-select-placeholder {
+  display: none;
+}
+
+.pb-form-field > .price-select-shell {
+  flex: 1 1 auto;
+}
+
+.pb-form-field > .price-select-shell > select {
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 30px 0 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 3px;
+  outline: 0;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 9px center;
+  color: #1d2129;
+  font: inherit;
+  appearance: none;
+  cursor: pointer;
+}
+
+.pb-form-field > .price-select-shell > select:focus {
+  border-color: var(--primary);
+}

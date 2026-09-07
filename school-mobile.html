@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>学校移动端 - 食谱中心原型</title>
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/school-mobile.css?v=20260907-weekday-only-1">
+</head>
+<body class="school-mobile-preview-body">
+  <main class="school-mobile-preview" aria-label="学校移动端原型预览">
+    <div class="school-mobile-preview-toolbar">
+      <a class="school-mobile-preview-back" href="./school.html" data-school-mobile-back aria-label="返回学校端 Web">
+        <span aria-hidden="true">←</span>
+      </a>
+    </div>
+    <section class="school-mobile-device" aria-label="iPhone 学校移动端原型外壳">
+      <div class="school-mobile-device-speaker" aria-hidden="true"></div>
+      <div class="school-mobile-screen" id="schoolMobileApp">
+        <div class="school-mobile-loading">正在加载学校移动端…</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js?v=20260907-standard-product-seed-1"></script>
+  <script src="./assets/js/services/repository.js"></script>
+  <script src="./assets/js/data/mock-dataset.js?v=20260907-standard-product-seed-1"></script>
+  <script src="./assets/js/data/school-reference-data.js?v=20260907-demo-settings-1"></script>
+  <script src="./assets/js/services/school-canteen-config-service.js?v=20260907-meal-defaults-1"></script>
+  <script src="./assets/js/services/school-recipe-service.js?v=20260903-4"></script>
+  <script src="./assets/js/services/school-recipe-attendance-service.js?v=20260907-demand-raw-1"></script>
+  <script src="./assets/js/services/school-order-service.js?v=20260907-mobile-auth-2"></script>
+  <script src="./assets/js/services/operations-service.js?v=20260829-1"></script>
+  <script src="./assets/js/services/school-recipe-demand-service.js?v=20260907-mobile-auth-2"></script>
+  <script src="./assets/js/pages/school-mobile.js?v=20260907-weekday-only-1"></script>
+</body>
+</html>

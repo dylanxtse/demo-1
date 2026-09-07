@@ -59,7 +59,9 @@
             : isSchool
               ? [['enterprise', '切换至企业端'], ['education', '切换至教育局端'], ['supplier', '切换至供应商端'], ['operations', '切换至运维管理平台']]
               : [['education', '切换至教育局端'], ['supplier', '切换至供应商端'], ['operations', '切换至运维管理平台'], ['school', '切换至学校端']]
-      ).map(([target, label]) => `<button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="${target}">${label}</button>`).join('');
+      ).concat([['mobile', '切换至移动端']])
+        .map(([target, label]) => `<button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="${target}">${label}</button>`)
+        .join('');
       const avatar = isSupplier
         ? `<div class="user-avatar supplier-user-avatar" aria-hidden="true">${window.AppMenuConfig?.icons?.users || ''}</div>`
         : isOperations
@@ -108,7 +110,8 @@
             education: './education.html',
             supplier: './supplier-bidding-quotation.html',
             operations: './operations.html',
-            school: './school-product-management.html'
+            school: './school-product-management.html',
+            mobile: './school-mobile.html'
           };
           const target = routes[switchButton.dataset.shellSwitch];
           if (target) {

@@ -8,6 +8,17 @@
   // 以兼容订单数据先于商品目录初始化的情况。
   let catalog = [];
 
+  function isStandardProduct(item) {
+    return item?.isStandardProduct === true || item?.isStandardProduct === 'true' || item?.isStandardProduct === '是'
+      || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是';
+  }
+
+  function restrictStandardQuantity(input, item) {
+    if (!input || !isStandardProduct(item)) return;
+    const value = String(input.value || '');
+    if (value.includes('.')) input.value = value.split('.')[0];
+  }
+
   function refreshCatalog() {
     const allProducts = (window.DemoStore?.get('products') || [])
       .filter((product) => !product.status || product.status === 'ENABLE' || product.status === '已上架');
@@ -18,7 +29,11 @@
       unit: p.unit,
       brand: p.brand,
       spec: p.spec,
+      category: p.category || p.categoryName || '未分类',
+      purchaseType: p.purchaseType || '供应商送货',
+      image: p.image || p.imageUrl || '',
       isNetVegetable: !!p.isNetVegetable,
+      isStandardProduct: isStandardProduct(p),
       agreementPrice: Number(p.marketPrice || 0),
       lastPrice: Number(p.marketPrice || 0),
       marketPrice: Number(p.marketPrice || 0)
@@ -51,6 +66,7 @@
       brand: item.brand || '--',
       spec: item.spec || '--',
       isNetVegetable: !!item.isNetVegetable,
+      isStandardProduct: isStandardProduct(item),
       agreementPrice: Number(item.agreementPrice || item.unitPrice || 0),
       lastPrice: Number(item.lastPrice || 0),
       marketPrice: Number(item.marketPrice || 0)
@@ -65,6 +81,7 @@
   const readonlyMode = mode === 'audit' || mode === 'confirm';
   let currentRecord = null;
   let goodsItems = [];
+  let goodsPickerState = null;
   const DEFAULT_ROW_COUNT = 5;
 
   const template = document.getElementById('orderAddTemplate');
@@ -152,6 +169,7 @@
       agreementPrice: 0,
       lastPrice: 0,
       marketPrice: 0,
+      isStandardProduct: false,
       remark: ''
     };
   }
@@ -169,6 +187,7 @@
       brand: source.brand || item.brand || '',
       spec: source.spec || item.spec || '',
       isNetVegetable: item.isNetVegetable ?? source.isNetVegetable ?? false,
+      isStandardProduct: isStandardProduct(item) || isStandardProduct(source),
       quantity: Number(item.quantity || 0),
       unitPrice: Number(item.unitPrice ?? item.agreementPrice ?? source.agreementPrice ?? 0),
       agreementPrice: Number(item.agreementPrice ?? source.agreementPrice ?? 0),
@@ -202,13 +221,17 @@
   }
 
   function renderGoods() {
-    goodsBody.innerHTML = goodsItems.map((item, index) => `
+    goodsBody.innerHTML = goodsItems.map((item, index) => {
+      const standardProduct = isStandardProduct(item);
+      const quantityStep = standardProduct ? '1' : '0.01';
+      const quantityInputMode = standardProduct ? 'numeric' : 'decimal';
+      return `
       <tr data-line-id="${escapeHtml(item.id)}">
         <td>${index + 1}</td>
         <td><span class="goods-thumb">暂无图片</span></td>
         <td class="goods-name-cell">${renderGoodsSelect(item.goodsId, item.id)}</td>
         <td>${escapeHtml(item.unit || '--')}</td>
-        <td><input class="table-input" data-field="quantity" type="number" min="0.01" step="0.01" value="${item.quantity || ''}" placeholder="请输入" ${readonlyMode ? 'disabled' : ''}></td>
+        <td><input class="table-input" data-field="quantity" type="number" min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${item.quantity || ''}" placeholder="请输入" ${readonlyMode ? 'disabled' : ''}></td>
         <td><input class="table-input" data-field="unitPrice" type="number" min="0" step="0.01" value="${item.unitPrice ? money(item.unitPrice) : ''}" placeholder="请输入" ${readonlyMode ? 'disabled' : ''}></td>
         <td class="line-subtotal">${money(item.quantity * item.unitPrice)}</td>
         <td>${item.agreementPrice ? money(item.agreementPrice) : '--'}</td>
@@ -217,33 +240,70 @@
         <td><input class="table-input remark-input" data-field="remark" value="${escapeHtml(item.remark)}" placeholder="请输入备注" ${readonlyMode ? 'disabled' : ''}></td>
         <td>${readonlyMode ? '--' : '<button class="btn-text danger" type="button" data-remove-line>删除</button>'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
     document.getElementById('goodsTotal').textContent = money(goodsItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0));
   }
 
-  // 批量添加商品弹窗（使用 overlay 模态层）
+  function pickerImage(item) {
+    return item.image
+      ? `<span class="product-picker-image"><img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.productName)}"></span>`
+      : '<span class="product-picker-image" aria-label="暂无商品图片">图片</span>';
+  }
+
+  function renderGoodsPicker() {
+    if (!goodsPickerState) return;
+    const body = overlay.querySelector('#orderProductPickerBody');
+    const pagination = overlay.querySelector('#orderProductPickerPagination');
+    if (!body || !pagination) return;
+    const filtered = catalog.filter((item) => (!goodsPickerState.purchaseType || item.purchaseType === goodsPickerState.purchaseType)
+      && (!goodsPickerState.category || item.category === goodsPickerState.category));
+    const pages = Math.max(1, Math.ceil(filtered.length / goodsPickerState.pageSize));
+    goodsPickerState.page = Math.min(goodsPickerState.page, pages);
+    const start = (goodsPickerState.page - 1) * goodsPickerState.pageSize;
+    const visible = filtered.slice(start, start + goodsPickerState.pageSize);
+    body.innerHTML = visible.length ? visible.map((item) => {
+      const exists = goodsItems.some((line) => line.goodsId === item.id);
+      const draft = goodsPickerState.drafts.get(item.id) || {};
+      const quantityStep = isStandardProduct(item) ? '1' : '0.01';
+      const quantityInputMode = isStandardProduct(item) ? 'numeric' : 'decimal';
+      return `<tr data-picker-product="${escapeHtml(item.id)}">
+        <td><input type="checkbox" data-picker-check value="${escapeHtml(item.id)}" ${goodsPickerState.selected.has(item.id) ? 'checked' : ''} ${exists ? 'disabled' : ''} aria-label="选择${escapeHtml(item.productName)}"></td>
+        <td>${pickerImage(item)}</td>
+        <td class="product-picker-product" title="${escapeHtml(window.DomUtils.formatProductDisplay(item, catalog))}">${escapeHtml(window.DomUtils.formatProductDisplay(item, catalog))}</td>
+        <td>${escapeHtml(item.unit)}</td>
+        <td><input type="number" data-picker-quantity min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${escapeHtml(draft.quantity || '')}" placeholder="${exists ? '已添加' : '请输入数量'}" ${exists ? 'disabled' : ''}></td>
+        <td><input type="text" data-picker-remark value="${escapeHtml(draft.remark || '')}" placeholder="请输入备注" ${exists ? 'disabled' : ''}></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" style="height:180px;color:#9aa4b2">暂无符合条件的商品</td></tr>';
+    const pageButtons = Array.from({ length: pages }, (_, index) => index + 1).map((page) => `<button type="button" class="product-picker-page-button ${page === goodsPickerState.page ? 'active' : ''}" data-product-picker-action="page" data-page="${page}" ${page === goodsPickerState.page ? 'aria-current="page"' : ''}>${page}</button>`).join('');
+    pagination.innerHTML = `<span class="product-picker-total">共 ${filtered.length} 条数据</span><select class="product-picker-page-size" disabled aria-label="每页条数"><option>${goodsPickerState.pageSize} 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-product-picker-action="page" data-page="${Math.max(1, goodsPickerState.page - 1)}" ${goodsPickerState.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="product-picker-page-button" data-product-picker-action="page" data-page="${Math.min(pages, goodsPickerState.page + 1)}" ${goodsPickerState.page === pages ? 'disabled' : ''}>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="${goodsPickerState.page}" data-picker-jump inputmode="numeric" aria-label="跳转页码"> / ${pages} 页</label>`;
+  }
+
+  // 批量添加商品弹窗：全项目统一使用 product-picker 标准。
   function openGoodsModal() {
-    overlay.innerHTML = `<div class="operations-modal-backdrop"><section class="operations-modal goods-picker-modal" role="dialog" aria-modal="true" aria-label="批量添加商品">
-      <header class="operations-modal-header"><h3>批量添加商品</h3><button data-overlay-close aria-label="关闭">×</button></header>
-      <div class="operations-modal-body"><div class="goods-picker-list">
-        <div class="goods-picker-row goods-picker-header"><span>选择</span><span>商品名称（计量单位/品牌/规格）</span><span>单位</span><span>下单数量</span></div>
-        ${catalog.map((item) => {
-          const exists = goodsItems.some((line) => line.goodsId === item.id);
-          const tag = item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
-          return `<div class="goods-picker-row">
-            <input type="checkbox" value="${item.id}" ${exists ? 'disabled' : ''}>
-            <span>${tag}${escapeHtml(window.DomUtils.formatProductDisplay(item, catalog))}</span>
-            <span>${escapeHtml(item.unit)}</span>
-            ${exists ? '<span class="picker-already-tag">已添加</span>' : '<input type="number" class="picker-qty-input" min="0.01" step="0.01" placeholder="请输入数量">'}
-          </div>`;
-        }).join('')}
-      </div></div>
-      <footer class="operations-modal-footer"><button class="btn" data-overlay-close>取消</button><button class="btn btn-primary" id="confirmGoods">添加</button></footer>
+    goodsPickerState = { purchaseType: '', category: '', page: 1, pageSize: 20, selected: new Set(), drafts: new Map() };
+    const purchaseTypes = [...new Set(catalog.map((item) => item.purchaseType).filter(Boolean))];
+    const categories = [...new Set(catalog.map((item) => item.category).filter(Boolean))];
+    overlay.innerHTML = `<div class="product-picker-backdrop"><section class="product-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="orderProductPickerTitle">
+      <header class="product-picker-header"><h3 id="orderProductPickerTitle">批量添加商品</h3><button class="product-picker-close" type="button" data-overlay-close aria-label="关闭">×</button></header>
+      <div class="product-picker-body">
+        <div class="product-picker-filters">
+          <label class="product-picker-filter"><span>采购类型</span><select data-picker-filter="purchaseType"><option value="">请选择</option>${purchaseTypes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
+          <label class="product-picker-filter"><span>商品分类</span><select data-picker-filter="category"><option value="">请选择商品分类</option>${categories.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
+          <div class="product-picker-filter-actions"><button class="btn btn-primary btn-sm" type="button" data-product-picker-action="query">查询</button><button class="btn btn-sm" type="button" data-product-picker-action="reset">重置</button></div>
+        </div>
+        <div class="product-picker-table-wrap"><table class="product-picker-table"><colgroup><col style="width:48px"><col style="width:110px"><col><col style="width:120px"><col style="width:180px"><col style="width:180px"></colgroup><thead><tr><th><input type="checkbox" data-picker-check-all aria-label="全选当前页"></th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>下单数量</th><th>备注</th></tr></thead><tbody id="orderProductPickerBody"></tbody></table></div>
+        <div class="product-picker-pagination" id="orderProductPickerPagination"></div>
+      </div>
+      <footer class="product-picker-footer"><button class="btn" type="button" data-overlay-close>关闭</button><button class="btn btn-primary" type="button" id="confirmGoods">添加</button></footer>
     </section></div>`;
+    renderGoodsPicker();
   }
 
   function closeOverlay() {
     overlay.innerHTML = '';
+    goodsPickerState = null;
   }
 
   function readData(statusValue) {
@@ -261,6 +321,7 @@
         goodsCode: item.goodsCode || item.goodsId,
         goodsName: item.productName || item.goodsName,
         isNetVegetable: item.isNetVegetable ?? false,
+        isStandardProduct: isStandardProduct(item),
         unit: item.unit,
         brand: item.brand,
         spec: item.spec,
@@ -318,6 +379,14 @@
     if (invalidLine) {
       document.getElementById('goodsTableError').textContent = '请完整填写商品下单数量和下单单价';
       first ||= goodsBody.querySelector(`[data-line-id="${invalidLine.id}"] input`);
+    }
+    const invalidStandardLine = validItems.find((item) => {
+      const quantity = Number(item.quantity);
+      return isStandardProduct(item) && Number.isFinite(quantity) && !Number.isInteger(quantity);
+    });
+    if (invalidStandardLine) {
+      document.getElementById('goodsTableError').textContent = '标品下单数量必须为整数';
+      first ||= goodsBody.querySelector(`[data-line-id="${invalidStandardLine.id}"] [data-field="quantity"]`);
     }
     first?.focus();
     return !first;
@@ -547,6 +616,7 @@
     item.brand = product.brand;
     item.spec = product.spec;
     item.isNetVegetable = product.isNetVegetable;
+    item.isStandardProduct = isStandardProduct(product);
     item.agreementPrice = product.agreementPrice;
     item.lastPrice = product.lastPrice;
     item.marketPrice = product?.marketPrice || 0;
@@ -561,20 +631,53 @@
   }
 
   root.addEventListener('change', (event) => {
+    if (goodsPickerState && event.target.matches('[data-picker-check]')) {
+      if (event.target.checked) goodsPickerState.selected.add(event.target.value);
+      else goodsPickerState.selected.delete(event.target.value);
+      return;
+    }
+    if (goodsPickerState && event.target.matches('[data-picker-check-all]')) {
+      overlay.querySelectorAll('[data-picker-check]:not(:disabled)').forEach((checkbox) => {
+        checkbox.checked = event.target.checked;
+        if (event.target.checked) goodsPickerState.selected.add(checkbox.value);
+        else goodsPickerState.selected.delete(checkbox.value);
+      });
+      return;
+    }
+    if (goodsPickerState && event.target.matches('[data-picker-jump]')) {
+      goodsPickerState.page = Math.max(1, Number(event.target.value) || 1);
+      renderGoodsPicker();
+      return;
+    }
     if (event.target.matches('.filter-select')) event.target.classList.toggle('has-value', Boolean(event.target.value));
     if (event.target === form.elements.customerName) refreshCanteens();
     const row = event.target.closest('[data-line-id]');
     if (row && event.target.dataset.field) {
       const item = goodsItems.find((entry) => entry.id === row.dataset.lineId);
+      if (event.target.dataset.field === 'quantity') restrictStandardQuantity(event.target, item);
       item[event.target.dataset.field] = event.target.dataset.field === 'remark' ? event.target.value : Number(event.target.value);
       renderGoods();
     }
   });
 
   root.addEventListener('input', (event) => {
+    const pickerRow = event.target.closest('[data-picker-product]');
+    if (goodsPickerState && pickerRow && event.target.matches('[data-picker-quantity], [data-picker-remark]')) {
+      const productCode = pickerRow.dataset.pickerProduct;
+      const draft = goodsPickerState.drafts.get(productCode) || {};
+      if (event.target.matches('[data-picker-quantity]')) {
+        restrictStandardQuantity(event.target, catalog.find((item) => item.id === productCode));
+        draft.quantity = event.target.value;
+      } else {
+        draft.remark = event.target.value;
+      }
+      goodsPickerState.drafts.set(productCode, draft);
+      return;
+    }
     const row = event.target.closest('[data-line-id]');
     if (row && event.target.dataset.field) {
       const item = goodsItems.find((entry) => entry.id === row.dataset.lineId);
+      if (event.target.dataset.field === 'quantity') restrictStandardQuantity(event.target, item);
       item[event.target.dataset.field] = event.target.dataset.field === 'remark' ? event.target.value : Number(event.target.value);
       row.querySelector('.line-subtotal').textContent = money(item.quantity * item.unitPrice);
       document.getElementById('goodsTotal').textContent = money(goodsItems.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0));
@@ -596,24 +699,39 @@
       selectGoods(select, option);
       return;
     }
+    const pickerAction = event.target.closest('[data-product-picker-action]');
+    if (goodsPickerState && pickerAction) {
+      const action = pickerAction.dataset.productPickerAction;
+      if (action === 'query') {
+        goodsPickerState.purchaseType = overlay.querySelector('[data-picker-filter="purchaseType"]')?.value || '';
+        goodsPickerState.category = overlay.querySelector('[data-picker-filter="category"]')?.value || '';
+        goodsPickerState.page = 1;
+        renderGoodsPicker();
+      }
+      if (action === 'reset') {
+        goodsPickerState.purchaseType = '';
+        goodsPickerState.category = '';
+        goodsPickerState.page = 1;
+        overlay.querySelectorAll('[data-picker-filter]').forEach((input) => { input.value = ''; });
+        renderGoodsPicker();
+      }
+      if (action === 'page') {
+        goodsPickerState.page = Number(pickerAction.dataset.page) || 1;
+        renderGoodsPicker();
+      }
+      return;
+    }
     if (event.target.closest('[data-overlay-close]')) return closeOverlay();
     if (event.target.closest('#batchAddGoods')) return openGoodsModal();
     if (event.target.closest('#confirmGoods')) {
-      const rows = overlay.querySelectorAll('.goods-picker-row:not(.goods-picker-header)');
-      const newItems = [];
-      rows.forEach((row) => {
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        const qtyInput = row.querySelector('.picker-qty-input');
-        if (checkbox && checkbox.checked && qtyInput && qtyInput.value) {
-          const id = checkbox.value;
-          const exists = goodsItems.some((item) => item.goodsId === id);
-          if (!exists) {
-            const item = normalizedItem(catalog.find((entry) => entry.id === id));
-            item.quantity = Number(qtyInput.value);
-            newItems.push(item);
-          }
-        }
-      });
+      const newItems = [...goodsPickerState.selected].map((id) => {
+        const draft = goodsPickerState.drafts.get(id) || {};
+        if (!draft.quantity || goodsItems.some((item) => item.goodsId === id)) return null;
+        const item = normalizedItem(catalog.find((entry) => entry.id === id));
+        item.quantity = Number(draft.quantity);
+        item.remark = draft.remark || '';
+        return item;
+      }).filter(Boolean);
       if (!newItems.length) return toast('请勾选商品并填写下单数量', true);
       // 移除空行，添加选中商品，再补一个空行
       goodsItems = goodsItems.filter((item) => item.goodsId);

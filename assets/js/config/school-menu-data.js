@@ -5,10 +5,7 @@
     { name: '商品档案', icon: 'box', children: [
       { name: '商品管理', href: './school-product-management.html' }
     ] },
-    { name: '订单管理', icon: 'cart', children: [
-      { name: '订单管理', href: './school-order-management.html' },
-      { name: '订单退货', unavailable: true }
-    ] },
+    { name: '订单管理', icon: 'cart', href: './school-order-management.html' },
     { name: '食谱中心', icon: 'layers', children: [
       { name: '营养食谱', href: './school-recipe-center.html' },
       { name: '需求填报', href: './school-recipe-attendance.html' },

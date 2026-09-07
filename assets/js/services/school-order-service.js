@@ -13,15 +13,21 @@
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
+  const flag = (value) => value === true || value === 'true' || value === '是';
   const money = (value) => Number(number(value).toFixed(2));
   const timestamp = () => window.BusinessRules?.now?.()
     || new Date().toISOString().slice(0, 19).replace('T', ' ');
-  const currentOperator = () => window.DemoStore?.getSession?.()?.displayName || '杨';
+  const currentOperator = () => {
+    const session = window.SchoolMobileAuth
+      ? window.SchoolMobileAuth.getSession?.()
+      : window.DemoStore?.getSession?.();
+    return session?.displayName || session?.username || '杨';
+  };
   const datePart = (value) => String(value || timestamp()).slice(0, 10).replace(/-/g, '');
   const displayName = (name, unit, brand = '--', spec = '--') => `${name}（${unit || '--'}/${brand || '--'}/${spec || '--'}）`;
 
   function makeLine({
-    id, name, unit, brand = '--', spec = '--', productCode = '', isNetVegetable = false, orderPrice = 0,
+    id, name, unit, brand = '--', spec = '--', productCode = '', isNetVegetable = false, isStandardProduct = false, orderPrice = 0,
     orderQty = 0, shippedQty = 0, acceptedQty = null, returnQty = null,
     reconciledQty = null, traceCode = '', qualityReport = '1', remark = '--',
     productionDate = '', agreementPrice = '', recentSalePrice = orderPrice,
@@ -37,6 +43,7 @@
       id: id || `SOL-${Math.random().toString(36).slice(2, 9)}`,
       productCode,
       isNetVegetable: Boolean(isNetVegetable),
+      isStandardProduct: flag(isStandardProduct),
       productName: name,
       goodsName: name,
       unit: unit || '--',
@@ -242,6 +249,7 @@
     const name = String(line.productName || line.goodsName || '').trim();
     const qty = Math.max(0, number(line.orderQty ?? line.quantity));
     const price = Math.max(0, number(line.orderPrice ?? line.unitPrice));
+    const catalogProduct = getProductCatalog().find((product) => String(product.code) === String(line.productCode || line.goodsCode || ''));
     return makeLine({
       id: line.id || `SOL-LINE-${Date.now()}-${index + 1}`,
       name,
@@ -250,6 +258,8 @@
       spec: line.spec || '--',
       productCode: line.productCode || line.goodsCode || '',
       isNetVegetable: line.isNetVegetable === true,
+      isStandardProduct: flag(line.isStandardProduct) || flag(line.isStandard)
+        || flag(catalogProduct?.isStandardProduct) || flag(catalogProduct?.isStandard),
       orderPrice: price,
       orderQty: qty,
       shippedQty: number(line.shippedQty),
@@ -270,12 +280,18 @@
     const items = (payload.items || [])
       .map(lineFromPayload)
       .filter((line) => line.productName && line.orderQty > 0);
+    const invalidStandardLine = items.find((line) => line.isStandardProduct && !Number.isInteger(line.orderQty));
+    if (invalidStandardLine) throw new Error('标品下单数量必须为整数');
     const orderAmount = money(items.reduce((sum, line) => sum + line.orderSubtotal, 0));
     return {
       customerName: SCHOOL_NAME,
       supplierName: String(payload.supplierName || SUPPLIER_NAME).trim(),
       canteen: String(payload.canteen || '').trim(),
+      canteenId: String(payload.canteenId || '').trim(),
       orderTag: String(payload.orderTag || '').trim(),
+      orderTagId: String(payload.orderTagId || '').trim(),
+      orderTagName: String(payload.orderTagName || '').trim(),
+      nutritious: String(payload.nutritious || '').trim(),
       expectedAt: String(payload.expectedAt || '').trim(),
       supplement: String(payload.supplement || '否'),
       source: String(payload.source || '平台下单'),
@@ -336,6 +352,7 @@
       spec: product.spec || '--',
       category: product.category || product.categoryName || '',
       isNetVegetable: product.isNetVegetable === true,
+      isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
       marketPrice: money(product.marketPrice)
     }));
   }

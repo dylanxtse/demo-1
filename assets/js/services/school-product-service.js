@@ -13,7 +13,8 @@
       ...product,
       seq: product.seq ?? index + 1,
       supplier: product.supplier || product.defaultSupplier || '平台默认供应商',
-      isNetVegetable: product.isNetVegetable === true
+      isNetVegetable: product.isNetVegetable === true,
+      isStandardProduct: product.isStandardProduct === true
     }));
   }
 

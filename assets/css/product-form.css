@@ -76,6 +76,14 @@
   grid-column: 1;
 }
 
+.product-switches {
+  grid-column: 1;
+  display: grid;
+  row-gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+
 .multi-unit-row {
   position: relative;
   width: 100%;
@@ -86,6 +94,7 @@
 }
 
 .net-vegetable-switch-field,
+.standard-product-switch-field,
 .shelf-life-switch-field {
   grid-column: 1;
 }
@@ -758,6 +767,10 @@
 .product-form.is-readonly .standalone-switch-field,
 .product-form.is-readonly .image-field {
   grid-column: auto;
+}
+
+.product-form.is-readonly .product-switches {
+  display: contents;
 }
 
 .product-form.is-readonly .form-field {

@@ -1,0 +1,314 @@
+/* 全项目“批量添加商品”弹窗唯一视觉标准。 */
+.product-picker-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: rgba(0, 0, 0, .56);
+}
+
+.product-picker-backdrop[hidden] { display: none; }
+.bidding-modal-mask.product-picker-backdrop:not(.open) { display: none; }
+
+.product-picker-dialog {
+  display: flex;
+  width: min(1100px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  min-height: min(720px, calc(100vh - 96px));
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #eaecf2;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(22, 34, 56, .2);
+}
+
+/* 覆盖竞价页旧的 .bidding-dialog.wide，确保所有入口使用同一宽度。 */
+.bidding-dialog.wide.product-picker-dialog {
+  width: min(1100px, calc(100vw - 48px));
+}
+
+.product-picker-header {
+  display: flex;
+  min-height: 54px;
+  flex: 0 0 54px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border: 0;
+}
+
+.product-picker-header h2,
+.product-picker-header h3 {
+  margin: 0;
+  color: #1d2129;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.product-picker-close {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #86909c;
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.product-picker-close:hover { color: #1d2129; }
+
+.product-picker-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 20px;
+}
+
+.product-picker-filters {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr) auto;
+  align-items: center;
+  gap: 28px 48px;
+  padding: 18px 34px 24px;
+}
+
+.product-picker-filter {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: #4e5969;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.product-picker-filter > span { text-align: right; }
+
+.product-picker-filter input,
+.product-picker-filter select {
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 30px 0 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 3px;
+  outline: 0;
+  background-color: #fff;
+  color: #1d2129;
+  font: inherit;
+}
+
+.product-picker-filter select {
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 9px center;
+  appearance: none;
+}
+
+.product-picker-filter input:focus,
+.product-picker-filter select:focus { border-color: var(--primary); }
+
+.product-picker-filter input::placeholder { color: #a8afba; }
+
+.product-picker-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.product-picker-filter-actions .btn {
+  min-width: 72px;
+  justify-content: center;
+}
+
+.product-picker-table-wrap {
+  min-width: 0;
+  min-height: 260px;
+  flex: 1 1 auto;
+  overflow: auto;
+  border: 1px solid #e2e6ed;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.product-picker-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #1d2129;
+  font-size: 14px;
+}
+
+.product-picker-table th,
+.product-picker-table td {
+  height: 54px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-right: 1px solid #e7ebf2;
+  border-bottom: 1px solid #e7ebf2;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.product-picker-table th {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  height: 46px;
+  background: #f2f5fa;
+  color: #858b9c;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.product-picker-table th:last-child,
+.product-picker-table td:last-child { border-right: 0; }
+
+.product-picker-table tbody tr:nth-child(odd) { background: #f5f7fb; }
+.product-picker-table tbody tr:hover { background: #edf3ff; }
+
+.product-picker-table input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.product-picker-table input[type='number'],
+.product-picker-table input[type='text'] {
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 3px;
+  outline: 0;
+  background: #fff;
+  color: #1d2129;
+  font: inherit;
+}
+
+.product-picker-table input:focus { border-color: var(--primary); }
+.product-picker-table input::placeholder { color: #a8afba; }
+
+.product-picker-image {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #e9edf4;
+  color: #a4adba;
+  font-size: 11px;
+}
+
+.product-picker-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-picker-product {
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 学校订单沿用 div 行结构，视觉仍由本共享规范统一。 */
+.product-picker-dialog .school-order-picker-row {
+  display: grid;
+  min-height: 54px;
+  grid-template-columns: 48px 110px minmax(280px, 1fr) 120px 180px 180px;
+  align-items: center;
+  border-bottom: 1px solid #e7ebf2;
+  color: #1d2129;
+  font-size: 14px;
+  text-align: center;
+}
+
+.product-picker-dialog .school-order-picker-row:nth-child(even) { background: #f5f7fb; }
+.product-picker-dialog .school-order-picker-row:hover { background: #edf3ff; }
+.product-picker-dialog .school-order-picker-row.header { position: sticky; z-index: 1; top: 0; min-height: 46px; background: #f2f5fa; color: #858b9c; font-weight: 500; }
+.product-picker-dialog .school-order-picker-row > span { min-width: 0; overflow: hidden; padding: 8px 12px; border-right: 1px solid #e7ebf2; text-overflow: ellipsis; white-space: nowrap; }
+.product-picker-dialog .school-order-picker-row > span:last-child { border-right: 0; }
+.product-picker-dialog .school-order-picker-row input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--primary); }
+.product-picker-dialog .school-order-picker-row input[type='number'],
+.product-picker-dialog .school-order-picker-row input[type='text'] { width: 100%; height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 3px; outline: 0; font: inherit; }
+
+.product-picker-pagination {
+  display: flex;
+  min-height: 58px;
+  flex: 0 0 58px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 10px 0;
+  color: #4e5969;
+  font-size: 13px;
+}
+
+.product-picker-total { margin-right: auto; white-space: nowrap; }
+
+.product-picker-page-size,
+.product-picker-jump-input,
+.product-picker-page-button {
+  height: 32px;
+  box-sizing: border-box;
+  border: 1px solid #e1e5ec;
+  border-radius: 3px;
+  background: #fff;
+  color: #4e5969;
+  font: inherit;
+}
+
+.product-picker-page-size { min-width: 92px; padding: 0 28px 0 10px; }
+.product-picker-page-buttons { display: flex; align-items: center; gap: 6px; }
+.product-picker-page-button { min-width: 32px; padding: 0 9px; cursor: pointer; }
+.product-picker-page-button.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+.product-picker-page-button:disabled { color: #c4cbd5; cursor: not-allowed; }
+.product-picker-page-jump { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.product-picker-jump-input { width: 48px; padding: 0 6px; text-align: center; }
+
+.product-picker-footer {
+  display: flex;
+  min-height: 64px;
+  flex: 0 0 64px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px 16px;
+  border: 0;
+}
+
+.product-picker-footer .btn {
+  min-width: 64px;
+  justify-content: center;
+}
+
+@media (max-width: 860px) {
+  .product-picker-backdrop { padding: 18px 10px; }
+  .product-picker-dialog { width: calc(100vw - 20px); min-height: 0; max-height: calc(100vh - 36px); }
+  .product-picker-filters { grid-template-columns: 1fr; gap: 12px; padding: 12px 0 16px; }
+  .product-picker-filter-actions { justify-content: flex-start; padding-left: 96px; }
+  .product-picker-pagination { overflow-x: auto; }
+}

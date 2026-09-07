@@ -175,7 +175,8 @@
     formWarehouse: '',
     formEntryTime: '',
     formRemark: '',
-    qrRowIndex: null
+    qrRowIndex: null,
+    productPicker: null
   };
   let inboundDatePicker = null;
   let inboundEntryDatePicker = null;
@@ -773,6 +774,7 @@
     state.formMode = null;
     state.editId = null;
     state.formItems = [];
+    state.productPicker = null;
     hideFormStatus();
   }
 
@@ -994,24 +996,6 @@
     renderFormTable();
   }
 
-  function addFormRow() {
-    state.formItems.push({
-      productCode: '',
-      productName: '',
-      unit: '',
-      conversionRate: '',
-      expectedQty: '',
-      damageQty: '',
-      actualQty: '',
-      unitPrice: '',
-      amount: '',
-      productionDate: '',
-      qualityReport: '',
-      qualityFiles: []
-    });
-    renderFormTable();
-  }
-
   function deleteFormRow(index) {
     if (state.formItems.length <= 1) {
       window.alert('至少保留一条明细');
@@ -1021,8 +1005,43 @@
     renderFormTable();
   }
 
+  function renderInboundProductPicker() {
+    const picker = state.productPicker;
+    const host = document.getElementById('inboundProductPicker');
+    if (!picker || !host) return;
+    const categories = [...new Set(state.products.map((product) => product.category).filter(Boolean))];
+    const filtered = state.products.filter((product) => (!picker.keyword || `${product.code} ${product.name}`.toLowerCase().includes(picker.keyword.toLowerCase())) && (!picker.category || product.category === picker.category));
+    const pages = Math.max(1, Math.ceil(filtered.length / 20)); picker.page = Math.min(picker.page, pages);
+    const visible = filtered.slice((picker.page - 1) * 20, picker.page * 20);
+    const existingCodes = new Set(state.formItems.map((item) => item.productCode).filter(Boolean));
+    const pageButtons = Array.from({ length: pages }, (_, index) => index + 1).map((page) => `<button type="button" class="product-picker-page-button ${page === picker.page ? 'active' : ''}" data-inbound-picker-action="page" data-page="${page}">${page}</button>`).join('');
+    const rows = visible.length ? visible.map((product) => { const exists = existingCodes.has(product.code); const draft = picker.drafts.get(product.code) || {}; const image = product.image ? `<span class="product-picker-image"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}"></span>` : '<span class="product-picker-image">图片</span>'; return `<tr data-inbound-picker-product="${escapeHtml(product.code)}"><td><input type="checkbox" data-inbound-picker-check value="${escapeHtml(product.code)}" ${picker.selected.has(product.code) ? 'checked' : ''} ${exists ? 'disabled' : ''}></td><td>${image}</td><td class="product-picker-product" title="${escapeHtml(window.DomUtils.formatProductDisplay(product, state.products))}">${escapeHtml(window.DomUtils.formatProductDisplay(product, state.products))}</td><td>${escapeHtml(product.unit || '--')}</td><td><input type="number" min="0.01" step="0.01" data-inbound-picker-quantity value="${escapeHtml(draft.quantity || '')}" placeholder="${exists ? '已添加' : '请输入数量'}" ${exists ? 'disabled' : ''}></td><td><input type="number" min="0" step="0.01" data-inbound-picker-price value="${escapeHtml(draft.price || product.marketPrice || '')}" placeholder="请输入单价" ${exists ? 'disabled' : ''}></td></tr>`; }).join('') : '<tr><td colspan="6" style="height:180px;color:#9aa4b2">暂无符合条件的商品</td></tr>';
+    host.innerHTML = `<div class="product-picker-backdrop"><section class="product-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="inboundPickerTitle"><header class="product-picker-header"><h3 id="inboundPickerTitle">批量添加商品</h3><button type="button" class="product-picker-close" data-inbound-picker-action="close" aria-label="关闭">×</button></header><div class="product-picker-body"><div class="product-picker-filters"><label class="product-picker-filter"><span>商品名称</span><input data-inbound-picker-filter="keyword" value="${escapeHtml(picker.keyword)}" placeholder="请输入商品名称/编号"></label><label class="product-picker-filter"><span>商品分类</span><select data-inbound-picker-filter="category"><option value="">请选择商品分类</option>${categories.map((category) => `<option value="${escapeHtml(category)}" ${picker.category === category ? 'selected' : ''}>${escapeHtml(category)}</option>`).join('')}</select></label><div class="product-picker-filter-actions"><button type="button" class="btn btn-primary btn-sm" data-inbound-picker-action="query">查询</button><button type="button" class="btn btn-sm" data-inbound-picker-action="reset">重置</button></div></div><div class="product-picker-table-wrap"><table class="product-picker-table"><colgroup><col style="width:48px"><col style="width:110px"><col><col style="width:120px"><col style="width:180px"><col style="width:180px"></colgroup><thead><tr><th><input type="checkbox" data-inbound-picker-check-all></th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>应入库数量</th><th>单价</th></tr></thead><tbody>${rows}</tbody></table></div><div class="product-picker-pagination"><span class="product-picker-total">共 ${filtered.length} 条数据</span><select class="product-picker-page-size" disabled><option>20 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-inbound-picker-action="page" data-page="${Math.max(1, picker.page - 1)}" ${picker.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="product-picker-page-button" data-inbound-picker-action="page" data-page="${Math.min(pages, picker.page + 1)}" ${picker.page === pages ? 'disabled' : ''}>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="${picker.page}" readonly> / ${pages} 页</label></div></div><footer class="product-picker-footer"><button type="button" class="btn" data-inbound-picker-action="close">关闭</button><button type="button" class="btn btn-primary" data-inbound-picker-action="confirm">添加</button></footer></section></div>`;
+  }
+
   function batchAddProducts() {
-    addFormRow();
+    state.productPicker = { keyword: '', category: '', page: 1, selected: new Set(), drafts: new Map() };
+    const formPage = document.getElementById('inboundFormPage');
+    formPage.insertAdjacentHTML('beforeend', '<div id="inboundProductPicker"></div>');
+    renderInboundProductPicker();
+  }
+
+  function closeInboundProductPicker() {
+    state.productPicker = null;
+    document.getElementById('inboundProductPicker')?.remove();
+  }
+
+  function confirmInboundProductPicker() {
+    const picker = state.productPicker;
+    if (!picker) return;
+    const additions = [...picker.selected].map((code) => { const product = findProduct(code); const draft = picker.drafts.get(code) || {}; if (!product || !draft.quantity || state.formItems.some((item) => item.productCode === code)) return null; return { productCode: product.code, productName: product.name, unit: product.unit, conversionRate: '1', expectedQty: draft.quantity, damageQty: '', actualQty: draft.quantity, unitPrice: draft.price || product.marketPrice || '', amount: ((Number(draft.quantity) || 0) * (Number(draft.price || product.marketPrice) || 0)).toFixed(2), productionDate: '', qualityReport: '', qualityFiles: [] }; }).filter(Boolean);
+    if (!additions.length) { showFormStatus('请勾选商品并填写应入库数量', 'error'); return; }
+    state.formItems = state.formItems.filter((item) => item.productCode);
+    state.formItems.push(...additions);
+    while (state.formItems.length < 6) state.formItems.push(...createEmptyItems(1));
+    closeInboundProductPicker();
+    renderFormTable();
+    updateTotalAmount();
   }
 
   function showFormStatus(message, type) {
@@ -1242,6 +1261,16 @@
     formPage.dataset.bound = 'true';
 
     formPage.addEventListener('click', (event) => {
+      const pickerTarget = event.target.closest('[data-inbound-picker-action]');
+      if (pickerTarget && state.productPicker) {
+        const pickerAction = pickerTarget.dataset.inboundPickerAction;
+        if (pickerAction === 'close') closeInboundProductPicker();
+        if (pickerAction === 'confirm') confirmInboundProductPicker();
+        if (pickerAction === 'query') { state.productPicker.keyword = formPage.querySelector('[data-inbound-picker-filter="keyword"]')?.value.trim() || ''; state.productPicker.category = formPage.querySelector('[data-inbound-picker-filter="category"]')?.value || ''; state.productPicker.page = 1; renderInboundProductPicker(); }
+        if (pickerAction === 'reset') { state.productPicker.keyword = ''; state.productPicker.category = ''; state.productPicker.page = 1; renderInboundProductPicker(); }
+        if (pickerAction === 'page') { state.productPicker.page = Number(pickerTarget.dataset.page) || 1; renderInboundProductPicker(); }
+        return;
+      }
       const dateCell = event.target.closest('.prod-date-cell');
       if (dateCell) {
         openProdDatePicker(dateCell);
@@ -1286,7 +1315,7 @@
       if (action === 'back-to-list') { closeFormPage(); return; }
       if (action === 'save-draft') { saveInbound('待审核'); return; }
       if (action === 'save-inbound') { saveInbound('已完成'); return; }
-      if (action === 'batch-add-products') { return; }
+      if (action === 'batch-add-products') { batchAddProducts(); return; }
       if (action === 'import-inbound') { return; }
       if (action === 'open-qr') {
         const index = Number(actionEl.dataset.index);
@@ -1319,6 +1348,15 @@
     });
 
     formPage.addEventListener('input', (event) => {
+      const pickerRow = event.target.closest('[data-inbound-picker-product]');
+      if (state.productPicker && pickerRow && event.target.matches('[data-inbound-picker-quantity], [data-inbound-picker-price]')) {
+        const code = pickerRow.dataset.inboundPickerProduct;
+        const draft = state.productPicker.drafts.get(code) || {};
+        if (event.target.matches('[data-inbound-picker-quantity]')) draft.quantity = event.target.value;
+        else draft.price = event.target.value;
+        state.productPicker.drafts.set(code, draft);
+        return;
+      }
       const fieldEl = event.target.closest('[data-form-field]');
       if (!fieldEl) return;
       const field = fieldEl.dataset.formField;
@@ -1338,6 +1376,15 @@
     });
 
     formPage.addEventListener('change', (event) => {
+      if (state.productPicker && event.target.matches('[data-inbound-picker-check]')) {
+        if (event.target.checked) state.productPicker.selected.add(event.target.value);
+        else state.productPicker.selected.delete(event.target.value);
+        return;
+      }
+      if (state.productPicker && event.target.matches('[data-inbound-picker-check-all]')) {
+        formPage.querySelectorAll('[data-inbound-picker-check]:not(:disabled)').forEach((checkbox) => { checkbox.checked = event.target.checked; if (event.target.checked) state.productPicker.selected.add(checkbox.value); else state.productPicker.selected.delete(checkbox.value); });
+        return;
+      }
       if (event.target.id === 'inbQrFileInput') {
         handleQrFileUpload(event);
         return;
