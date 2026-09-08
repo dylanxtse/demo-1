@@ -178,7 +178,7 @@
 .school-recipe-demand-detail-table .col-product { width: 84px; }
 
 .school-recipe-demand-detail-product-table {
-  min-width: 1080px;
+  min-width: 1050px;
 }
 
 .school-recipe-demand-detail-product-table th,
@@ -188,25 +188,23 @@
 }
 
 .school-recipe-demand-detail-product-table .col-index { width: 48px; }
-.school-recipe-demand-detail-product-table .col-product { width: 180px; }
-.school-recipe-demand-detail-product-table .col-ingredient { width: 180px; }
+.school-recipe-demand-detail-product-table .col-product { width: 250px; }
+.school-recipe-demand-detail-product-table .col-standard { width: 80px; }
 .school-recipe-demand-detail-product-table .col-code { width: 110px; }
 .school-recipe-demand-detail-product-table .col-unit { width: 56px; }
-.school-recipe-demand-detail-product-table .col-quantity { width: 94px; }
-.school-recipe-demand-detail-product-table .col-total { width: 96px; }
-.school-recipe-demand-detail-product-table .col-purchase { width: 96px; }
+.school-recipe-demand-detail-product-table .col-quantity { width: 112px; }
+.school-recipe-demand-detail-product-table .col-purchase { width: 116px; }
 
 .school-recipe-demand-order-table {
-  min-width: 660px;
+  min-width: 640px;
 }
 
 .school-recipe-demand-order-table .col-order-no { width: 220px; }
 .school-recipe-demand-order-table .col-date { width: 140px; }
-.school-recipe-demand-order-table .col-participant { width: 120px; }
+.school-recipe-demand-order-table .col-meal { width: 100px; }
 .school-recipe-demand-order-table .col-tag { width: 180px; }
 
-.school-recipe-demand-detail-product-name,
-.school-recipe-demand-detail-ingredient-name {
+.school-recipe-demand-detail-product-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -233,11 +231,6 @@
   font-weight: 400;
   line-height: 1;
   vertical-align: middle;
-}
-
-.school-recipe-demand-detail-ingredient-name {
-  color: var(--text-tertiary);
-  font-size: 12px;
 }
 
 .school-recipe-demand-order-link {

@@ -1,0 +1,101 @@
+/* 食堂管理页沿用学校端其他管理页的左侧菜单规格。 */
+.school-shell .menu-item {
+  margin: 0 8px;
+}
+
+.school-shell .menu-item-header {
+  width: 100%;
+  height: 50px;
+  margin: 0;
+  padding: 0 20px 0 24px;
+  gap: 16px;
+  border-radius: 2px;
+  font-size: 16px;
+}
+
+.school-shell .menu-item-header .menu-icon,
+.school-shell .menu-item-header .menu-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.school-shell .menu-arrow {
+  transform: rotate(90deg);
+}
+
+.school-shell .menu-item.menu-leaf.active > .menu-item-header {
+  color: #fff;
+  background: var(--primary);
+}
+
+.school-shell .menu-item.menu-leaf.active > .menu-item-header:hover {
+  color: #fff;
+  background: #035ee0;
+}
+
+.school-shell .menu-sub-item {
+  height: 40px;
+  padding: 0 20px 0 52px;
+  line-height: 40px;
+  font-size: 14px;
+}
+
+.school-shell .menu-sub-group > .menu-sub-item {
+  padding-left: calc(52px + (var(--menu-level) - 1) * 20px);
+}
+
+@media (max-width: 1300px) {
+  .school-shell .sidebar:not(.collapsed) {
+    width: var(--sidebar-width);
+  }
+
+  .school-shell .sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+  }
+
+  .school-shell .sidebar-logo {
+    height: 78px;
+    padding: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .school-shell.app-layout {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .school-shell .sidebar {
+    width: 32px;
+  }
+
+  .school-shell .sidebar-logo {
+    height: 78px;
+    padding: 0;
+  }
+
+  .school-shell .sidebar-logo img {
+    width: 32px;
+    object-fit: cover;
+    object-position: left center;
+  }
+
+  .school-shell .menu-item-header {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .school-shell .menu-item-header > span:not(.menu-icon),
+  .school-shell .menu-item-header .menu-arrow,
+  .school-shell .menu-sub {
+    display: none;
+  }
+
+  .school-shell .menu-icon {
+    margin: 0 auto;
+  }
+
+  .school-shell .sidebar-toggle {
+    display: none;
+  }
+}

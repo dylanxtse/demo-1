@@ -19,7 +19,7 @@
     maximumFractionDigits: 2,
     useGrouping: false
   });
-  const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 12, useGrouping: false });
+  const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
   const purchaseQuantity = (value, item) => {
     const amount = Number(value);
     return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
@@ -349,6 +349,7 @@
       .map((row, index) => `<tr>
       <td>${index + 1}</td>
       <td class="school-recipe-attendance-product-name">${renderProductName(row, productSummary(row).label)}</td>
+      <td>${isStandardProduct(row) ? '是' : '否'}</td>
       <td>${escapeHtml(row.productCode || '--')}</td>
       <td>${escapeHtml(row.unit)}</td>
       ${participants.map((participant) => `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('')}
@@ -359,7 +360,7 @@
     }).join('');
     const dynamicSubColumns = participants.map(() => '<th>需求量</th><th>采购数量</th>').join('');
     const dynamicColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
-    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
+    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
   }
 
   function renderAttendanceDetail(menu) {
@@ -507,7 +508,7 @@
     const { menu, meal, dish } = result;
     const rows = (dish.ingredients || []).map((item, index) => {
       const product = productSummary(item);
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(product.label)}</td><td>${escapeHtml(product.code)}</td><td class="is-number">${number(item.perCapitaQty)}</td><td>${escapeHtml(item.unit || '--')}</td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(product.label)}</td><td>${escapeHtml(product.code)}</td><td class="is-number">${quantity(item.perCapitaQty)}</td><td>${escapeHtml(item.unit || '--')}</td></tr>`;
     }).join('');
     const backdrop = document.createElement('div');
     backdrop.className = 'school-recipe-modal-backdrop';
@@ -828,6 +829,12 @@
         return;
       }
       saveFilledAttendanceDrafts();
+      const savedRecord = attendanceService.get(state.selectedDate, currentCanteen());
+      const savedCalculation = attendanceService.calculate(menu, savedRecord, serviceOptions());
+      if (Number(savedCalculation.totalPeople || 0) <= 0) {
+        showToast('人数保存失败，请重新填写后再确认', true);
+        return;
+      }
       if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
       else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
     }

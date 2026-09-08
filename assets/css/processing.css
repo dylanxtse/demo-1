@@ -693,6 +693,29 @@
   --detail-field-label-width: 140px;
 }
 
+/* 企业端订单详情：按参考页面整理字段，桌面端一行四列，标签与内容自然贴合。 */
+.enterprise-order-detail-page .processing-detail-info {
+  --detail-grid-columns: 4;
+  --detail-field-label-width: auto;
+  --detail-grid-row-gap: 16px;
+  --detail-grid-column-gap: 28px;
+}
+.enterprise-order-detail-page .processing-detail-info .info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.enterprise-order-detail-page .processing-detail-info .info-label {
+  width: auto;
+  color: var(--text-primary);
+  text-align: left;
+}
+.enterprise-order-detail-page .processing-detail-info .info-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 入库/出库/订单详情页：商品图片、商品名称子文本 */
 .inbound-detail-table .detail-product-img,
 .outbound-detail-table .detail-product-img,

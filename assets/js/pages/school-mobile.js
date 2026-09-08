@@ -17,7 +17,6 @@
   let firstDate = menus[0]?.date || '2026-09-07';
   const defaultCanteen = window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
   const canteenStorageKey = 'school-recipe-current-canteen';
-  const mobileAttendanceEmptyKey = 'school-mobile-attendance-empty-v20260907';
   const mobileAuthStorageKey = 'school-mobile-auth-session-v1';
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -31,7 +30,7 @@
     useGrouping: false
   });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     useGrouping: false
   });
@@ -139,16 +138,6 @@
   const initialCanteen = canteenNames.includes(storedCanteen)
     ? storedCanteen
     : canteenNames.includes(defaultCanteen) ? defaultCanteen : canteenNames[0];
-
-  function ensureMobileAttendanceStartsEmpty() {
-    if (!window.AppStorage?.read || !window.AppStorage?.write) return;
-    if (window.AppStorage.read(mobileAttendanceEmptyKey, false)) return;
-    canteenNames.forEach((name) => {
-      const canteen = canteenConfig?.getCanteen?.(name) || { id: '', name };
-      menus.forEach((menu) => attendanceService.remove(menu.date, canteen));
-    });
-    window.AppStorage.write(mobileAttendanceEmptyKey, true);
-  }
 
   const state = {
     screen: 'main',
@@ -451,12 +440,12 @@
   }
 
   function currentFilledDateSummaries() {
-    const submitted = demandService.submittedDateSet();
     return menus.map((menu) => {
       const record = attendanceFor(menu.date);
       const calculation = attendanceService.calculate(menu, record, serviceOptions());
       const validation = attendanceService.validate(menu, record, serviceOptions());
-      return { date: menu.date, menu, record, calculation, validation, submitted: submitted.has(menu.date) };
+      const status = attendanceService.status(menu, record, serviceOptions());
+      return { date: menu.date, menu, record, calculation, validation, status };
     }).filter((summary) => Number(summary.calculation.totalPeople || 0) > 0);
   }
 
@@ -469,9 +458,27 @@
       return;
     }
     attendanceService.save(state.date, state.attendance.meals, menu.version || recipeService.MENU_VERSION, currentCanteen());
+    const savedRecord = attendanceService.get(state.date, currentCanteen());
+    const savedCalculation = attendanceService.calculate(menu, savedRecord, serviceOptions());
+    if (Number(savedCalculation.totalPeople || 0) <= 0) {
+      state.screen = 'main';
+      state.tab = 'attendance';
+      loadAttendance();
+      render();
+      showToast('人数保存失败，请重新填写后再确认', true);
+      return;
+    }
     const summaries = currentFilledDateSummaries();
-    const available = summaries.filter((summary) => !summary.submitted);
-    state.confirmDates = new Set(available.map((summary) => summary.date));
+    const filledDates = summaries.map((summary) => summary.date);
+    if (!filledDates.length) {
+      state.screen = 'main';
+      state.tab = 'attendance';
+      loadAttendance();
+      render();
+      showToast('人数保存失败，请重新填写后再确认', true);
+      return;
+    }
+    state.confirmDates = new Set(filledDates);
     state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30';
     state.screen = 'confirm';
     state.toast = null;
@@ -485,14 +492,15 @@
       : { rows: [], totalPersonTimes: 0, productCount: 0, canSubmit: false, message: '请选择已填报日期' };
     const dateOptions = summaries.length
       ? summaries.map((summary) => '<button type="button" class="school-mobile-confirm-date '
+        + (summary.status?.key === 'partial' ? 'is-partial ' : summary.status?.key === 'complete' ? 'is-complete ' : 'is-disabled ')
         + (state.confirmDates.has(summary.date) ? 'is-selected ' : '')
-        + (summary.submitted ? 'is-disabled' : '') + '" data-action="confirm-date" data-date="' + escapeHtml(summary.date) + '" ' + (summary.submitted ? 'disabled' : '') + '>'
+        + '" data-action="confirm-date" data-date="' + escapeHtml(summary.date) + '">'
         + '<strong>' + escapeHtml(shortDate(summary.date)) + '</strong><small>' + number(summary.calculation.totalPeople) + ' 人次</small></button>').join('')
       : '<div class="school-mobile-empty">暂无可提交的填报日期</div>';
     const expectedAt = state.expectedAt || '';
     const canSubmit = Boolean(preview.canSubmit && expectedAt);
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
-      + '<section class="school-mobile-confirm-card"><h2>选择用料日期</h2><p>可一次提交多个已完成填报的日期，已下单日期不可重复提交。</p><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
+      + '<section class="school-mobile-confirm-card"><h2>选择用料日期</h2><p>可一次提交多个已填报日期，每次提交均按当前选择独立生成需求。</p><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
       + '<section class="school-mobile-confirm-card"><h2>订单信息</h2><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><label class="school-mobile-field"><span>期望送达时间</span><input type="datetime-local" value="' + escapeHtml(expectedAt) + '" data-action="expected-at" aria-label="期望送达时间"></label></section>'
       + '<section class="school-mobile-confirm-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>提交日期</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
       + '<section class="school-mobile-confirm-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong><small>共 ' + number((preview.rows || []).length) + ' 项</small></div>' + renderPreviewProductRows(preview) + '</section>'
@@ -531,29 +539,6 @@
       || recordNumbers.has(String(order.recipeDemandRecordNo || ''))
       || (order.source === '食谱下单' && names.has(String(order.creator || '')))
     ));
-    const knownOrders = new Set(orders.flatMap((order) => [order.id, order.orderNo].map((value) => String(value || '')).filter(Boolean)));
-    records.forEach((record) => (record.orders || []).forEach((reference) => {
-      const referenceId = String(reference.orderId || reference.id || '');
-      const referenceNo = String(reference.orderNo || '');
-      if ((referenceId && knownOrders.has(referenceId)) || (referenceNo && knownOrders.has(referenceNo))) return;
-      orders.push({
-        id: referenceId,
-        orderNo: referenceNo,
-        status: reference.status || '待发货',
-        recipeDemandRecordId: record.id,
-        recipeDemandRecordNo: record.recordNo,
-        recipeDemandDate: reference.date || record.dates?.[0] || '',
-        orderTag: reference.orderTag || (reference.orderTagName
-          ? reference.orderTagName + '-' + (reference.nutritious || '不区分')
-          : (reference.participantType || reference.recipeParticipantType || '') + '-不区分'),
-        productCount: 0,
-        orderAmount: 0,
-        expectedAt: reference.expectedAt || '',
-        createdAt: record.submittedAt || ''
-      });
-      if (referenceId) knownOrders.add(referenceId);
-      if (referenceNo) knownOrders.add(referenceNo);
-    }));
     return orders.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
   }
 
@@ -934,8 +919,11 @@
       return;
     }
     if (action === 'confirm-date') {
-      if (target.disabled) return;
       const date = target.dataset.date;
+      if (state.confirmDates.has(date) && state.confirmDates.size <= 1) {
+        showToast('至少选择一个用料日期', true);
+        return;
+      }
       if (state.confirmDates.has(date)) state.confirmDates.delete(date);
       else state.confirmDates.add(date);
       render();
@@ -1038,7 +1026,6 @@
     mealSwipeStart = null;
   }, { passive: true });
 
-  ensureMobileAttendanceStartsEmpty();
   loadAttendance();
   render();
 })();

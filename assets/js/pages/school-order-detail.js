@@ -3,26 +3,58 @@
   if (!service) return;
   const id = new URLSearchParams(window.location.search).get('id') || '';
   const demoOrder = (() => {
-    const participant = id.endsWith('-TEACHER') ? '教师' : id.endsWith('-STUDENT') ? '学生' : '';
-    if (!id.startsWith('SCHOOL-ORDER-DEMO-20260829-') || !participant) return null;
-    const quantities = participant === '学生'
+    const mealMatch = id.match(/^SCHOOL-ORDER-DEMO-20260829-(breakfast|lunch|dinner|snack)-(student|teacher)$/);
+    const legacyMatch = id.match(/^SCHOOL-ORDER-DEMO-20260829-(student|teacher)$/);
+    const participantKey = mealMatch?.[2] || legacyMatch?.[1] || '';
+    if (!participantKey) return null;
+    const participant = participantKey === 'teacher' ? '教师' : '学生';
+    const mealKey = mealMatch?.[1] || '';
+    const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
+    const mealPeople = {
+      breakfast: { student: 520, teacher: 42 },
+      lunch: { student: 680, teacher: 48 },
+      dinner: { student: 460, teacher: 36 },
+      snack: { student: 0, teacher: 0 }
+    };
+    const mealProducts = {
+      breakfast: [
+        ['牛奶', 'SP0300037', '瓶', 5, 0.25], ['面粉', 'SP0300016', '斤', 30, 0.08],
+        ['鸡蛋', 'SP0300018', '斤', 22, 0.05], ['苹果', 'SP0300014', '斤', 23, 0.10],
+        ['大玉米棒子', 'SP0300036', 'KG', 5, 0.20]
+      ],
+      lunch: [
+        ['西红柿', 'SP0300020', 'KG', 5.6, 0.08], ['鸡蛋', 'SP0300018', '斤', 22, 0.05],
+        ['金龙鱼豆油', 'SP0300017', '斤', 50, 0.01], ['大米', 'SP0300025', 'KG', 19, 0.12],
+        ['土豆', 'SP0300040', '斤', 3.2, 0.10], ['鸡腿肉', 'SP0300013', '斤', 23, 0.08]
+      ],
+      dinner: [
+        ['土豆', 'SP0300040', '斤', 3.2, 0.12], ['鸡腿肉', 'SP0300013', '斤', 23, 0.10],
+        ['大白菜', 'SP0300019', '斤', 2.2, 0.08], ['金龙鱼豆油', 'SP0300017', '斤', 50, 0.01],
+        ['大米', 'SP0300025', 'KG', 19, 0.12]
+      ]
+    };
+    const legacyQuantities = participant === '学生'
       ? [260.8, 136.8, 424, 197, 228.4, 64.4, 248, 260, 166, 191.2, 236.8, 46]
       : [19.68, 10.08, 32.4, 14.7, 17.04, 4.74, 19.2, 21, 12.6, 13.92, 17.28, 3.6];
-    const products = [
+    const legacyProducts = [
       ['大白菜', 'SP0300019', '斤', 2.2], ['大米', 'SP0300025', 'KG', 19], ['大玉米棒子', 'SP0300036', 'KG', 5],
       ['鸡蛋', 'SP0300018', '斤', 22], ['鸡腿肉', 'SP0300013', '斤', 23], ['金龙鱼豆油', 'SP0300017', '斤', 50],
       ['面粉', 'SP0300016', '斤', 30], ['牛奶', 'SP0300037', '瓶', 5], ['苹果', 'SP0300014', '斤', 23],
       ['土豆', 'SP0300040', '斤', 3.2], ['西红柿', 'SP0300020', 'KG', 5.6], ['香蕉', 'SP0300015', '斤', 30]
     ];
-    const items = products.map(([name, productCode, unit, orderPrice], index) => ({
+    const items = (mealKey ? (mealProducts[mealKey] || []) : legacyProducts).map(([name, productCode, unit, orderPrice, perCapitaQty], index) => {
+      const quantity = mealKey
+        ? Number((Number(perCapitaQty || 0) * Number(mealPeople[mealKey]?.[participantKey] || 0)).toFixed(2))
+        : legacyQuantities[index];
+      return {
       id: `${id}-ITEM-${index + 1}`,
       productName: name,
       goodsName: name,
       productCode,
       unit,
       orderPrice,
-      orderQty: quantities[index],
-      orderSubtotal: Number((orderPrice * quantities[index]).toFixed(2)),
+      orderQty: quantity,
+      orderSubtotal: Number((orderPrice * quantity).toFixed(2)),
       shippedQty: 0,
       shippedSubtotal: 0,
       acceptedQty: null,
@@ -36,15 +68,23 @@
       productionDate: '',
       inspectionImages: [],
       inspectionVideos: []
-    }));
+      };
+    });
+    const orderNo = mealKey
+      ? {
+        breakfast: { student: 'DD202608290300001', teacher: 'DD202608290300002' },
+        lunch: { student: 'DD202608290300003', teacher: 'DD202608290300004' },
+        dinner: { student: 'DD202608290300005', teacher: 'DD202608290300006' }
+      }[mealKey]?.[participantKey]
+      : participant === '学生' ? 'DD202608290300001' : 'DD202608290300002';
     return {
       id,
-      orderNo: participant === '学生' ? 'DD202608290300001' : 'DD202608290300002',
+      orderNo,
       customerName: service.SCHOOL_NAME,
       supplierName: service.SUPPLIER_NAME,
       canteen: service.CANTEEN_NAME,
-      purchaseType: '销售订单',
       orderTag: `${participant}-不区分`,
+      ...(mealKey ? { mealKey, mealName: mealNames[mealKey], mealPeople: mealPeople[mealKey]?.[participantKey] || 0 } : {}),
       recipeDemandRecordId: 'RECIPE-DEMAND-DEMO-20260829',
       expectedAt: '2026-09-06 07:30:00',
       source: '食谱下单',
@@ -58,10 +98,11 @@
       remark: '--',
       orderAmount: Number(items.reduce((sum, item) => sum + item.orderSubtotal, 0).toFixed(2)),
       items,
-      operationLogs: [{ action: '食谱需求下单', operator: '管理员', result: '添加', time: '2026-08-29 16:20:00', description: '需求提交记录 XQ2026082948261' }]
+      operationLogs: [{ action: '食谱需求下单', operator: '管理员', result: '添加', time: '2026-08-29 16:20:00', description: `${mealKey ? `${mealNames[mealKey]}、` : ''}需求提交记录 XQ2026082948261` }]
     };
   })();
-  const order = service.get(id) || demoOrder;
+  const loadedOrder = service.get(id) || demoOrder;
+  const order = loadedOrder && (window.OrderSchema?.normalize(loadedOrder, 'school') || loadedOrder);
   if (!order) {
     window.location.href = './school-order-management.html';
     return;
@@ -81,6 +122,13 @@
   const catalog = service.getProductCatalog?.() || [];
   const lineIsNetVegetable = (line) => line.isNetVegetable === true
     || catalog.some((product) => String(product.code) === String(line.productCode || line.goodsCode || line.productId || line.goodsId) && product.isNetVegetable === true);
+  const lineIsStandard = (line) => {
+    const isFlag = (item) => item === true || item === 'true' || item === '是';
+    if (isFlag(line?.isStandardProduct) || isFlag(line?.isStandard)) return true;
+    const code = line?.productCode || line?.goodsCode || line?.productId || line?.goodsId;
+    return catalog.some((product) => String(product.code) === String(code)
+      && (isFlag(product.isStandardProduct) || isFlag(product.isStandard)));
+  };
   const lineDisplayHtml = (line) => `<span class="product-display-text">${lineIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(lineDisplay(line))}</span>`;
   const mediaCount = (items, unit) => Array.isArray(items) && items.length ? `${items.length}${unit}` : '--';
   const statusText = (status) => ({
@@ -148,6 +196,7 @@
         <td><div class="detail-product-img" aria-label="商品图片">图片</div></td>
         <td><span class="product-display-text" title="${escapeHtml(productDisplay)}">${lineIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(productDisplay)}</span></td>
         <td>${escapeHtml(productCode || '--')}</td>
+        <td>${lineIsStandard(line) ? '是' : '否'}</td>
         <td>${value(line.unit)}</td>
         <td>${amount(unitPrice)}</td>
         <td>${qty(quantity)}</td>
@@ -172,9 +221,9 @@
       <div class="processing-detail-page-body">
         <div class="processing-detail-section"><h3>基本信息</h3><div class="processing-detail-info">
           ${infoItem('订单号', order.orderNo)}
-          ${infoItem('客户名称', order.customerName || service.SCHOOL_NAME)}
+          ${infoItem('供货企业', order.supplierName || service.SUPPLIER_NAME)}
           ${infoItem('食堂', order.canteen)}
-          ${infoItem('采购类型', order.purchaseType || '销售订单')}
+          ${infoItem('餐次', order.mealName)}
           ${infoItem('订单标签', order.orderTag)}
           ${infoItem('期望送达时间', order.expectedAt)}
           ${infoItem('单据来源', order.source)}
@@ -184,11 +233,10 @@
           ${infoItem('司机', order.driver)}
           ${infoItem('验收时间', order.acceptedAt)}
           ${infoItem('是否补单', order.supplement)}
-          ${order.rejectReason ? infoItem('驳回原因', order.rejectReason) : ''}
         </div></div>
         <div class="processing-detail-section"><h3>商品信息</h3><div class="order-detail-table-wrap"><table class="processing-detail-table order-detail-table"><thead><tr>
-          <th>序号</th><th>图片</th><th style="min-width:230px">商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>计量单位</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货数量</th><th>发货小计</th><th>退货数量</th><th>退货小计</th><th>对账数量</th><th>对账小计</th><th>验货数量</th><th>验货金额</th><th>溯源码</th><th>备注</th><th>生产日期</th><th>验货图片</th><th>验货视频</th>
-        </tr></thead><tbody>${productRows || '<tr><td colspan="21" style="text-align:center;color:var(--text-tertiary);">暂无明细</td></tr>'}</tbody></table></div></div>
+          <th>序号</th><th>图片</th><th style="min-width:230px">商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>是否标品</th><th>计量单位</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货数量</th><th>发货小计</th><th>退货数量</th><th>退货小计</th><th>对账数量</th><th>对账小计</th><th>验货数量</th><th>验货金额</th><th>溯源码</th><th>备注</th><th>生产日期</th><th>验货图片</th><th>验货视频</th>
+        </tr></thead><tbody>${productRows || '<tr><td colspan="22" style="text-align:center;color:var(--text-tertiary);">暂无明细</td></tr>'}</tbody></table></div></div>
         <div class="processing-detail-section"><h3>备注</h3><div class="detail-remark-box">${value(order.remark)}</div></div>
         <div class="processing-detail-section"><h3>操作记录</h3><div class="detail-timeline">${renderOperationLogs(order.operationLogs)}</div></div>
       </div>

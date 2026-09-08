@@ -6,6 +6,7 @@
   const RESOURCE = 'recipeDemandRecords';
   const DEMO_RECORD_DATE = '2026-09-07';
   const DEMO_RECORD_CREATED_AT = '2026-08-29 16:20:00';
+  const DEMO_RECORD_VERSION = '20260908-meal-split-v1';
   const RECORD_NO_PATTERN = /^XQ\d{8}\d{5}$/;
   const DEMO_ATTENDANCE = {
     id: 'RECIPE-ATTENDANCE-DEMO-20260907',
@@ -41,6 +42,20 @@
     const demandQuantity = number(value);
     return isStandardProduct(product) ? Math.ceil(demandQuantity) : demandQuantity;
   };
+  const purchaseRowKey = (row) => String(row?.key || `${row?.productCode || row?.productName || ''}::${row?.unit || '--'}`);
+  const purchaseQuantityKey = (row, participantKey) => `${purchaseRowKey(row)}::${participantKey}`;
+  const purchaseAllocationKey = (summary, meal, row, participantKey) => `${summary?.date || ''}::${meal?.key || ''}::${purchaseQuantityKey(row, participantKey)}`;
+  const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
+  const toKeySet = (value) => value instanceof Set
+    ? new Set([...value].map((key) => String(key)))
+    : new Set(Array.isArray(value) ? value.map((key) => String(key)) : []);
+  const normalizePurchaseQuantity = (value, product) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) return 0;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return isStandardProduct(product) ? Math.ceil(parsed) : parsed;
+  };
   const normalizeExpectedAt = (value) => {
     const text = String(value || '').trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${text} 07:30:00`;
@@ -74,7 +89,18 @@
 
   function readAll() {
     const current = window.DemoStore?.get?.(RESOURCE);
-    if (Array.isArray(current) && current.length) return refreshRecordNumbers(current);
+    if (Array.isArray(current) && current.length) {
+      const migrated = current.map((record) => (
+        record?.demoOnly && record.id === 'RECIPE-DEMAND-DEMO-20260829' && record.demoVersion !== DEMO_RECORD_VERSION
+          ? buildDemoRecord()
+          : record
+      ));
+      if (migrated.some((record, index) => record !== current[index])) {
+        if (window.DemoStore?.replace) window.DemoStore.replace(RESOURCE, migrated);
+        else memoryRecords = clone(migrated);
+      }
+      return refreshRecordNumbers(migrated);
+    }
     if (!window.DemoStore && memoryRecords.length) return clone(memoryRecords);
     const demoRecord = buildDemoRecord();
     if (window.DemoStore?.replace) return window.DemoStore.replace(RESOURCE, [demoRecord]);
@@ -96,19 +122,14 @@
       .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)))].sort();
   }
 
-  function submittedDateSet(records = readAll()) {
-    return new Set(records
-      .filter((record) => !record.demoOnly)
-      .flatMap((record) => Array.isArray(record.dates) ? record.dates : []));
-  }
-
-  function buildDateSummary(date, submittedDates, attendanceOverride = null, options = {}) {
+  function buildDateSummary(date, attendanceOverride = null, options = {}) {
     const menu = recipeService.getMenu(date);
     const canteen = currentCanteen(options.canteen);
     const participants = options.participants || participantsFor(canteen);
     const attendance = attendanceOverride ? clone(attendanceOverride) : attendanceService.get(date, canteen);
     const calculation = attendanceService.calculate(menu, attendance, { canteen, participants });
     const validation = attendanceService.validate(menu, attendance, { canteen, participants });
+    const attendanceStatus = attendanceService.status(menu, attendance, { canteen, participants });
     return {
       date,
       menu,
@@ -117,8 +138,7 @@
       participants,
       calculation,
       validation,
-      submitted: submittedDates.has(date),
-      status: validation.canContinue ? '可提交' : (validation.missingMeals.length ? '未完成' : '不可提交')
+      status: attendanceStatus.label
     };
   }
 
@@ -164,7 +184,7 @@
 
   function buildDemoRecord() {
     const demoCanteen = { id: '', name: CANTEEN_NAME };
-    const dateSummaries = [buildDateSummary(DEMO_RECORD_DATE, new Set(), DEMO_ATTENDANCE, {
+    const dateSummaries = [buildDateSummary(DEMO_RECORD_DATE, DEMO_ATTENDANCE, {
       canteen: demoCanteen,
       participants: LEGACY_PARTICIPANTS
     })];
@@ -174,10 +194,27 @@
     const teacherPersonTimes = number(summary.calculation.totalTeacherPeople);
     const totalPersonTimes = studentPersonTimes + teacherPersonTimes;
     const productCount = items.filter((row) => row.mappingStatus === '已关联').length;
+    const demoMealRows = (summary.calculation.mealRows || []).filter((meal) => (
+      meal.rows?.some((row) => row.mappingStatus === '已关联' && row.totalQty > 0)
+    ));
+    const demoOrders = demoMealRows.flatMap((meal) => LEGACY_PARTICIPANTS
+      .filter((participant) => number(meal.participantPeople?.[participant.key]) > 0)
+      .map((participant) => ({ meal, participant })))
+      .map(({ meal, participant }, index) => ({
+        orderId: `SCHOOL-ORDER-DEMO-20260829-${meal.key}-${participant.key}`,
+        orderNo: `DD2026082903${String(index + 1).padStart(5, '0')}`,
+        date: DEMO_RECORD_DATE,
+        mealKey: meal.key,
+        mealName: meal.name,
+        mealPeople: number(meal.participantPeople?.[participant.key]),
+        participantType: participant.label,
+        orderTag: participant.orderTag
+      }));
     return {
       id: 'RECIPE-DEMAND-DEMO-20260829',
       recordNo: 'XQ2026082948261',
       demoOnly: true,
+      demoVersion: DEMO_RECORD_VERSION,
       schoolName: SCHOOL_NAME,
       canteen: CANTEEN_NAME,
       canteenId: demoCanteen.id,
@@ -207,44 +244,39 @@
       submittedBy: '管理员',
       submittedById: 'USER-HEAD-ADMIN',
       submittedAt: DEMO_RECORD_CREATED_AT,
-      orders: [
-        { orderId: 'SCHOOL-ORDER-DEMO-20260829-STUDENT', orderNo: 'DD202608290300001', date: DEMO_RECORD_DATE, participantType: '学生', orderTag: '学生-不区分' },
-        { orderId: 'SCHOOL-ORDER-DEMO-20260829-TEACHER', orderNo: 'DD202608290300002', date: DEMO_RECORD_DATE, participantType: '教师', orderTag: '教师-不区分' }
-      ],
+      orders: demoOrders,
       enterpriseSyncWarnings: [],
       operationLogs: [
         { action: '提交需求', operator: '管理员', operatorId: 'USER-HEAD-ADMIN', result: '提交成功', time: DEMO_RECORD_CREATED_AT, description: `提交 ${DEMO_RECORD_DATE} 的食谱需求` },
-        { action: '订单生成', operator: '系统', result: '2 笔', time: '2026-08-29 16:20:02', description: '已按学生、教师标签生成订单' }
+        { action: '订单生成', operator: '系统', result: `${demoOrders.length} 笔`, time: '2026-08-29 16:20:02', description: '已按餐次及学生、教师标签生成订单' }
       ]
     };
   }
 
   function buildPreview(dates, options = {}) {
     const normalizedDates = normalizeDates(dates);
-    const submittedDates = submittedDateSet();
     const canteen = currentCanteen(options.canteen);
     const participants = options.participants || participantsFor(canteen);
-    const dateSummaries = normalizedDates.map((date) => buildDateSummary(date, submittedDates, null, { canteen, participants }));
+    const dateSummaries = normalizedDates.map((date) => buildDateSummary(date, null, { canteen, participants }));
     const rows = aggregateRows(dateSummaries, participants);
+    const excludedProductKeys = toKeySet(options.excludedProductKeys);
     const participantPersonTimes = Object.fromEntries(participants.map((participant) => [participant.key, 0]));
     dateSummaries.forEach((item) => participants.forEach((participant) => {
       participantPersonTimes[participant.key] = number(participantPersonTimes[participant.key]) + number(item.calculation.participantPeople?.[participant.key]);
     }));
     const totalStudentPersonTimes = dateSummaries.reduce((total, item) => total + number(item.calculation.totalStudentPeople), 0);
     const totalTeacherPersonTimes = dateSummaries.reduce((total, item) => total + number(item.calculation.totalTeacherPeople), 0);
-    const alreadySubmitted = dateSummaries.filter((item) => item.submitted).map((item) => item.date);
     const invalidSummary = dateSummaries.find((item) => !item.validation.canContinue);
+    const linkedRows = rows.filter((row) => row.mappingStatus === '已关联' && row.totalQty > 0);
+    const confirmedRows = linkedRows.filter((row) => !excludedProductKeys.has(purchaseRowKey(row)));
     const canSubmit = Boolean(normalizedDates.length)
-      && !alreadySubmitted.length
       && !invalidSummary
-      && rows.some((row) => row.mappingStatus === '已关联' && row.totalQty > 0);
+      && confirmedRows.length > 0;
     const message = !normalizedDates.length
       ? '请选择要提交的填报日期'
-      : alreadySubmitted.length
-        ? `${alreadySubmitted.join('、')} 已提交过需求，不能重复下单`
-        : invalidSummary
-          ? `${invalidSummary.date} ${invalidSummary.validation.message || '人数填报未完成'}`
-          : canSubmit ? '' : '当前日期暂无可下单的商品需求';
+      : invalidSummary
+        ? `${invalidSummary.date} ${invalidSummary.validation.message || '人数填报未完成'}`
+        : canSubmit ? '' : linkedRows.length && !confirmedRows.length ? '请至少保留一项商品进行确认' : '当前日期暂无可下单的商品需求';
     return {
       dates: normalizedDates,
       canteen,
@@ -255,7 +287,7 @@
       totalStudentPersonTimes,
       totalTeacherPersonTimes,
       totalPersonTimes: totalStudentPersonTimes + totalTeacherPersonTimes,
-      productCount: rows.filter((row) => row.mappingStatus === '已关联').length,
+      productCount: confirmedRows.length,
       canSubmit,
       message
     };
@@ -303,13 +335,50 @@
     return new Map((schoolOrderService.getProductCatalog?.() || []).map((product) => [String(product.code), product]));
   }
 
-  function participantItems(summary, participantKey, productMap) {
+  function buildPurchaseQuantityAllocations(preview, overrides, productMap, excludedProductKeys = new Set()) {
+    const allocations = {};
+    const participants = preview.participants || [];
+    (preview.rows || []).forEach((aggregateRow) => {
+      participants.forEach((participant) => {
+        if (excludedProductKeys.has(purchaseRowKey(aggregateRow))) return;
+        const overrideKey = purchaseQuantityKey(aggregateRow, participant.key);
+        if (!hasOwn(overrides, overrideKey)) return;
+        const product = productMap.get(String(aggregateRow.productCode)) || {};
+        const sources = [];
+        (preview.dateSummaries || []).forEach((summary) => {
+          (summary.calculation?.mealRows || []).forEach((meal) => {
+            (meal.rows || []).forEach((row) => {
+              if (purchaseRowKey(row) !== purchaseRowKey(aggregateRow)) return;
+              const demand = number(row.participantQty?.[participant.key]);
+              if (demand > 0) sources.push({ summary, meal, row, defaultQty: purchaseQuantity(demand, product) });
+            });
+          });
+        });
+        let remaining = normalizePurchaseQuantity(overrides[overrideKey], product);
+        sources.forEach((source, index) => {
+          const assigned = index === sources.length - 1
+            ? remaining
+            : Math.min(source.defaultQty, remaining);
+          allocations[purchaseAllocationKey(source.summary, source.meal, source.row, participant.key)] = assigned;
+          remaining = Math.max(0, remaining - assigned);
+        });
+      });
+    });
+    return allocations;
+  }
+
+  function participantItems(summary, participantKey, productMap, meal = null, options = {}) {
     const qtyKey = `${participantKey}Qty`;
-    return (summary.items || [])
-      .filter((row) => row.mappingStatus === '已关联' && number(row.participantQty?.[participantKey] ?? row[qtyKey]) > 0)
+    const sourceRows = meal?.rows || summary.items || [];
+    const excludedProductKeys = toKeySet(options.excludedProductKeys);
+    return sourceRows
+      .filter((row) => !excludedProductKeys.has(purchaseRowKey(row)) && row.mappingStatus === '已关联' && number(row.participantQty?.[participantKey] ?? row[qtyKey]) > 0)
       .map((row) => {
         const product = productMap.get(String(row.productCode)) || {};
-        const orderQty = purchaseQuantity(row.participantQty?.[participantKey] ?? row[qtyKey], product);
+        const allocationKey = purchaseAllocationKey(summary, meal, row, participantKey);
+        const orderQty = hasOwn(options.purchaseQuantityAllocations, allocationKey)
+          ? number(options.purchaseQuantityAllocations[allocationKey])
+          : purchaseQuantity(row.participantQty?.[participantKey] ?? row[qtyKey], product);
         const participant = (summary.participants || []).find((item) => item.key === participantKey)
           || LEGACY_PARTICIPANTS.find((item) => item.key === participantKey)
           || { label: participantKey, orderTag: participantKey };
@@ -325,9 +394,10 @@
           orderQty,
           orderPrice,
           marketPrice: orderPrice,
-          remark: `食谱${summary.date}${participant.label || participant.tagName || participantKey}需求`
+          remark: `食谱${summary.date}${meal?.name || ''}${participant.label || participant.tagName || participantKey}需求`
         };
-      });
+      })
+      .filter((item) => item.orderQty > 0);
   }
 
   async function createCentralOrder(order, participant, record, date) {
@@ -350,6 +420,9 @@
       recipeDemandRecordNo: record.recordNo,
       recipeDemandDate: date,
       recipeParticipantType: participant.label,
+      mealKey: order.mealKey || '',
+      mealName: order.mealName || '',
+      mealPeople: order.mealPeople ?? '',
       expectedAt: order.expectedAt,
       items: (order.items || []).map((line) => ({
         productId: line.productCode,
@@ -368,11 +441,6 @@
       })),
       orderAmount: order.orderAmount,
       productCount: order.productCount,
-      recipeTag: order.recipeTag,
-      recipeDemandRecordId: record.id,
-      recipeDemandRecordNo: record.recordNo,
-      recipeDemandDate: date,
-      recipeParticipantType: participant.label,
       status: 'PENDING_CONFIRM',
       creator: order.creator,
       createdAt: order.createdAt,
@@ -380,7 +448,7 @@
         action: '食谱需求下单',
         operator: order.creator,
         createdAt: order.createdAt,
-        desc: `${order.creator} 根据需求提交记录 ${record.recordNo} 创建${participant.label}订单`
+        desc: `${order.creator} 根据需求提交记录 ${record.recordNo} 创建${order.mealName ? `${order.mealName}、` : ''}${participant.label}订单`
       }]
     });
   }
@@ -388,6 +456,7 @@
   async function submit(dates, options = {}) {
     const preview = buildPreview(dates, options);
     if (!preview.canSubmit) throw new Error(preview.message || '当前需求不能提交');
+    const excludedProductKeys = toKeySet(options.excludedProductKeys);
     const expectedAt = normalizeExpectedAt(options.expectedAt || options.expectedDeliveryAt);
     const earliestDate = preview.dates[0] || '';
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(expectedAt)) throw new Error('请选择期望送达时间');
@@ -404,6 +473,8 @@
       canteenId: preview.canteen.id || '',
       participants: clone(preview.participants),
       dates: clone(preview.dates),
+      excludedProductKeys: [...excludedProductKeys],
+      purchaseQuantityOverrides: clone(options.purchaseQuantityOverrides || {}),
       expectedAt,
       recipeVersion: preview.dateSummaries.find((item) => item.menu)?.menu?.version || recipeService.MENU_VERSION,
       dateSummaries: preview.dateSummaries.map((summary) => ({
@@ -415,7 +486,7 @@
         studentPersonTimes: summary.calculation.totalStudentPeople,
         teacherPersonTimes: summary.calculation.totalTeacherPeople,
         totalPersonTimes: summary.calculation.totalPeople,
-        productCount: summary.calculation.rows.filter((row) => row.mappingStatus === '已关联').length,
+        productCount: summary.calculation.rows.filter((row) => row.mappingStatus === '已关联' && !excludedProductKeys.has(purchaseRowKey(row))).length,
         items: clone(summary.calculation.rows)
       })),
       items: clone(preview.rows),
@@ -442,51 +513,61 @@
     writeAll([...records, record]);
 
     const productMap = getProductMap();
+    const purchaseQuantityAllocations = buildPurchaseQuantityAllocations(preview, options.purchaseQuantityOverrides, productMap, excludedProductKeys);
     for (const summary of preview.dateSummaries) {
-      for (const participant of preview.participants) {
-        const items = participantItems({ ...summary, items: summary.calculation.rows }, participant.key, productMap);
-        if (!items.length) continue;
-        const order = schoolOrderService.create({
-          id: `SCHOOL-ORDER-${datePart(createdAt)}-${record.recordNo}-${summary.date.replace(/-/g, '')}-${participant.key}`,
-          customerName: SCHOOL_NAME,
-          supplierName: schoolOrderService.SUPPLIER_NAME,
-          canteen: preview.canteen.name || CANTEEN_NAME,
-          canteenId: preview.canteen.id || '',
-          orderTag: participant.orderTag,
-          orderTagId: participant.tagId || participant.key,
-          orderTagName: participant.tagName || participant.label,
-          nutritious: participant.nutritious || '不区分',
-          recipeTag: `食谱Tag-${summary.date}`,
-          recipeDemandRecordId: record.id,
-          recipeDemandRecordNo: record.recordNo,
-          recipeDemandDate: summary.date,
-          recipeParticipantType: participant.label,
-          expectedAt,
-          supplement: '否',
-          source: '食谱下单',
-          status: '待审核',
-          creator: operator.name,
-          items
-        });
-        let enterpriseOrder = null;
-        try {
-          enterpriseOrder = await createCentralOrder(order, participant, record, summary.date);
-        } catch (error) {
-          record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
+      for (const meal of (summary.calculation.mealRows || [])) {
+        for (const participant of preview.participants) {
+          const items = participantItems(summary, participant.key, productMap, meal, { purchaseQuantityAllocations, excludedProductKeys });
+          if (!items.length) continue;
+          const order = schoolOrderService.create({
+            id: `SCHOOL-ORDER-${datePart(createdAt)}-${record.recordNo}-${summary.date.replace(/-/g, '')}-${meal.key}-${participant.key}`,
+            customerName: SCHOOL_NAME,
+            supplierName: schoolOrderService.SUPPLIER_NAME,
+            canteen: preview.canteen.name || CANTEEN_NAME,
+            canteenId: preview.canteen.id || '',
+            orderTag: participant.orderTag,
+            orderTagId: participant.tagId || participant.key,
+            orderTagName: participant.tagName || participant.label,
+            nutritious: participant.nutritious || '不区分',
+            mealKey: meal.key,
+            mealName: meal.name,
+            mealPeople: number(meal.participantPeople?.[participant.key]),
+            recipeTag: `食谱Tag-${summary.date}`,
+            recipeDemandRecordId: record.id,
+            recipeDemandRecordNo: record.recordNo,
+            recipeDemandDate: summary.date,
+            recipeParticipantType: participant.label,
+            expectedAt,
+            supplement: '否',
+            source: '食谱下单',
+            status: '待审核',
+            creator: operator.name,
+            items
+          });
+          let enterpriseOrder = null;
+          try {
+            enterpriseOrder = await createCentralOrder(order, participant, record, summary.date);
+          } catch (error) {
+            record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
+          }
+          // 这里只保存已创建订单的关联索引，订单实体统一由 SchoolOrderService.create 产生。
+          record.orders.push({
+            orderId: order.id,
+            orderNo: order.orderNo,
+            enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
+            date: summary.date,
+            mealKey: meal.key,
+            mealName: meal.name,
+            mealPeople: number(meal.participantPeople?.[participant.key]),
+            participantType: participant.label,
+            orderTag: participant.orderTag,
+            orderTagId: participant.tagId || participant.key,
+            orderTagName: participant.tagName || participant.label,
+            nutritious: participant.nutritious || '不区分',
+            expectedAt
+          });
+          writeAll([...records, record]);
         }
-        record.orders.push({
-          orderId: order.id,
-          orderNo: order.orderNo,
-          enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
-          date: summary.date,
-          participantType: participant.label,
-          orderTag: participant.orderTag,
-          orderTagId: participant.tagId || participant.key,
-          orderTagName: participant.tagName || participant.label,
-          nutritious: participant.nutritious || '不区分',
-          expectedAt
-        });
-        writeAll([...records, record]);
       }
     }
     const completedAt = timestamp();
@@ -497,7 +578,7 @@
       result: `${record.orders.length} 笔`,
       time: completedAt,
       description: record.orders.length
-        ? `已按${preview.participants.map((participant) => `${participant.label || participant.tagName}标签`).join('、')}生成订单：${record.orders.map((item) => item.orderNo).join('、')}`
+        ? `已按餐次及${preview.participants.map((participant) => `${participant.label || participant.tagName}标签`).join('、')}生成订单：${record.orders.map((item) => item.orderNo).join('、')}`
         : '没有生成可下单商品'
     });
     if (record.enterpriseSyncWarnings.length) {
@@ -525,7 +606,6 @@
       const record = readAll().find((item) => String(item.id) === String(id) || String(item.recordNo) === String(id));
       return clone(record || null);
     },
-    submittedDateSet,
     buildPreview,
     submit
   };

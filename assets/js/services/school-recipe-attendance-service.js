@@ -1,7 +1,5 @@
 (function () {
   const RESOURCE = 'recipeAttendance';
-  const META_RESOURCE = 'recipeAttendanceMeta';
-  const SEED_VERSION = '20260904-attendance-seed-v2-empty';
   const MIN_COUNT = 1;
   const MAX_COUNT = 100000;
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -22,14 +20,7 @@
     { key: 'teacher', label: '教师', tagName: '教师', nutritious: '不区分', orderTag: '教师-不区分', legacyKey: 'teacher' }
   ];
 
-  const seed = [];
-  let memoryRecords = clone(seed);
-
-  function hasSeedMarker() {
-    if (!window.DemoStore) return false;
-    const markers = window.DemoStore.get(META_RESOURCE);
-    return Array.isArray(markers) && markers.some((item) => item.id === SEED_VERSION);
-  }
+  let memoryRecords = [];
 
   function writeRecords(records) {
     const next = clone(records || []);
@@ -41,11 +32,7 @@
   function readAll() {
     if (!window.DemoStore) return clone(memoryRecords);
     const current = window.DemoStore.get(RESOURCE);
-    if (hasSeedMarker()) return Array.isArray(current) ? current : [];
-    // 切换为空白初始数据时，清理旧版演示人数及其已保存的填报数据。
-    window.DemoStore.replace(RESOURCE, seed);
-    window.DemoStore.replace(META_RESOURCE, [{ id: SEED_VERSION, createdAt: timestamp() }]);
-    return clone(seed);
+    return Array.isArray(current) ? clone(current) : [];
   }
 
   function resolveCanteen(canteen) {
@@ -237,12 +224,14 @@
 
   function calculate(menu, record, options = {}) {
     const rows = new Map();
+    const mealRows = [];
     const participants = resolveParticipants(options);
     const participantPeople = Object.fromEntries(participants.map((participant) => [participant.key, 0]));
     let totalStudentPeople = 0;
     let totalTeacherPeople = 0;
     (menu?.meals || []).forEach((meal) => {
       const values = record?.meals?.[meal.key] || {};
+      const mealRowsMap = new Map();
       const mealPeople = {};
       participants.forEach((participant) => {
         const people = number(valueForParticipant(values, participant));
@@ -251,41 +240,54 @@
         if (participant.legacyKey === 'student' || participant.tagName === '学生') totalStudentPeople += people;
         if (participant.legacyKey === 'teacher' || participant.tagName === '教师' || participant.tagName === '教职工') totalTeacherPeople += people;
       });
+
+      const addRow = (targetRows, item, dish) => {
+        const mapped = Boolean(item.productCode) && item.mappingStatus === '已关联';
+        const unit = item.unit || '--';
+        const code = mapped ? item.productCode : `UNMAPPED-${item.name}`;
+        const key = `${code}::${unit}`;
+        const current = targetRows.get(key) || {
+          key,
+          productCode: mapped ? item.productCode : '',
+          productName: mapped ? (item.productName || item.name) : '未关联采购商品',
+          ingredientNames: [],
+          unit,
+          perCapitaQty: 0,
+          participantQty: Object.fromEntries(participants.map((participant) => [participant.key, 0])),
+          studentQty: 0,
+          teacherQty: 0,
+          totalQty: 0,
+          mealNames: [],
+          dishNames: [],
+          mappingStatus: mapped ? '已关联' : '待关联'
+        };
+        const perCapitaQty = number(item.perCapitaQty);
+        current.perCapitaQty += perCapitaQty;
+        participants.forEach((participant) => {
+          const participantQty = perCapitaQty * number(mealPeople[participant.key]);
+          current.participantQty[participant.key] = number(current.participantQty[participant.key]) + participantQty;
+          if (participant.legacyKey === 'student' || participant.tagName === '学生') current.studentQty += participantQty;
+          if (participant.legacyKey === 'teacher' || participant.tagName === '教师' || participant.tagName === '教职工') current.teacherQty += participantQty;
+        });
+        current.totalQty = participants.reduce((total, participant) => total + number(current.participantQty[participant.key]), 0);
+        if (!current.ingredientNames.includes(item.name)) current.ingredientNames.push(item.name);
+        if (!current.mealNames.includes(meal.name)) current.mealNames.push(meal.name);
+        if (!current.dishNames.includes(dish.name)) current.dishNames.push(dish.name);
+        targetRows.set(key, current);
+      };
+
       (meal.dishes || []).forEach((dish) => {
         (dish.ingredients || []).forEach((item) => {
-          const mapped = Boolean(item.productCode) && item.mappingStatus === '已关联';
-          const unit = item.unit || '--';
-          const code = mapped ? item.productCode : `UNMAPPED-${item.name}`;
-          const key = `${code}::${unit}`;
-          const current = rows.get(key) || {
-            key,
-            productCode: mapped ? item.productCode : '',
-            productName: mapped ? (item.productName || item.name) : '未关联采购商品',
-            ingredientNames: [],
-            unit,
-            perCapitaQty: 0,
-            participantQty: Object.fromEntries(participants.map((participant) => [participant.key, 0])),
-            studentQty: 0,
-            teacherQty: 0,
-            totalQty: 0,
-            mealNames: [],
-            dishNames: [],
-            mappingStatus: mapped ? '已关联' : '待关联'
-          };
-          const perCapitaQty = number(item.perCapitaQty);
-          current.perCapitaQty += perCapitaQty;
-          participants.forEach((participant) => {
-            const participantQty = perCapitaQty * number(mealPeople[participant.key]);
-            current.participantQty[participant.key] = number(current.participantQty[participant.key]) + participantQty;
-            if (participant.legacyKey === 'student' || participant.tagName === '学生') current.studentQty += participantQty;
-            if (participant.legacyKey === 'teacher' || participant.tagName === '教师' || participant.tagName === '教职工') current.teacherQty += participantQty;
-          });
-          current.totalQty = participants.reduce((total, participant) => total + number(current.participantQty[participant.key]), 0);
-          if (!current.ingredientNames.includes(item.name)) current.ingredientNames.push(item.name);
-          if (!current.mealNames.includes(meal.name)) current.mealNames.push(meal.name);
-          if (!current.dishNames.includes(dish.name)) current.dishNames.push(dish.name);
-          rows.set(key, current);
+          addRow(rows, item, dish);
+          addRow(mealRowsMap, item, dish);
         });
+      });
+      mealRows.push({
+        key: meal.key,
+        name: meal.name,
+        participantPeople: mealPeople,
+        totalPeople: participants.reduce((total, participant) => total + number(mealPeople[participant.key]), 0),
+        rows: [...mealRowsMap.values()]
       });
     });
     return {
@@ -293,6 +295,7 @@
         if (a.mappingStatus !== b.mappingStatus) return a.mappingStatus === '待关联' ? -1 : 1;
         return a.productName.localeCompare(b.productName, 'zh-CN');
       }),
+      mealRows,
       participantPeople,
       totalStudentPeople,
       totalTeacherPeople,

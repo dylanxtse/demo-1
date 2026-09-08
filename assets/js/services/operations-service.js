@@ -358,7 +358,10 @@
     },
 
     async create(resource, data) {
-      if (resource === 'orders' && window.OrderFlowService) return window.OrderFlowService.createOrder(data);
+      if (resource === 'orders') {
+        if (!window.OrderFlowService?.createOrder) throw error('ORDER_SERVICE_NOT_READY', '统一订单服务未加载');
+        return window.OrderFlowService.createOrder(data);
+      }
       const items = load(resource);
       const payload = resource === 'warehouses' ? prepareWarehouseData(data, items) : data;
       validate(resource, payload);
@@ -421,7 +424,10 @@
     },
 
     async update(resource, id, data) {
-      if (resource === 'orders' && window.OrderFlowService) return window.OrderFlowService.updateOrder(id, data);
+      if (resource === 'orders') {
+        if (!window.OrderFlowService?.updateOrder) throw error('ORDER_SERVICE_NOT_READY', '统一订单服务未加载');
+        return window.OrderFlowService.updateOrder(id, data);
+      }
       if (resource === 'sortingItems' && data.actualQty !== undefined && window.OrderFlowService) {
         return window.OrderFlowService.transition(resource, id, 'sort', { actualQty: data.actualQty });
       }
@@ -455,7 +461,10 @@
     },
 
     async remove(resource, id) {
-      if (resource === 'orders' && window.OrderFlowService) return window.OrderFlowService.removeOrder(id);
+      if (resource === 'orders') {
+        if (!window.OrderFlowService?.removeOrder) throw error('ORDER_SERVICE_NOT_READY', '统一订单服务未加载');
+        return window.OrderFlowService.removeOrder(id);
+      }
       const items = load(resource);
       const index = items.findIndex((item) => item.id === id);
       if (index < 0) throw error('RECORD_NOT_FOUND', '记录不存在或已删除');

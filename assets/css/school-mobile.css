@@ -1763,6 +1763,26 @@ button {
   background: #edf5ff;
 }
 
+.school-mobile-confirm-date.is-partial {
+  border-color: #e8c27f;
+  background: #fff4db;
+}
+
+.school-mobile-confirm-date.is-complete {
+  border-color: #a9d3b6;
+  background: #eaf7ee;
+}
+
+.school-mobile-confirm-date.is-selected.is-partial {
+  border-color: var(--mobile-blue);
+  background: #fff4db;
+}
+
+.school-mobile-confirm-date.is-selected.is-complete {
+  border-color: var(--mobile-blue);
+  background: #eaf7ee;
+}
+
 .school-mobile-confirm-date.is-disabled {
   color: #b1bbc8;
   background: #f4f6f8;

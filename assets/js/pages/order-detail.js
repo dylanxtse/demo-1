@@ -11,6 +11,13 @@
     if (catalogProduct) return Boolean(catalogProduct.isNetVegetable);
     return Boolean(line.isNetVegetable);
   };
+  const productIsStandard = (line) => {
+    const isFlag = (value) => value === true || value === 'true' || value === '是';
+    if (isFlag(line?.isStandardProduct) || isFlag(line?.isStandard)) return true;
+    const code = line?.productId || line?.productCode || line?.goodsCode || line?.goodsId;
+    const catalogProduct = (window.DemoStore?.get('products') || window.MockProducts || []).find((product) => product.code === code || product.id === code);
+    return isFlag(catalogProduct?.isStandardProduct) || isFlag(catalogProduct?.isStandard);
+  };
 
   const formatTraceCode = (line) => {
     if (!line.goodsCode) return '--';
@@ -104,7 +111,7 @@
 
   function render(order) {
     if (!order) {
-      return `<div class="page-card processing-detail-page order-detail-page">
+      return `<div class="page-card processing-detail-page order-detail-page enterprise-order-detail-page">
         <div class="processing-detail-page-header">
           <button class="back-link" type="button" data-action="back">${backIcon}<span>返回</span></button>
           <h1>订单详情</h1>
@@ -126,6 +133,7 @@
           <span class="product-display-text" title="${escapeHtml(productDisplay)}">${productTag}${escapeHtml(productDisplay)}</span>
         </td>
         <td>${escapeHtml(line.goodsCode || line.goodsId || '--')}</td>
+        <td>${productIsStandard(line) ? '是' : '否'}</td>
         <td>${escapeHtml(line.unit)}</td>
         <td>${money(line.unitPrice)}</td>
         <td>${line.quantity || 0}</td>
@@ -144,10 +152,10 @@
         <td>${(line.inspectionImages && line.inspectionImages.length) ? `${line.inspectionImages.length}张` : '--'}</td>
         <td>${(line.inspectionVideos && line.inspectionVideos.length) ? `${line.inspectionVideos.length}个` : '--'}</td>
       </tr>
-      ${renderNetMaterialRows(line, 21)}`;
+      ${renderNetMaterialRows(line, 22)}`;
     }).join('');
 
-    return `<div class="page-card processing-detail-page order-detail-page">
+    return `<div class="page-card processing-detail-page order-detail-page enterprise-order-detail-page">
       <div class="processing-detail-page-header">
         <button class="back-link" type="button" data-action="back">${backIcon}<span>返回</span></button>
         <h1>订单详情</h1>
@@ -163,9 +171,8 @@
             ${infoItem('订单号', order.orderNo)}
             ${infoItem('客户名称', order.customerName)}
             ${infoItem('食堂', order.canteen)}
-            ${infoItem('采购类型', order.purchaseType || '销售订单')}
+            ${infoItem('餐次', order.mealName)}
             ${infoItem('订单标签', order.orderTag)}
-            ${order.recipeTag ? infoItem('食谱Tag', order.recipeTag) : ''}
             ${infoItem('期望送达时间', order.expectedAt)}
             ${infoItem('单据来源', order.source)}
             ${infoItem('添加时间', order.createdAt)}
@@ -174,7 +181,7 @@
             ${infoItem('司机', order.driver)}
             ${infoItem('验收时间', order.acceptedAt)}
             ${infoItem('是否补单', order.supplement)}
-            ${order.rejectReason ? infoItem('驳回原因', order.rejectReason) : ''}
+            ${infoItem('采购负责人', order.purchaser)}
           </div>
         </div>
         <div class="processing-detail-section">
@@ -187,6 +194,7 @@
                 <th>图片</th>
                 <th style="min-width:230px">商品名称（计量单位/品牌/规格）</th>
                 <th>商品编号</th>
+                <th>是否标品</th>
                 <th>计量单位</th>
                 <th>下单单价</th>
                 <th>下单数量</th>
@@ -206,7 +214,7 @@
                 <th>验货视频</th>
               </tr>
             </thead>
-            <tbody>${itemRows || '<tr><td colspan="21" style="text-align:center;color:var(--text-tertiary);">暂无明细</td></tr>'}</tbody>
+            <tbody>${itemRows || '<tr><td colspan="22" style="text-align:center;color:var(--text-tertiary);">暂无明细</td></tr>'}</tbody>
           </table>
           </div>
         </div>
@@ -253,6 +261,6 @@
       }
     });
   }).catch((error) => {
-    window.AppShell.mount({ title: '订单管理', content: `<div class="page-card processing-detail-page order-detail-page"><div class="processing-detail-page-header"><button class="back-link" type="button" onclick="window.AppNavigation.navigate('./order-management.html')">${backIcon}<span>返回</span></button><h1>订单详情</h1></div><div class="processing-detail-page-body"><div class="page-empty-state">${escapeHtml(error.message || '订单加载失败')}</div></div></div>` });
+    window.AppShell.mount({ title: '订单管理', content: `<div class="page-card processing-detail-page order-detail-page enterprise-order-detail-page"><div class="processing-detail-page-header"><button class="back-link" type="button" onclick="window.AppNavigation.navigate('./order-management.html')">${backIcon}<span>返回</span></button><h1>订单详情</h1></div><div class="processing-detail-page-body"><div class="page-empty-state">${escapeHtml(error.message || '订单加载失败')}</div></div></div>` });
   });
 })();

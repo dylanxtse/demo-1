@@ -163,9 +163,9 @@
           ${detailField('净含量', appendUnit(product.netContent, product.netContentUnit))}
           ${detailField('上传合格证明', product.qualificationCertificate)}
           ${detailField('是否净菜', isNetVegetable ? '是' : '否')}
-          ${detailField('是否标品', isStandardProduct ? '是' : '否')}
           ${detailField('采购类型', product.purchaseType || '供应商送货', { required: true })}
           ${procurementFields}
+          ${detailField('是否标品', isStandardProduct ? '是' : '否')}
           ${detailField('启用多单位', multiUnitEnabled ? '是' : '否')}
           ${multiUnitFields}
           ${detailField('是否称重', isWeighed ? '是' : '否')}
@@ -199,6 +199,7 @@
               <div class="filter-fields">
                 <div class="filter-group"><label class="filter-label" for="schoolProductKeyword">商品名称</label><input class="filter-input" id="schoolProductKeyword" data-filter="keyword" type="text" placeholder="请输入名称/编号"></div>
                 <div class="filter-group"><label class="filter-label" for="schoolProductNetVegetable">是否净菜</label><select class="filter-select" id="schoolProductNetVegetable" data-filter="netVegetable"><option value="">全部</option><option value="net">净菜</option><option value="non-net">非净菜</option></select></div>
+                <div class="filter-group"><label class="filter-label" for="schoolProductStandardProduct">是否标品</label><select class="filter-select" id="schoolProductStandardProduct" data-filter="standardProduct"><option value="" selected>全部</option><option value="standard">是</option><option value="non-standard">否</option></select></div>
               </div>
               <div class="action-controls"><button type="submit" class="btn btn-primary btn-sm btn-fixed">查询</button><button type="button" class="btn btn-sm btn-fixed" data-action="reset">重置</button></div>
             </div>
@@ -214,7 +215,8 @@
     const applyFilters = (resetPage = true) => {
       const keyword = page.querySelector('[data-filter="keyword"]').value;
       const netVegetable = page.querySelector('[data-filter="netVegetable"]').value;
-      state.filtered = service.filterRows(state.rows, { keyword, category: state.category, netVegetable });
+      const standardProduct = page.querySelector('[data-filter="standardProduct"]').value;
+      state.filtered = service.filterRows(state.rows, { keyword, category: state.category, netVegetable, standardProduct });
       state.pager?.update({ total: state.filtered.length, ...(resetPage ? { page: 1 } : {}) });
       renderRows(page, state);
     };
@@ -251,6 +253,7 @@
       if (action === 'reset') {
         page.querySelector('[data-filter="keyword"]').value = '';
         page.querySelector('[data-filter="netVegetable"]').value = '';
+        page.querySelector('[data-filter="standardProduct"]').value = '';
         page.querySelector('#schoolCategoryKeyword').value = '';
         state.category = '';
         state.treeKeyword = '';

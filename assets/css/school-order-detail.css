@@ -59,6 +59,18 @@
   --detail-field-label-width: 140px;
 }
 
+/* 学校端订单字段与参考页面一致：桌面端固定四列，餐次作为额外字段排在末尾。 */
+.school-order-detail-page .processing-detail-info {
+  --detail-grid-columns: 4;
+  --detail-field-label-width: 104px;
+  --detail-grid-row-gap: 16px;
+  --detail-grid-column-gap: 28px;
+}
+
+.school-order-detail-page .processing-detail-info .info-label {
+  color: var(--text-primary);
+}
+
 .school-order-detail-section-title {
   display: flex;
   align-items: center;
@@ -223,11 +235,13 @@
 .school-order-detail-actions .btn { min-width: 84px; justify-content: center; }
 
 @media (max-width: 1180px) {
+  .school-order-detail-page .processing-detail-info { --detail-grid-columns: 2; }
   .school-order-detail-summary.processing-detail-info { --detail-grid-columns: 2; }
 }
 
 @media (max-width: 760px) {
   .school-order-detail-header { padding: 0 12px; }
   .school-order-detail-body { padding: 16px 12px 82px; }
+  .school-order-detail-page .processing-detail-info { --detail-grid-columns: 1; }
   .school-order-detail-summary.processing-detail-info { --detail-grid-columns: 1; }
 }

@@ -770,7 +770,10 @@
 }
 
 .product-form.is-readonly .product-switches {
-  display: contents;
+  display: grid;
+  grid-column: 1;
+  row-gap: 18px;
+  align-content: start;
 }
 
 .product-form.is-readonly .form-field {

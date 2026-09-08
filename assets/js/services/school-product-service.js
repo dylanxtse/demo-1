@@ -23,7 +23,7 @@
       return clone(getEnterpriseRows());
     },
 
-    filterRows(source, { keyword = '', category = '', netVegetable = '' } = {}) {
+    filterRows(source, { keyword = '', category = '', netVegetable = '', standardProduct = '' } = {}) {
       const query = normalize(keyword);
       return source.filter((row) => {
         const textMatch = !query || `${row.code} ${row.name}`.toLocaleLowerCase().includes(query);
@@ -34,7 +34,9 @@
           || categoryParts[categoryParts.length - 1] === category;
         const netVegetableMatch = !netVegetable
           || (netVegetable === 'net' ? row.isNetVegetable === true : row.isNetVegetable !== true);
-        return textMatch && categoryMatch && netVegetableMatch;
+        const standardProductMatch = !standardProduct
+          || (standardProduct === 'standard' ? row.isStandardProduct === true : row.isStandardProduct !== true);
+        return textMatch && categoryMatch && netVegetableMatch && standardProductMatch;
       });
     }
   };

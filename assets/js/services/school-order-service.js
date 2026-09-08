@@ -93,7 +93,7 @@
       const lines = items.map((line, index) => makeLine({ id: `${id}-ITEM-${index + 1}`, ...line }));
       const orderAmount = money(lines.reduce((sum, line) => sum + line.orderSubtotal, 0));
       return {
-        id, orderNo, ...common, supplierName, canteen, orderTag, source, driver, creator,
+        id, orderNo, ...common, supplierName, canteen, mealName: '', orderTag, source, driver, creator,
         orderAmount, shippingAmount: shipped ? orderAmount : 0, acceptedAmount: 0,
         returnAmount: 0, reconciliationAmount: 0, expectedAt, status,
         productCount: lines.length, acceptedAt: '', shippingAt, createdAt, items: lines,
@@ -229,13 +229,15 @@
     if (window.DemoStore?.get) {
       const stored = window.DemoStore.get(RESOURCE);
       const meta = window.DemoStore.get(META_RESOURCE);
-      if (stored.length && meta.some((item) => item.id === SEED_VERSION)) return stored;
+      if (stored.length && meta.some((item) => item.id === SEED_VERSION)) return normalizeStoredOrders(stored);
       const seed = makeSeed();
-      window.DemoStore.replace(RESOURCE, seed);
+      const normalizedSeed = normalizeStoredOrders(seed);
+      window.DemoStore.replace(RESOURCE, normalizedSeed);
       window.DemoStore.replace(META_RESOURCE, [{ id: SEED_VERSION, createdAt: timestamp() }]);
-      return clone(seed);
+      return clone(normalizedSeed);
     }
-    if (!memoryOrders) memoryOrders = makeSeed();
+    if (!memoryOrders) memoryOrders = makeSeed().map((order) => canonicalOrder(order));
+    memoryOrders = normalizeStoredOrders(memoryOrders);
     return clone(memoryOrders);
   }
 
@@ -243,6 +245,16 @@
     if (window.DemoStore?.replace) return window.DemoStore.replace(RESOURCE, orders);
     memoryOrders = clone(orders);
     return clone(memoryOrders);
+  }
+
+  function canonicalOrder(order, options = {}) {
+    return window.OrderSchema?.normalize(order, 'school', options) || clone(order || {});
+  }
+
+  function normalizeStoredOrders(orders) {
+    const normalized = (orders || []).map((order) => canonicalOrder(order));
+    if (normalized.some((order, index) => JSON.stringify(order) !== JSON.stringify(orders[index]))) writeOrders(normalized);
+    return normalized;
   }
 
   function lineFromPayload(line, index) {
@@ -283,7 +295,11 @@
     const invalidStandardLine = items.find((line) => line.isStandardProduct && !Number.isInteger(line.orderQty));
     if (invalidStandardLine) throw new Error('标品下单数量必须为整数');
     const orderAmount = money(items.reduce((sum, line) => sum + line.orderSubtotal, 0));
-    return {
+    const mealKey = String(payload.mealKey || '').trim();
+    const mealName = String(payload.mealName || '').trim();
+    const mealPeople = payload.mealPeople === '' || payload.mealPeople == null ? '' : number(payload.mealPeople);
+    const mealFields = mealKey || mealName ? { mealKey, mealName, mealPeople } : { mealName };
+    return canonicalOrder({
       customerName: SCHOOL_NAME,
       supplierName: String(payload.supplierName || SUPPLIER_NAME).trim(),
       canteen: String(payload.canteen || '').trim(),
@@ -303,8 +319,9 @@
       recipeParticipantType: String(payload.recipeParticipantType || '').trim(),
       orderAmount,
       productCount: items.length,
-      items
-    };
+      items,
+      ...mealFields
+    }, 'school');
   }
 
   function nextOrderNo(orders, createdAt) {
@@ -412,10 +429,10 @@
       const orders = readOrders();
       const normalized = normalizePayload(payload);
       const now = timestamp();
-      const record = {
+      const record = canonicalOrder({
+        ...normalized,
         id: payload.id || `SCHOOL-ORDER-${datePart(now)}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         orderNo: payload.orderNo || nextOrderNo(orders, now),
-        ...normalized,
         status: payload.status || '待发货',
         acceptedAmount: 0,
         returnAmount: 0,
@@ -427,7 +444,7 @@
         creator: payload.creator || currentOperator(),
         createdAt: now,
         operationLogs: [logEntry(payload.recipeDemandRecordId ? '食谱需求下单' : '添加', '添加', payload.recipeDemandRecordNo ? `需求提交记录 ${payload.recipeDemandRecordNo}` : '')]
-      };
+      }, 'school');
       orders.unshift(record);
       writeOrders(orders);
       return clone(record);
@@ -438,7 +455,7 @@
       if (index < 0) return null;
       const current = orders[index];
       const normalized = normalizePayload({ ...current, ...payload });
-      const next = {
+      const next = canonicalOrder({
         ...current,
         ...normalized,
         id: current.id,
@@ -448,7 +465,7 @@
         returnAmount: current.returnAmount || 0,
         reconciliationAmount: current.reconciliationAmount || 0,
         operationLogs: [...(current.operationLogs || []), logEntry('编辑', '保存')]
-      };
+      }, 'school');
       orders[index] = next;
       writeOrders(orders);
       return clone(next);
@@ -471,6 +488,8 @@
         createdAt: timestamp(),
         creator: currentOperator()
       };
+      delete payload.id;
+      delete payload.orderNo;
       return this.create(payload);
     },
     approve(id) {

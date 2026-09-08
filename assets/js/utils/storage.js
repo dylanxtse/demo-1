@@ -31,7 +31,7 @@
   const storageKey = 'procurement-demo-v3';
   const previousStorageKey = 'procurement-demo-v2';
   const backupStorageKey = 'procurement-demo-v3-migration-backup';
-  const schemaVersion = '20260805-flow-v3.0';
+  const schemaVersion = '20260908-order-detail-schema-v1';
   const warehouseMonitorPointSeed = [
     {
       id: 'WMP-001',
@@ -81,6 +81,59 @@
   };
   const timestamp = () => window.BusinessRules?.now() || new Date().toISOString().slice(0, 19).replace('T', ' ');
   const normalizeDateTime = (value) => window.BusinessRules?.normalizeDateTime(value) || String(value || '');
+
+  // 订单详情的字段契约。业务元数据仍可服务于分拣、发货和追溯，但订单创建只能
+  // 使用这里定义的订单字段，详情页不再为历史别名增加第二套字段。
+  const orderDetailFields = Object.freeze({
+    school: Object.freeze(['orderNo', 'supplierName', 'canteen', 'mealName', 'orderTag', 'expectedAt', 'source', 'createdAt', 'creator', 'shippingAt', 'driver', 'acceptedAt', 'supplement']),
+    enterprise: Object.freeze(['orderNo', 'customerName', 'canteen', 'mealName', 'orderTag', 'expectedAt', 'source', 'createdAt', 'creator', 'shippingAt', 'driver', 'acceptedAt', 'supplement', 'purchaser'])
+  });
+  const canonicalOrderKeys = Object.freeze([
+    'id', 'orderId', 'orderNo', 'customerId', 'customerCode', 'customerName', 'customerType', 'supplierName',
+    'canteen', 'canteenId', 'orderTag', 'orderTagId', 'orderTagName', 'nutritious', 'mealKey', 'mealName', 'mealPeople',
+    'expectedAt', 'source', 'sourceType', 'createdAt', 'createTime', 'creator', 'shippingAt', 'driver', 'acceptedAt',
+    'status', 'receiptStatus', 'receivedAt', 'supplement', 'remark', 'orderAmount', 'shippingAmount', 'acceptedAmount',
+    'returnAmount', 'reconciliationAmount', 'productCount', 'orderLineCount', 'items', 'orderLines', 'warehouse', 'route',
+    'receiver', 'phone', 'address', 'printed', 'sortingCompleted', 'recipeTag', 'recipeDemandRecordId',
+    'recipeDemandRecordNo', 'recipeDemandDate', 'recipeParticipantType', 'purchaser', 'auditAt', 'auditor', 'rejectReason',
+    'auditOpinion', 'updatedAt', 'orderType', 'netVegetable', 'operationLogs'
+  ]);
+  const legacyOrderKeys = Object.freeze(['meal', 'mealType', 'purchaseType', 'purchaserName', 'purchaseManager', 'buyer']);
+  const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
+  const cloneValue = (value) => value === undefined ? value : clone(value);
+  const firstText = (...values) => values.find((value) => value !== '' && value != null)?.toString().trim() || '';
+
+  function normalizeOrderShape(source = {}, side = 'enterprise', options = {}) {
+    const partial = options.partial === true;
+    const strict = options.strict === true;
+    const input = clone(source || {});
+    const result = strict
+      ? Object.fromEntries(canonicalOrderKeys.filter((key) => hasOwn(input, key)).map((key) => [key, cloneValue(input[key])]))
+      : input;
+    const mealSource = firstText(input.mealName, input.meal, input.mealType);
+    const shouldSetMeal = !partial || hasOwn(input, 'mealName') || hasOwn(input, 'meal') || hasOwn(input, 'mealType');
+    if (shouldSetMeal) result.mealName = mealSource;
+    if (side === 'enterprise') {
+      const shouldSetPurchaser = !partial || hasOwn(input, 'purchaser') || hasOwn(input, 'purchaserName')
+        || hasOwn(input, 'purchaseManager') || hasOwn(input, 'buyer');
+      if (shouldSetPurchaser) result.purchaser = firstText(input.purchaser, input.purchaserName, input.purchaseManager, input.buyer);
+    } else {
+      delete result.purchaser;
+    }
+    legacyOrderKeys.forEach((key) => delete result[key]);
+    if (!partial) {
+      const fields = orderDetailFields[side] || orderDetailFields.enterprise;
+      fields.forEach((field) => {
+        if (!hasOwn(result, field) || result[field] == null) result[field] = '';
+      });
+    }
+    return result;
+  }
+
+  window.OrderSchema = Object.freeze({
+    detailFields: orderDetailFields,
+    normalize: normalizeOrderShape
+  });
 
   function organizationSeed() {
     const createdAt = '2026-08-12 09:00:00';
@@ -682,7 +735,7 @@
     if (status === 'CONFIRMED') status = 'READY_FOR_SORTING';
     if (status === 'COMPLETED') status = 'SHIPPED';
     const shippingAt = source.shippingAt || (status === 'SHIPPED' ? `${createdAt.slice(0, 10)} 06:30:00` : '');
-    return {
+    const record = {
       ...clone(source),
       id,
       orderId: id,
@@ -695,9 +748,14 @@
       customerId: source.customerId || '',
       customerName: source.customerName || '',
       canteen: source.canteen || '',
+      mealName: firstText(source.mealName, source.meal, source.mealType),
+      source: source.source || '',
       receiptStatus: '未收货',
       receivedAt: '',
       supplement: '否',
+      acceptedAt: normalizeDateTime(source.acceptedAt || ''),
+      driver: source.driver || '',
+      purchaser: firstText(source.purchaser, source.purchaserName, source.purchaseManager, source.buyer),
       orderLineCount: items.length,
       productCount: items.length,
       items,
@@ -706,6 +764,7 @@
       shippingAt: normalizeDateTime(shippingAt),
       updatedAt: source.updatedAt || createdAt
     };
+    return normalizeOrderShape(record, 'enterprise');
   }
 
   function normalizeOrderLogs(order, createdAt, creator) {
@@ -1155,13 +1214,20 @@
         if ('productCode' in line) set(line, resource, 'productCode', productId);
         if (!line.goodsName && !line.productName) set(line, resource, 'productName', product.name);
       }
+      if (resource === 'orders') {
+        const isStandardProduct = line.isStandardProduct === true || line.isStandardProduct === 'true' || line.isStandardProduct === '是'
+          || line.isStandard === true || line.isStandard === 'true' || line.isStandard === '是'
+          || product?.isStandardProduct === true || product?.isStandardProduct === 'true' || product?.isStandardProduct === '是'
+          || product?.isStandard === true || product?.isStandard === 'true' || product?.isStandard === '是';
+        set(line, resource, 'isStandardProduct', isStandardProduct);
+      }
       if (line.amount !== undefined) {
         set(line, resource, 'amount', Number(rules.itemAmount(line).toFixed(2)));
       }
     };
 
     const dateFields = {
-      orders: ['createdAt', 'createTime', 'updatedAt', 'expectedAt', 'shippingAt'],
+      orders: ['createdAt', 'createTime', 'updatedAt', 'expectedAt', 'shippingAt', 'acceptedAt'],
       shippingOrders: ['createdAt', 'expectedAt'],
       sortingTasks: ['expectedAt', 'sortingAt'],
       inboundOrders: ['entryTime'],
@@ -1223,7 +1289,13 @@
       set(progress, 'sortingProgress', 'route', progress.route || location.route);
     });
 
-    (state.orders || []).forEach((order) => {
+    const normalizedOrders = (state.orders || []).map((order) => {
+      const normalized = normalizeOrderShape(order, 'enterprise');
+      if (JSON.stringify(normalized) !== JSON.stringify(order)) changed = true;
+      return normalized;
+    });
+    state.orders = normalizedOrders;
+    normalizedOrders.forEach((order) => {
       (order.items || []).forEach((line) => normalizeLine(line, 'orders'));
       order.orderLines = order.items;
       set(order, 'orders', 'orderAmount', Number(rules.totalAmount(order.items, ['quantity', 'orderQty']).toFixed(2)));
@@ -2392,24 +2464,25 @@
   window.OrderFlowService = {
     createOrder(data) {
       return window.DemoStore.transact((state) => {
-        assertStandardOrderQuantities(state, data.items);
-        const sourceType = data.sourceType || (data.source === '客户下单' ? 'CUSTOMER' : 'ENTERPRISE');
-        const orderId = data.orderId || `ORD-${Date.now()}`;
+        const source = window.OrderSchema?.normalize(data, 'enterprise', { strict: true }) || clone(data || {});
+        assertStandardOrderQuantities(state, source.items);
+        const sourceType = source.sourceType || (source.source === '客户下单' ? 'CUSTOMER' : 'ENTERPRISE');
+        const orderId = source.orderId || source.id || `ORD-${Date.now()}`;
         const settings = state.settings;
-        const requestedStatus = data.status === 'DRAFT' ? 'DRAFT' : null;
+        const requestedStatus = source.status === 'DRAFT' ? 'DRAFT' : null;
         const status = requestedStatus || (sourceType === 'CUSTOMER'
           ? 'PENDING_CONFIRM'
           : settings.enterpriseOrderAuditEnabled ? 'PENDING_AUDIT' : 'READY_FOR_SHIPPING');
-        const createdAt = data.createdAt || now();
+        const createdAt = source.createdAt || now();
         const customer = (state.customers || []).find((item) => (
-          (data.customerId && (item.id === data.customerId || item.customerId === data.customerId))
-          || (data.customerName && item.customerName === data.customerName)
+          (source.customerId && (item.id === source.customerId || item.customerId === source.customerId))
+          || (source.customerName && item.customerName === source.customerName)
         ));
         const customerCode = window.BusinessRules.businessCode(
-          data.customerCode || customer?.customerCode || '03',
+          source.customerCode || customer?.customerCode || '03',
           '03'
         );
-        const items = (data.items || []).map((item, index) => ({
+        const items = (source.items || []).map((item, index) => ({
           ...clone(item),
           id: `${orderId}-LINE-${String(index + 1).padStart(3, '0')}`,
           orderLineId: `${orderId}-LINE-${String(index + 1).padStart(3, '0')}`,
@@ -2422,10 +2495,10 @@
           subtotal: number(item.subtotal || number(item.quantity) * number(item.unitPrice))
         }));
         const order = {
-          ...clone(data),
+          ...source,
           id: orderId,
           orderId,
-          orderNo: data.orderNo || nextOrderNumber(state, data, createdAt),
+          orderNo: source.orderNo || nextOrderNumber(state, source, createdAt),
           customerCode,
           sourceType,
           status,
@@ -2435,10 +2508,18 @@
           receiptStatus: '未收货',
           receivedAt: '',
           supplement: '否',
+          acceptedAt: source.acceptedAt || '',
+          shippingAt: source.shippingAt || '',
+          driver: source.driver || '',
+          purchaser: source.purchaser || '',
+          mealName: source.mealName || '',
+          acceptedAmount: number(source.acceptedAmount),
+          returnAmount: number(source.returnAmount),
+          reconciliationAmount: number(source.reconciliationAmount),
           createdAt,
           createTime: createdAt,
-          creator: data.creator || '管理员',
-          operationLogs: createOrderLogs(data, data.createdAt || now(), data.creator || '管理员'),
+          creator: source.creator || '管理员',
+          operationLogs: createOrderLogs(source, source.createdAt || now(), source.creator || '管理员'),
           updatedAt: now()
         };
         state.orders.unshift(order);
@@ -2454,7 +2535,7 @@
         const order = getOrder(state, orderId);
         if (!order) return null;
         if (Array.isArray(data.items)) assertStandardOrderQuantities(state, data.items);
-        const updates = clone(data);
+        const updates = window.OrderSchema?.normalize(data, 'enterprise', { partial: true, strict: true }) || clone(data || {});
         if (updates.status === 'PENDING' && !['PENDING_CONFIRM', 'PENDING_AUDIT'].includes(order.status)) delete updates.status;
         Object.assign(order, updates, { id: order.id, orderId: order.id, updatedAt: now() });
         if (Array.isArray(data.items)) {
@@ -2471,7 +2552,12 @@
           state.orderLines = [...state.orderLines.filter((line) => line.orderId !== order.id), ...order.items];
           createSortingTasks(state, order);
         }
-        syncOrder(state, order.id);
+        const stableId = order.id;
+        const canonical = window.OrderSchema?.normalize(order, 'enterprise') || order;
+        Object.keys(order).forEach((key) => { delete order[key]; });
+        Object.assign(order, canonical, { id: stableId, orderId: stableId, updatedAt: now() });
+        state.orderLines = [...state.orderLines.filter((line) => line.orderId !== stableId), ...(order.items || []).map((line) => clone(line))];
+        syncOrder(state, stableId);
         return order;
       });
     },

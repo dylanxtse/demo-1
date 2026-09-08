@@ -6,50 +6,22 @@
 
   const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
   const allMenus = recipeService.getAll().sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  const menuDates = new Set(allMenus.map((menu) => menu.date));
-  const requestedDate = new URLSearchParams(window.location.search).get('date') || '';
-  const submittedDates = demandService.submittedDateSet();
   const dateSummaryFor = (date) => demandService.buildPreview([date]).dateSummaries[0] || null;
   const allDateSummaries = allMenus.map((menu) => dateSummaryFor(menu.date)).filter(Boolean);
   const filledDateSummaries = allDateSummaries.filter((summary) => Number(summary.calculation?.totalPeople || 0) > 0);
-  const firstFilledDate = filledDateSummaries.find((summary) => !summary.submitted)?.date || '';
-  const firstDate = allMenus[0]?.date || requestedDate || '2026-09-07';
+  const fallbackDate = allMenus[0]?.date || '2026-09-07';
   const dateObject = (date) => {
-    const parsed = new Date(`${String(date || firstDate)}T00:00:00`);
-    return Number.isNaN(parsed.getTime()) ? new Date(`${firstDate}T00:00:00`) : parsed;
+    const parsed = new Date(`${String(date || fallbackDate)}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? new Date(`${fallbackDate}T00:00:00`) : parsed;
   };
   const dateValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const monthStart = (value) => {
-    const text = String(value || firstDate);
-    return /^\d{4}-\d{2}/.test(text) ? `${text.slice(0, 7)}-01` : `${firstDate.slice(0, 7)}-01`;
-  };
-  const monthDates = (start) => {
-    const date = dateObject(monthStart(start));
-    const total = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    return Array.from({ length: total }, (_, index) => dateValue(new Date(date.getFullYear(), date.getMonth(), index + 1)));
-  };
-  const monthLabel = (start) => `${start.slice(0, 4)}年${start.slice(5, 7)}月`;
-  const shiftMonth = (start, offset) => {
-    const date = dateObject(monthStart(start));
-    date.setMonth(date.getMonth() + offset);
-    return dateValue(new Date(date.getFullYear(), date.getMonth(), 1));
-  };
-  const today = new Date();
-  const currentMonthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-  const minMonthStart = shiftMonth(currentMonthStart, -1);
-  const maxMonthStart = shiftMonth(currentMonthStart, 1);
-  const initialDate = requestedDate && menuDates.has(requestedDate)
-    ? requestedDate
-    : firstFilledDate || allMenus[0]?.date || dateValue(today);
-  const initialMonthStart = monthStart(initialDate);
   const state = {
-    selectedDates: new Set(filledDateSummaries
-      .filter((summary) => !summary.submitted)
-      .map((summary) => summary.date)),
-    monthStart: initialMonthStart,
+    selectedDates: new Set(filledDateSummaries.map((summary) => summary.date)),
     expectedAt: '',
     expectedAtManuallyChanged: false,
-    submitting: false
+    submitting: false,
+    purchaseQtyOverrides: {},
+    excludedProductKeys: new Set()
   };
   const defaultExpectedAt = (dates = []) => {
     const earliest = [...new Set(dates)].sort()[0] || '';
@@ -86,9 +58,19 @@
     maximumFractionDigits: 2
   });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 12
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   });
+  const fixedQuantity = (value) => {
+    const text = String(value ?? '').trim();
+    if (!text) return '';
+    const parsed = Number(text);
+    return Number.isFinite(parsed) ? parsed.toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: false
+    }) : '';
+  };
   const productDisplay = (item) => window.DomUtils?.formatProductDisplay
     ? window.DomUtils.formatProductDisplay(item)
     : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
@@ -105,6 +87,19 @@
     const amount = Number(value);
     return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
   };
+  const purchaseRowKey = (item) => String(item?.key || `${item?.productCode || item?.productName || ''}::${item?.unit || '--'}`);
+  const isProductExcluded = (item) => state.excludedProductKeys.has(purchaseRowKey(item));
+  const purchaseQuantityKey = (item, participantKey) => `${purchaseRowKey(item)}::${participantKey}`;
+  const hasPurchaseQuantityOverride = (item, participantKey) => Object.prototype.hasOwnProperty.call(
+    state.purchaseQtyOverrides,
+    purchaseQuantityKey(item, participantKey)
+  );
+  const purchaseQuantityValue = (item, participant) => {
+    const key = purchaseQuantityKey(item, participant.key);
+    return hasPurchaseQuantityOverride(item, participant.key)
+      ? state.purchaseQtyOverrides[key]
+      : purchaseQuantity(item.participantQty?.[participant.key], item);
+  };
   const currentCanteen = window.AppStorage?.read?.('school-recipe-current-canteen', window.SchoolOrderService?.CANTEEN_NAME || '第一食堂') || window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
   const currentCanteenScope = demandService.currentCanteen?.(currentCanteen) || { id: '', name: currentCanteen };
   const currentCanteenName = currentCanteenScope.name || currentCanteen;
@@ -120,8 +115,6 @@
     .map((meal) => meal.name)
     .join('、') || '--';
   const attendanceValue = (value) => value === '' || value == null ? '--' : number(value);
-  const calendarChevronLeft = '<svg class="icon-svg school-recipe-demand-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>';
-  const calendarChevronRight = '<svg class="icon-svg school-recipe-demand-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
 
   function navigate(url) {
     if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(url);
@@ -137,45 +130,6 @@
     document.body.appendChild(toast);
     window.clearTimeout(showToast.timer);
     showToast.timer = window.setTimeout(() => toast.remove(), 2400);
-  }
-
-  function statusFor(summary) {
-    if (!summary) return { label: '暂无菜谱', className: 'is-no-menu', disabled: true };
-    if (summary.submitted) return { label: '已下单', className: 'is-submitted', disabled: true };
-    if (summary.validation.canContinue) return { label: '可提交', className: 'is-ready', disabled: false };
-    if (Number(summary.calculation?.totalPeople || 0) > 0) return { label: '未完成', className: 'is-warning', disabled: false };
-    return { label: '未填写', className: 'is-disabled', disabled: true };
-  }
-
-  function renderDatePanel(dateSummaryMap) {
-    const dates = monthDates(state.monthStart);
-    const leadingEmptyDays = dateObject(state.monthStart).getDay();
-    const previousMonth = shiftMonth(state.monthStart, -1);
-    const nextMonth = shiftMonth(state.monthStart, 1);
-    const canGoPrevious = previousMonth >= minMonthStart;
-    const canGoNext = nextMonth <= maxMonthStart;
-    const filledDays = dates.filter((date) => Number(dateSummaryMap.get(date)?.calculation?.totalPeople || 0) > 0).length;
-    const cells = [...Array(leadingEmptyDays).fill(''), ...dates].map((date) => {
-      if (!date) return '<span class="school-recipe-demand-calendar-date-placeholder" aria-hidden="true"></span>';
-      const summary = dateSummaryMap.get(date) || null;
-      const menu = menuDates.has(date);
-      const status = statusFor(summary);
-      const hasPeople = Number(summary?.calculation?.totalPeople || 0) > 0;
-      const checked = state.selectedDates.has(date);
-      const calendarClass = !menu ? 'is-empty is-no-menu' : summary?.submitted ? 'is-submitted' : !hasPeople ? 'is-empty' : summary.validation.canContinue ? 'is-complete' : 'is-partial';
-      const disabled = !menu || !hasPeople || status.disabled;
-      return `<button type="button" class="school-recipe-demand-calendar-date ${calendarClass} ${checked ? 'is-selected' : ''}" data-confirm-date="${escapeHtml(date)}" title="${escapeHtml(`${date} ${status.label}`)}" ${disabled ? 'disabled' : ''}>
-        <span class="school-recipe-demand-calendar-date-number">${escapeHtml(String(Number(date.slice(8, 10))))}</span>
-        <span class="school-recipe-demand-calendar-date-week${menu ? '' : ' is-hidden'}">${escapeHtml(weekday(date))}</span>
-      </button>`;
-    }).join('');
-    return `<aside class="school-recipe-demand-date-panel" aria-label="选择提交日期">
-      <div class="school-recipe-demand-calendar-heading"><div class="school-recipe-demand-calendar-actions"><button type="button" data-confirm-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}>${calendarChevronLeft}</button><span class="school-recipe-demand-current-month">${escapeHtml(monthLabel(state.monthStart))}</span><button type="button" data-confirm-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}>${calendarChevronRight}</button></div></div>
-      <div class="school-recipe-demand-calendar-caption"><span>本月菜谱</span><small>已填 ${number(filledDays)} 天</small></div>
-      <div class="school-recipe-demand-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${escapeHtml(name)}</span>`).join('')}</div>
-      <div class="school-recipe-demand-calendar-grid">${cells}</div>
-      <div class="school-recipe-demand-calendar-legend"><span><i class="is-complete"></i>可提交</span><span><i class="is-partial"></i>未完成</span><span><i class="is-submitted"></i>已下单</span></div>
-    </aside>`;
   }
 
   function renderAttendanceDetail(summary) {
@@ -199,15 +153,14 @@
   }
 
   function renderDateSummaryTable(preview) {
-    const summaries = preview.dateSummaries
-      .filter((summary) => Number(summary.calculation?.totalPeople || 0) > 0);
+    const summaries = preview.dateSummaries || [];
     const participants = preview.participants || [];
     const participantHeaders = participants.map((participant) => `<th>${escapeHtml(attendanceService.participantDisplayName?.(participant, participants) || `${participant.label || participant.tagName || '--'}—${participant.nutritious || '不区分'}`)}人次</th>`).join('');
     const participantColgroup = participants.map(() => '<col class="col-person">').join('');
     const rows = summaries
       .map((summary, index) => {
-        const cannotDelete = summary.submitted || summaries.length <= 1;
-        const deleteTitle = summary.submitted ? '已下单日期不可删除' : summaries.length <= 1 ? '至少保留一个填报日期' : '删除该日期填报';
+        const cannotDelete = summaries.length <= 1;
+        const deleteTitle = summaries.length <= 1 ? '至少保留一个填报日期' : '删除该日期填报';
         const detailId = `schoolRecipeDemandConfirmDateDetail${index}`;
         return `<tr class="school-recipe-demand-date-row">
       <td class="school-recipe-demand-date-expand-cell"><button type="button" class="school-recipe-demand-date-expand-button" data-action="toggle-date" data-date="${escapeHtml(summary.date)}" aria-expanded="false" aria-controls="${detailId}" aria-label="展开 ${escapeHtml(summary.date)} 的餐次填报记录"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button></td>
@@ -231,19 +184,42 @@
       const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
       return `<th colspan="2">${escapeHtml(name)}</th>`;
     }).join('');
-    const participantSubColumns = participants.map(() => '<th>需求量</th><th>采购数量</th>').join('');
+    const participantSubColumns = participants.map((participant) => {
+      const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
+      return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购数量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购数量" aria-label="清空${escapeHtml(name)}采购数量">×</button></div></th>`;
+    }).join('');
     const participantColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
+    const activeProductCount = preview.rows.filter((row) => row.mappingStatus === '已关联' && row.totalQty > 0 && !isProductExcluded(row)).length;
     const rows = preview.rows
       .filter((row) => row.mappingStatus === '已关联')
-      .map((row, index) => `<tr>
-        <td>${index + 1}</td>
-        <td class="school-recipe-demand-product-name">${renderProductName(row, productDisplay(row))}</td>
-        <td>${escapeHtml(row.productCode || '--')}</td>
-        <td>${escapeHtml(row.unit || '--')}</td>
-        ${participants.map((participant) => `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('')}
-      </tr>`).join('');
+      .map((row, index) => {
+        const productKey = purchaseRowKey(row);
+        const excluded = isProductExcluded(row);
+        const cannotExclude = !excluded && row.totalQty > 0 && activeProductCount <= 1;
+        const excludedClass = excluded ? ' is-excluded' : '';
+        const disabledAttribute = excluded ? ' disabled' : '';
+        const participantCells = participants.map((participant) => {
+          const demandCell = `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td>`;
+          const key = purchaseQuantityKey(row, participant.key);
+          const participantName = attendanceService.participantDisplayName?.(participant, participants)
+            || participant.label || participant.tagName || participant.key;
+          const value = purchaseQuantityValue(row, participant);
+          const overridden = hasPurchaseQuantityOverride(row, participant.key);
+          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购数量`)}"${disabledAttribute}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购数量`)}" title="清空采购数量"${disabledAttribute}>×</button></div></td>`;
+          return `${demandCell}${purchaseCell}`;
+        }).join('');
+        return `<tr class="school-recipe-demand-product-row${excludedClass}">
+          <td>${index + 1}</td>
+          <td class="school-recipe-demand-product-name">${renderProductName(row, productDisplay(row))}</td>
+          <td>${isStandardProduct(row) ? '是' : '否'}</td>
+          <td>${escapeHtml(row.productCode || '--')}</td>
+          <td>${escapeHtml(row.unit || '--')}</td>
+          ${participantCells}
+          <td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-toggle${excluded ? ' is-excluded' : ''}" data-action="toggle-product-confirm" data-product-key="${escapeHtml(productKey)}" title="${excluded ? '恢复确认该商品' : cannotExclude ? '至少保留一项商品进行确认' : '暂不确认该商品'}"${cannotExclude ? ' disabled' : ''}>${excluded ? '恢复确认' : '暂不确认'}</button></td>
+        </tr>`;
+      }).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit">${participantColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${participantColumns}</tr><tr>${participantSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${participantColgroup}<col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${participantColumns}<th rowspan="2">操作</th></tr><tr>${participantSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">当前选中日期暂无可提交的商品需求</div>';
   }
 
@@ -256,7 +232,7 @@
       <div class="school-recipe-demand-detail-scroll">
         <div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteenName)}</strong></div><div class="operations-field school-recipe-demand-delivery-field"><label class="filter-label" for="schoolRecipeExpectedAt">期望送达时间</label><div class="date-input-control"><input class="filter-input" id="schoolRecipeExpectedAt" type="text" value="${escapeHtml(state.expectedAt)}" placeholder="请选择日期" readonly aria-label="期望送达时间"><span class="date-range-icon" aria-hidden="true">${calendarIcon}</span></div></div></div>
         <section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderDateSummaryTable(preview)}</section>
-        <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>${renderProductTable(preview)}</section>
+        <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div><button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button></header>${renderProductTable(preview)}</section>
       </div>
       <footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit" ${preview.canSubmit && expectedAtIsAllowed(state.expectedAt, preview.dates) && !state.submitting ? '' : 'disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer>
     </main>`;
@@ -300,6 +276,57 @@
     });
   }
 
+  function rememberPurchaseQuantity(input) {
+    const key = input?.dataset?.purchaseKey;
+    if (!key) return;
+    input.dataset.purchaseOverridden = 'true';
+    state.purchaseQtyOverrides[key] = input.value;
+  }
+
+  function normalizePurchaseQuantityInput(input) {
+    if (!input || input.value === '') return;
+    const parsed = Number(input.value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      input.value = '0.00';
+      return;
+    }
+    input.value = fixedQuantity(input.step === '1' ? Math.ceil(parsed) : parsed);
+  }
+
+  function syncPurchaseQuantityInputs() {
+    body.querySelectorAll('[data-purchase-quantity]').forEach((input) => {
+      if (input.dataset.purchaseOverridden !== 'true') return;
+      normalizePurchaseQuantityInput(input);
+      rememberPurchaseQuantity(input);
+    });
+  }
+
+  function clearPurchaseQuantity(button) {
+    const key = button?.dataset?.purchaseKey;
+    if (!key) return;
+    state.purchaseQtyOverrides[key] = '';
+    const input = button.closest('.school-recipe-demand-purchase-control')?.querySelector('[data-purchase-quantity]');
+    if (input) {
+      input.value = '';
+      input.dataset.purchaseOverridden = 'true';
+      input.focus();
+    }
+  }
+
+  function clearPurchaseQuantityColumn(button) {
+    const participantKey = button?.dataset?.participantKey;
+    if (!participantKey) return;
+    syncPurchaseQuantityInputs();
+    const inputs = [...body.querySelectorAll('[data-purchase-quantity]')]
+      .filter((input) => input.dataset.purchaseParticipantKey === participantKey);
+    inputs.forEach((input) => {
+      input.value = '';
+      input.dataset.purchaseOverridden = 'true';
+      rememberPurchaseQuantity(input);
+    });
+    showToast(`已清空${button.dataset.participantName || ''}采购数量`);
+  }
+
   function closeSubmitConfirm() {
     document.querySelector('#schoolRecipeDemandSubmitModal')?.remove();
   }
@@ -311,7 +338,12 @@
     confirmButton.disabled = true;
     confirmButton.textContent = '提交中…';
     modal.querySelector('[data-modal-cancel]')?.setAttribute('disabled', 'disabled');
-    demandService.submit([...state.selectedDates], { expectedAt: state.expectedAt, canteen: currentCanteenScope })
+    demandService.submit([...state.selectedDates], {
+      expectedAt: state.expectedAt,
+      canteen: currentCanteenScope,
+      purchaseQuantityOverrides: { ...state.purchaseQtyOverrides },
+      excludedProductKeys: [...state.excludedProductKeys]
+    })
       .then(() => {
         closeSubmitConfirm();
         showToast('操作成功');
@@ -346,7 +378,15 @@
   }
 
   function renderBody() {
-    const preview = demandService.buildPreview([...state.selectedDates]);
+    const selectedDates = [...state.selectedDates];
+    const preview = demandService.buildPreview(selectedDates, {
+      canteen: currentCanteenScope,
+      excludedProductKeys: [...state.excludedProductKeys]
+    });
+    if (!selectedDates.length || !preview.dates.length) {
+      navigate('./school-recipe-attendance.html');
+      return;
+    }
     expectedAtPicker?.destroy();
     expectedAtPicker = null;
     syncExpectedAt(preview);
@@ -355,35 +395,52 @@
   }
 
   page.addEventListener('change', (event) => {
-    const checkbox = event.target.closest('[data-confirm-date]');
-    if (!checkbox) return;
-    const date = checkbox.dataset.confirmDate;
-    if (checkbox.checked) state.selectedDates.add(date);
-    else state.selectedDates.delete(date);
-    renderBody();
+    const purchaseInput = event.target.closest('[data-purchase-quantity]');
+    if (purchaseInput) {
+      normalizePurchaseQuantityInput(purchaseInput);
+      rememberPurchaseQuantity(purchaseInput);
+    }
+  });
+
+  page.addEventListener('input', (event) => {
+    const purchaseInput = event.target.closest('[data-purchase-quantity]');
+    if (purchaseInput) rememberPurchaseQuantity(purchaseInput);
   });
 
   page.addEventListener('click', async (event) => {
-    const monthButton = event.target.closest('[data-confirm-month]');
-    if (monthButton) {
-      if (monthButton.disabled) return;
-      const offset = monthButton.dataset.confirmMonth === 'prev' ? -1 : 1;
-      state.monthStart = shiftMonth(state.monthStart, offset);
-      renderBody();
-      return;
-    }
-    const dateButton = event.target.closest('button[data-confirm-date]');
-    if (dateButton) {
-      if (dateButton.disabled) return;
-      const date = dateButton.dataset.confirmDate;
-      if (state.selectedDates.has(date)) state.selectedDates.delete(date);
-      else state.selectedDates.add(date);
-      renderBody();
+    const clearButton = event.target.closest('[data-purchase-clear]');
+    if (clearButton) {
+      clearPurchaseQuantity(clearButton);
       return;
     }
     const button = event.target.closest('[data-action]');
     if (!button) return;
     const action = button.dataset.action;
+    if (action === 'restore-default') {
+      state.purchaseQtyOverrides = {};
+      state.excludedProductKeys.clear();
+      renderBody();
+      showToast('已恢复默认采购数量和商品确认');
+      return;
+    }
+    if (action === 'clear-purchase-column') {
+      clearPurchaseQuantityColumn(button);
+      return;
+    }
+    if (action === 'toggle-product-confirm') {
+      syncPurchaseQuantityInputs();
+      const productKey = button.dataset.productKey;
+      if (!productKey) return;
+      if (state.excludedProductKeys.has(productKey)) {
+        state.excludedProductKeys.delete(productKey);
+        showToast('已恢复该商品确认');
+      } else {
+        state.excludedProductKeys.add(productKey);
+        showToast('已标记该商品暂不确认');
+      }
+      renderBody();
+      return;
+    }
     if (action === 'toggle-date') {
       const dateRow = button.closest('.school-recipe-demand-date-row');
       const detailRow = dateRow?.nextElementSibling;
@@ -400,11 +457,12 @@
       return;
     }
     if (action === 'delete-attendance') {
+      syncPurchaseQuantityInputs();
       const date = button.dataset.date;
       const selectedDateCount = [...state.selectedDates]
         .filter((selectedDate) => Number(dateSummaryFor(selectedDate)?.calculation?.totalPeople || 0) > 0)
         .length;
-      if (button.disabled || submittedDates.has(date) || selectedDateCount <= 1) return;
+      if (button.disabled || selectedDateCount <= 1) return;
       if (!attendanceService.remove(date, currentCanteenScope)) {
         showToast('未找到该日期的填报数据', true);
         return;
@@ -415,7 +473,11 @@
       return;
     }
     if (action !== 'submit' || state.submitting) return;
-    const preview = demandService.buildPreview([...state.selectedDates]);
+    syncPurchaseQuantityInputs();
+    const preview = demandService.buildPreview([...state.selectedDates], {
+      canteen: currentCanteenScope,
+      excludedProductKeys: [...state.excludedProductKeys]
+    });
     if (!preview.canSubmit) {
       showToast(preview.message || '请先完成需求确认', true);
       return;
