@@ -1,5 +1,6 @@
 (function () {
   const RESOURCE = 'recipeAttendance';
+  const FLOW_RESET_KEY = 'school-recipe-attendance-reset-on-return-v1';
   const MIN_COUNT = 1;
   const MAX_COUNT = 100000;
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -21,6 +22,7 @@
   ];
 
   let memoryRecords = [];
+  let memoryPendingReset = null;
 
   function writeRecords(records) {
     const next = clone(records || []);
@@ -115,6 +117,48 @@
     if (next.length === current.length) return false;
     writeRecords(next);
     return true;
+  }
+
+  function clearForCanteen(canteen) {
+    const scope = resolveCanteen(canteen);
+    const current = readAll();
+    const next = current.filter((item) => !sameScope(item, scope));
+    if (next.length !== current.length) writeRecords(next);
+    return current.length - next.length;
+  }
+
+  function markResetOnReturn(canteen) {
+    const scope = resolveCanteen(canteen);
+    const pending = { canteenId: scope.id || '', canteen: scope.name || '' };
+    memoryPendingReset = pending;
+    window.AppStorage?.write?.(FLOW_RESET_KEY, pending);
+  }
+
+  function pendingResetMatches(pending, scope) {
+    return pending.canteenId && scope.id
+      ? String(pending.canteenId) === String(scope.id)
+      : String(pending.canteen || '') === String(scope.name || '');
+  }
+
+  function clearPendingReset(canteen) {
+    const pending = window.AppStorage?.read?.(FLOW_RESET_KEY, memoryPendingReset) || memoryPendingReset;
+    if (!pending) return false;
+    const scope = resolveCanteen(canteen);
+    if (!pendingResetMatches(pending, scope)) return false;
+    memoryPendingReset = null;
+    window.AppStorage?.write?.(FLOW_RESET_KEY, null);
+    return true;
+  }
+
+  function consumeResetOnReturn(canteen) {
+    const scope = resolveCanteen(canteen);
+    if (!clearPendingReset(scope)) return false;
+    clearForCanteen(scope);
+    return true;
+  }
+
+  function cancelResetOnReturn(canteen) {
+    return clearPendingReset(canteen);
   }
 
   function participantsFor(canteen) {
@@ -309,6 +353,10 @@
     get,
     save,
     remove,
+    clearForCanteen,
+    markResetOnReturn,
+    consumeResetOnReturn,
+    cancelResetOnReturn,
     emptyRecord,
     participantsFor,
     valueForParticipant,

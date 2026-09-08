@@ -175,8 +175,14 @@
     return { canteen: currentCanteen(), participants: participants() };
   }
 
-  function loadAttendance() {
+  const startWithEmptyAttendance = Boolean(attendanceService.consumeResetOnReturn?.(currentCanteen()));
+
+  function loadAttendance(preserveEmpty = false) {
     state.attendance = attendanceService.get(state.date, currentCanteen());
+    if (startWithEmptyAttendance && preserveEmpty) {
+      state.attendance = attendanceService.emptyRecord(state.date, currentCanteen());
+      state.attendance.meals = {};
+    }
   }
 
   function saveAttendanceDraft() {
@@ -468,6 +474,7 @@
       showToast('人数保存失败，请重新填写后再确认', true);
       return;
     }
+    attendanceService.markResetOnReturn?.(currentCanteen());
     const summaries = currentFilledDateSummaries();
     const filledDates = summaries.map((summary) => summary.date);
     if (!filledDates.length) {
@@ -741,6 +748,18 @@
     state.attendance.meals = {};
   }
 
+  function clearAttendanceAfterFlow() {
+    attendanceService.clearForCanteen?.(currentCanteen());
+    state.attendance = attendanceService.emptyRecord(state.date, currentCanteen());
+    state.attendance.meals = {};
+    state.confirmDates.clear();
+    state.expectedAt = '';
+  }
+
+  function preserveAttendanceOnReturn() {
+    attendanceService.cancelResetOnReturn?.(currentCanteen());
+  }
+
   function normalizeExpectedAt(value) {
     const text = String(value || '').trim();
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(text)) return text.replace('T', ' ') + ':00';
@@ -814,6 +833,7 @@
         expectedAt,
         canteen: currentCanteen()
       });
+      clearAttendanceAfterFlow();
       state.submitting = false;
       state.screen = 'main';
       state.tab = 'profile';
@@ -840,14 +860,22 @@
     const action = target.dataset.action;
 
     if (action === 'tab') {
+      const nextTab = target.dataset.tab || 'recipe';
+      if (state.screen === 'main' && state.tab === 'attendance' && nextTab !== 'attendance') clearAttendanceAfterFlow();
       state.screen = 'main';
-      state.tab = target.dataset.tab || 'recipe';
+      state.tab = nextTab;
       state.sheet = null;
       if (state.tab === 'attendance') loadAttendance();
       render();
       return;
     }
     if (action === 'back') {
+      if (state.screen === 'confirm') {
+        preserveAttendanceOnReturn();
+        loadAttendance();
+        state.confirmDates.clear();
+        state.expectedAt = '';
+      }
       state.screen = 'main';
       state.tab = state.tab === 'profile' ? 'profile' : 'attendance';
       state.record = null;
@@ -1026,6 +1054,21 @@
     mealSwipeStart = null;
   }, { passive: true });
 
-  loadAttendance();
+  window.addEventListener('pagehide', () => {
+    if (state.screen === 'confirm' || (state.screen === 'main' && state.tab === 'attendance')) {
+      attendanceService.markResetOnReturn?.(currentCanteen());
+    }
+  });
+
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted || !attendanceService.consumeResetOnReturn?.(currentCanteen())) return;
+    clearAttendanceAfterFlow();
+    state.screen = 'main';
+    state.tab = 'attendance';
+    state.sheet = null;
+    render();
+  });
+
+  loadAttendance(true);
   render();
 })();

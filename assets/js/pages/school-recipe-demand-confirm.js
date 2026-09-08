@@ -301,21 +301,67 @@
     });
   }
 
+  function captureViewportState() {
+    const detailScroll = body.querySelector('.school-recipe-demand-detail-scroll');
+    return {
+      windowLeft: window.scrollX,
+      windowTop: window.scrollY,
+      bodyLeft: body.scrollLeft,
+      bodyTop: body.scrollTop,
+      detailLeft: detailScroll?.scrollLeft || 0,
+      detailTop: detailScroll?.scrollTop || 0,
+      tableWraps: [...body.querySelectorAll('.school-recipe-demand-table-wrap')].map((wrap) => ({
+        left: wrap.scrollLeft,
+        top: wrap.scrollTop
+      }))
+    };
+  }
+
+  function restoreViewportState(snapshot, focusProductKey = '') {
+    if (!snapshot) return;
+    const restore = () => {
+      window.scrollTo(snapshot.windowLeft, snapshot.windowTop);
+      body.scrollLeft = snapshot.bodyLeft;
+      body.scrollTop = snapshot.bodyTop;
+      const detailScroll = body.querySelector('.school-recipe-demand-detail-scroll');
+      if (detailScroll) {
+        detailScroll.scrollLeft = snapshot.detailLeft;
+        detailScroll.scrollTop = snapshot.detailTop;
+      }
+      body.querySelectorAll('.school-recipe-demand-table-wrap').forEach((wrap, index) => {
+        const position = snapshot.tableWraps[index];
+        if (!position) return;
+        wrap.scrollLeft = position.left;
+        wrap.scrollTop = position.top;
+      });
+      if (focusProductKey) {
+        const toggle = [...body.querySelectorAll('[data-action="toggle-product-confirm"]')]
+          .find((button) => button.dataset.productKey === focusProductKey);
+        toggle?.focus({ preventScroll: true });
+      }
+    };
+    restore();
+    window.requestAnimationFrame(restore);
+  }
+
   function clearPurchaseQuantity(button) {
     const key = button?.dataset?.purchaseKey;
     if (!key) return;
+    const viewport = captureViewportState();
     state.purchaseQtyOverrides[key] = '';
     const input = button.closest('.school-recipe-demand-purchase-control')?.querySelector('[data-purchase-quantity]');
     if (input) {
       input.value = '';
       input.dataset.purchaseOverridden = 'true';
-      input.focus();
+      input.focus({ preventScroll: true });
     }
+    restoreViewportState(viewport);
   }
 
   function clearPurchaseQuantityColumn(button) {
     const participantKey = button?.dataset?.participantKey;
     if (!participantKey) return;
+    const viewport = captureViewportState();
     syncPurchaseQuantityInputs();
     const inputs = [...body.querySelectorAll('[data-purchase-quantity]')]
       .filter((input) => input.dataset.purchaseParticipantKey === participantKey);
@@ -324,11 +370,20 @@
       input.dataset.purchaseOverridden = 'true';
       rememberPurchaseQuantity(input);
     });
+    restoreViewportState(viewport);
     showToast(`已清空${button.dataset.participantName || ''}采购数量`);
   }
 
   function closeSubmitConfirm() {
     document.querySelector('#schoolRecipeDemandSubmitModal')?.remove();
+  }
+
+  function clearAttendanceAfterFlow() {
+    attendanceService.clearForCanteen?.(currentCanteenScope);
+  }
+
+  function preserveAttendanceOnReturn() {
+    attendanceService.cancelResetOnReturn?.(currentCanteenScope);
   }
 
   function submitFromConfirm(preview, modal) {
@@ -343,8 +398,9 @@
       canteen: currentCanteenScope,
       purchaseQuantityOverrides: { ...state.purchaseQtyOverrides },
       excludedProductKeys: [...state.excludedProductKeys]
-    })
+      })
       .then(() => {
+        clearAttendanceAfterFlow();
         closeSubmitConfirm();
         showToast('操作成功');
         window.setTimeout(() => navigate('./school-recipe-attendance.html'), 700);
@@ -377,13 +433,15 @@
     modal.querySelector('[data-modal-confirm]')?.focus();
   }
 
-  function renderBody() {
+  function renderBody(options = {}) {
+    const viewport = options.preserveViewport ? captureViewportState() : null;
     const selectedDates = [...state.selectedDates];
     const preview = demandService.buildPreview(selectedDates, {
       canteen: currentCanteenScope,
       excludedProductKeys: [...state.excludedProductKeys]
     });
     if (!selectedDates.length || !preview.dates.length) {
+      preserveAttendanceOnReturn();
       navigate('./school-recipe-attendance.html');
       return;
     }
@@ -392,6 +450,7 @@
     syncExpectedAt(preview);
     body.innerHTML = renderDetail(preview);
     mountExpectedAtPicker(preview);
+    restoreViewportState(viewport, options.focusProductKey || '');
   }
 
   page.addEventListener('change', (event) => {
@@ -419,7 +478,7 @@
     if (action === 'restore-default') {
       state.purchaseQtyOverrides = {};
       state.excludedProductKeys.clear();
-      renderBody();
+      renderBody({ preserveViewport: true });
       showToast('已恢复默认采购数量和商品确认');
       return;
     }
@@ -438,7 +497,7 @@
         state.excludedProductKeys.add(productKey);
         showToast('已标记该商品暂不确认');
       }
-      renderBody();
+      renderBody({ preserveViewport: true, focusProductKey: productKey });
       return;
     }
     if (action === 'toggle-date') {
@@ -453,6 +512,7 @@
       return;
     }
     if (action === 'back') {
+      preserveAttendanceOnReturn();
       navigate('./school-recipe-attendance.html');
       return;
     }

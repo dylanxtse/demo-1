@@ -100,7 +100,7 @@
     products: config.type === 'agreement' && config.mode === 'sales' ? salesProductRows.map((row) => ({ ...row })) : [],
     groups: groupRows.map((row) => ({ ...row })), places: placeRows.map((row) => ({ ...row })),
     form: null, formMode: 'add', editingId: null, detailRow: null, detailTab: 0,
-    modal: null, batchSelected: new Set(), batchDrafts: new Map(), categorySelected: new Set(), batchPage: 1, entitySelectOpen: false, toastTimer: null,
+    modal: null, batchSelected: new Set(), batchDrafts: new Map(), categorySelected: new Set(), selectedLineIndexes: new Set(), batchPrice: { reference: '', formula: '', value: '' }, batchPage: 1, entitySelectOpen: false, toastTimer: null,
     filters: {}, batchFilters: {}, datePickers: []
   };
 
@@ -321,6 +321,7 @@
     const type = config.type;
     state.view = 'form'; state.formMode = mode; state.editingId = row?.id || null;
     state.form = row?.form ? JSON.parse(JSON.stringify(row.form)) : formDefaults(type);
+    state.selectedLineIndexes = new Set();
     state.entitySelectOpen = false;
     if (type === 'agreement') {
       const legacyEntities = String(state.form.entity || '').split('、').map((value) => value.trim()).filter(Boolean);
@@ -334,7 +335,7 @@
     render();
   }
 
-  function backToList() { state.view = 'list'; state.form = null; state.modal = null; state.detailRow = null; state.editingId = null; state.entitySelectOpen = false; render(); }
+  function backToList() { state.view = 'list'; state.form = null; state.modal = null; state.detailRow = null; state.editingId = null; state.selectedLineIndexes = new Set(); state.entitySelectOpen = false; render(); }
 
   function formSelect(name, selected, disabled = false) {
     const values = config.mode === 'sales' ? customers : suppliers;
@@ -352,8 +353,12 @@
 
   function renderAgreementForm() {
     const f = state.form; const isSales = config.mode === 'sales'; const entityLabel = isSales ? '客户名称' : '供应商名称'; const contact = f.entity ? (isSales ? '联系人' : f.entity === '盒马鲜生' ? '王先生' : '李先生') : '--'; const phone = f.entity ? (isSales ? '021-63265986' : f.entity === '盒马鲜生' ? '13265985264' : '13900000000') : '--';
-    const lines = f.lines.map((line, index) => { const product = productObject(line.code); return `<tr><td><input type="checkbox" class="pb-checkbox" data-line-check="${index}" ${line.code ? '' : 'disabled'}></td><td>${index + 1}</td><td><span class="pb-image-placeholder">图片</span></td><td>${productSelect(index, line.code, !f.entity)}</td><td>${esc(product?.category || '')}</td><td>${esc(product?.unit || '')}</td><td>${product ? money(product.market) : '--'}</td><td>${product ? money(product.recent) : '--'}</td><td><input type="number" min="0" step="0.01" data-line-price="${index}" value="${esc(line.price || '')}" placeholder="请输入协议价"></td></tr>`; }).join('');
-    return `<section class="page-card price-business-page price-business-form-page"><div class="pb-form-head"><button type="button" class="pb-back" data-biz-action="back"><svg class="pb-back-icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>${isSales ? '添加销售协议价' : '添加采购协议价'}</h1></div><div class="pb-form-section"><h2>基础信息</h2><div class="pb-form-grid"><div class="pb-form-field"><label><span class="pb-required">*</span> ${entityLabel}</label>${formSelect('entity', f.entity)}${isSales ? '<button type="button" class="pb-plus" data-biz-action="customer-add" aria-label="添加客户">+</button>' : ''}</div><div class="pb-form-field"><label><span class="pb-required">*</span> 执行周期</label><div class="pb-date-range"><input type="text" data-form-field="from" value="${esc(f.from)}" aria-label="执行周期开始"><span>-</span><input type="text" data-form-field="to" value="${esc(f.to)}" aria-label="执行周期结束"></div></div><div class="pb-form-field"><label>备注</label><div class="pb-textarea-wrap"><textarea data-form-field="remark" maxlength="${isSales ? 50 : 20}" placeholder="请输入备注">${esc(f.remark)}</textarea><span class="pb-counter">${String(f.remark || '').length}/${isSales ? 50 : 20}</span></div></div></div><h2>联系信息</h2><div class="pb-form-grid two"><div class="pb-form-field"><label>联系人</label><span class="pb-contact-value">${esc(f.contact || contact)}</span></div><div class="pb-form-field"><label>联系电话</label><span class="pb-contact-value">${esc(f.phone || phone)}</span></div></div></div><div class="pb-form-tools"><button type="button" class="btn btn-primary btn-sm" data-biz-action="batch-products">批量添加商品</button><button type="button" class="btn btn-primary btn-sm" data-biz-action="batch-price">批量定价</button></div><div class="pb-form-table-wrap"><table class="pb-form-table"><thead><tr><th><input type="checkbox" class="pb-checkbox" disabled></th><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>商品分类</th><th>计量单位</th><th>市场价</th><th>近一次采购价</th><th>${isSales ? '协议价' : '*协议价'}</th></tr></thead><tbody>${lines}</tbody></table></div><div class="pb-form-footer"><button type="button" class="btn" data-biz-action="back">返回</button><button type="button" class="btn btn-primary" data-biz-action="save-form">保存</button></div></section>${state.modal ? modalMarkup() : ''}`;
+    const selectableIndexes = f.lines.map((line, index) => line.code ? index : null).filter((index) => index !== null);
+    const selectableSet = new Set(selectableIndexes);
+    state.selectedLineIndexes = new Set([...state.selectedLineIndexes].filter((index) => selectableSet.has(index)));
+    const allSelected = selectableIndexes.length > 0 && selectableIndexes.every((index) => state.selectedLineIndexes.has(index));
+    const lines = f.lines.map((line, index) => { const product = productObject(line.code); const checked = state.selectedLineIndexes.has(index) ? ' checked' : ''; return `<tr><td><input type="checkbox" class="pb-checkbox" data-line-check="${index}"${line.code ? checked : ''} ${line.code ? '' : 'disabled'}></td><td>${index + 1}</td><td><span class="pb-image-placeholder">图片</span></td><td>${productSelect(index, line.code, !f.entity)}</td><td>${esc(product?.category || '')}</td><td>${esc(product?.unit || '')}</td><td>${product ? money(product.market) : '--'}</td><td>${product ? money(product.recent) : '--'}</td><td><input type="number" min="0" step="0.01" data-line-price="${index}" value="${esc(line.price || '')}" placeholder="请输入协议价"></td></tr>`; }).join('');
+    return `<section class="page-card price-business-page price-business-form-page"><div class="pb-form-head"><button type="button" class="pb-back" data-biz-action="back"><svg class="pb-back-icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>${isSales ? '添加销售协议价' : '添加采购协议价'}</h1></div><div class="pb-form-section"><h2>基础信息</h2><div class="pb-form-grid"><div class="pb-form-field"><label><span class="pb-required">*</span> ${entityLabel}</label>${formSelect('entity', f.entity)}${isSales ? '<button type="button" class="pb-plus" data-biz-action="customer-add" aria-label="添加客户">+</button>' : ''}</div><div class="pb-form-field"><label><span class="pb-required">*</span> 执行周期</label><div class="pb-date-range"><input type="text" data-form-field="from" value="${esc(f.from)}" aria-label="执行周期开始"><span>-</span><input type="text" data-form-field="to" value="${esc(f.to)}" aria-label="执行周期结束"></div></div><div class="pb-form-field"><label>备注</label><div class="pb-textarea-wrap"><textarea data-form-field="remark" maxlength="${isSales ? 50 : 20}" placeholder="请输入备注">${esc(f.remark)}</textarea><span class="pb-counter">${String(f.remark || '').length}/${isSales ? 50 : 20}</span></div></div></div><h2>联系信息</h2><div class="pb-form-grid two"><div class="pb-form-field"><label>联系人</label><span class="pb-contact-value">${esc(f.contact || contact)}</span></div><div class="pb-form-field"><label>联系电话</label><span class="pb-contact-value">${esc(f.phone || phone)}</span></div></div></div><div class="pb-form-tools"><button type="button" class="btn btn-primary btn-sm" data-biz-action="batch-products">批量添加商品</button><button type="button" class="btn btn-primary btn-sm" data-biz-action="batch-price">批量定价</button></div><div class="pb-form-table-wrap"><table class="pb-form-table"><thead><tr><th><input type="checkbox" class="pb-checkbox" data-line-check-all aria-label="全选商品" ${allSelected ? 'checked' : ''} ${selectableIndexes.length ? '' : 'disabled'}></th><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>商品分类</th><th>计量单位</th><th>市场价</th><th>近一次采购价</th><th>${isSales ? '协议价' : '*协议价'}</th></tr></thead><tbody>${lines}</tbody></table></div><div class="pb-form-footer"><button type="button" class="btn" data-biz-action="back">返回</button><button type="button" class="btn btn-primary" data-biz-action="save-form">保存</button></div></section>${state.modal ? modalMarkup() : ''}`;
   }
 
   function addCategoryButton() {
@@ -388,6 +393,25 @@
     return `<div class="product-picker-pagination"><span class="product-picker-total">共 ${total} 条数据</span><select class="product-picker-page-size" disabled aria-label="每页条数"><option>20 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-biz-action="batch-page" data-id="${Math.max(1, state.batchPage - 1)}" ${state.batchPage === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="product-picker-page-button" data-biz-action="batch-page" data-id="${Math.min(pages, state.batchPage + 1)}" ${state.batchPage === pages ? 'disabled' : ''}>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="${state.batchPage}" readonly aria-label="跳转页码"> / ${pages} 页</label></div>`;
   }
 
+  function batchPriceExpression() {
+    const formula = state.batchPrice.formula;
+    if (!formula || formula === 'none') return '';
+    const input = `<input type="number" min="0" step="0.01" data-batch-price-value value="${esc(state.batchPrice.value)}" placeholder="请输入">`;
+    if (formula === 'addValue') return `<div class="pb-batch-price-expression"><span>参考价 +</span>${input}<span>元</span></div>`;
+    if (formula === 'subtractValue') return `<div class="pb-batch-price-expression"><span>参考价 −</span>${input}<span>元</span></div>`;
+    if (formula === 'addPercent') return `<div class="pb-batch-price-expression"><span>参考价 ×（1 +</span>${input}<span>%）</span></div>`;
+    return `<div class="pb-batch-price-expression"><span>参考价 ×（1 −</span>${input}<span>%）</span></div>`;
+  }
+
+  function calculateBatchPrice(basePrice, formula, value) {
+    const amount = Number(value || 0);
+    if (formula === 'addValue') return basePrice + amount;
+    if (formula === 'subtractValue') return basePrice - amount;
+    if (formula === 'addPercent') return basePrice * (1 + amount / 100);
+    if (formula === 'subtractPercent') return basePrice * (1 - amount / 100);
+    return basePrice;
+  }
+
   function modalMarkup() {
     const modal = state.modal;
     if (modal.type === 'batchProducts') {
@@ -416,7 +440,11 @@
       }).join('');
       return `<div class="pb-modal" data-modal-backdrop><div class="pb-dialog pb-category-dialog" role="dialog" aria-modal="true" aria-labelledby="pbCategoryPickerTitle"><div class="pb-dialog-head"><h2 id="pbCategoryPickerTitle">按分类添加商品</h2><button type="button" class="pb-close" data-biz-action="modal-close" aria-label="关闭">×</button></div><div class="pb-dialog-body pb-category-picker"><p>请选择商品三级分类，可多选</p><div class="pb-category-list">${categoryRows}</div></div><div class="pb-modal-footer"><button type="button" class="btn" data-biz-action="modal-close">取消</button><button type="button" class="btn btn-primary" data-biz-action="category-confirm">确定</button></div></div></div>`;
     }
-    if (modal.type === 'batchPrice') return `<div class="pb-modal"><div class="pb-dialog small" role="dialog" aria-modal="true"><div class="pb-dialog-head"><h2>批量定价</h2><button type="button" class="pb-close" data-biz-action="modal-close" aria-label="关闭">×</button></div><form class="pb-small-form"><label>协议价<input type="number" min="0" step="0.01" data-modal-price placeholder="请输入协议价"></label><div class="pb-modal-footer"><button type="button" class="btn" data-biz-action="modal-close">取消</button><button type="button" class="btn btn-primary" data-biz-action="bulk-price-confirm">确定</button></div></form></div></div>`;
+    if (modal.type === 'batchPrice') {
+      const references = [['market', '按市场价计算'], ['supplier', '按供应商报价计算']];
+      const formulas = [['none', '不设公式'], ['addValue', '加价值'], ['subtractValue', '减价值'], ['addPercent', '加价百分比'], ['subtractPercent', '折扣百分比']];
+      return `<div class="pb-modal batch-price-modal" data-modal-backdrop><div class="pb-dialog pb-batch-price-dialog" role="dialog" aria-modal="true" aria-labelledby="pbBatchPriceTitle"><div class="pb-dialog-head"><h2 id="pbBatchPriceTitle">批量定价</h2><button type="button" class="pb-close" data-biz-action="modal-close" aria-label="关闭">×</button></div><div class="pb-batch-price-form"><label class="pb-batch-price-field"><span><span class="pb-required">*</span> 参考价</span><select data-batch-price-reference aria-label="参考价"><option value="">请选择</option>${references.map(([value, label]) => `<option value="${value}" ${state.batchPrice.reference === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="pb-batch-price-field"><span><span class="pb-required">*</span> 设置公式</span><select data-batch-price-formula aria-label="设置公式"><option value="">请选择</option>${formulas.map(([value, label]) => `<option value="${value}" ${state.batchPrice.formula === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>${batchPriceExpression()}</div><div class="pb-modal-footer pb-batch-price-footer"><button type="button" class="btn" data-biz-action="modal-close">取消</button><button type="button" class="btn btn-primary" data-biz-action="bulk-price-confirm">确定</button></div></div></div>`;
+    }
     if (modal.type === 'customer') return `<div class="pb-modal"><div class="pb-dialog small" role="dialog" aria-modal="true"><div class="pb-dialog-head"><h2>添加客户</h2><button type="button" class="pb-close" data-biz-action="modal-close" aria-label="关闭">×</button></div><form class="pb-small-form"><label>客户名称<input data-modal-field="customer" placeholder="请输入客户名称"></label><label>联系人<input data-modal-field="contact" placeholder="请输入联系人"></label><label>联系电话<input data-modal-field="phone" placeholder="请输入联系电话"></label><div class="pb-modal-footer"><button type="button" class="btn" data-biz-action="modal-close">取消</button><button type="button" class="btn btn-primary" data-biz-action="customer-confirm">确定</button></div></form></div></div>`;
     if (modal.type === 'group' || modal.type === 'place') { const group = modal.type === 'group'; const row = modal.row || {}; return `<div class="pb-modal"><div class="pb-dialog small" role="dialog" aria-modal="true"><div class="pb-dialog-head"><h2>${row.id ? '编辑' : '添加'}${group ? '询价小组成员' : '询价地点'}</h2><button type="button" class="pb-close" data-biz-action="modal-close" aria-label="关闭">×</button></div><form class="pb-small-form"><label>${group ? '成员姓名' : '询价地点'}<input data-modal-field="name" value="${esc(row.name || '')}" placeholder="请输入${group ? '成员姓名' : '询价地点'}"></label><label>${group ? '联系电话' : '地址'}<input data-modal-field="secondary" value="${esc(group ? row.phone || '' : row.address || '')}" placeholder="请输入${group ? '联系电话' : '地址'}"></label><div class="pb-modal-footer"><button type="button" class="btn" data-biz-action="modal-close">取消</button><button type="button" class="btn btn-primary" data-biz-action="maintain-confirm">确定</button></div></form></div></div>`; }
     return '';
@@ -513,7 +541,27 @@
     state.modal = null;
     render();
   }
-  function confirmBulkPrice() { collectForm(); const price = host.querySelector('[data-modal-price]')?.value || ''; if (!price) { toast('请输入协议价', 'error'); return; } const checked = [...host.querySelectorAll('[data-line-check]:checked')].map((element) => Number(element.dataset.lineCheck)); if (!checked.length) { toast('请至少选择一条商品', 'error'); return; } checked.forEach((index) => { if (state.form.lines[index]) state.form.lines[index].price = price; }); state.modal = null; render(); }
+  function confirmBulkPrice() {
+    collectForm();
+    const reference = host.querySelector('[data-batch-price-reference]')?.value || state.batchPrice.reference;
+    const formula = host.querySelector('[data-batch-price-formula]')?.value || state.batchPrice.formula;
+    const value = host.querySelector('[data-batch-price-value]')?.value ?? state.batchPrice.value;
+    if (!reference || !formula) { toast('请选择参考价和设置公式', 'error'); return; }
+    if (formula !== 'none' && (value === '' || Number.isNaN(Number(value)))) { toast('请输入有效的计算值', 'error'); return; }
+    const checked = [...host.querySelectorAll('[data-line-check]:checked')].map((element) => Number(element.dataset.lineCheck));
+    if (!checked.length) { toast('请至少选择一条商品', 'error'); return; }
+    checked.forEach((index) => {
+      const line = state.form.lines[index];
+      const product = productObject(line?.code);
+      if (!line || !product) return;
+      const basePrice = Number(reference === 'market' ? product.market : product.recent);
+      if (!Number.isFinite(basePrice)) return;
+      line.price = money(Math.max(0, calculateBatchPrice(basePrice, formula, value)));
+    });
+    state.batchPrice = { reference: '', formula: '', value: '' };
+    state.modal = null;
+    render();
+  }
 
   function saveCustomer() { const name = host.querySelector('[data-modal-field="customer"]')?.value.trim(); if (!name) { toast('请输入客户名称', 'error'); return; } if (!customers.includes(name)) customers.push(name); const selectedValues = new Set(state.form.entities || []); selectedValues.add(name); state.form.entities = [...selectedValues]; state.form.entity = state.form.entities.join('、'); state.form.contact = host.querySelector('[data-modal-field="contact"]')?.value.trim() || ''; state.form.phone = host.querySelector('[data-modal-field="phone"]')?.value.trim() || ''; state.modal = null; render(); }
   function saveMaintain() { const name = host.querySelector('[data-modal-field="name"]')?.value.trim(); const secondary = host.querySelector('[data-modal-field="secondary"]')?.value.trim(); if (!name || !secondary) { toast('请完善信息', 'error'); return; } const group = state.modal.type === 'group'; const collection = group ? state.groups : state.places; const row = state.modal.row || { id: `${group ? 'GROUP' : 'PLACE'}-${Date.now()}`, status: '启用' }; row.name = name; if (group) row.phone = secondary; else row.address = secondary; if (!state.modal.row) collection.push(row); state.modal = null; render(); }
@@ -531,7 +579,7 @@
     if (action === 'save-form') return saveForm();
     if (action === 'batch-products') return openBatchProducts();
     if (action === 'category-products') return openCategoryProducts();
-    if (action === 'batch-price') { collectForm(); const selected = host.querySelectorAll('[data-line-check]:checked').length; if (!selected) { toast('请至少选择一条商品', 'error'); return; } state.modal = { type: 'batchPrice' }; render(); return; }
+    if (action === 'batch-price') { collectForm(); const selected = host.querySelectorAll('[data-line-check]:checked').length; if (!selected) { toast('请至少选择一条商品', 'error'); return; } state.batchPrice = { reference: '', formula: '', value: '' }; state.modal = { type: 'batchPrice' }; render(); return; }
     if (action === 'modal-close') { state.modal = null; render(); return; }
     if (action === 'modal-query') { state.batchFilters = { purchaseType: host.querySelector('[data-modal-filter="purchaseType"]')?.value || '', category: host.querySelector('[data-modal-filter="category"]')?.value || '' }; state.batchPage = 1; render(); return; }
     if (action === 'modal-reset') { state.batchFilters = {}; state.batchPage = 1; render(); return; }
@@ -592,6 +640,29 @@
   });
 
   root.addEventListener('change', (event) => {
+    if (event.target.matches('[data-batch-price-reference]')) {
+      state.batchPrice.reference = event.target.value;
+      return;
+    }
+    if (event.target.matches('[data-batch-price-formula]')) {
+      state.batchPrice.formula = event.target.value;
+      render();
+      return;
+    }
+    if (event.target.matches('[data-line-check-all]')) {
+      collectForm();
+      const selectableIndexes = (state.form?.lines || []).map((line, index) => line.code ? index : null).filter((index) => index !== null);
+      if (event.target.checked) selectableIndexes.forEach((index) => state.selectedLineIndexes.add(index));
+      else selectableIndexes.forEach((index) => state.selectedLineIndexes.delete(index));
+      render();
+      return;
+    }
+    if (event.target.matches('[data-line-check]')) {
+      const index = Number(event.target.dataset.lineCheck);
+      if (event.target.checked) state.selectedLineIndexes.add(index);
+      else state.selectedLineIndexes.delete(index);
+      return;
+    }
     if (event.target.matches('[data-category-product]')) {
       if (event.target.checked) state.categorySelected.add(event.target.value); else state.categorySelected.delete(event.target.value);
       return;
@@ -613,6 +684,10 @@
   });
 
   root.addEventListener('input', (event) => {
+    if (event.target.matches('[data-batch-price-value]')) {
+      state.batchPrice.value = event.target.value;
+      return;
+    }
     if (event.target.matches('[data-batch-qty], [data-batch-remark]')) {
       const code = event.target.dataset.batchQty || event.target.dataset.batchRemark;
       const draft = state.batchDrafts.get(code) || {};

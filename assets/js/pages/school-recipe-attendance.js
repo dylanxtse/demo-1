@@ -121,8 +121,15 @@
     ]));
   }
 
+  const startWithEmptyAttendance = Boolean(attendanceService.consumeResetOnReturn?.(currentCanteen()));
+
+  function attendanceForSelection(date, preserveEmpty = false) {
+    const record = state.attendanceByDate[date] || attendanceService.get(date, currentCanteen());
+    return startWithEmptyAttendance && preserveEmpty ? clone(record) : hydrateDefaults(record, date);
+  }
+
   state.attendanceByDate = buildAttendanceMap();
-  state.attendance = hydrateDefaults(state.attendanceByDate[defaultDate] || attendanceService.get(defaultDate, currentCanteen()), defaultDate);
+  state.attendance = attendanceForSelection(defaultDate, true);
 
   function cacheCurrentDraft() {
     const scope = currentScopeKey();
@@ -398,7 +405,7 @@
     cacheCurrentDraft();
     state.selectedDate = date;
     state.monthStart = monthStart(date);
-    state.attendance = hydrateDefaults(state.attendanceByDate[date] || attendanceService.get(date, currentCanteen()), date);
+    state.attendance = attendanceForSelection(date);
     renderBody(root);
   }
 
@@ -406,6 +413,18 @@
   const root = window.AppShell.mount({ title: '就餐人数填报', content, variant: 'school', emptyText: '就餐人数填报' });
   const page = root.querySelector('#schoolRecipeAttendancePage');
   renderBody(root);
+
+  function resetPageAfterFlowReturn() {
+    if (!attendanceService.consumeResetOnReturn?.(currentCanteen())) return;
+    draftsByCanteen[currentScopeKey()] = {};
+    state.attendanceByDate = buildAttendanceMap();
+    state.attendance = attendanceForSelection(state.selectedDate, true);
+    renderBody(root);
+  }
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) resetPageAfterFlowReturn();
+  });
 
   page.addEventListener('mouseover', (event) => {
     const cell = event.target.closest('.school-recipe-attendance-dish-cell');
@@ -504,7 +523,7 @@
         state.canteen = nextCanteen;
         window.AppStorage?.write?.(canteenStorageKey, nextCanteen);
         state.attendanceByDate = buildAttendanceMap();
-        state.attendance = hydrateDefaults(state.attendanceByDate[state.selectedDate] || attendanceService.get(state.selectedDate, currentCanteen()), state.selectedDate);
+        state.attendance = attendanceForSelection(state.selectedDate);
         renderBody(root);
       }
       return;
@@ -523,7 +542,7 @@
       state.monthStart = nextMonth;
       const dates = monthDates(state.monthStart);
       state.selectedDate = dates.includes(state.selectedDate) ? state.selectedDate : dates.find((date) => menuForDate(date)) || dates[0];
-      state.attendance = hydrateDefaults(state.attendanceByDate[state.selectedDate] || attendanceService.get(state.selectedDate, currentCanteen()), state.selectedDate);
+      state.attendance = attendanceForSelection(state.selectedDate);
       renderBody(root);
       return;
     }
@@ -572,8 +591,13 @@
         showToast('人数保存失败，请重新填写后再确认', true);
         return;
       }
+      attendanceService.markResetOnReturn?.(currentCanteen());
       if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
       else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
     }
+  });
+
+  window.addEventListener('pagehide', () => {
+    attendanceService.markResetOnReturn?.(currentCanteen());
   });
 })();
