@@ -45,8 +45,6 @@
 .school-recipe-attendance-date-item.is-selected .school-recipe-attendance-date-week { color: var(--primary); }
 .school-recipe-attendance-date-week { color: #8994a4; font-size: 13px; line-height: 18px; white-space: nowrap; }
 .school-recipe-attendance-date-week.is-hidden { display: none; }
-.school-recipe-attendance-date-status { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 500; line-height: 14px; }
-.school-recipe-attendance-date-item.is-no-menu .school-recipe-attendance-date-status { font-weight: 400; }
 .school-recipe-attendance-date-item.is-no-menu .school-recipe-attendance-date-number,
 .school-recipe-attendance-date-item.is-no-menu .school-recipe-attendance-date-week { color: #8994a4; }
 .school-recipe-attendance-detail-panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
@@ -191,7 +189,7 @@
 .school-recipe-attendance-reset-dropdown:hover .school-recipe-attendance-reset-chevron,
 .school-recipe-attendance-reset-dropdown:focus-within .school-recipe-attendance-reset-chevron,
 .school-recipe-attendance-reset-dropdown.is-open .school-recipe-attendance-reset-chevron { transform: rotate(180deg); }
-.school-recipe-attendance-reset-menu { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 10; display: none; min-width: 190px; padding: 4px; border: 1px solid var(--border-light); border-radius: 4px; box-shadow: 0 6px 18px rgba(31, 35, 41, .12); background: #fff; }
+.school-recipe-attendance-reset-menu { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 10; display: none; width: max-content; min-width: 0; padding: 4px; border: 1px solid var(--border-light); border-radius: 4px; box-shadow: 0 6px 18px rgba(31, 35, 41, .12); background: #fff; }
 .school-recipe-attendance-reset-dropdown:hover .school-recipe-attendance-reset-menu,
 .school-recipe-attendance-reset-dropdown:focus-within .school-recipe-attendance-reset-menu,
 .school-recipe-attendance-reset-dropdown.is-open .school-recipe-attendance-reset-menu { display: flex; flex-direction: column; }
@@ -284,5 +282,5 @@
   .school-recipe-attendance-section-heading,
   .school-recipe-attendance-demand-section > header { flex-direction: column; gap: 4px; }
   .school-recipe-attendance-actions { padding-right: 16px; padding-left: 16px; }
-  .school-recipe-attendance-reset-menu { min-width: 178px; }
+  .school-recipe-attendance-reset-menu { width: max-content; min-width: 0; }
 }

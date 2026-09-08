@@ -83,8 +83,6 @@
 .school-recipe-date-item.is-selected .school-recipe-date-week { color: var(--primary); }
 .school-recipe-date-week { color: #8994a4; font-size: 13px; line-height: 18px; white-space: nowrap; }
 .school-recipe-date-week.is-hidden { display: none; }
-.school-recipe-date-status { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 500; line-height: 14px; }
-.school-recipe-date-item.is-no-menu .school-recipe-date-status { font-weight: 400; }
 .school-recipe-date-item.is-empty .school-recipe-date-number { color: #8994a4; font-weight: 500; }
 .school-recipe-date-item.is-no-menu .school-recipe-date-number,
 .school-recipe-date-item.is-no-menu .school-recipe-date-week { color: #8994a4; }

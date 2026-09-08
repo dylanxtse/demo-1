@@ -208,11 +208,9 @@
       const menu = menuForDate(date);
       const status = statusForDate(date);
       const hideWeekday = status.key === 'empty' || status.key === 'no-menu';
-      const dateStatus = menu ? '有菜谱' : '暂无菜谱';
-      return `<button type="button" class="school-recipe-attendance-date-item ${date === state.selectedDate ? 'is-selected' : ''} ${menu ? '' : 'is-empty'} is-${escapeHtml(status.key)}" data-attendance-date="${escapeHtml(date)}" title="${escapeHtml(`${date} ${status.label}`)}">
+      return `<button type="button" class="school-recipe-attendance-date-item ${date === state.selectedDate ? 'is-selected' : ''} ${menu ? '' : 'is-empty'} is-${escapeHtml(status.key)}" data-attendance-date="${escapeHtml(date)}" title="${escapeHtml(date)}">
         <span class="school-recipe-attendance-date-number">${escapeHtml(String(Number(date.slice(8, 10))))}</span>
         <span class="school-recipe-attendance-date-week${hideWeekday ? ' is-hidden' : ''}">${escapeHtml(weekday(date))}</span>
-        <span class="school-recipe-attendance-date-status">${escapeHtml(dateStatus)}</span>
       </button>`;
     }).join('');
     return `<aside class="school-recipe-attendance-date-panel" aria-label="就餐人数填报日期">

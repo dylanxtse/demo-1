@@ -92,6 +92,7 @@
     return catalog.find((product) => String(product.code || product.id) === String(code)) || {};
   };
   const productName = (item) => item?.productName || productFor(item).name || item?.name || '未关联采购商品';
+  const productCode = (item) => item?.productCode || item?.productId || item?.goodsCode || productFor(item).code || productFor(item).id || '--';
   const productUnit = (item) => item?.unit || item?.productUnit || productFor(item).unit || '--';
   const isStandardProduct = (item) => Boolean(
     item?.isStandardProduct === true
@@ -343,7 +344,12 @@
     if (!menu) {
       return '<div class="school-mobile-scroll school-mobile-recipe-scroll">'
         + renderDateStrip('recipe')
-        + '<div class="school-mobile-empty school-mobile-recipe-empty"><strong>暂无菜谱</strong><span>' + escapeHtml(dateText(state.date)) + ' 暂未发布食谱</span></div>'
+        + '<section class="school-mobile-summary-card school-mobile-recipe-summary-card">'
+        + '<div><span>用料日期</span><strong>' + dateValueMarkup(state.date) + '</strong></div>'
+        + '<div class="is-primary"><span>菜品数</span><strong>0</strong></div>'
+        + '<div><span>食材种数</span><strong>0</strong></div>'
+        + '</section>'
+        + '<div class="school-mobile-empty school-mobile-recipe-empty">当前日期暂无菜谱</div>'
         + '</div>';
     }
     const meals = menu.meals || [];
@@ -366,7 +372,7 @@
 
   function renderMeal(meal) {
     const dishes = meal.dishes || [];
-    const rows = dishes.map((dish, index) => '<button type="button" class="school-mobile-dish-row" data-action="dish" data-menu-date="' + escapeHtml(state.date) + '" data-dish-id="' + escapeHtml(dish.id) + '" aria-label="查看' + escapeHtml(dish.name) + '的食材含量和人均用量">'
+    const rows = dishes.map((dish, index) => '<button type="button" class="school-mobile-dish-row" data-action="dish" data-menu-date="' + escapeHtml(state.date) + '" data-meal-key="' + escapeHtml(meal.key) + '" data-dish-index="' + index + '" data-dish-id="' + escapeHtml(dish.id || '') + '" aria-label="查看' + escapeHtml(dish.name) + '的食材含量和人均用量">'
       + '<span class="school-mobile-dish-index">' + String(index + 1).padStart(2, '0') + '</span>'
       + '<span><strong>' + escapeHtml(dish.name) + '</strong><small>' + number((dish.ingredients || []).length) + ' 种食材' + (dish.note ? ' · ' + escapeHtml(dish.note) : '') + '</small></span>'
       + '<span class="school-mobile-dish-arrow" aria-hidden="true">›</span>'
@@ -646,16 +652,35 @@
     const detail = state.sheet?.detail;
     if (!detail) return '';
     const ingredients = detail.dish.ingredients || [];
-    const rows = ingredients.map((item) => '<div class="school-mobile-ingredient-row" role="row"><strong role="cell">' + escapeHtml(item.name || '--') + '</strong><span role="cell">' + escapeHtml(productName(item)) + '</span><em role="cell">' + quantity(ingredientQuantity(item)) + ' ' + escapeHtml(productUnit(item)) + '</em></div>').join('');
+    const rows = ingredients.map((item) => '<div class="school-mobile-ingredient-row" role="row">'
+      + '<span role="cell" title="' + escapeHtml(productName(item)) + '">' + escapeHtml(productName(item)) + '</span>'
+      + '<span role="cell" title="' + escapeHtml(productCode(item)) + '">' + escapeHtml(productCode(item)) + '</span>'
+      + '<em role="cell">' + quantity(ingredientQuantity(item)) + '</em>'
+      + '<span role="cell">' + escapeHtml(productUnit(item)) + '</span>'
+      + '</div>').join('');
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet" role="dialog" aria-modal="true" aria-label="菜品食材详情">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(detail.dish.name) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<p class="school-mobile-sheet-subtitle">' + escapeHtml(dateText(detail.menu.date)) + ' · ' + escapeHtml(detail.meal.name) + '</p>'
       + '<div class="school-mobile-dish-detail-heading"><strong>食材含量与人均用量</strong><span>共 ' + number(ingredients.length) + ' 项</span></div>'
-      + '<div class="school-mobile-ingredient-list" role="table" aria-label="食材含量与人均用量明细">'
-      + '<div class="school-mobile-ingredient-head" role="row"><span role="columnheader">食材</span><span role="columnheader">关联商品</span><span role="columnheader">人均用量</span></div>'
+      + '<div class="school-mobile-ingredient-list" role="table" aria-label="商品与人均用量明细">'
+      + '<div class="school-mobile-ingredient-head" role="row"><span role="columnheader">商品名称</span><span role="columnheader">编号</span><span role="columnheader">人均用量</span><span role="columnheader">单位</span></div>'
       + (rows || '<div class="school-mobile-empty">暂无食材明细</div>')
       + '</div>'
       + '</section></div>';
+  }
+
+  function openDishSheet(target) {
+    const menu = menuFor(target.dataset.menuDate || state.date);
+    const meal = (menu?.meals || []).find((item) => item.key === target.dataset.mealKey)
+      || (menu?.meals || []).find((item) => item.key === state.mealKey);
+    const dishIndex = Number(target.dataset.dishIndex);
+    const dish = Number.isInteger(dishIndex) ? meal?.dishes?.[dishIndex] : null;
+    const detail = menu && meal && dish
+      ? { menu, meal, dish }
+      : recipeService.getDish(target.dataset.menuDate || state.date, target.dataset.dishId);
+    if (!detail) return;
+    state.sheet = { type: 'dish', detail };
+    render();
   }
 
   function render() {
@@ -891,11 +916,7 @@
       return;
     }
     if (action === 'dish') {
-      const detail = recipeService.getDish(target.dataset.menuDate || state.date, target.dataset.dishId);
-      if (detail) {
-        state.sheet = { type: 'dish', detail };
-        render();
-      }
+      openDishSheet(target);
       return;
     }
     if (action === 'fill-defaults') {
@@ -996,7 +1017,6 @@
     const panel = event.target.closest?.('[data-meal-panel]');
     if (!panel || !app.contains(panel) || (event.pointerType === 'mouse' && event.button !== 0)) return;
     mealSwipeStart = { x: event.clientX, y: event.clientY };
-    panel.setPointerCapture?.(event.pointerId);
   }, { passive: true });
 
   app.addEventListener('pointerup', (event) => {

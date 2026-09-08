@@ -212,8 +212,7 @@ button {
   transform: rotate(-18deg);
 }
 
-.school-mobile-topbar-main,
-.school-mobile-topbar-actions {
+.school-mobile-topbar-main {
   position: relative;
   z-index: 1;
 }
@@ -258,29 +257,7 @@ button {
   color: #fff;
 }
 
-.school-mobile-topbar-actions {
-  position: absolute;
-  right: 15px;
-  bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.school-mobile-refresh-button {
-  width: auto;
-  min-width: 52px;
-  padding: 0 9px;
-  gap: 3px;
-  font-size: 14px;
-}
-
-.school-mobile-refresh-button span {
-  font-size: 11px;
-}
-
-.school-mobile-canteen-button,
-.school-mobile-icon-button {
+.school-mobile-canteen-button {
   display: inline-flex;
   height: 32px;
   align-items: center;
@@ -301,15 +278,7 @@ button {
   white-space: nowrap;
 }
 
-.school-mobile-icon-button {
-  width: 32px;
-  flex: 0 0 32px;
-  padding: 0;
-  font-size: 17px;
-}
-
-.school-mobile-canteen-button:hover,
-.school-mobile-icon-button:hover {
+.school-mobile-canteen-button:hover {
   background: rgba(255, 255, 255, .22);
 }
 
@@ -683,26 +652,8 @@ button {
 }
 
 .school-mobile-recipe-empty {
-  display: flex;
   min-height: 0;
   flex: 1 1 auto;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 7px;
-  border: 1px dashed #d9dee5;
-  border-radius: 14px;
-  color: #8994a4;
-  background: #f3f5f7;
-}
-
-.school-mobile-recipe-empty strong {
-  color: #687486;
-  font-size: 15px;
-}
-
-.school-mobile-recipe-empty span {
-  font-size: 11px;
 }
 
 .school-mobile-home-scroll {
@@ -1995,32 +1946,6 @@ button {
   text-align: center;
 }
 
-.school-mobile-login-icon {
-  display: grid;
-  width: 58px;
-  height: 58px;
-  margin: 0 auto 12px;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(145deg, #90c9ff, #327bef);
-  box-shadow: 0 5px 14px rgba(50, 123, 239, .22);
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.school-mobile-login-card h2 {
-  margin: 0;
-  color: var(--mobile-ink);
-  font-size: 17px;
-}
-
-.school-mobile-login-card > p {
-  margin: 6px 0 16px;
-  color: var(--mobile-ink-3);
-  font-size: 10px;
-}
-
 .school-mobile-login-card form {
   display: grid;
   gap: 10px;
@@ -2077,13 +2002,6 @@ button {
   flex: 0 0 15px;
   margin: 0;
   accent-color: var(--mobile-blue);
-}
-
-.school-mobile-login-card > small {
-  display: block;
-  margin-top: 12px;
-  color: var(--mobile-ink-3);
-  font-size: 9px;
 }
 
 .school-mobile-profile-order-card {
@@ -2569,7 +2487,7 @@ button {
   width: 100%;
   max-height: 82%;
   overflow: auto;
-  padding: 14px 14px max(18px, env(safe-area-inset-bottom));
+  padding: 14px 14px max(36px, calc(20px + env(safe-area-inset-bottom)));
   border-radius: 22px 22px 0 0;
   background: #fff;
   box-shadow: 0 -8px 24px rgba(31, 43, 67, .18);
@@ -2675,10 +2593,10 @@ button {
 .school-mobile-ingredient-head,
 .school-mobile-ingredient-row {
   display: grid;
-  grid-template-columns: 1fr 1.1fr 58px;
+  grid-template-columns: minmax(96px, 1fr) 76px 50px 34px;
   align-items: center;
-  gap: 6px;
-  padding: 6px 9px;
+  gap: 4px;
+  padding: 6px 7px;
 }
 
 .school-mobile-ingredient-head {
@@ -2688,7 +2606,7 @@ button {
   font-size: 10px;
 }
 
-.school-mobile-ingredient-head span:last-child {
+.school-mobile-ingredient-head span:nth-last-child(-n + 2) {
   text-align: right;
 }
 
@@ -2703,23 +2621,18 @@ button {
   border-bottom: 0;
 }
 
-.school-mobile-ingredient-row strong,
 .school-mobile-ingredient-row span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.school-mobile-ingredient-row strong {
-  color: #3d4f68;
-  font-weight: 500;
-}
-
 .school-mobile-ingredient-row span {
   color: #8390a1;
 }
 
-.school-mobile-ingredient-row em {
+.school-mobile-ingredient-row em,
+.school-mobile-ingredient-row span:last-child {
   color: #5c81aa;
   font-style: normal;
   text-align: right;
