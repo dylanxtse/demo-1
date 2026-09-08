@@ -95,6 +95,7 @@
           <td><button type="button" class="school-product-code" data-action="detail" data-code="${escapeHtml(row.code)}">${escapeHtml(row.code)}</button></td>
           <td class="school-product-name" title="${escapeHtml(productDisplay)}"><span class="school-product-name-main">${row.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(productDisplay)}</span></td>
           <td class="school-product-category" title="${escapeHtml(row.category)}">${escapeHtml(row.category)}</td>
+          <td>${row.isStandardProduct ? '是' : '否'}</td>
           <td>${escapeHtml(row.unit)}</td>
           <td>${escapeHtml(row.supplier)}</td>
           <td>${escapeHtml(row.alias || '')}</td>
@@ -103,7 +104,7 @@
           <td>${escapeHtml(row.addTime)}</td>
         </tr>`;
       }).join('')
-      : '<tr><td class="school-product-empty" colspan="11">暂无符合条件的数据</td></tr>';
+      : '<tr><td class="school-product-empty" colspan="12">暂无符合条件的数据</td></tr>';
   }
 
   function renderDetail(productId) {
@@ -204,7 +205,7 @@
               <div class="action-controls"><button type="submit" class="btn btn-primary btn-sm btn-fixed">查询</button><button type="button" class="btn btn-sm btn-fixed" data-action="reset">重置</button></div>
             </div>
           </form>
-          <div class="school-product-table-wrap"><table class="school-product-table"><colgroup><col class="col-seq"><col class="col-image"><col class="col-code"><col class="col-name"><col class="col-category"><col class="col-unit"><col class="col-supplier"><col class="col-alias"><col class="col-origin"><col class="col-shelf"><col class="col-time"></colgroup><thead><tr><th>序号</th><th>图片</th><th>商品编号</th><th>商品名称（计量单位/品牌/规格）</th><th>分类</th><th>计量单位</th><th>供货企业</th><th>别名</th><th>产地</th><th>保质期</th><th>添加时间</th></tr></thead><tbody id="schoolProductBody"></tbody></table></div>
+          <div class="school-product-table-wrap"><table class="school-product-table"><colgroup><col class="col-seq"><col class="col-image"><col class="col-code"><col class="col-name"><col class="col-category"><col class="col-standard"><col class="col-unit"><col class="col-supplier"><col class="col-alias"><col class="col-origin"><col class="col-shelf"><col class="col-time"></colgroup><thead><tr><th>序号</th><th>图片</th><th>商品编号</th><th>商品名称（计量单位/品牌/规格）</th><th>分类</th><th>是否标品</th><th>计量单位</th><th>供货企业</th><th>别名</th><th>产地</th><th>保质期</th><th>添加时间</th></tr></thead><tbody id="schoolProductBody"></tbody></table></div>
           <div class="pagination school-product-pagination" id="schoolProductPagination"></div>
         </section>
       </div>

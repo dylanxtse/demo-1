@@ -5,16 +5,16 @@
     orderCutoffDays: '0',
     orderCutoffTime: '',
     orderPricePriority1: '协议价',
-    orderPricePriority2: '近一次销售价',
-    orderPricePriority3: '手动定价',
-    orderPricePriority4: '市场价',
+    orderPricePriority2: '市场价',
+    orderPricePriority3: '近一次销售价',
+    orderPricePriority4: '手动定价',
     allowClientEditPrice: false,
-    purchasePriceMode: '竞价模式',
-    purchasePricePriority1: '中标价',
-    purchasePricePriority2: '近一次采购价',
+    purchasePriceMode: '订价模式',
+    purchasePricePriority1: '协议价',
+    purchasePricePriority2: '市场价',
     purchasePricePriority3: '近一次采购价',
-    purchasePricePriority4: '',
-    purchasePricePriority5: '',
+    purchasePricePriority4: '供应商报价',
+    purchasePricePriority5: '手动定价',
     purchasePricePriority6: '',
     autoInbound: false,
     sortingLowerThreshold: '',
@@ -53,10 +53,12 @@
   const purchasePriorityProfiles = {
     '订价模式': {
       count: 5,
+      defaults: ['协议价', '市场价', '近一次采购价', '供应商报价', '手动定价'],
       options: ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价']
     },
     '竞价模式': {
       count: 3,
+      defaults: ['中标价', '近一次采购价', '近一次采购价'],
       optionsByPosition: [
         ['中标价'],
         ['近一次采购价', '市场价'],
@@ -65,6 +67,7 @@
     },
     '订价+竞价模式': {
       count: 6,
+      defaults: ['中标价', '协议价', '近一次采购价', '供应商报价', '手动定价', '市场价'],
       optionsByPosition: [
         ['中标价'],
         ['协议价', '近一次采购价', '供应商报价', '市场价', '手动定价'],
@@ -257,7 +260,10 @@
       const currentValue = select.value;
       const options = purchasePriorityOptions(normalizedMode, index);
       select.innerHTML = optionMarkupFromValues(options, true);
-      select.value = options.includes(currentValue) ? currentValue : '';
+      const fallbackValue = profile.defaults?.[index - 1] || '';
+      select.value = options.includes(currentValue)
+        ? currentValue
+        : (options.includes(fallbackValue) ? fallbackValue : '');
       const active = index <= profile.count;
       label.hidden = !active;
       select.hidden = !active;

@@ -20,8 +20,7 @@
     expectedAt: '',
     expectedAtManuallyChanged: false,
     submitting: false,
-    purchaseQtyOverrides: {},
-    excludedProductKeys: new Set()
+    purchaseQtyOverrides: {}
   };
   const defaultExpectedAt = (dates = []) => {
     const earliest = [...new Set(dates)].sort()[0] || '';
@@ -88,7 +87,6 @@
     return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
   };
   const purchaseRowKey = (item) => String(item?.key || `${item?.productCode || item?.productName || ''}::${item?.unit || '--'}`);
-  const isProductExcluded = (item) => state.excludedProductKeys.has(purchaseRowKey(item));
   const purchaseQuantityKey = (item, participantKey) => `${purchaseRowKey(item)}::${participantKey}`;
   const hasPurchaseQuantityOverride = (item, participantKey) => Object.prototype.hasOwnProperty.call(
     state.purchaseQtyOverrides,
@@ -100,6 +98,9 @@
       ? state.purchaseQtyOverrides[key]
       : purchaseQuantity(item.participantQty?.[participant.key], item);
   };
+  const hasPurchaseQuantity = (preview) => (preview.rows || [])
+    .filter((row) => row.mappingStatus === '已关联')
+    .some((row) => (preview.participants || []).some((participant) => Number(purchaseQuantityValue(row, participant)) > 0));
   const currentCanteen = window.AppStorage?.read?.('school-recipe-current-canteen', window.SchoolOrderService?.CANTEEN_NAME || '第一食堂') || window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
   const currentCanteenScope = demandService.currentCanteen?.(currentCanteen) || { id: '', name: currentCanteen };
   const currentCanteenName = currentCanteenScope.name || currentCanteen;
@@ -186,18 +187,14 @@
     }).join('');
     const participantSubColumns = participants.map((participant) => {
       const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
-      return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购数量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购数量" aria-label="清空${escapeHtml(name)}采购数量">×</button></div></th>`;
+      return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量">×</button></div></th>`;
     }).join('');
     const participantColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
-    const activeProductCount = preview.rows.filter((row) => row.mappingStatus === '已关联' && row.totalQty > 0 && !isProductExcluded(row)).length;
     const rows = preview.rows
       .filter((row) => row.mappingStatus === '已关联')
       .map((row, index) => {
         const productKey = purchaseRowKey(row);
-        const excluded = isProductExcluded(row);
-        const cannotExclude = !excluded && row.totalQty > 0 && activeProductCount <= 1;
-        const excludedClass = excluded ? ' is-excluded' : '';
-        const disabledAttribute = excluded ? ' disabled' : '';
+        const hasRowPurchaseQuantity = participants.some((participant) => Number(purchaseQuantityValue(row, participant)) > 0);
         const participantCells = participants.map((participant) => {
           const demandCell = `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td>`;
           const key = purchaseQuantityKey(row, participant.key);
@@ -205,17 +202,17 @@
             || participant.label || participant.tagName || participant.key;
           const value = purchaseQuantityValue(row, participant);
           const overridden = hasPurchaseQuantityOverride(row, participant.key);
-          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购数量`)}"${disabledAttribute}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购数量`)}" title="清空采购数量"${disabledAttribute}>×</button></div></td>`;
+          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购量`)}"><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购量`)}" title="清空采购量">×</button></div></td>`;
           return `${demandCell}${purchaseCell}`;
         }).join('');
-        return `<tr class="school-recipe-demand-product-row${excludedClass}">
+        return `<tr class="school-recipe-demand-product-row">
           <td>${index + 1}</td>
           <td class="school-recipe-demand-product-name">${renderProductName(row, productDisplay(row))}</td>
           <td>${isStandardProduct(row) ? '是' : '否'}</td>
           <td>${escapeHtml(row.productCode || '--')}</td>
           <td>${escapeHtml(row.unit || '--')}</td>
           ${participantCells}
-          <td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-toggle${excluded ? ' is-excluded' : ''}" data-action="toggle-product-confirm" data-product-key="${escapeHtml(productKey)}" title="${excluded ? '恢复确认该商品' : cannotExclude ? '至少保留一项商品进行确认' : '暂不确认该商品'}"${cannotExclude ? ' disabled' : ''}>${excluded ? '恢复确认' : '暂不确认'}</button></td>
+          <td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="clear-purchase-row" data-product-key="${escapeHtml(productKey)}" data-product-name="${escapeHtml(productDisplay(row))}" title="清空该商品全部采购量"${hasRowPurchaseQuantity ? '' : ' disabled'}>清空采购量</button></td>
         </tr>`;
       }).join('');
     return rows
@@ -234,7 +231,7 @@
         <section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderDateSummaryTable(preview)}</section>
         <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div><button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button></header>${renderProductTable(preview)}</section>
       </div>
-      <footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit" ${preview.canSubmit && expectedAtIsAllowed(state.expectedAt, preview.dates) && !state.submitting ? '' : 'disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer>
+      <footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit" ${preview.canSubmit && hasPurchaseQuantity(preview) && expectedAtIsAllowed(state.expectedAt, preview.dates) && !state.submitting ? '' : 'disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer>
     </main>`;
   }
 
@@ -317,7 +314,7 @@
     };
   }
 
-  function restoreViewportState(snapshot, focusProductKey = '') {
+  function restoreViewportState(snapshot) {
     if (!snapshot) return;
     const restore = () => {
       window.scrollTo(snapshot.windowLeft, snapshot.windowTop);
@@ -334,11 +331,6 @@
         wrap.scrollLeft = position.left;
         wrap.scrollTop = position.top;
       });
-      if (focusProductKey) {
-        const toggle = [...body.querySelectorAll('[data-action="toggle-product-confirm"]')]
-          .find((button) => button.dataset.productKey === focusProductKey);
-        toggle?.focus({ preventScroll: true });
-      }
     };
     restore();
     window.requestAnimationFrame(restore);
@@ -356,6 +348,8 @@
       input.focus({ preventScroll: true });
     }
     restoreViewportState(viewport);
+    updatePurchaseClearState();
+    updateSubmitButtonState();
   }
 
   function clearPurchaseQuantityColumn(button) {
@@ -371,7 +365,25 @@
       rememberPurchaseQuantity(input);
     });
     restoreViewportState(viewport);
-    showToast(`已清空${button.dataset.participantName || ''}采购数量`);
+    updatePurchaseClearState();
+    updateSubmitButtonState();
+    showToast(`已清空${button.dataset.participantName || ''}采购量`);
+  }
+
+  function clearPurchaseQuantityRow(button) {
+    const row = button?.closest('.school-recipe-demand-product-row');
+    if (!row) return;
+    const viewport = captureViewportState();
+    syncPurchaseQuantityInputs();
+    row.querySelectorAll('[data-purchase-quantity]').forEach((input) => {
+      input.value = '';
+      input.dataset.purchaseOverridden = 'true';
+      rememberPurchaseQuantity(input);
+    });
+    restoreViewportState(viewport);
+    updatePurchaseClearState();
+    updateSubmitButtonState();
+    showToast(`已清空${button.dataset.productName || '该商品'}全部采购量`);
   }
 
   function closeSubmitConfirm() {
@@ -396,8 +408,7 @@
     demandService.submit([...state.selectedDates], {
       expectedAt: state.expectedAt,
       canteen: currentCanteenScope,
-      purchaseQuantityOverrides: { ...state.purchaseQtyOverrides },
-      excludedProductKeys: [...state.excludedProductKeys]
+      purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }
       })
       .then(() => {
         clearAttendanceAfterFlow();
@@ -437,8 +448,7 @@
     const viewport = options.preserveViewport ? captureViewportState() : null;
     const selectedDates = [...state.selectedDates];
     const preview = demandService.buildPreview(selectedDates, {
-      canteen: currentCanteenScope,
-      excludedProductKeys: [...state.excludedProductKeys]
+      canteen: currentCanteenScope
     });
     if (!selectedDates.length || !preview.dates.length) {
       preserveAttendanceOnReturn();
@@ -450,7 +460,28 @@
     syncExpectedAt(preview);
     body.innerHTML = renderDetail(preview);
     mountExpectedAtPicker(preview);
-    restoreViewportState(viewport, options.focusProductKey || '');
+    restoreViewportState(viewport);
+  }
+
+  function updateSubmitButtonState() {
+    const submitButton = body.querySelector('[data-action="submit"]');
+    if (!submitButton || state.submitting) return;
+    const preview = demandService.buildPreview([...state.selectedDates], { canteen: currentCanteenScope });
+    const hasCurrentPurchaseQuantity = [...body.querySelectorAll('[data-purchase-quantity]')]
+      .some((input) => Number(input.value) > 0);
+    submitButton.disabled = !(preview.canSubmit
+      && hasCurrentPurchaseQuantity
+      && expectedAtIsAllowed(state.expectedAt, preview.dates));
+  }
+
+  function updatePurchaseClearState() {
+    body.querySelectorAll('.school-recipe-demand-product-row').forEach((row) => {
+      const clearButton = row.querySelector('[data-action="clear-purchase-row"]');
+      if (!clearButton) return;
+      const hasRowPurchaseQuantity = [...row.querySelectorAll('[data-purchase-quantity]')]
+        .some((input) => Number(input.value) > 0);
+      clearButton.disabled = !hasRowPurchaseQuantity;
+    });
   }
 
   page.addEventListener('change', (event) => {
@@ -458,12 +489,18 @@
     if (purchaseInput) {
       normalizePurchaseQuantityInput(purchaseInput);
       rememberPurchaseQuantity(purchaseInput);
+      updatePurchaseClearState();
+      updateSubmitButtonState();
     }
   });
 
   page.addEventListener('input', (event) => {
     const purchaseInput = event.target.closest('[data-purchase-quantity]');
-    if (purchaseInput) rememberPurchaseQuantity(purchaseInput);
+    if (purchaseInput) {
+      rememberPurchaseQuantity(purchaseInput);
+      updatePurchaseClearState();
+      updateSubmitButtonState();
+    }
   });
 
   page.addEventListener('click', async (event) => {
@@ -477,27 +514,16 @@
     const action = button.dataset.action;
     if (action === 'restore-default') {
       state.purchaseQtyOverrides = {};
-      state.excludedProductKeys.clear();
       renderBody({ preserveViewport: true });
-      showToast('已恢复默认采购数量和商品确认');
+      showToast('已恢复默认采购量');
       return;
     }
     if (action === 'clear-purchase-column') {
       clearPurchaseQuantityColumn(button);
       return;
     }
-    if (action === 'toggle-product-confirm') {
-      syncPurchaseQuantityInputs();
-      const productKey = button.dataset.productKey;
-      if (!productKey) return;
-      if (state.excludedProductKeys.has(productKey)) {
-        state.excludedProductKeys.delete(productKey);
-        showToast('已恢复该商品确认');
-      } else {
-        state.excludedProductKeys.add(productKey);
-        showToast('已标记该商品暂不确认');
-      }
-      renderBody({ preserveViewport: true, focusProductKey: productKey });
+    if (action === 'clear-purchase-row') {
+      clearPurchaseQuantityRow(button);
       return;
     }
     if (action === 'toggle-date') {
@@ -535,11 +561,15 @@
     if (action !== 'submit' || state.submitting) return;
     syncPurchaseQuantityInputs();
     const preview = demandService.buildPreview([...state.selectedDates], {
-      canteen: currentCanteenScope,
-      excludedProductKeys: [...state.excludedProductKeys]
+      canteen: currentCanteenScope
     });
     if (!preview.canSubmit) {
       showToast(preview.message || '请先完成需求确认', true);
+      return;
+    }
+    if (!hasPurchaseQuantity(preview)) {
+      updateSubmitButtonState();
+      showToast('当前没有采购量，无法提交', true);
       return;
     }
     if (!expectedAtIsAllowed(state.expectedAt, preview.dates)) {

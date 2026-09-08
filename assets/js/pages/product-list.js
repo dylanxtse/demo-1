@@ -84,6 +84,7 @@
                     <th>商品编号</th>
                     <th>商品名称（计量单位/品牌/规格）</th>
                     <th>分类</th>
+                    ${isSupplierProductPage ? '' : '<th>是否标品</th>'}
                     <th>计量单位</th>
                     <th>市场价</th>
                     <th>状态</th>
@@ -232,6 +233,7 @@
           <td class="code-cell"><button class="btn-text code-link" type="button" data-row-action="detail" data-code="${safe.code}">${safe.code}</button></td>
           <td class="name-cell"><span class="product-display-text" title="${window.DomUtils.escapeHtml(productDisplay)}">${netVegetableTag}${window.DomUtils.escapeHtml(productDisplay)}</span></td>
           <td>${safe.category}</td>
+          ${isSupplierProductPage ? '' : `<td>${product.isStandardProduct ? '是' : '否'}</td>`}
           <td>${safe.unit}</td>
           <td>${safe.marketPrice}</td>
           <td><span class="status-tag ${isEnabled ? 'online' : 'offline'}">${window.DomUtils.escapeHtml(statusLabel)}</span></td>

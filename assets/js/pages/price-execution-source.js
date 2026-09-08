@@ -121,7 +121,7 @@
     return `<div class="operations-filter"><div class="operations-filter-main"><div class="operations-filter-grid">${filterField('客户类型', 'customerType', renderSelect('customerType', ['默认客户类型（全部商品）', '学校', '幼儿园', '机关单位'], f.customerType, '请选择'))}${filterField('客户名称', 'customerName', renderSelect('customerName', customers, f.customerName, '请选择'))}${filterField('商品分类', 'category', renderSelect('category', [...new Set(products.map((product) => product.category))], f.category, '请选择商品分类'))}${filterField('商品名称', 'name', `<input class="filter-input" data-filter="name" value="${esc(f.name || '')}" placeholder="请输入名称/编号" aria-label="商品名称">`)}${filterField('价格类型', 'priceType', renderSelect('priceType', priceColumns.sales.map((column) => column.label), f.priceType, '全部'))}</div>${actions}</div></div>`;
   }
 
-  function priorityNote() { return state.mode === 'purchase' ? '当前采购单价取值优先级：供应商报价＞协议价＞手动订价＞近一次采购价＞市场价' : '当前销售单价取值优先级：协议价＞市场价＞手动订价＞近一次销售价'; }
+  function priorityNote() { return state.mode === 'purchase' ? '当前采购单价取值优先级：协议价＞市场价＞近一次采购价＞供应商报价＞手动定价' : '当前销售单价取值优先级：协议价＞市场价＞近一次销售价＞手动定价'; }
   function downloadIcon() { return '<svg class="px-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>'; }
   function uploadIcon() { return '<svg class="px-icon" viewBox="0 0 24 24"><path d="M12 16V4"></path><polyline points="7 9 12 4 17 9"></polyline><path d="M5 20h14"></path></svg>'; }
 

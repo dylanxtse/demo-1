@@ -44,12 +44,13 @@
 .school-product-filters .action-controls { flex-shrink: 0; }
 .school-product-filters .btn-fixed { width: var(--query-action-width); justify-content: center; }
 .school-product-table-wrap { min-width: 0; min-height: 0; flex: 1; overflow: auto; border: 1px solid #e1e4eb; background: #fff; }
-.school-product-table { width: 100%; min-width: 1600px; table-layout: fixed; border-collapse: collapse; font-size: 14px; }
+.school-product-table { width: 100%; min-width: 1680px; table-layout: fixed; border-collapse: collapse; font-size: 14px; }
 .school-product-table .col-seq { width: 48px; }
 .school-product-table .col-image { width: 56px; }
 .school-product-table .col-code { width: 100px; }
 .school-product-table .col-name { width: 220px; }
 .school-product-table .col-category { width: 220px; }
+.school-product-table .col-standard { width: 80px; }
 .school-product-table .col-unit { width: 80px; }
 .school-product-table .col-supplier { width: 118px; }
 .school-product-table .col-alias { width: 90px; }
@@ -69,7 +70,7 @@
 .school-product-code { border: 0; background: transparent; color: #2b74bf; font: inherit; cursor: pointer; }
 .school-product-code:hover { text-decoration: underline; }
 .school-product-name,
-.school-product-category { text-align: left !important; }
+.school-product-category { text-align: center !important; }
 .school-product-name-main { display: inline-flex; max-width: 100%; align-items: center; vertical-align: middle; }
 .net-vegetable-tag { display: inline-flex; height: 20px; align-items: center; justify-content: center; flex: 0 0 auto; margin-right: 6px; border: 1px solid var(--success); border-radius: 3px; padding: 0 5px; color: var(--success); font-size: 12px; font-weight: 400; line-height: 1; vertical-align: middle; }
 .school-product-empty { height: 160px !important; color: var(--text-tertiary) !important; text-align: center !important; }
@@ -103,7 +104,7 @@
   .school-product-filters .filter-panel { align-items: flex-start; flex-direction: column; }
   .school-product-filters .filter-fields { width: 100%; max-width: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
   .school-product-filters .action-controls { width: 100%; justify-content: flex-start; }
-  .school-product-table { min-width: 980px; }
+  .school-product-table { min-width: 1060px; }
 }
 
 @media (max-width: 520px) {

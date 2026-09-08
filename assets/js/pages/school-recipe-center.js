@@ -358,7 +358,7 @@
       const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
       return `<th colspan="2">${escapeHtml(name)}</th>`;
     }).join('');
-    const dynamicSubColumns = participants.map(() => '<th>需求量</th><th>采购数量</th>').join('');
+    const dynamicSubColumns = participants.map(() => '<th>需求量</th><th>采购量</th>').join('');
     const dynamicColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
     return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
   }

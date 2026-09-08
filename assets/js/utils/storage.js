@@ -365,6 +365,17 @@
       processing: '杨采'
     },
     defaultWarehouseId: 'WH-001',
+    orderPricePriority1: '协议价',
+    orderPricePriority2: '市场价',
+    orderPricePriority3: '近一次销售价',
+    orderPricePriority4: '手动定价',
+    purchasePriceMode: '订价模式',
+    purchasePricePriority1: '协议价',
+    purchasePricePriority2: '市场价',
+    purchasePricePriority3: '近一次采购价',
+    purchasePricePriority4: '供应商报价',
+    purchasePricePriority5: '手动定价',
+    purchasePricePriority6: '',
     amountDecimal: '2',
     quantityDecimal: '0',
     decimalSettingsVersion: '20260815-default-decimals'

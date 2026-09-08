@@ -345,6 +345,8 @@
 .pb-category-option-main small { overflow: hidden; color: #86909c; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .pb-category-option > em { flex: 0 0 auto; color: #697586; font-size: 12px; font-style: normal; white-space: nowrap; }
 .pb-form-field .pb-date-range { width: 0; }
+.pb-form-field > .pb-form-date-range { width: 0; min-width: 0; flex: 1 1 auto; }
+.pb-form-date-range .date-range-display { width: 100%; min-width: 0; box-sizing: border-box; }
 .pb-counter { position: absolute; right: 10px; bottom: 6px; margin: 0; padding-left: 4px; background: #fff; color: #9aa4b2; font-size: 12px; line-height: 16px; pointer-events: none; }
 .pb-contact-value { min-height: 32px; flex: 1 1 auto; line-height: 32px; color: #1d2129; }
 .pb-plus { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; margin-left: -34px; border: 0; background: transparent; color: var(--primary); font-size: 22px; cursor: pointer; }

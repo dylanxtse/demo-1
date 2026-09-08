@@ -164,18 +164,10 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-product-table thead tr:first-child th:last-child { z-index: 6; background: #fafbfc; }
 .school-recipe-demand-product-table tbody tr:hover td:last-child { background: #f8fbff; }
 .school-recipe-demand-product-action { text-align: center !important; }
-.school-recipe-demand-product-toggle { padding: 0; border: 0; color: var(--danger); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
-.school-recipe-demand-product-toggle:hover { color: #b8322a; text-decoration: underline; }
-.school-recipe-demand-product-toggle:disabled { color: #b8c0cb; text-decoration: none; cursor: not-allowed; }
-.school-recipe-demand-product-toggle.is-excluded { color: #477fca; }
-.school-recipe-demand-product-toggle.is-excluded:hover { color: #2f6db6; }
-.school-recipe-demand-product-table tbody tr.is-excluded td { color: #a6afbc; background: #fbfcfd; }
-.school-recipe-demand-product-table tbody tr.is-excluded:hover td { background: #f7f9fc; }
-.school-recipe-demand-product-table tbody tr.is-excluded td.school-recipe-demand-product-name { color: #9aa4b2 !important; }
-.school-recipe-demand-product-table tbody tr.is-excluded td:last-child { background: #fbfcfd; }
-.school-recipe-demand-product-table tbody tr.is-excluded:hover td:last-child { background: #f7f9fc; }
-.school-recipe-demand-product-table tbody tr.is-excluded .school-recipe-demand-purchase-input { color: #a6afbc; background: transparent; cursor: not-allowed; }
-.school-recipe-demand-product-table tbody tr.is-excluded .school-recipe-demand-purchase-clear { opacity: 0; pointer-events: none; }
+.school-recipe-demand-product-clear-row { padding: 0; border: 0; color: var(--danger); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+.school-recipe-demand-product-clear-row:hover,
+.school-recipe-demand-product-clear-row:focus-visible { color: #b8322a; text-decoration: underline; outline: none; }
+.school-recipe-demand-product-clear-row:disabled { color: #b8c0cb; text-decoration: none; cursor: not-allowed; }
 .school-recipe-demand-purchase-header { display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
 .school-recipe-demand-purchase-clear-column { display: inline-flex; width: 17px; height: 17px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; color: var(--danger); background: #fff0ef; font: inherit; font-size: 14px; line-height: 17px; opacity: 0; pointer-events: none; cursor: pointer; transition: opacity .15s ease, color .15s ease, background .15s ease; }
 .school-recipe-demand-product-table thead tr:nth-child(2) th:hover .school-recipe-demand-purchase-clear-column,
@@ -193,6 +185,8 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-actions { display: flex; min-height: 62px; flex-shrink: 0; align-items: center; justify-content: center; gap: 12px; padding: 0 22px; border-top: 1px solid var(--border-light); background: #fff; }
 .school-recipe-demand-actions .btn { min-width: 110px; justify-content: center; }
 .school-recipe-demand-actions .btn-primary { min-width: 150px; }
+.school-recipe-demand-actions .btn-primary:disabled,
+.school-recipe-demand-actions .btn-primary:disabled:hover { border-color: #c8ced8; color: #fff; background: #c8ced8; cursor: not-allowed; opacity: 1; }
 
 .school-recipe-demand-submit-modal .operations-modal-body { padding: 22px 24px; }
 .school-recipe-demand-submit-confirm > p { margin: 0 0 22px; color: var(--text-primary); font-size: 15px; text-align: center; }
