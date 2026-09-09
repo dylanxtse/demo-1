@@ -79,6 +79,8 @@
   const defaultDate = allMenus.find((menu) => String(menu.date).startsWith(todayMonth))?.date || dateValue(today);
   const state = { selectedDate: defaultDate, monthStart: defaultMonth, canteen: canteenNames.includes(storedCanteen) ? storedCanteen : defaultCanteen, attendanceByDate: {} };
   const draftsByCanteen = {};
+  let attendanceInputMode = 'dining';
+  let attendanceValidationHighlightDate = '';
   let dishTooltip = null;
 
   function currentCanteen() {
@@ -145,12 +147,16 @@
 
   function filledAttendanceDates() {
     return allMenus
-      .filter((menu) => attendanceService.calculate(menu, attendanceForDate(menu.date), serviceOptions()).totalPeople > 0)
+      .filter((menu) => attendanceService.calculate(menu, attendanceForDate(menu.date), serviceOptions()).totalDiningPeople > 0)
       .map((menu) => menu.date);
   }
 
   function serviceOptions() {
     return { canteen: currentCanteen(), participants: participantsForState() };
+  }
+
+  function canAttemptContinue(menu, validation) {
+    return Boolean(menu) && participantsForState().length > 0 && !validation.errors.length && !validation.missingMappings.length;
   }
 
   function statusForDate(date) {
@@ -161,13 +167,15 @@
   }
 
   function syncCurrentDraftFromInputs(page) {
-    page.querySelectorAll('[data-attendance-field]').forEach((input) => {
+    page.querySelectorAll('[data-attendance-field], [data-attendance-non-dining-field]').forEach((input) => {
       const mealKey = input.dataset.mealKey;
-      const type = input.dataset.attendanceField;
+      const isNonDining = input.dataset.attendanceNonDiningField != null;
+      const type = isNonDining ? input.dataset.attendanceNonDiningField : input.dataset.attendanceField;
       if (!mealKey || !type) return;
-      if (!state.attendance.meals) state.attendance.meals = {};
-      if (!state.attendance.meals[mealKey]) state.attendance.meals[mealKey] = {};
-      state.attendance.meals[mealKey][type] = input.value === '' ? '' : input.value;
+      const recordKey = isNonDining ? 'temporaryNonDining' : 'meals';
+      if (!state.attendance[recordKey]) state.attendance[recordKey] = {};
+      if (!state.attendance[recordKey][mealKey]) state.attendance[recordKey][mealKey] = {};
+      state.attendance[recordKey][mealKey][type] = input.value === '' ? '' : input.value;
     });
     cacheCurrentDraft();
   }
@@ -181,8 +189,8 @@
         : state.attendanceByDate[menu.date];
       if (!record) return;
       const calculation = attendanceService.calculate(menu, record, { canteen, participants });
-      if (Number(calculation.totalPeople || 0) <= 0) return;
-      const saved = attendanceService.save(menu.date, record.meals, menu.version || recipeService.MENU_VERSION, canteen);
+      if (Number(calculation.totalDiningPeople || 0) <= 0) return;
+      const saved = attendanceService.save(menu.date, record.meals, menu.version || recipeService.MENU_VERSION, canteen, record.temporaryNonDining);
       state.attendanceByDate[menu.date] = clone(saved);
       if (menu.date === state.selectedDate) state.attendance = clone(saved);
     });
@@ -191,10 +199,11 @@
   function renderOverview(menu) {
     const record = attendanceForDate(state.selectedDate);
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
-    return `${renderCanteenTabs()}<div class="school-recipe-attendance-overview" id="schoolRecipeAttendanceOverview" aria-label="就餐人数填报概况">
+    return `${renderCanteenTabs()}<div class="school-recipe-attendance-overview" id="schoolRecipeAttendanceOverview" aria-label="总人数填报概况">
       <div class="school-recipe-attendance-overview-fields">
         <div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span class="school-recipe-attendance-overview-label">用料日期：</span><strong>${escapeHtml(menu ? longDate(menu.date) : longDate(state.selectedDate))}</strong></div>
-        <div class="school-recipe-attendance-overview-item school-recipe-attendance-total"><span class="school-recipe-attendance-overview-label">总就餐人次：</span><strong id="schoolRecipeAttendanceOverviewTotal">${number(calculation.totalPeople)}</strong></div>
+        <div class="school-recipe-attendance-overview-item school-recipe-attendance-total"><span class="school-recipe-attendance-overview-label">实际就餐人次：</span><strong id="schoolRecipeAttendanceOverviewTotal">${number(calculation.totalPeople)}</strong></div>
+        <div class="school-recipe-attendance-overview-item school-recipe-attendance-non-dining${calculation.totalNonDiningPeople > 0 ? '' : ' school-recipe-attendance-is-hidden'}" data-attendance-overview-non-dining><span class="school-recipe-attendance-overview-label">不就餐人次：</span><strong data-attendance-overview-non-dining-total>${number(calculation.totalNonDiningPeople)}</strong></div>
       </div>
     </div>`;
   }
@@ -220,7 +229,7 @@
         <span class="school-recipe-attendance-date-week${hideWeekday ? ' is-hidden' : ''}">${escapeHtml(weekday(date))}</span>
       </button>`;
     }).join('');
-    return `<aside class="school-recipe-attendance-date-panel" aria-label="就餐人数填报日期">
+    return `<aside class="school-recipe-attendance-date-panel" aria-label="总人数填报日期">
       <div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-attendance-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${escapeHtml(monthLabel(state.monthStart))}</span><button type="button" data-attendance-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div>
       <div class="school-recipe-attendance-calendar-caption"><span>本月菜谱</span></div>
       <div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${escapeHtml(name)}</span>`).join('')}</div>
@@ -241,8 +250,60 @@
     return attendanceService.valueForParticipant(record?.meals?.[mealKey] || {}, participant);
   }
 
+  function temporaryNonDiningField(record, mealKey, participant) {
+    return attendanceService.temporaryNonDiningFor?.(record, mealKey, participant) || '';
+  }
+
+  function findEmptyAttendanceField(menu, record) {
+    const participants = participantsForState();
+    for (const meal of menu?.meals || []) {
+      for (const participant of participants) {
+        const value = mealField(record, meal.key, participant);
+        if (value === '' || value == null) return { meal, participant };
+      }
+    }
+    return null;
+  }
+
+  function recordHasAttendanceValues(record) {
+    return [record?.meals, record?.temporaryNonDining].some((group) => Object.values(group || {}).some((values) => (
+      Object.values(values || {}).some((value) => value !== '' && value != null)
+    )));
+  }
+
+  function attendanceDatesForValidation() {
+    const otherDates = allMenus
+      .map((menu) => menu.date)
+      .filter((date) => date !== state.selectedDate)
+      .filter((date) => recordHasAttendanceValues(attendanceForDate(date)));
+    return [state.selectedDate, ...otherDates];
+  }
+
+  function findFirstEmptyAttendanceField() {
+    for (const date of attendanceDatesForValidation()) {
+      const menu = menuForDate(date);
+      const record = attendanceForDate(date);
+      const field = findEmptyAttendanceField(menu, record);
+      if (field) return { date, record, ...field };
+    }
+    return null;
+  }
+
+  function nonDiningIssue(record, mealKey, participant) {
+    const value = temporaryNonDiningField(record, mealKey, participant);
+    if (value === '' || value == null) return '';
+    const parsed = Number(value);
+    const diningValue = mealField(record, mealKey, participant);
+    const diningPeople = Number(diningValue);
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100000) return '请输入 0～100000 的整数';
+    if (parsed > 0 && (!Number.isInteger(diningPeople) || diningPeople < 1 || diningPeople > 100000)) return '请先填写总人数';
+    if (parsed > diningPeople) return '不能大于总人数';
+    return '';
+  }
+
   function renderMealTable(meals, record) {
     const participants = participantsForState();
+    const isNonDiningMode = attendanceInputMode === 'non-dining';
     const personCount = Math.max(1, participants.length);
     const mealColumnWidth = 112;
     const dishMinWidth = 80;
@@ -255,10 +316,27 @@
       : '<th class="school-recipe-attendance-no-participant">暂无启用人员类型</th>';
     const rows = meals.map((meal) => {
       const values = participants.map((participant) => mealField(record, meal.key, participant));
-      const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
       const dishNames = (meal.dishes || []).map((dish) => dish.name).join('、');
+      const total = participants.reduce((sum, participant) => sum + attendanceService.effectivePeopleFor(record, meal.key, participant), 0);
       const personCells = participants.length
-        ? participants.map((participant, index) => `<td><div class="school-recipe-attendance-table-input"><input type="number" min="1" max="100000" step="1" inputmode="numeric" value="${escapeHtml(values[index])}" placeholder="请输入" data-attendance-field="${escapeHtml(participant.key)}" data-meal-key="${escapeHtml(meal.key)}" aria-label="${escapeHtml(`${meal.name}${participant.label}人数`)}"><i>人</i></div></td>`).join('')
+        ? participants.map((participant, index) => {
+          const nonDiningValue = temporaryNonDiningField(record, meal.key, participant);
+          const issue = nonDiningIssue(record, meal.key, participant);
+          const isEmptyHighlight = !isNonDiningMode && attendanceValidationHighlightDate === state.selectedDate && (values[index] === '' || values[index] == null);
+          const diningInput = `<div class="school-recipe-attendance-table-input"><input class="school-recipe-attendance-count-input${isEmptyHighlight ? ' is-empty' : ''}" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${escapeHtml(values[index])}" placeholder="请输入" data-attendance-field="${escapeHtml(participant.key)}" data-meal-key="${escapeHtml(meal.key)}" aria-label="${escapeHtml(`${meal.name}${participant.label}人数`)}"${isEmptyHighlight ? ' aria-invalid="true"' : ''}><i>人</i></div>`;
+          if (!isNonDiningMode) {
+            const nonDiningPeople = Number(nonDiningValue);
+            const nonDiningSummary = Number.isInteger(nonDiningPeople) && nonDiningPeople > 0
+              ? `<small class="school-recipe-attendance-person-non-dining-summary">含不就餐${number(nonDiningPeople)}人</small>`
+              : '';
+            return `<td>${diningInput}${nonDiningSummary}</td>`;
+          }
+          const diningDisplayValue = values[index] === '' || values[index] == null ? '--' : `${number(values[index])} 人`;
+          return `<td><div class="school-recipe-attendance-person-cell is-non-dining-mode">
+            <div class="school-recipe-attendance-person-count-display"><span>总人数</span><strong>${escapeHtml(diningDisplayValue)}</strong></div>
+            <div class="school-recipe-attendance-person-count-item"><span>不就餐</span><div class="school-recipe-attendance-table-input school-recipe-attendance-non-dining-input"><input type="number" min="0" max="100000" step="1" inputmode="numeric" value="${escapeHtml(nonDiningValue)}" placeholder="0" data-attendance-non-dining-field="${escapeHtml(participant.key)}" data-meal-key="${escapeHtml(meal.key)}" aria-label="${escapeHtml(`${meal.name}${participant.label}不就餐人数`)}"${issue ? ' aria-invalid="true"' : ''}><i>人</i></div><small class="school-recipe-attendance-non-dining-error${issue ? ' is-visible' : ''}" data-attendance-non-dining-error data-meal-key="${escapeHtml(meal.key)}" data-participant-key="${escapeHtml(participant.key)}">${escapeHtml(issue)}</small></div>
+          </div></td>`;
+        }).join('')
         : '<td class="school-recipe-attendance-no-participant-cell">请先在食堂运营设置中启用人员类型</td>';
       return `<tr data-attendance-meal="${escapeHtml(meal.key)}">
         <td class="school-recipe-attendance-meal-name"><strong>${escapeHtml(meal.name)}</strong></td>
@@ -268,13 +346,14 @@
       </tr>`;
     }).join('');
     const personColgroup = Array.from({ length: personCount }, () => '<col class="col-person">').join('');
-    return `<div class="school-recipe-attendance-meal-table-wrap"><table class="school-recipe-attendance-meal-table" style="--meal-table-min-width:${minTableWidth}px;--meal-fixed-columns-width:${fixedColumnsWidth}px;--meal-dish-min-width:${dishMinWidth}px"><colgroup><col class="col-meal"><col class="col-dishes">${personColgroup}<col class="col-meal-total"></colgroup><thead><tr><th rowspan="2">餐次</th><th rowspan="2">当餐菜品</th><th colspan="${personCount}">就餐人数</th><th rowspan="2">本餐合计</th></tr><tr>${personHeaders}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="school-recipe-attendance-meal-table-wrap"><table class="school-recipe-attendance-meal-table" style="--meal-table-min-width:${minTableWidth}px;--meal-fixed-columns-width:${fixedColumnsWidth}px;--meal-dish-min-width:${dishMinWidth}px"><colgroup><col class="col-meal"><col class="col-dishes">${personColgroup}<col class="col-meal-total"></colgroup><thead><tr><th rowspan="2">餐次</th><th rowspan="2">当餐菜品</th><th colspan="${personCount}">总人数</th><th rowspan="2">本餐合计</th></tr><tr>${personHeaders}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
   function renderNotice(menu, record) {
     if (!menu) return '';
     const validation = attendanceService.validate(menu, record, serviceOptions());
-    if (!participantsForState().length) return `<div class="school-recipe-attendance-notice is-warning"><span class="school-recipe-attendance-notice-icon">!</span><div><strong>尚未配置人员类型</strong><p>请先在当前食堂的运营设置中启用人员类型，再填写就餐人数。</p></div></div>`;
+    if (!participantsForState().length) return `<div class="school-recipe-attendance-notice is-warning"><span class="school-recipe-attendance-notice-icon">!</span><div><strong>尚未配置人员类型</strong><p>请先在当前食堂的运营设置中启用人员类型，再填写总人数。</p></div></div>`;
+    if (validation.errors.length) return `<div class="school-recipe-attendance-notice is-warning"><span class="school-recipe-attendance-notice-icon">!</span><div><strong>请检查人数填报</strong><p>${escapeHtml(validation.message || validation.errors[0])}</p></div></div>`;
     if (validation.missingMappings.length) {
       return `<div class="school-recipe-attendance-notice is-warning"><span class="school-recipe-attendance-notice-icon">!</span><div><strong>存在未关联商品</strong><p>${escapeHtml(validation.missingMappings.join('、'))}尚未关联采购商品，请先在营养膳食管理平台完成关联后重新同步。</p></div></div>`;
     }
@@ -307,15 +386,20 @@
     const validation = attendanceService.validate(menu, record, serviceOptions());
     const meals = menu?.meals || [];
     if (!menu) return `<main class="school-recipe-attendance-detail-panel">${renderOverview(menu)}<div class="school-recipe-attendance-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>请选择有菜谱的日期</p></div></main>`;
-    return `<main class="school-recipe-attendance-detail-panel" aria-label="就餐人数填报详情">
+    const isNonDiningMode = attendanceInputMode === 'non-dining';
+    const canContinueAttempt = canAttemptContinue(menu, validation);
+    const footer = isNonDiningMode
+      ? '<div class="school-recipe-attendance-mode-tip">填写完成后点击右上角“保存”</div>'
+      : `<div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-attendance-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-attendance-action="reset-current">重置当前人数</button><button type="button" role="menuitem" data-attendance-action="reset-all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-attendance-action="fill-defaults">填写默认人数</button></div><div class="school-recipe-attendance-confirm-action"><button type="button" class="btn btn-primary btn-sm ${canContinueAttempt ? '' : 'btn-disabled'}" data-attendance-action="continue" ${canContinueAttempt ? '' : 'disabled'}>确认需求</button></div>`;
+    return `<main class="school-recipe-attendance-detail-panel" aria-label="总人数填报详情">
       ${renderOverview(menu)}
       <div class="school-recipe-attendance-detail-scroll">
-        <div class="school-recipe-attendance-section-heading"><div><span class="section-title-mark">餐次就餐人数</span></div></div>
+        <div class="school-recipe-attendance-section-heading"><div><span class="section-title-mark">餐次总人数</span>${isNonDiningMode ? '<p class="school-recipe-attendance-mode-hint">当前为不就餐人数填写模式，总人数已锁定</p>' : '<span class="school-recipe-attendance-count-tip">无人员就餐请填写为0</span>'}</div><button type="button" class="btn btn-sm school-recipe-attendance-mode-action${isNonDiningMode ? ' btn-primary' : ''}" data-attendance-mode-toggle>${isNonDiningMode ? '保存' : '填写不就餐人数'}</button></div>
         ${renderNotice(menu, record)}
         ${renderMealTable(meals, record)}
         <section class="school-recipe-attendance-demand-section" aria-label="商品需求测算"><header><div><span class="section-title-mark">商品需求测算</span></div></header><div id="schoolRecipeAttendanceDemand">${renderDemand(menu, record)}</div></section>
       </div>
-      <footer class="school-recipe-attendance-actions"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-attendance-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-attendance-action="reset-current">重置当前人数</button><button type="button" role="menuitem" data-attendance-action="reset-all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-attendance-action="fill-defaults">填写默认人数</button></div><div class="school-recipe-attendance-confirm-action"><button type="button" class="btn btn-primary btn-sm ${validation.canContinue ? '' : 'btn-disabled'}" data-attendance-action="continue" ${validation.canContinue ? '' : 'disabled'}>确认需求</button></div></footer>
+      <footer class="school-recipe-attendance-actions">${footer}</footer>
     </main>`;
   }
 
@@ -324,6 +408,59 @@
     hideDishTooltip();
     if (!body) return;
     body.innerHTML = `${renderCalendar()}${renderDetail(menuForDate(state.selectedDate))}`;
+  }
+
+  function focusFirstNonDiningInput(page) {
+    page.querySelector('[data-attendance-non-dining-field]')?.focus({ preventScroll: true });
+  }
+
+  function focusEmptyAttendanceField(root, issue) {
+    attendanceValidationHighlightDate = issue.date;
+    state.selectedDate = issue.date;
+    state.monthStart = monthStart(issue.date);
+    state.attendance = clone(issue.record);
+    state.attendanceByDate[issue.date] = clone(issue.record);
+    renderBody(root);
+    const input = [...page.querySelectorAll('[data-attendance-field]')]
+      .find((item) => item.dataset.mealKey === issue.meal.key && item.dataset.attendanceField === issue.participant.key);
+    input?.focus({ preventScroll: true });
+    input?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+    const participantName = issue.participant.label || issue.participant.tagName || '人员';
+    showToast(`${issue.meal.name}${participantName}总人数不能为空，请填写0`, true);
+  }
+
+  function saveNonDiningMode(page, root) {
+    syncCurrentDraftFromInputs(page);
+    const menu = menuForDate(state.selectedDate);
+    const validation = attendanceService.validate(menu, state.attendance, serviceOptions());
+    if (validation.errors.length) {
+      if (validation.errors.some((message) => message.includes('请先填写总人数'))) {
+        attendanceInputMode = 'dining';
+        renderBody(root);
+      }
+      showToast(validation.message || validation.errors[0] || '请检查不就餐人数', true);
+      if (attendanceInputMode === 'non-dining') updateLiveView(page);
+      return;
+    }
+    const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
+    if (Number(calculation.totalDiningPeople || 0) <= 0) {
+      attendanceInputMode = 'dining';
+      renderBody(root);
+      showToast('请先填写总人数后再填不就餐人数', true);
+      return;
+    }
+    const saved = attendanceService.save(
+      state.selectedDate,
+      state.attendance.meals,
+      menu.version || recipeService.MENU_VERSION,
+      currentCanteen(),
+      state.attendance.temporaryNonDining
+    );
+    state.attendanceByDate[state.selectedDate] = clone(saved);
+    state.attendance = clone(saved);
+    attendanceInputMode = 'dining';
+    renderBody(root);
+    showToast('已保存不就餐人数，已返回总人数填报');
   }
 
   function updateLiveView(page) {
@@ -336,15 +473,33 @@
     if (demand) demand.innerHTML = renderDemand(menu, record);
     const overviewTotal = page.querySelector('#schoolRecipeAttendanceOverviewTotal');
     if (overviewTotal) overviewTotal.textContent = number(calculation.totalPeople);
+    const overviewNonDining = page.querySelector('[data-attendance-overview-non-dining]');
+    const overviewNonDiningTotal = page.querySelector('[data-attendance-overview-non-dining-total]');
+    overviewNonDiningTotal && (overviewNonDiningTotal.textContent = number(calculation.totalNonDiningPeople));
+    overviewNonDining?.classList.toggle('school-recipe-attendance-is-hidden', calculation.totalNonDiningPeople <= 0);
     const continueButton = page.querySelector('[data-attendance-action="continue"]');
     if (continueButton) {
-      continueButton.disabled = !validation.canContinue;
-      continueButton.classList.toggle('btn-disabled', !validation.canContinue);
+      const canContinueAttempt = canAttemptContinue(menu, validation);
+      continueButton.disabled = !canContinueAttempt;
+      continueButton.classList.toggle('btn-disabled', !canContinueAttempt);
     }
+    page.querySelectorAll('[data-attendance-field]').forEach((input) => {
+      const isEmptyHighlight = attendanceValidationHighlightDate === state.selectedDate && (input.value === '' || input.value == null);
+      input.classList.toggle('is-empty', isEmptyHighlight);
+      input.toggleAttribute('aria-invalid', isEmptyHighlight);
+    });
     const participants = participantsForState();
     page.querySelectorAll('[data-attendance-meal-total]').forEach((element) => {
-      const values = record.meals?.[element.dataset.attendanceMealTotal] || {};
-      element.textContent = number(participants.reduce((total, participant) => total + Number(attendanceService.valueForParticipant(values, participant) || 0), 0));
+      const mealRow = calculation.mealRows.find((row) => row.key === element.dataset.attendanceMealTotal);
+      element.textContent = number(mealRow?.totalPeople || 0);
+    });
+    page.querySelectorAll('[data-attendance-non-dining-error]').forEach((element) => {
+      const participant = participants.find((item) => item.key === element.dataset.participantKey);
+      const issue = participant ? nonDiningIssue(record, element.dataset.mealKey, participant) : '';
+      element.textContent = issue;
+      element.classList.toggle('is-visible', Boolean(issue));
+      const input = element.closest('.school-recipe-attendance-person-count-item')?.querySelector('[data-attendance-non-dining-field]');
+      input?.toggleAttribute('aria-invalid', Boolean(issue));
     });
     const notice = page.querySelector('.school-recipe-attendance-notice');
     if (notice) notice.outerHTML = renderNotice(menu, record);
@@ -409,14 +564,15 @@
     renderBody(root);
   }
 
-  const content = `<section class="page-card school-recipe-attendance-page" id="schoolRecipeAttendancePage" aria-label="就餐人数填报"><div class="school-recipe-attendance-body" id="schoolRecipeAttendanceBody"></div></section>`;
-  const root = window.AppShell.mount({ title: '就餐人数填报', content, variant: 'school', emptyText: '就餐人数填报' });
+  const content = `<section class="page-card school-recipe-attendance-page" id="schoolRecipeAttendancePage" aria-label="总人数填报"><div class="school-recipe-attendance-body" id="schoolRecipeAttendanceBody"></div></section>`;
+  const root = window.AppShell.mount({ title: '总人数填报', content, variant: 'school', emptyText: '总人数填报' });
   const page = root.querySelector('#schoolRecipeAttendancePage');
   renderBody(root);
 
   function resetPageAfterFlowReturn() {
     if (!attendanceService.consumeResetOnReturn?.(currentCanteen())) return;
     draftsByCanteen[currentScopeKey()] = {};
+    attendanceInputMode = 'dining';
     state.attendanceByDate = buildAttendanceMap();
     state.attendance = attendanceForSelection(state.selectedDate, true);
     renderBody(root);
@@ -443,7 +599,7 @@
   });
 
   page.addEventListener('input', (event) => {
-    const input = event.target.closest('[data-attendance-field]');
+    const input = event.target.closest('[data-attendance-field], [data-attendance-non-dining-field]');
     if (!input) return;
     syncCurrentDraftFromInputs(page);
     updateLiveView(page);
@@ -515,6 +671,30 @@
       return;
     }
     if (!event.target.closest('.school-recipe-attendance-reset-dropdown')) closeResetMenu();
+    const modeToggle = event.target.closest('[data-attendance-mode-toggle]');
+    if (modeToggle) {
+      if (attendanceInputMode === 'non-dining') saveNonDiningMode(page, root);
+      else {
+        syncCurrentDraftFromInputs(page);
+        const menu = menuForDate(state.selectedDate);
+        const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
+        if (Number(calculation.totalDiningPeople || 0) <= 0) {
+          showToast('请先填写总人数后再填不就餐人数', true);
+          return;
+        }
+        attendanceInputMode = 'non-dining';
+        renderBody(root);
+        focusFirstNonDiningInput(page);
+      }
+      return;
+    }
+    if (attendanceInputMode === 'non-dining') {
+      const navigationTarget = event.target.closest('[data-recipe-canteen], [data-attendance-date], [data-attendance-month], [data-attendance-action]');
+      if (navigationTarget) {
+        showToast('请先保存不就餐人数，再切换日期或执行其他操作', true);
+        return;
+      }
+    }
     const canteenButton = event.target.closest('[data-recipe-canteen]');
     if (canteenButton) {
       const nextCanteen = canteenButton.dataset.recipeCanteen || '';
@@ -558,6 +738,7 @@
     if (action === 'reset-current') {
       const cleared = clone(attendanceService.emptyRecord(state.selectedDate, currentCanteen()));
       cleared.meals = {};
+      cleared.temporaryNonDining = {};
       attendanceService.remove(state.selectedDate, currentCanteen());
       state.attendance = cleared;
       cacheCurrentDraft();
@@ -572,6 +753,7 @@
       state.attendanceByDate = buildAttendanceMap();
       state.attendance = clone(attendanceService.emptyRecord(state.selectedDate, currentCanteen()));
       state.attendance.meals = {};
+      state.attendance.temporaryNonDining = {};
       renderBody(root);
       showToast(dates.length ? `已重置全部 ${dates.length} 个已填日期` : '暂无已填写日期');
       return;
@@ -579,6 +761,11 @@
     if (action === 'continue') {
       syncCurrentDraftFromInputs(page);
       const menu = menuForDate(state.selectedDate);
+      const emptyField = findFirstEmptyAttendanceField();
+      if (emptyField) {
+        focusEmptyAttendanceField(root, emptyField);
+        return;
+      }
       const validation = attendanceService.validate(menu, state.attendance, serviceOptions());
       if (!validation.canContinue) {
         showToast(validation.message || '请先完成当前日期填报', true);

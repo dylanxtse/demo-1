@@ -14,6 +14,7 @@
   }
 
   const defaultDate = todayStr();
+  const orderMealOptions = window.OrderMealOptions || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
 
   function renderGoodsName(item) {
     const name = escapeHtml(window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || '--');
@@ -95,7 +96,8 @@
       { key: 'customerName', label: '客户名称', placeholder: '请输入' },
       { key: 'stockLevel', label: '库存', options: ['有库存', '库存不足'] },
       { key: 'orderTag', label: '订单标签', options: ['营养餐', '普通餐'] },
-      { key: 'orderNo', label: '订单号', placeholder: '请输入' }
+      { key: 'orderNo', label: '订单号', placeholder: '请输入' },
+      { key: 'mealName', label: '订单餐次', emptyLabel: '请选择', placeholderOnly: true, options: orderMealOptions }
     ],
     columns: productColumns,
     tabs: [

@@ -78,6 +78,11 @@
     const catalog = window.SchoolOrderService?.getProductCatalog?.() || window.DemoStore?.get?.('products') || window.MockProducts || [];
     return catalog.find((product) => String(product.code || product.id) === String(code)) || {};
   };
+  const canModifyPurchaseQuantity = (item) => {
+    const product = productForIngredient(item);
+    const value = item?.allowSchoolModifyPurchaseQuantity ?? product?.allowSchoolModifyPurchaseQuantity;
+    return value !== false && value !== 'false' && value !== '否' && value !== 0 && value !== '0';
+  };
   const isStandardProduct = (item) => item?.isStandardProduct === true || item?.isStandardProduct === 'true' || item?.isStandardProduct === '是'
     || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是'
     || productForIngredient(item).isStandardProduct === true || productForIngredient(item).isStandard === true;
@@ -94,7 +99,7 @@
   );
   const purchaseQuantityValue = (item, participant) => {
     const key = purchaseQuantityKey(item, participant.key);
-    return hasPurchaseQuantityOverride(item, participant.key)
+    return canModifyPurchaseQuantity(item) && hasPurchaseQuantityOverride(item, participant.key)
       ? state.purchaseQtyOverrides[key]
       : purchaseQuantity(item.participantQty?.[participant.key], item);
   };
@@ -141,16 +146,22 @@
       : '<th>暂无人员类型</th>';
     const rows = meals.map((meal) => {
       const values = summary?.attendance?.meals?.[meal.key] || {};
+      const mealSummary = summary?.calculation?.mealRows?.find((row) => row.key === meal.key);
       const hasPeople = participants.some((participant) => attendanceService.valueForParticipant(values, participant) !== '');
-      const total = hasPeople ? participants.reduce((sum, participant) => sum + Number(attendanceService.valueForParticipant(values, participant) || 0), 0) : '--';
+      const total = hasPeople ? (mealSummary?.totalPeople ?? participants.reduce((sum, participant) => sum + attendanceService.effectivePeopleFor(summary.attendance, meal.key, participant), 0)) : '--';
       const personCells = participants.length
-        ? participants.map((participant) => `<td class="is-number">${attendanceValue(attendanceService.valueForParticipant(values, participant))}</td>`).join('')
+        ? participants.map((participant) => {
+          const diningValue = attendanceService.valueForParticipant(values, participant);
+          const nonDiningValue = attendanceService.temporaryNonDiningFor?.(summary.attendance, meal.key, participant) || '';
+          const actualPeople = attendanceService.effectivePeopleFor(summary.attendance, meal.key, participant);
+          return `<td class="is-number"><div class="school-recipe-demand-attendance-person"><span>${diningValue === '' ? '--' : `总人数 ${attendanceValue(diningValue)} 人`}</span>${nonDiningValue !== '' ? `<small>不就餐 ${attendanceValue(nonDiningValue)} 人</small>` : ''}<em>实际 ${number(actualPeople)} 人</em></div></td>`;
+        }).join('')
         : '<td class="is-number">--</td>';
       return `<tr><td>${escapeHtml(meal.name)}</td>${personCells}<td class="is-number is-total">${typeof total === 'number' ? number(total) : total}</td></tr>`;
     }).join('');
     const personColgroup = Array.from({ length: Math.max(1, participants.length) }, () => '<col class="col-person">').join('');
     const emptyColspan = 2 + Math.max(1, participants.length);
-    return `<div class="school-recipe-demand-attendance-detail"><table class="school-recipe-demand-attendance-detail-table"><colgroup><col class="col-meal">${personColgroup}<col class="col-total"></colgroup><thead><tr><th>餐次</th>${personHeaders}<th>合计</th></tr></thead><tbody>${rows || `<tr><td colspan="${emptyColspan}" class="school-recipe-demand-record-detail-empty-cell">暂无餐次填报记录</td></tr>`}</tbody></table></div>`;
+    return `<div class="school-recipe-demand-attendance-detail"><table class="school-recipe-demand-attendance-detail-table"><colgroup><col class="col-meal">${personColgroup}<col class="col-total"></colgroup><thead><tr><th>餐次</th>${personHeaders}<th>实际合计</th></tr></thead><tbody>${rows || `<tr><td colspan="${emptyColspan}" class="school-recipe-demand-record-detail-empty-cell">暂无餐次填报记录</td></tr>`}</tbody></table></div>`;
   }
 
   function renderDateSummaryTable(preview) {
@@ -181,38 +192,42 @@
 
   function renderProductTable(preview) {
     const participants = preview.participants || [];
+    const linkedRows = preview.rows.filter((row) => row.mappingStatus === '已关联');
     const participantColumns = participants.map((participant) => {
       const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
       return `<th colspan="2">${escapeHtml(name)}</th>`;
     }).join('');
     const participantSubColumns = participants.map((participant) => {
       const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
-      return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量">×</button></div></th>`;
+      const hasEditableRows = linkedRows.some((row) => canModifyPurchaseQuantity(row));
+      return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量"${hasEditableRows ? '' : ' disabled'}>×</button></div></th>`;
     }).join('');
     const participantColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
     const rows = preview.rows
       .filter((row) => row.mappingStatus === '已关联')
       .map((row, index) => {
         const productKey = purchaseRowKey(row);
-        const hasRowPurchaseQuantity = participants.some((participant) => Number(purchaseQuantityValue(row, participant)) > 0);
+        const editable = canModifyPurchaseQuantity(row);
+        const hasRowPurchaseQuantity = editable && participants.some((participant) => Number(purchaseQuantityValue(row, participant)) > 0);
         const participantCells = participants.map((participant) => {
           const demandCell = `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td>`;
           const key = purchaseQuantityKey(row, participant.key);
           const participantName = attendanceService.participantDisplayName?.(participant, participants)
             || participant.label || participant.tagName || participant.key;
           const value = purchaseQuantityValue(row, participant);
-          const overridden = hasPurchaseQuantityOverride(row, participant.key);
-          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购量`)}"><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购量`)}" title="清空采购量">×</button></div></td>`;
+          const overridden = editable && hasPurchaseQuantityOverride(row, participant.key);
+          const readonlyTitle = editable ? '' : ' title="企业端已关闭学校修改采购量"';
+          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${editable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购量${editable ? '' : '（企业端关闭修改）'}`)}"${editable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购量`)}" title="清空采购量"${editable ? '' : ' disabled'}>×</button></div></td>`;
           return `${demandCell}${purchaseCell}`;
         }).join('');
-        return `<tr class="school-recipe-demand-product-row">
+        return `<tr class="school-recipe-demand-product-row${editable ? '' : ' is-readonly'}">
           <td>${index + 1}</td>
           <td class="school-recipe-demand-product-name">${renderProductName(row, productDisplay(row))}</td>
           <td>${isStandardProduct(row) ? '是' : '否'}</td>
           <td>${escapeHtml(row.productCode || '--')}</td>
           <td>${escapeHtml(row.unit || '--')}</td>
           ${participantCells}
-          <td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="clear-purchase-row" data-product-key="${escapeHtml(productKey)}" data-product-name="${escapeHtml(productDisplay(row))}" title="清空该商品全部采购量"${hasRowPurchaseQuantity ? '' : ' disabled'}>清空采购量</button></td>
+          <td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="clear-purchase-row" data-product-key="${escapeHtml(productKey)}" data-product-name="${escapeHtml(productDisplay(row))}" title="${editable ? '清空该商品全部采购量' : '企业端已关闭学校修改采购量'}"${hasRowPurchaseQuantity ? '' : ' disabled'}>清空采购量</button></td>
         </tr>`;
       }).join('');
     return rows
@@ -275,7 +290,7 @@
 
   function rememberPurchaseQuantity(input) {
     const key = input?.dataset?.purchaseKey;
-    if (!key) return;
+    if (!key || input.disabled) return;
     input.dataset.purchaseOverridden = 'true';
     state.purchaseQtyOverrides[key] = input.value;
   }
@@ -358,7 +373,7 @@
     const viewport = captureViewportState();
     syncPurchaseQuantityInputs();
     const inputs = [...body.querySelectorAll('[data-purchase-quantity]')]
-      .filter((input) => input.dataset.purchaseParticipantKey === participantKey);
+      .filter((input) => input.dataset.purchaseParticipantKey === participantKey && !input.disabled);
     inputs.forEach((input) => {
       input.value = '';
       input.dataset.purchaseOverridden = 'true';
@@ -375,7 +390,7 @@
     if (!row) return;
     const viewport = captureViewportState();
     syncPurchaseQuantityInputs();
-    row.querySelectorAll('[data-purchase-quantity]').forEach((input) => {
+    row.querySelectorAll('[data-purchase-quantity]:not(:disabled)').forEach((input) => {
       input.value = '';
       input.dataset.purchaseOverridden = 'true';
       rememberPurchaseQuantity(input);
@@ -479,6 +494,7 @@
       const clearButton = row.querySelector('[data-action="clear-purchase-row"]');
       if (!clearButton) return;
       const hasRowPurchaseQuantity = [...row.querySelectorAll('[data-purchase-quantity]')]
+        .filter((input) => !input.disabled)
         .some((input) => Number(input.value) > 0);
       clearButton.disabled = !hasRowPurchaseQuantity;
     });

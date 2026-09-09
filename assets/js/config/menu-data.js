@@ -82,7 +82,7 @@
       { name: '采购对账', children: ['对账', '采购账款'] }
     ] },
     { name: '数据统计', icon: 'chart', children: [
-      { name: '销售统计', children: ['订单汇总', { name: '商品销量', href: './product-sales.html' }, '客户统计'] },
+      { name: '销售统计', children: [{ name: '订单汇总', href: './order-summary.html' }, { name: '商品销量', href: './product-sales.html' }, '客户统计'] },
       { name: '采购统计', children: ['采购明细', '采购商品', '供应商统计'] },
       { name: '销售毛利统计', children: [{ name: '商品毛利统计', href: './goods-profit-statistics.html' }, '客户毛利统计'] }
     ] },

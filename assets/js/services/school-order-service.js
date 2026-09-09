@@ -14,6 +14,7 @@
     return Number.isFinite(parsed) ? parsed : fallback;
   };
   const flag = (value) => value === true || value === 'true' || value === '是';
+  const isFalseFlag = (value) => value === false || value === 'false' || value === '否' || value === 0 || value === '0';
   const money = (value) => Number(number(value).toFixed(2));
   const timestamp = () => window.BusinessRules?.now?.()
     || new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -370,6 +371,7 @@
       category: product.category || product.categoryName || '',
       isNetVegetable: product.isNetVegetable === true,
       isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
+      allowSchoolModifyPurchaseQuantity: !isFalseFlag(product.allowSchoolModifyPurchaseQuantity),
       marketPrice: money(product.marketPrice)
     }));
   }

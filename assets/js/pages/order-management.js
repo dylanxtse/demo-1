@@ -1,5 +1,7 @@
 (function () {
   const service = window.OperationsService;
+  const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
+  const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
   const statusMap = {
     PENDING: ['待审核', 'warning'],
     PENDING_CONFIRM: ['待确认', 'warning'],
@@ -75,6 +77,7 @@
           <div class="operations-field"><label class="filter-label" for="receiptStatus">收货状态</label><select class="filter-select" id="receiptStatus"><option value="">全部</option><option>待收货</option><option>部分收货</option><option>已收货</option><option>未收货</option></select></div>
           <div class="operations-field"><label class="filter-label" for="orderType">订单类型</label><select class="filter-select" id="orderType"><option value="">全部</option><option>销售订单</option><option>临时订单</option></select></div>
           <div class="operations-field"><label class="filter-label" for="netVegetable">是否净菜</label><select class="filter-select" id="netVegetable"><option value="">全部</option><option value="net">净菜</option><option value="non-net">非净菜</option></select></div>
+          <div class="operations-field"><label class="filter-label" for="mealName">订单餐次</label><select class="filter-select is-placeholder" id="mealName" data-placeholder-only><option value="" disabled selected hidden>请选择</option>${orderMealOptions}</select></div>
           </div>
         </div>
       </div>
@@ -137,7 +140,7 @@
 
   function collectCondition() {
     const condition = {};
-    ['orderNo', 'customerName', 'customerType', 'status', 'orderTag', 'warehouse', 'source', 'expectedAt', 'receiptStatus', 'orderType', 'netVegetable']
+    ['orderNo', 'customerName', 'customerType', 'status', 'orderTag', 'mealName', 'warehouse', 'source', 'expectedAt', 'receiptStatus', 'orderType', 'netVegetable']
       .forEach((key) => {
         const value = $(`#${key}`).value.trim();
         if (value) condition[key] = value;
@@ -320,6 +323,7 @@
     }
     if (event.target.id === 'resetButton') {
       root.querySelectorAll('.operations-filter input, .operations-filter select').forEach((field) => { field.value = ''; });
+      root.querySelector('#mealName')?.classList.add('is-placeholder');
       expectedAtPicker?.clear(false);
       state.condition = {};
       state.page = 1;

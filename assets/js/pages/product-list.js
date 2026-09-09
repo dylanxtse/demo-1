@@ -63,6 +63,13 @@
           <div class="action-bar">
             <div class="action-main">
               <button class="btn btn-primary btn-sm btn-action" type="button" data-action="add-product">${addIcon}添加商品</button>
+              ${isSupplierProductPage ? '' : `<div class="purchase-quantity-action-wrap" id="purchaseQuantityActionWrap">
+                <button id="batchPurchaseQuantityBtn" class="btn btn-sm btn-action btn-blue btn-disabled purchase-quantity-action" type="button" disabled title="请先勾选商品" aria-haspopup="menu">修改采购量<span class="purchase-quantity-action-arrow" aria-hidden="true">▾</span></button>
+                <div class="purchase-quantity-menu" role="menu" aria-label="采购量修改权限">
+                  <button class="purchase-quantity-menu-item" type="button" data-action="allow-purchase-quantity" role="menuitem">允许修改</button>
+                  <button class="purchase-quantity-menu-item" type="button" data-action="deny-purchase-quantity" role="menuitem">禁止修改</button>
+                </div>
+              </div>`}
               <button id="supplierImportInfoBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品信息</button>
               <button id="supplierImportImageBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品图片</button>
               ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue" type="button">导入市场价</button>'}
@@ -85,6 +92,7 @@
                     <th>商品名称（计量单位/品牌/规格）</th>
                     <th>分类</th>
                     ${isSupplierProductPage ? '' : '<th>是否标品</th>'}
+                    ${isSupplierProductPage ? '' : '<th><span class="product-list-header-title"><span>是否允许修改</span><span class="product-list-header-help" data-tooltip="允许修改的商品在学校根据食谱下单时可自定义修改采购量" tabindex="0" role="img" aria-label="允许修改的商品在学校根据食谱下单时可自定义修改采购量">?</span></span></th>'}
                     <th>计量单位</th>
                     <th>市场价</th>
                     <th>状态</th>
@@ -125,6 +133,23 @@
           </div>
         </div>
       </div>
+
+      <div class="unshelf-modal purchase-quantity-modal" id="purchaseQuantityModal" aria-hidden="true">
+        <div class="unshelf-modal-dialog purchase-quantity-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="purchaseQuantityModalTitle">
+          <div class="unshelf-modal-header">
+            <h2 id="purchaseQuantityModalTitle">开启修改采购量</h2>
+            <button class="unshelf-modal-close" type="button" data-action="close-purchase-quantity-modal" aria-label="关闭">×</button>
+          </div>
+          <div class="unshelf-modal-body">
+            <p class="purchase-quantity-confirm-message" id="purchaseQuantityConfirmMessage"></p>
+          </div>
+          <div class="unshelf-modal-actions">
+            <button class="btn" type="button" data-action="cancel-purchase-quantity">取消</button>
+            <button class="btn btn-primary" type="button" data-action="confirm-purchase-quantity">确定</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-list-toast" id="productListToast" role="status" aria-live="polite"></div>
     </div>
   `;
 
@@ -234,6 +259,7 @@
           <td class="name-cell"><span class="product-display-text" title="${window.DomUtils.escapeHtml(productDisplay)}">${netVegetableTag}${window.DomUtils.escapeHtml(productDisplay)}</span></td>
           <td>${safe.category}</td>
           ${isSupplierProductPage ? '' : `<td>${product.isStandardProduct ? '是' : '否'}</td>`}
+          ${isSupplierProductPage ? '' : `<td class="center">${canModifyPurchaseQuantity(product) ? '是' : '否'}</td>`}
           <td>${safe.unit}</td>
           <td>${safe.marketPrice}</td>
           <td><span class="status-tag ${isEnabled ? 'online' : 'offline'}">${window.DomUtils.escapeHtml(statusLabel)}</span></td>
@@ -254,6 +280,85 @@
     updateBatchButtons();
   }
 
+  const selectedProductCodes = () => [...document.querySelectorAll('#tableBody .custom-checkbox.checked')]
+    .map((checkbox) => checkbox.closest('tr')?.querySelector('[data-code]')?.dataset.code)
+    .filter(Boolean);
+
+  const isFalseFlag = (value) => value === false || value === 'false' || value === '否' || value === 0 || value === '0';
+  const canModifyPurchaseQuantity = (product) => !isFalseFlag(product?.allowSchoolModifyPurchaseQuantity);
+  let pendingPurchaseQuantityCodes = [];
+
+  function updatePurchaseQuantityButton() {
+    const button = document.getElementById('batchPurchaseQuantityBtn');
+    const wrapper = document.getElementById('purchaseQuantityActionWrap');
+    if (!button) return;
+    const products = selectedProductCodes()
+      .map((code) => state.products.find((product) => product.code === code))
+      .filter(Boolean);
+    const hasSelection = products.length > 0;
+    button.disabled = !hasSelection;
+    button.classList.toggle('btn-disabled', !hasSelection);
+    button.title = hasSelection ? '选择学校端采购量修改权限' : '请先勾选商品';
+    wrapper?.classList.toggle('has-selection', hasSelection);
+  }
+
+  function applyPurchaseQuantityPermission(codes, allowed) {
+    const uniqueCodes = [...new Set(codes || [])];
+    let updatedCount = 0;
+    uniqueCodes.forEach((code) => {
+      const product = state.products.find((item) => item.code === code);
+      if (!product) return;
+      const updatedProduct = window.ProductService.update(product.code, {
+        allowSchoolModifyPurchaseQuantity: allowed
+      });
+      if (!updatedProduct) return;
+      const index = state.products.findIndex((item) => item.code === product.code);
+      if (index >= 0) state.products[index] = updatedProduct;
+      const filteredIndex = state.filteredProducts.findIndex((item) => item.code === product.code);
+      if (filteredIndex >= 0) state.filteredProducts[filteredIndex] = updatedProduct;
+      updatedCount += 1;
+    });
+    updateBatchButtons();
+    return updatedCount;
+  }
+
+  function showOperationToast(message) {
+    const toast = document.getElementById('productListToast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    window.clearTimeout(showOperationToast.timer);
+    showOperationToast.timer = window.setTimeout(() => toast.classList.remove('is-visible'), 2200);
+  }
+
+  function openPurchaseQuantityModal() {
+    const codes = selectedProductCodes();
+    if (!codes.length) return;
+    pendingPurchaseQuantityCodes = codes;
+    const modal = document.getElementById('purchaseQuantityModal');
+    const message = document.getElementById('purchaseQuantityConfirmMessage');
+    message.textContent = `已选中${codes.length}个商品，开启后学校根据食谱下单时将允许自定义修改这些商品的采购量`;
+    modal.classList.add('is-visible');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closePurchaseQuantityModal() {
+    const modal = document.getElementById('purchaseQuantityModal');
+    modal.classList.remove('is-visible');
+    modal.setAttribute('aria-hidden', 'true');
+    pendingPurchaseQuantityCodes = [];
+  }
+
+  function confirmPurchaseQuantity() {
+    if (!pendingPurchaseQuantityCodes.length) {
+      closePurchaseQuantityModal();
+      return;
+    }
+    const updatedCount = applyPurchaseQuantityPermission(pendingPurchaseQuantityCodes, true);
+    closePurchaseQuantityModal();
+    if (updatedCount) showOperationToast('操作成功');
+  }
+
   function updateBatchButtons() {
     const enabled = document.querySelectorAll('#tableBody .custom-checkbox.checked').length > 0;
     const buttonIds = isSupplierProductPage
@@ -265,6 +370,7 @@
       button.disabled = !enabled;
       button.classList.toggle('btn-disabled', !enabled);
     });
+    updatePurchaseQuantityButton();
   }
 
   function renderProductPage() {
@@ -376,9 +482,24 @@
     };
     root.addEventListener('click', (event) => {
       const action = event.target.closest('[data-action]')?.dataset.action;
-      const selectedCodes = () => [...document.querySelectorAll('#tableBody .custom-checkbox.checked')]
-        .map((checkbox) => checkbox.closest('tr')?.querySelector('[data-code]')?.dataset.code)
-        .filter(Boolean);
+      const selectedCodes = selectedProductCodes;
+      if (action === 'allow-purchase-quantity') {
+        openPurchaseQuantityModal();
+        return;
+      }
+      if (action === 'deny-purchase-quantity') {
+        const updatedCount = applyPurchaseQuantityPermission(selectedCodes(), false);
+        if (updatedCount) showOperationToast('操作成功');
+        return;
+      }
+      if (action === 'close-purchase-quantity-modal' || action === 'cancel-purchase-quantity') {
+        closePurchaseQuantityModal();
+        return;
+      }
+      if (action === 'confirm-purchase-quantity') {
+        confirmPurchaseQuantity();
+        return;
+      }
       if (event.target.id === 'batchShelfBtn') {
         selectedCodes().forEach((code) => {
           const product = state.products.find((item) => item.code === code);

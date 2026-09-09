@@ -70,15 +70,21 @@
     const rows = meals.map((meal) => {
       const values = attendance.meals?.[meal.key] || {};
       const hasPeople = participants.some((participant) => valueForParticipant(values, participant) !== '');
-      const total = hasPeople ? participants.reduce((sum, participant) => sum + Number(valueForParticipant(values, participant) || 0), 0) : '--';
+      const mealSummary = summary?.calculation?.mealRows?.find((row) => row.key === meal.key);
+      const total = hasPeople ? (mealSummary?.totalPeople ?? participants.reduce((sum, participant) => sum + attendanceService.effectivePeopleFor(attendance, meal.key, participant), 0)) : '--';
       const cells = participants.length
-        ? participants.map((participant) => `<td class="is-number">${attendanceValue(valueForParticipant(values, participant))}</td>`).join('')
+        ? participants.map((participant) => {
+          const diningValue = valueForParticipant(values, participant);
+          const nonDiningValue = attendanceService.temporaryNonDiningFor?.(attendance, meal.key, participant) || '';
+          const actualPeople = attendanceService.effectivePeopleFor(attendance, meal.key, participant);
+          return `<td class="is-number"><div class="school-recipe-demand-attendance-person"><span>${diningValue === '' ? '--' : `总人数 ${attendanceValue(diningValue)} 人`}</span>${nonDiningValue !== '' ? `<small>不就餐 ${attendanceValue(nonDiningValue)} 人</small>` : ''}<em>实际 ${number(actualPeople)} 人</em></div></td>`;
+        }).join('')
         : '<td class="is-number">--</td>';
       return `<tr><td>${escapeHtml(meal.name)}</td>${cells}<td class="is-number is-total">${typeof total === 'number' ? number(total) : total}</td></tr>`;
     }).join('');
     const personColgroup = Array.from({ length: Math.max(1, participants.length) }, () => '<col class="col-person">').join('');
     const emptyColspan = 2 + Math.max(1, participants.length);
-    return `<div class="school-recipe-demand-attendance-detail"><table class="school-recipe-demand-attendance-detail-table"><colgroup><col class="col-meal">${personColgroup}<col class="col-total"></colgroup><thead><tr><th>餐次</th>${headers}<th>合计</th></tr></thead><tbody>${rows || `<tr><td colspan="${emptyColspan}" class="school-recipe-demand-record-detail-empty-cell">暂无餐次填报记录</td></tr>`}</tbody></table></div>`;
+    return `<div class="school-recipe-demand-attendance-detail"><table class="school-recipe-demand-attendance-detail-table"><colgroup><col class="col-meal">${personColgroup}<col class="col-total"></colgroup><thead><tr><th>餐次</th>${headers}<th>实际合计</th></tr></thead><tbody>${rows || `<tr><td colspan="${emptyColspan}" class="school-recipe-demand-record-detail-empty-cell">暂无餐次填报记录</td></tr>`}</tbody></table></div>`;
   }
 
   function renderDateRows() {

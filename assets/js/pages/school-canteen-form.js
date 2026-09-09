@@ -100,7 +100,7 @@
           <div class="school-form-section school-other-qualification"><div class="school-upload-field"><div class="school-upload-label">其他资质 <button class="school-plus-button" type="button" id="addQualification" aria-label="添加其他资质">+</button></div><div class="school-upload-main"><p class="school-upload-help school-other-help">支持png、jpg、jpeg等图片格式，单张图片不超过5M。</p><div id="qualificationFiles"></div></div></div></div>
         </section>
         <section class="school-canteen-form-panel" id="canteenOperationSettingsPanel" data-canteen-panel="operation" aria-label="运营设置">
-          <div class="school-canteen-operation-intro"><strong>人员类型及默认就餐人数</strong></div>
+          <div class="school-canteen-operation-intro"><strong>人员类型及默认就餐人数</strong><span>请启用人员类型后设置默认人数，未运营的餐次无需填写</span></div>
           <div class="school-canteen-settings-table-wrap">${renderTagSettingsTable(enterpriseTags, tagSettings)}</div>
         </section>
         </div>

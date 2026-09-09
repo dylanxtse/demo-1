@@ -9,6 +9,7 @@
     orderPricePriority3: '近一次销售价',
     orderPricePriority4: '手动定价',
     allowClientEditPrice: false,
+    splitOrderByMeal: true,
     purchasePriceMode: '订价模式',
     purchasePricePriority1: '协议价',
     purchasePricePriority2: '市场价',
@@ -90,7 +91,7 @@
   };
   const optionMarkupFromValues = (values, includeBlank = false) => `${includeBlank ? '<option value=""></option>' : ''}${values.map((option) => `<option value="${option}">${option}</option>`).join('')}`;
   const optionMarkup = (key, includeBlank = false) => optionMarkupFromValues(selectOptions[key], includeBlank);
-  const help = (text) => `<span class="config-help" title="${text}" aria-label="${text}">?</span>`;
+  const help = (text) => `<span class="config-help" data-tooltip="${text}" tabindex="0" role="img" aria-label="${text}">?</span>`;
   const clearButton = (key) => `<button class="config-clear" type="button" data-clear="${key}">清空</button>`;
   const configSelect = (key, className = '', options = {}) => `<select class="config-select ${className}" data-config="${key}" aria-label="${key}" ${options.disabled ? 'disabled' : ''}>${optionMarkupFromValues(options.values || selectOptions[key], options.includeBlank)}</select>`;
   const purchasePrioritySelect = (index) => {
@@ -140,6 +141,10 @@
         <div class="config-row permission-row">
           <div class="config-label">客户端下单修改单价权限</div>
           ${configCheckbox('allowClientEditPrice', '修改单价')}
+        </div>
+        <div class="config-row permission-row">
+          <div class="config-label">拆单配置</div>
+          ${configCheckbox('splitOrderByMeal', '按餐次拆单', '开启后，学校根据食谱下单时将按餐次拆分订单')}
         </div>
 
         <h2 class="system-config-title">采购配置</h2>

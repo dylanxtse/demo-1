@@ -384,6 +384,7 @@
 
   function layoutScope(scope, queryButton) {
     if (!scope?.isConnected || !queryButton?.isConnected) return;
+    if (scope.dataset.queryFilterManual === 'true') return;
     const host = findPrimaryHost(scope);
     if (!host) return;
 

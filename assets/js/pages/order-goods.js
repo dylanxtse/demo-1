@@ -1,5 +1,8 @@
 (function () {
   const service = window.OperationsService;
+  const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
+  const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
+  const resolveMealName = (value) => window.OrderMealNameByKey?.[value] || value || '';
   const content = `<section class="page-card operations-page order-module-page order-goods-page">
     <div class="operations-tabs order-view-tabs"><a class="operations-tab" href="./order-management.html">订单列表</a><a class="operations-tab active" href="./order-goods.html">订单商品</a></div>
     <div class="operations-filter filter-section">
@@ -22,6 +25,7 @@
         <div class="operations-field"><label class="filter-label" for="goodsReceiptStatus">收货状态</label><select class="filter-select" id="goodsReceiptStatus"><option value="">全部</option><option>待收货</option><option>部分收货</option><option>已收货</option><option>未收货</option></select></div>
         <div class="operations-field"><label class="filter-label" for="goodsOrderType">订单类型</label><select class="filter-select" id="goodsOrderType"><option value="">全部</option><option>销售订单</option><option>临时订单</option></select></div>
         <div class="operations-field"><label class="filter-label" for="goodsNetVegetable">是否净菜</label><select class="filter-select" id="goodsNetVegetable"><option value="">全部</option><option value="net">净菜</option><option value="non-net">非净菜</option></select></div>
+        <div class="operations-field"><label class="filter-label" for="goodsMealName">订单餐次</label><select class="filter-select is-placeholder" id="goodsMealName" data-placeholder-only><option value="" disabled selected hidden>请选择</option>${orderMealOptions}</select></div>
       </div></div>
     </div>
     <div class="operations-toolbar"><span></span><button class="btn btn-sm" id="goodsExport">导出</button></div>
@@ -59,6 +63,7 @@
     const category = document.getElementById('goodsCategory').value;
     const customerType = document.getElementById('goodsCustomerType').value;
     const orderTag = document.getElementById('goodsOrderTag').value;
+    const mealName = document.getElementById('goodsMealName').value;
     const orderStatus = document.getElementById('goodsOrderStatus').value;
     const supplement = document.getElementById('goodsSupplement').value;
     const orderNo = document.getElementById('goodsOrderNo').value.trim();
@@ -74,6 +79,7 @@
         (!category || categoryFor(line) === category) &&
         (!customerType || order.customerType === customerType) &&
         (!orderTag || order.orderTag === orderTag) &&
+        (!mealName || resolveMealName(order.mealName || order.mealKey) === mealName) &&
         (!orderStatus || order.status === orderStatus) &&
         (!supplement || order.supplement === supplement) &&
         (!orderNo || String(order.orderNo || '').includes(orderNo)) &&
@@ -100,6 +106,7 @@
     if (event.target.closest('#goodsQuery')) load();
     if (event.target.closest('#goodsReset')) {
       root.querySelectorAll('.operations-filter input, .operations-filter select').forEach((control) => { control.value = ''; });
+      root.querySelector('#goodsMealName')?.classList.add('is-placeholder');
       datePicker?.clear(false);
       load();
     }

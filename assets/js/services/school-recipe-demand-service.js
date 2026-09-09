@@ -38,6 +38,10 @@
   const demandQuantity = (value) => number(value);
   const isStandardProduct = (product) => product?.isStandardProduct === true || product?.isStandardProduct === 'true' || product?.isStandardProduct === '是'
     || product?.isStandard === true || product?.isStandard === 'true' || product?.isStandard === '是';
+  const canModifyPurchaseQuantity = (product) => {
+    const value = product?.allowSchoolModifyPurchaseQuantity;
+    return value !== false && value !== 'false' && value !== '否' && value !== 0 && value !== '0';
+  };
   const purchaseQuantity = (value, product) => {
     const demandQuantity = number(value);
     return isStandardProduct(product) ? Math.ceil(demandQuantity) : demandQuantity;
@@ -74,6 +78,10 @@
       name: session.displayName || session.username || '当前用户',
       id: session.userId || session.id || ''
     };
+  };
+  const shouldSplitOrderByMeal = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
+    return value !== false && value !== 'false' && value !== 0 && value !== '0';
   };
 
   function currentCanteen(value) {
@@ -344,6 +352,7 @@
         const overrideKey = purchaseQuantityKey(aggregateRow, participant.key);
         if (!hasOwn(overrides, overrideKey)) return;
         const product = productMap.get(String(aggregateRow.productCode)) || {};
+        if (!canModifyPurchaseQuantity(product)) return;
         const sources = [];
         (preview.dateSummaries || []).forEach((summary) => {
           (summary.calculation?.mealRows || []).forEach((meal) => {
@@ -367,6 +376,19 @@
     return allocations;
   }
 
+  function editablePurchaseQuantityOverrides(preview, overrides, productMap) {
+    const editable = {};
+    (preview.rows || []).forEach((row) => {
+      const product = productMap.get(String(row.productCode)) || {};
+      if (!canModifyPurchaseQuantity(product)) return;
+      (preview.participants || []).forEach((participant) => {
+        const key = purchaseQuantityKey(row, participant.key);
+        if (hasOwn(overrides, key)) editable[key] = overrides[key];
+      });
+    });
+    return editable;
+  }
+
   function participantItems(summary, participantKey, productMap, meal = null, options = {}) {
     const qtyKey = `${participantKey}Qty`;
     const sourceRows = meal?.rows || summary.items || [];
@@ -376,7 +398,7 @@
       .map((row) => {
         const product = productMap.get(String(row.productCode)) || {};
         const allocationKey = purchaseAllocationKey(summary, meal, row, participantKey);
-        const orderQty = hasOwn(options.purchaseQuantityAllocations, allocationKey)
+        const orderQty = canModifyPurchaseQuantity(product) && hasOwn(options.purchaseQuantityAllocations, allocationKey)
           ? number(options.purchaseQuantityAllocations[allocationKey])
           : purchaseQuantity(row.participantQty?.[participantKey] ?? row[qtyKey], product);
         const participant = (summary.participants || []).find((item) => item.key === participantKey)
@@ -400,8 +422,28 @@
       .filter((item) => item.orderQty > 0);
   }
 
-  async function createCentralOrder(order, participant, record, date) {
+  function mergeOrderItems(sources, dates, mealName, participant) {
+    const merged = new Map();
+    sources.forEach((source) => {
+      (source.items || []).forEach((item) => {
+        const key = purchaseRowKey(item);
+        const current = merged.get(key);
+        if (!current) {
+          merged.set(key, clone(item));
+          return;
+        }
+        current.orderQty = quantity(number(current.orderQty) + number(item.orderQty));
+      });
+    });
+    const remark = `食谱${dates.join('、')}${mealName || ''}${participant.label || participant.tagName || participant.key}需求`;
+    return [...merged.values()]
+      .map((item) => ({ ...item, remark }))
+      .filter((item) => item.orderQty > 0);
+  }
+
+  async function createCentralOrder(order, participant, record, dates) {
     if (!window.OperationsService?.create) return null;
+    const demandDates = (Array.isArray(dates) ? dates : [dates]).filter(Boolean);
     return window.OperationsService.create('orders', {
       orderId: order.id,
       orderNo: order.orderNo,
@@ -418,7 +460,7 @@
       recipeTag: order.recipeTag,
       recipeDemandRecordId: record.id,
       recipeDemandRecordNo: record.recordNo,
-      recipeDemandDate: date,
+      recipeDemandDate: demandDates.join('、'),
       recipeParticipantType: participant.label,
       mealKey: order.mealKey || '',
       mealName: order.mealName || '',
@@ -465,6 +507,13 @@
     const records = readAll();
     const operator = currentOperator();
     const createdAt = timestamp();
+    const productMap = getProductMap();
+    const splitOrderByMeal = shouldSplitOrderByMeal();
+    const purchaseQuantityOverrides = editablePurchaseQuantityOverrides(
+      preview,
+      options.purchaseQuantityOverrides || {},
+      productMap
+    );
     const record = {
       id: `RECIPE-DEMAND-${datePart(createdAt)}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       recordNo: nextRecordNo(records, createdAt),
@@ -474,7 +523,7 @@
       participants: clone(preview.participants),
       dates: clone(preview.dates),
       excludedProductKeys: [...excludedProductKeys],
-      purchaseQuantityOverrides: clone(options.purchaseQuantityOverrides || {}),
+      purchaseQuantityOverrides: clone(purchaseQuantityOverrides),
       expectedAt,
       recipeVersion: preview.dateSummaries.find((item) => item.menu)?.menu?.version || recipeService.MENU_VERSION,
       dateSummaries: preview.dateSummaries.map((summary) => ({
@@ -512,62 +561,93 @@
     };
     writeAll([...records, record]);
 
-    const productMap = getProductMap();
-    const purchaseQuantityAllocations = buildPurchaseQuantityAllocations(preview, options.purchaseQuantityOverrides, productMap, excludedProductKeys);
-    for (const summary of preview.dateSummaries) {
-      for (const meal of (summary.calculation.mealRows || [])) {
-        for (const participant of preview.participants) {
+    const purchaseQuantityAllocations = buildPurchaseQuantityAllocations(preview, purchaseQuantityOverrides, productMap, excludedProductKeys);
+    const mealDefinitions = [];
+    const mealKeys = new Set();
+    preview.dateSummaries.forEach((summary) => {
+      (summary.calculation.mealRows || []).forEach((meal) => {
+        const key = String(meal.key || meal.name || '').trim();
+        if (!key || mealKeys.has(key)) return;
+        mealKeys.add(key);
+        mealDefinitions.push({ ...meal, key });
+      });
+    });
+    const orderGroups = splitOrderByMeal
+      ? mealDefinitions.map((meal) => ({ key: meal.key, name: meal.name || meal.key, meals: [meal] }))
+      : [{
+        key: 'all-meals',
+        name: mealDefinitions.map((meal) => meal.name || meal.key).join('、'),
+        meals: mealDefinitions
+      }];
+    // 订单先按订单标签（人员类型）聚合，是否再按餐次拆分由企业端配置决定；用料日期只用于汇总来源和留痕。
+    for (const participant of preview.participants) {
+      for (const orderGroup of orderGroups) {
+        const mealSources = preview.dateSummaries.flatMap((summary) => orderGroup.meals.map((mealDefinition) => {
+          const meal = (summary.calculation.mealRows || []).find((item) => String(item.key || item.name || '') === mealDefinition.key);
+          if (!meal) return null;
           const items = participantItems(summary, participant.key, productMap, meal, { purchaseQuantityAllocations, excludedProductKeys });
-          if (!items.length) continue;
-          const order = schoolOrderService.create({
-            id: `SCHOOL-ORDER-${datePart(createdAt)}-${record.recordNo}-${summary.date.replace(/-/g, '')}-${meal.key}-${participant.key}`,
-            customerName: SCHOOL_NAME,
-            supplierName: schoolOrderService.SUPPLIER_NAME,
-            canteen: preview.canteen.name || CANTEEN_NAME,
-            canteenId: preview.canteen.id || '',
-            orderTag: participant.orderTag,
-            orderTagId: participant.tagId || participant.key,
-            orderTagName: participant.tagName || participant.label,
-            nutritious: participant.nutritious || '不区分',
-            mealKey: meal.key,
-            mealName: meal.name,
-            mealPeople: number(meal.participantPeople?.[participant.key]),
-            recipeTag: `食谱Tag-${summary.date}`,
-            recipeDemandRecordId: record.id,
-            recipeDemandRecordNo: record.recordNo,
-            recipeDemandDate: summary.date,
-            recipeParticipantType: participant.label,
-            expectedAt,
-            supplement: '否',
-            source: '食谱下单',
-            status: '待审核',
-            creator: operator.name,
-            items
-          });
-          let enterpriseOrder = null;
-          try {
-            enterpriseOrder = await createCentralOrder(order, participant, record, summary.date);
-          } catch (error) {
-            record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
-          }
-          // 这里只保存已创建订单的关联索引，订单实体统一由 SchoolOrderService.create 产生。
-          record.orders.push({
-            orderId: order.id,
-            orderNo: order.orderNo,
-            enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
+          return {
             date: summary.date,
-            mealKey: meal.key,
-            mealName: meal.name,
-            mealPeople: number(meal.participantPeople?.[participant.key]),
-            participantType: participant.label,
-            orderTag: participant.orderTag,
-            orderTagId: participant.tagId || participant.key,
-            orderTagName: participant.tagName || participant.label,
-            nutritious: participant.nutritious || '不区分',
-            expectedAt
-          });
-          writeAll([...records, record]);
+            meal,
+            items,
+            people: number(meal.participantPeople?.[participant.key])
+          };
+        })).filter(Boolean);
+        const activeSources = mealSources.filter((source) => source.people > 0 || source.items.length > 0);
+        if (!activeSources.length) continue;
+        const orderDates = [...new Set(activeSources.map((source) => source.date))];
+        const items = mergeOrderItems(activeSources, orderDates, orderGroup.name, participant);
+        if (!items.length) continue;
+        const mealPeople = activeSources.reduce((total, source) => total + source.people, 0);
+        const order = schoolOrderService.create({
+          id: `SCHOOL-ORDER-${datePart(createdAt)}-${record.recordNo}-${participant.key}-${orderGroup.key}`,
+          customerName: SCHOOL_NAME,
+          supplierName: schoolOrderService.SUPPLIER_NAME,
+          canteen: preview.canteen.name || CANTEEN_NAME,
+          canteenId: preview.canteen.id || '',
+          orderTag: participant.orderTag,
+          orderTagId: participant.tagId || participant.key,
+          orderTagName: participant.tagName || participant.label,
+          nutritious: participant.nutritious || '不区分',
+          mealKey: splitOrderByMeal ? orderGroup.key : '',
+          mealName: orderGroup.name,
+          mealPeople,
+          recipeTag: `食谱Tag-${record.recordNo}`,
+          recipeDemandRecordId: record.id,
+          recipeDemandRecordNo: record.recordNo,
+          recipeDemandDate: orderDates.join('、'),
+          recipeParticipantType: participant.label,
+          expectedAt,
+          supplement: '否',
+          source: '食谱下单',
+          status: '待审核',
+          creator: operator.name,
+          items
+        });
+        let enterpriseOrder = null;
+        try {
+          enterpriseOrder = await createCentralOrder(order, participant, record, orderDates);
+        } catch (error) {
+          record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
         }
+        // 这里只保存已创建订单的关联索引，订单实体统一由 SchoolOrderService.create 产生。
+        record.orders.push({
+          orderId: order.id,
+          orderNo: order.orderNo,
+          enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
+          date: orderDates.join('、'),
+          dates: clone(orderDates),
+          mealKey: splitOrderByMeal ? orderGroup.key : '',
+          mealName: orderGroup.name,
+          mealPeople,
+          participantType: participant.label,
+          orderTag: participant.orderTag,
+          orderTagId: participant.tagId || participant.key,
+          orderTagName: participant.tagName || participant.label,
+          nutritious: participant.nutritious || '不区分',
+          expectedAt
+        });
+        writeAll([...records, record]);
       }
     }
     const completedAt = timestamp();
@@ -578,7 +658,9 @@
       result: `${record.orders.length} 笔`,
       time: completedAt,
       description: record.orders.length
-        ? `已按餐次及${preview.participants.map((participant) => `${participant.label || participant.tagName}标签`).join('、')}生成订单：${record.orders.map((item) => item.orderNo).join('、')}`
+        ? splitOrderByMeal
+          ? `已按订单标签及餐次生成订单（用料日期不参与拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
+          : `已按订单标签生成订单（未按餐次及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
         : '没有生成可下单商品'
     });
     if (record.enterpriseSyncWarnings.length) {

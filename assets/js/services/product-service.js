@@ -7,6 +7,14 @@
     return value === true || value === 'true' || value === '是';
   }
 
+  function isFalseFlag(value) {
+    return value === false || value === 'false' || value === '否' || value === 0 || value === '0';
+  }
+
+  function canModifyPurchaseQuantity(product) {
+    return !isFalseFlag(product?.allowSchoolModifyPurchaseQuantity);
+  }
+
   const supplierProductsResource = 'supplierProductsBySupplier';
   const defaultSupplier = { id: 'SUP-004', name: '南皮供应商01' };
 
@@ -64,6 +72,7 @@
       seq: product.seq ?? index + 1,
       isNetVegetable: product.isNetVegetable ?? product.name === '土豆丝',
       isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
+      allowSchoolModifyPurchaseQuantity: canModifyPurchaseQuantity(product),
       purchaseType: product.purchaseType,
       defaultSupplier: product.defaultSupplier || '平台默认供应商',
       responsible: product.responsible || '管理员',
@@ -102,6 +111,7 @@
       const created = {
         ...data,
         isStandardProduct: flag(data.isStandardProduct) || flag(data.isStandard),
+        allowSchoolModifyPurchaseQuantity: canModifyPurchaseQuantity(data),
         seq: products.length + 1,
         code: `${isSupplierContext() ? 'SSP' : 'SP'}${String(nextNumber).padStart(7, '0')}`,
         status: 'DISABLE',
@@ -124,6 +134,9 @@
         ...data,
         code: products[index].code,
         id: products[index].id || products[index].code,
+        allowSchoolModifyPurchaseQuantity: data.allowSchoolModifyPurchaseQuantity === undefined
+          ? canModifyPurchaseQuantity(products[index])
+          : canModifyPurchaseQuantity(data),
         isStandardProduct: data.isStandardProduct === undefined && data.isStandard === undefined
           ? Boolean(products[index].isStandardProduct)
           : flag(data.isStandardProduct) || flag(data.isStandard),

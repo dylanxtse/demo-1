@@ -1,7 +1,8 @@
 (function () {
   const RESOURCE = 'recipeAttendance';
   const FLOW_RESET_KEY = 'school-recipe-attendance-reset-on-return-v1';
-  const MIN_COUNT = 1;
+  const MIN_COUNT = 0;
+  const MIN_NON_DINING_COUNT = 0;
   const MAX_COUNT = 100000;
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
   const number = (value, fallback = 0) => {
@@ -66,7 +67,8 @@
       date,
       recipeVersion: '',
       updatedAt: '',
-      meals: {}
+      meals: {},
+      temporaryNonDining: {}
     };
   }
 
@@ -77,10 +79,10 @@
     return clone(record || emptyRecord(targetDate, canteen));
   }
 
-  function normalizeCount(value) {
+  function normalizeCount(value, min = MIN_COUNT) {
     if (value === '' || value == null) return '';
     const parsed = Number(value);
-    if (!Number.isInteger(parsed) || parsed < MIN_COUNT || parsed > MAX_COUNT) return '';
+    if (!Number.isInteger(parsed) || parsed < min || parsed > MAX_COUNT) return '';
     return parsed;
   }
 
@@ -92,13 +94,22 @@
     return normalized;
   }
 
-  function save(date, meals, recipeVersion = '', canteen) {
+  function normalizeNonDining(meals = {}) {
+    const normalized = {};
+    Object.entries(meals || {}).forEach(([key, value]) => {
+      normalized[key] = Object.fromEntries(Object.entries(value || {}).map(([participantKey, count]) => [participantKey, normalizeCount(count, MIN_NON_DINING_COUNT)]));
+    });
+    return normalized;
+  }
+
+  function save(date, meals, recipeVersion = '', canteen, temporaryNonDining = {}) {
     const scope = resolveCanteen(canteen);
     const next = {
       ...emptyRecord(date, scope),
       recipeVersion,
       updatedAt: timestamp(),
-      meals: normalizeMeals(meals)
+      meals: normalizeMeals(meals),
+      temporaryNonDining: normalizeNonDining(temporaryNonDining)
     };
     const current = readAll();
     const index = current.findIndex((item) => item.date === date && sameScope(item, scope));
@@ -188,6 +199,10 @@
     return key ? source[key] : '';
   }
 
+  function temporaryNonDiningFor(record, mealKey, participant) {
+    return valueForParticipant(record?.temporaryNonDining?.[mealKey] || {}, participant);
+  }
+
   function participantLabel(participant) {
     const label = participant?.label || participant?.tagName || '人员';
     const nutritious = participant?.nutritious && participant.nutritious !== '不区分' ? `（${participant.nutritious}）` : '';
@@ -206,6 +221,20 @@
   function hasValue(value) {
     const parsed = Number(value);
     return value !== '' && value != null && Number.isInteger(parsed) && parsed >= MIN_COUNT && parsed <= MAX_COUNT;
+  }
+
+  function hasNonDiningValue(value) {
+    const parsed = Number(value);
+    return value !== '' && value != null && Number.isInteger(parsed)
+      && parsed >= MIN_NON_DINING_COUNT && parsed <= MAX_COUNT;
+  }
+
+  function effectivePeopleFor(record, mealKey, participant) {
+    const diningValue = valueForParticipant(record?.meals?.[mealKey] || {}, participant);
+    if (!hasValue(diningValue)) return 0;
+    const nonDiningValue = temporaryNonDiningFor(record, mealKey, participant);
+    const nonDiningPeople = hasNonDiningValue(nonDiningValue) ? number(nonDiningValue) : 0;
+    return Math.max(0, number(diningValue) - nonDiningPeople);
   }
 
   function hasPeople(values = {}, participants = []) {
@@ -243,7 +272,17 @@
         const value = valueForParticipant(values, participant);
         const parsed = Number(value);
         if (value !== '' && value != null && (!Number.isInteger(parsed) || parsed < MIN_COUNT || parsed > MAX_COUNT)) {
-          errors.push(`${meal.name}${participantLabel(participant)}人数需填写 1～100000 的整数`);
+          errors.push(`${meal.name}${participantLabel(participant)}人数需填写 0～100000 的整数`);
+        }
+        const nonDiningValue = temporaryNonDiningFor(record, meal.key, participant);
+        const nonDiningPeople = Number(nonDiningValue);
+        if (nonDiningValue !== '' && nonDiningValue != null
+          && (!Number.isInteger(nonDiningPeople) || nonDiningPeople < MIN_NON_DINING_COUNT || nonDiningPeople > MAX_COUNT)) {
+          errors.push(`${meal.name}${participantLabel(participant)}不就餐人数需填写 0～100000 的整数`);
+        } else if (hasNonDiningValue(nonDiningValue) && nonDiningPeople > 0 && !hasValue(value)) {
+          errors.push(`${meal.name}${participantLabel(participant)}请先填写总人数`);
+        } else if (hasNonDiningValue(nonDiningValue) && hasValue(value) && nonDiningPeople > parsed) {
+          errors.push(`${meal.name}${participantLabel(participant)}不就餐人数不能大于总人数`);
         }
       });
       if (!hasPeople(values, participants)) missingMeals.push(meal.name);
@@ -253,8 +292,7 @@
     )));
     const uniqueMissingMappings = [...new Set(missingMappings)];
     const people = requiredMeals(menu).reduce((total, meal) => {
-      const values = record?.meals?.[meal.key] || {};
-      return total + participants.reduce((sum, participant) => sum + (hasValue(valueForParticipant(values, participant)) ? number(valueForParticipant(values, participant)) : 0), 0);
+      return total + participants.reduce((sum, participant) => sum + effectivePeopleFor(record, meal.key, participant), 0);
     }, 0);
     return {
       errors,
@@ -262,7 +300,7 @@
       missingMappings: uniqueMissingMappings,
       people,
       canContinue: Boolean(menu) && !errors.length && !uniqueMissingMappings.length && people > 0,
-      message: errors[0] || (uniqueMissingMappings.length ? '当前食谱存在未关联采购商品' : people > 0 ? '' : '至少填写一餐的就餐人数')
+      message: errors[0] || (uniqueMissingMappings.length ? '当前食谱存在未关联采购商品' : people > 0 ? '' : '当前没有实际就餐人数，无法确认需求')
     };
   }
 
@@ -271,16 +309,29 @@
     const mealRows = [];
     const participants = resolveParticipants(options);
     const participantPeople = Object.fromEntries(participants.map((participant) => [participant.key, 0]));
+    const participantDiningPeople = Object.fromEntries(participants.map((participant) => [participant.key, 0]));
+    const participantNonDiningPeople = Object.fromEntries(participants.map((participant) => [participant.key, 0]));
     let totalStudentPeople = 0;
     let totalTeacherPeople = 0;
     (menu?.meals || []).forEach((meal) => {
       const values = record?.meals?.[meal.key] || {};
       const mealRowsMap = new Map();
       const mealPeople = {};
+      const mealDiningPeople = {};
+      const mealNonDiningPeople = {};
       participants.forEach((participant) => {
-        const people = number(valueForParticipant(values, participant));
+        const diningPeople = hasValue(valueForParticipant(values, participant))
+          ? number(valueForParticipant(values, participant))
+          : 0;
+        const nonDiningValue = temporaryNonDiningFor(record, meal.key, participant);
+        const nonDiningPeople = hasNonDiningValue(nonDiningValue) ? number(nonDiningValue) : 0;
+        const people = Math.max(0, diningPeople - nonDiningPeople);
+        mealDiningPeople[participant.key] = diningPeople;
+        mealNonDiningPeople[participant.key] = nonDiningPeople;
         mealPeople[participant.key] = people;
         participantPeople[participant.key] = number(participantPeople[participant.key]) + people;
+        participantDiningPeople[participant.key] = number(participantDiningPeople[participant.key]) + diningPeople;
+        participantNonDiningPeople[participant.key] = number(participantNonDiningPeople[participant.key]) + nonDiningPeople;
         if (participant.legacyKey === 'student' || participant.tagName === '学生') totalStudentPeople += people;
         if (participant.legacyKey === 'teacher' || participant.tagName === '教师' || participant.tagName === '教职工') totalTeacherPeople += people;
       });
@@ -329,7 +380,11 @@
       mealRows.push({
         key: meal.key,
         name: meal.name,
+        participantDiningPeople: mealDiningPeople,
+        participantNonDiningPeople: mealNonDiningPeople,
         participantPeople: mealPeople,
+        totalDiningPeople: participants.reduce((total, participant) => total + number(mealDiningPeople[participant.key]), 0),
+        totalNonDiningPeople: participants.reduce((total, participant) => total + number(mealNonDiningPeople[participant.key]), 0),
         totalPeople: participants.reduce((total, participant) => total + number(mealPeople[participant.key]), 0),
         rows: [...mealRowsMap.values()]
       });
@@ -340,9 +395,13 @@
         return a.productName.localeCompare(b.productName, 'zh-CN');
       }),
       mealRows,
+      participantDiningPeople,
+      participantNonDiningPeople,
       participantPeople,
       totalStudentPeople,
       totalTeacherPeople,
+      totalDiningPeople: participants.reduce((total, participant) => total + number(participantDiningPeople[participant.key]), 0),
+      totalNonDiningPeople: participants.reduce((total, participant) => total + number(participantNonDiningPeople[participant.key]), 0),
       totalPeople: participants.reduce((total, participant) => total + number(participantPeople[participant.key]), 0),
       totalQty: [...rows.values()].reduce((total, row) => total + row.totalQty, 0)
     };
@@ -360,6 +419,8 @@
     emptyRecord,
     participantsFor,
     valueForParticipant,
+    temporaryNonDiningFor,
+    effectivePeopleFor,
     participantDisplayName,
     status,
     validate,

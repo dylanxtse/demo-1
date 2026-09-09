@@ -376,6 +376,7 @@
     purchasePricePriority4: '供应商报价',
     purchasePricePriority5: '手动定价',
     purchasePricePriority6: '',
+    splitOrderByMeal: true,
     amountDecimal: '2',
     quantityDecimal: '0',
     decimalSettingsVersion: '20260815-default-decimals'
@@ -1484,6 +1485,8 @@
         customerName: order.customerName || '',
         canteen: order.canteen || '',
         orderNo: order.orderNo || '',
+        mealKey: order.mealKey || '',
+        mealName: order.mealName || '',
         orderQty: number(line.quantity),
         actualQty,
         unit: line.unit || '',
@@ -2185,6 +2188,9 @@
         address: order.address || '',
         route: order.route || '',
         expectedAt: order.expectedAt || '',
+        mealKey: order.mealKey || '',
+        mealName: order.mealName || '',
+        mealNames: order.mealName ? [order.mealName] : [],
         sortedCount: 0,
         orderCount: tasks.length,
         progress: `0/${tasks.length}`,
@@ -2201,6 +2207,13 @@
     progress.phone = order.phone || progress.phone || location?.phone || '';
     progress.address = order.address || progress.address || location?.address || '';
     progress.route = order.route || progress.route || location?.route || '';
+    const relatedMealNames = state.orders
+      .filter((item) => item.customerName === progress.customerName && item.canteen === progress.canteen && item.expectedAt === progress.expectedAt)
+      .map((item) => item.mealName || item.mealKey)
+      .filter(Boolean);
+    const currentMealNames = Array.isArray(progress.mealNames) ? progress.mealNames : [];
+    progress.mealNames = [...new Set([...currentMealNames, ...relatedMealNames])];
+    progress.mealName = progress.mealNames.length === 1 ? progress.mealNames[0] : '';
     const sortedCount = tasks.filter((task) => task.sortingCompleted).length;
     progress.sortedCount = sortedCount;
     progress.orderCount = tasks.length;
@@ -2262,6 +2275,8 @@
       customerName: order.customerName || '',
       canteen: order.canteen || '',
       orderNo: order.orderNo || '',
+      mealKey: order.mealKey || '',
+      mealName: order.mealName || '',
       orderQty: number(line.quantity),
       actualQty: 0,
       unit: line.unit || '',
@@ -2328,6 +2343,8 @@
       status: 'PENDING',
       printed: '否',
       expectedAt: order.expectedAt || '',
+      mealKey: order.mealKey || '',
+      mealName: order.mealName || '',
       orderTag: order.orderTag || '',
       creator: order.creator || '系统',
       createdAt: now(),
@@ -2368,6 +2385,8 @@
       orderId: order.id,
       orderNo: order.orderNo,
       relNo: order.orderNo,
+      mealKey: order.mealKey || '',
+      mealName: order.mealName || '',
       warehouse: order.warehouse || '中心仓',
       warehouseName: order.warehouse || '中心仓',
       outboundType: '销售出库',

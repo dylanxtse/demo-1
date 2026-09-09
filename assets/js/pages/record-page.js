@@ -49,11 +49,12 @@
       activeTab: config.tabs?.[0]?.key,
       activeStatus: config.tabs?.[0]?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
     };
+    const currentFilters = () => config.tabs?.find((tab) => tab.key === state.activeTab)?.filters || config.filters || [];
     const renderFilter = (field) => `
       <div class="operations-field">
         <label class="filter-label" for="filter-${field.key}">${field.label}</label>
         ${field.options
-          ? `<select class="filter-select" id="filter-${field.key}"><option value="">全部</option>${field.options.map((option) => {
+          ? `<select class="filter-select${field.placeholderOnly ? ' is-placeholder' : ''}" id="filter-${field.key}"${field.placeholderOnly ? ' data-placeholder-only' : ''}>${field.placeholderOnly ? `<option value="" disabled selected hidden>${escapeHtml(field.emptyLabel || '请选择')}</option>` : `<option value="">${escapeHtml(field.emptyLabel || '全部')}</option>`}${field.options.map((option) => {
             const value = typeof option === 'string' ? option : option.value;
             const label = typeof option === 'string' ? option : option.label;
             return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
@@ -64,10 +65,10 @@
                 <input type="hidden" data-date-start><input type="hidden" data-date-end>
               </div>`
             : field.type === 'date'
-              ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
+              ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
               : `<input class="filter-input" id="filter-${field.key}" type="${field.type || 'text'}" placeholder="${field.placeholder || '请输入'}">`}
       </div>`;
-    const filters = config.filters || [];
+    const filters = currentFilters();
     const filterHtml = filters.map(renderFilter).join('');
     const primaryFilterHtml = useDemoListLayout ? filterHtml : filters.slice(0, 3).map(renderFilter).join('');
     const advancedFilterHtml = useDemoListLayout ? '' : filters.slice(3).map(renderFilter).join('');
@@ -103,7 +104,7 @@
       <section class="page-card operations-page ${escapeHtml(config.pageClass || '')}" aria-label="${escapeHtml(config.title)}">
         ${config.tabs ? `<div class="operations-tabs">${config.tabs.map((tab, index) => `<button class="operations-tab ${index === 0 ? 'active' : ''}" data-view-tab="${tab.key}">${tab.label}</button>`).join('')}</div>` : ''}
         <div class="operations-status-row"><div class="operations-status-tabs" id="recordStatusTabs"></div></div>
-        <div class="operations-filter filter-section">
+        <div class="operations-filter filter-section"${config.manualFilterLayout ? ' data-query-filter-manual="true"' : ''}>
           <div class="operations-filter-main">
             <div class="operations-filter-grid">${primaryFilterHtml}</div>
             <div class="operations-filter-actions">
@@ -142,6 +143,58 @@
     const $ = (selector) => root.querySelector(selector);
     const overlay = $('#recordOverlay');
     const datePickers = new Map();
+
+    function bindDatePickers() {
+      datePickers.forEach((picker) => picker.destroy?.());
+      datePickers.clear();
+      currentFilters().filter((field) => field.type === 'date').forEach((field) => {
+        const input = $(`#filter-${field.key}`);
+        if (input && window.DatePicker) datePickers.set(field.key, window.DatePicker.create({ input }));
+      });
+      currentFilters().filter((field) => field.type === 'dateRange').forEach((field) => {
+        const container = $(`#filter-wrap-${field.key}`);
+        if (container && window.DateRangePicker) datePickers.set(field.key, window.DateRangePicker.create({ container }));
+      });
+      root.querySelectorAll('[data-record-expanded-date]').forEach((input, index) => {
+        if (!window.DatePicker) return;
+        const lineId = input.closest('tr')?.dataset.expandedItem || index;
+        const picker = window.DatePicker.create({ input });
+        if (picker) datePickers.set(`expanded:${lineId}`, picker);
+      });
+    }
+
+    function renderFilterControls() {
+      const filterSection = root.querySelector('.operations-filter');
+      const mainGrid = root.querySelector('.operations-filter-main .operations-filter-grid');
+      if (!filterSection || !mainGrid) return;
+      const fields = currentFilters();
+      const primaryFields = useDemoListLayout ? fields : fields.slice(0, 3);
+      const advancedFields = useDemoListLayout ? [] : fields.slice(3);
+      mainGrid.innerHTML = primaryFields.map(renderFilter).join('');
+      let toggle = filterSection.querySelector('[data-operations-filter-toggle]');
+      let advanced = filterSection.querySelector('.operations-filter-advanced');
+      if (!advancedFields.length) {
+        toggle?.remove();
+        advanced?.remove();
+        bindDatePickers();
+        return;
+      }
+      if (!toggle) {
+        filterSection.querySelector('.operations-filter-actions')?.insertAdjacentHTML('afterbegin', '<button class="operations-filter-toggle" type="button" data-operations-filter-toggle aria-expanded="false">高级筛选<span class="toggle-arrow">▾</span></button>');
+        toggle = filterSection.querySelector('[data-operations-filter-toggle]');
+      }
+      if (!advanced) {
+        advanced = document.createElement('div');
+        advanced.className = 'operations-filter-advanced';
+        advanced.innerHTML = '<div class="operations-filter-grid"></div>';
+        filterSection.appendChild(advanced);
+      }
+      advanced.querySelector('.operations-filter-grid').innerHTML = advancedFields.map(renderFilter).join('');
+      toggle.classList.remove('is-active');
+      toggle.setAttribute('aria-expanded', 'false');
+      advanced.classList.remove('is-visible');
+      bindDatePickers();
+    }
 
     if (config.categoryTree) {
       const page = root.querySelector('.operations-page');
@@ -265,8 +318,11 @@
     }
 
     function renderHead() {
-      const showSequence = config.hideSequence !== true;
-      const showActions = config.hideRowActions !== true;
+      root.querySelector('.operations-page')?.setAttribute('data-active-tab', state.activeTab || '');
+      const showSequence = (currentTab()?.hideSequence ?? config.hideSequence) !== true;
+      const expandable = currentTab()?.expandable ?? config.expandable === true;
+      const showActions = (currentTab()?.hideRowActions ?? config.hideRowActions) !== true;
+      const expandHeader = expandable ? '<th class="record-expand-cell" aria-label="展开"></th>' : '';
       const selectionHeader = config.selectable === false
         ? ''
         : '<th><input type="checkbox" id="recordSelectAll" aria-label="选择全部"></th>';
@@ -276,14 +332,14 @@
         const sequence = showSequence ? `<th rowspan="${rows.length}">序号</th>` : '';
         const actions = showActions ? `<th rowspan="${rows.length}">操作</th>` : '';
         $('#recordHead').innerHTML = rows.map((row, rowIndex) => `<tr>
-          ${rowIndex === 0 ? `${selection}${sequence}` : ''}
+          ${rowIndex === 0 ? `${expandHeader.replace('<th', `<th rowspan="${rows.length}"`)}${selection}${sequence}` : ''}
           ${row.map((header) => `<th${header.rowspan ? ` rowspan="${header.rowspan}"` : ''}${header.colspan ? ` colspan="${header.colspan}"` : ''}>${escapeHtml(header.label)}</th>`).join('')}
           ${rowIndex === 0 ? actions : ''}
         </tr>`).join('');
         return;
       }
       $('#recordHead').innerHTML = `<tr>
-        ${selectionHeader}
+        ${expandHeader}${selectionHeader}
         ${showSequence ? '<th>序号</th>' : ''}${currentColumns().map((column) => `<th>${column.label}</th>`).join('')}${showActions ? '<th>操作</th>' : ''}
       </tr>`;
     }
@@ -300,16 +356,18 @@
 
     function renderBody() {
       const columns = currentColumns();
-      const showSequence = config.hideSequence !== true;
-      const showActions = config.hideRowActions !== true;
+      const showSequence = (currentTab()?.hideSequence ?? config.hideSequence) !== true;
+      const expandable = currentTab()?.expandable ?? config.expandable === true;
+      const showActions = (currentTab()?.hideRowActions ?? config.hideRowActions) !== true;
       if (!state.items.length) {
-        const extraColumns = (config.selectable === false ? 0 : 1) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
+        const extraColumns = (expandable ? 1 : 0) + (config.selectable === false ? 0 : 1) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
         $('#recordBody').innerHTML = `<tr><td class="empty-cell" colspan="${columns.length + extraColumns}">暂无数据</td></tr>`;
         return;
       }
       $('#recordBody').innerHTML = state.items.map((item, index) => {
         const actions = showActions ? currentActions(item) : [];
-        return `<tr data-id="${escapeHtml(item.id)}">
+        const row = `<tr data-id="${escapeHtml(item.id)}">
+          ${expandable ? `<td class="record-expand-cell"><button class="record-expand-button" type="button" data-record-expand aria-expanded="false" aria-label="展开${escapeHtml(item.orderNo || item.customerName || '记录')}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m10 8 4 4-4 4"></path></svg></button></td>` : ''}
           ${config.selectable !== false ? `<td><input type="checkbox" class="record-row-select" aria-label="选择数据" ${state.selected.has(item.id) ? 'checked' : ''} ${isSelectable(item) ? '' : 'disabled'}></td>` : ''}
           ${showSequence ? `<td>${(state.page - 1) * state.pageSize + index + 1}</td>` : ''}
           ${columns.map((column) => {
@@ -325,6 +383,12 @@
             return `${usePagination && actionIndex ? '' : (!usePagination && actionIndex ? '<span class="divider">|</span>' : '')}<button class="btn-text ${action.danger ? 'danger' : ''}" data-row-action="${action.key}"${isDisabled ? ' disabled' : ''}>${action.label}</button>`;
           }).join('') || '--'}</div></td>` : ''}
         </tr>`;
+        const expandedRenderer = currentTab()?.renderExpandedRow || config.renderExpandedRow;
+        if (!expandable || typeof expandedRenderer !== 'function') return row;
+        const expandedContent = expandedRenderer(item);
+        if (!expandedContent) return row;
+        const colspan = columns.length + (expandable ? 1 : 0) + (config.selectable === false ? 0 : 1) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
+        return `${row}<tr class="record-expanded-row" data-expanded-for="${escapeHtml(item.id)}" hidden><td colspan="${colspan}">${expandedContent}</td></tr>`;
       }).join('');
     }
 
@@ -364,13 +428,13 @@
 
     function collectCondition() {
       const condition = {};
-      (config.filters || []).forEach((field) => {
+      currentFilters().forEach((field) => {
         if (field.type === 'dateRange') {
           const value = datePickers.get(field.key)?.getValue();
           if (value?.startDate || value?.endDate) condition[field.conditionKey || field.key] = [value.startDate, value.endDate];
           return;
         }
-        const value = $(`#filter-${field.key}`).value.trim();
+        const value = $(`#filter-${field.key}`)?.value?.trim() || '';
         if (value) condition[field.key] = value;
       });
       return condition;
@@ -397,6 +461,7 @@
       renderHead();
       renderStatusTabs();
       renderBody();
+      bindDatePickers();
       renderToolbar();
       renderPagination();
       updateSelection();
@@ -671,6 +736,18 @@
       if (filterToggle) {
         const expanded = filterToggle.classList.toggle('is-active');
         root.querySelector('.operations-filter-advanced')?.classList.toggle('is-visible', expanded);
+        filterToggle.setAttribute('aria-expanded', String(expanded));
+        return;
+      }
+      const expandButton = event.target.closest('[data-record-expand]');
+      if (expandButton) {
+        const row = expandButton.closest('tr[data-id]');
+        const expanded = expandButton.getAttribute('aria-expanded') === 'true';
+        expandButton.setAttribute('aria-expanded', String(!expanded));
+        row?.classList.toggle('is-expanded', !expanded);
+        const detailRow = [...root.querySelectorAll('.record-expanded-row')]
+          .find((element) => element.dataset.expandedFor === row?.dataset.id);
+        if (detailRow) detailRow.hidden = expanded;
         return;
       }
       const categoryButton = event.target.closest('[data-record-category]');
@@ -699,6 +776,8 @@
         window.AppNavigation?.navigate?.(cellLink.dataset.cellHref);
         return;
       }
+      const reportButton = event.target.closest('[data-record-expanded-report]');
+      if (reportButton) return toast('质检报告上传入口已打开');
       const rowButton = event.target.closest('[data-row-action]');
       if (rowButton) return rowAction(rowButton.dataset.rowAction, rowButton.closest('tr').dataset.id);
       const toolbarButton = event.target.closest('[data-toolbar-action]');
@@ -710,6 +789,8 @@
         root.querySelectorAll('.operations-tab').forEach((element) => element.classList.toggle('active', element === tabButton));
         state.page = 1;
         state.selected.clear();
+        state.condition = {};
+        renderFilterControls();
         return load();
       }
       const statusButton = event.target.closest('[data-status-tab]');
@@ -731,7 +812,10 @@
       }
       if (event.target.id === 'recordReset') {
         root.querySelectorAll('.operations-filter input,.operations-filter select').forEach((element) => { element.value = ''; });
-        datePickers.forEach((picker) => picker.clear(false));
+        root.querySelectorAll('select[data-placeholder-only]').forEach((element) => element.classList.add('is-placeholder'));
+        datePickers.forEach((picker, key) => {
+          if (!String(key).startsWith('expanded:')) picker.clear(false);
+        });
         state.condition = {};
         if (state.activeStatus) {
           const statuses = String(state.activeStatus).split(',');
@@ -741,6 +825,14 @@
         state.selected.clear();
         return load();
       }
+    });
+
+    root.addEventListener('input', (event) => {
+      if (!event.target.matches('[data-record-expanded-shipping-qty]')) return;
+      const quantity = Math.max(0, Number(event.target.value || 0));
+      const price = Number(event.target.dataset.unitPrice || 0);
+      const subtotal = event.target.closest('tr')?.querySelector('[data-record-expanded-subtotal]');
+      if (subtotal) subtotal.textContent = Number.isFinite(quantity * price) ? (quantity * price).toFixed(2) : '--';
     });
 
     root.addEventListener('change', (event) => {
@@ -764,6 +856,7 @@
       if (event.target.id === 'recordSelectAll') {
         state.items.filter(isSelectable).forEach((item) => event.target.checked ? state.selected.add(item.id) : state.selected.delete(item.id));
         renderBody();
+        bindDatePickers();
         updateSelection();
       }
       if (event.target.classList.contains('record-row-select')) {
@@ -807,14 +900,7 @@
       });
     }
 
-    (config.filters || []).filter((field) => field.type === 'date').forEach((field) => {
-      const input = $(`#filter-${field.key}`);
-      if (input && window.DatePicker) datePickers.set(field.key, window.DatePicker.create({ input }));
-    });
-    (config.filters || []).filter((field) => field.type === 'dateRange').forEach((field) => {
-      const container = $(`#filter-wrap-${field.key}`);
-      if (container && window.DateRangePicker) datePickers.set(field.key, window.DateRangePicker.create({ container }));
-    });
+    bindDatePickers();
     load();
     return { load, state };
   }

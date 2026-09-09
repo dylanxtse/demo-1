@@ -40,6 +40,45 @@
     });
   }
 
+  const fallbackOrderMealNameByKey = {
+    breakfast: '早餐',
+    lunch: '午餐',
+    dinner: '晚餐',
+    morningSnack: '早点',
+    afternoonSnack: '午点',
+    eveningSnack: '晚点'
+  };
+
+  function orderMealName(value) {
+    const raw = String(value ?? '').trim();
+    return window.OrderMealNameByKey?.[raw] || fallbackOrderMealNameByKey[raw] || raw;
+  }
+
+  function relatedOrders(item, resource) {
+    const orders = window.DemoStore?.get?.('orders') || [];
+    return orders.filter((order) => {
+      const directMatch = (item.orderId && order.id === item.orderId)
+        || (item.orderNo && order.orderNo === item.orderNo);
+      if (directMatch) return true;
+      return resource === 'sortingProgress'
+        && order.customerName === item.customerName
+        && order.canteen === item.canteen
+        && (!item.expectedAt || order.expectedAt === item.expectedAt);
+    });
+  }
+
+  function matchesMealName(item, expected, resource) {
+    const target = orderMealName(expected);
+    const candidates = [item.mealName, item.mealKey];
+    if (Array.isArray(item.mealNames)) candidates.push(...item.mealNames);
+    if (resource !== 'orders') {
+      relatedOrders(item, resource).forEach((order) => {
+        candidates.push(order.mealName, order.mealKey);
+      });
+    }
+    return candidates.some((candidate) => candidate && orderMealName(candidate) === target);
+  }
+
   function enrichSortingItems(records) {
     const orders = window.DemoStore.get('orders') || [];
     const shippingOrders = window.DemoStore.get('shippingOrders') || [];
@@ -54,6 +93,7 @@
       const matchedRows = warehouseRows.length ? warehouseRows : balances.filter((row) => row.productId === productId);
       return {
         ...item,
+        mealName: orderMealName(item.mealName || item.mealKey || order?.mealName || order?.mealKey),
         shipped: orderStatus === 'SHIPPED' || shippingStatus === 'SHIPPED' ? '是' : '否',
         stock: matchedRows.reduce((total, row) => total + Number(row.currentStock || 0), 0)
       };
@@ -94,6 +134,7 @@
         unit: item.unit || '',
         orderNo: order.orderNo,
         orderTag: order.orderTag || '',
+        mealName: orderMealName(order.mealName || order.mealKey),
         status: 'PENDING',
         shortage: '否',
         expectedAt: order.expectedAt || ''
@@ -151,6 +192,7 @@
         const source = item.createdAt || item.expectedAt || item.occurredAt || item.inboundAt || item.countAt || '';
         return (!value[0] || source >= value[0]) && (!value[1] || source <= `${value[1]} 23:59:59`);
       }
+      if (key === 'mealName') return matchesMealName(item, value, resource);
       if (resource === 'orders' && key === 'netVegetable') {
         const containsNetVegetable = orderContainsNetVegetable(item);
         return value === 'net' ? containsNetVegetable : value === 'non-net' ? !containsNetVegetable : true;
@@ -253,6 +295,9 @@
     progress.orderCount = sortingItems.length;
     progress.progress = `${sortedCount}/${sortingItems.length}`;
     progress.status = completedCount === 0 ? 'PENDING' : completedCount === sortingItems.length ? 'SORTED' : 'PARTIAL';
+    const mealNames = [...new Set(sortingItems.map((item) => item.mealName || item.mealKey).filter(Boolean))];
+    progress.mealNames = mealNames;
+    progress.mealName = mealNames.length === 1 ? mealNames[0] : '';
     save('sortingProgress', progressItems);
   }
 

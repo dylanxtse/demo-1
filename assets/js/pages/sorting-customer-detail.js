@@ -4,6 +4,8 @@
   const customerName = params.get('customer') || '';
   const canteen = params.get('canteen') || '';
   const expectedDate = params.get('date') || '';
+  const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
+  const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
   const selected = new Set();
   let items = [];
   let filteredItems = [];
@@ -25,6 +27,7 @@
         <div class="operations-filter-grid sorting-customer-filter-grid">
           <div class="operations-field"><label class="filter-label" for="goodsNameFilter">商品名称</label><input class="filter-input" id="goodsNameFilter" placeholder="请输入"></div>
           <div class="operations-field"><label class="filter-label" for="shippedFilter">是否发货</label><select class="filter-select" id="shippedFilter"><option value="">全部</option><option value="是">是</option><option value="否">否</option></select></div>
+          <div class="operations-field"><label class="filter-label" for="mealNameFilter">订单餐次</label><select class="filter-select is-placeholder" id="mealNameFilter" data-placeholder-only><option value="" disabled selected hidden>请选择</option>${orderMealOptions}</select></div>
         </div>
         <div class="operations-filter-actions"><button class="btn btn-primary btn-sm btn-fixed" type="button" data-action="query">查询</button><button class="btn btn-sm btn-fixed" type="button" data-action="reset">重置</button></div>
       </div>
@@ -52,6 +55,15 @@
   const isSorted = (item) => item.status === 'SORTED' || Number(item.actualQty || 0) >= Number(item.orderQty || 0);
   const statusText = (item) => isSorted(item) ? '已分拣' : '未分拣';
   const statusClass = (item) => isSorted(item) ? 'success' : 'danger';
+  const resolveMealName = (value) => window.OrderMealNameByKey?.[value] || value || '';
+  const itemMealName = (item) => {
+    const ownMeal = resolveMealName(item.mealName || item.mealKey);
+    if (ownMeal) return ownMeal;
+    const order = (window.DemoStore?.get('orders') || []).find((entry) => (
+      (item.orderId && entry.id === item.orderId) || (item.orderNo && entry.orderNo === item.orderNo)
+    ));
+    return resolveMealName(order?.mealName || order?.mealKey);
+  };
   const renderGoodsName = (item) => {
     const display = window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || '--';
     const marker = item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
@@ -106,8 +118,13 @@
 
   function applyFilters() {
     const keyword = root.querySelector('#goodsNameFilter').value.trim().toLowerCase();
+    const mealName = root.querySelector('#mealNameFilter').value;
     const shipped = root.querySelector('#shippedFilter').value;
-    filteredItems = items.filter((item) => (!keyword || String(item.goodsName || '').toLowerCase().includes(keyword)) && (!shipped || item.shipped === shipped));
+    filteredItems = items.filter((item) => (
+      (!keyword || String(item.goodsName || '').toLowerCase().includes(keyword))
+      && (!mealName || itemMealName(item) === mealName)
+      && (!shipped || item.shipped === shipped)
+    ));
     selected.clear();
     render();
   }
@@ -135,7 +152,7 @@
     const action = event.target.closest('[data-action]')?.dataset.action;
     if (action === 'back') { window.AppNavigation?.navigate?.('./sorting-management.html'); return; }
     if (action === 'query') { applyFilters(); return; }
-    if (action === 'reset') { root.querySelector('#goodsNameFilter').value = ''; root.querySelector('#shippedFilter').value = ''; applyFilters(); return; }
+    if (action === 'reset') { root.querySelector('#goodsNameFilter').value = ''; root.querySelector('#mealNameFilter').value = ''; root.querySelector('#mealNameFilter').classList.add('is-placeholder'); root.querySelector('#shippedFilter').value = ''; applyFilters(); return; }
     if (action === 'batch-sort' || action === 'batch-shortage') {
       const ids = [...selected];
       if (!ids.length) { toast('请选择要操作的数据', 'error'); return; }

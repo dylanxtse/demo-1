@@ -73,6 +73,40 @@
     const [year, month] = String(monthKey || '').split('-').map(Number);
     return new Date(year || 2026, month || 1, 0).getDate();
   };
+  const normalizeExpectedAtTime = (value) => {
+    const parts = String(value || '').split(':');
+    const normalizePart = (raw, fallback, max) => {
+      const parsed = Number(raw);
+      return String(!String(raw || '').trim() || !Number.isFinite(parsed) || parsed < 0 || parsed > max ? fallback : Math.floor(parsed)).padStart(2, '0');
+    };
+    const hour = normalizePart(parts[0], 7, 23);
+    const minute = normalizePart(parts[1], 30, 59);
+    const second = normalizePart(parts[2], 0, 59);
+    return `${hour}:${minute}:${second}`;
+  };
+  const expectedAtTimePart = (time, part, value) => {
+    const parts = normalizeExpectedAtTime(time).split(':');
+    const index = { hour: 0, minute: 1, second: 2 }[part];
+    if (index !== undefined) parts[index] = String(value).padStart(2, '0');
+    return parts.join(':');
+  };
+  const parseExpectedAtValue = (value) => {
+    const text = String(value || '').trim().replace('T', ' ');
+    const match = text.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+    return {
+      date: match?.[1] || '',
+      time: match ? normalizeExpectedAtTime(`${match[2] || '07'}:${match[3] || '30'}:${match[4] || '00'}`) : '07:30:00'
+    };
+  };
+  const expectedAtInputValue = (date, time) => date ? `${date}T${normalizeExpectedAtTime(time)}` : '';
+  const expectedAtDisplayValue = (value) => {
+    const parts = parseExpectedAtValue(value);
+    return parts.date ? `${parts.date.replace(/-/g, '/')} ${parts.time}` : '请选择日期时间';
+  };
+  const expectedAtMonthText = (monthKey) => {
+    const [year, month] = String(monthKey || '').split('-');
+    return `${year || '--'}年${month || '--'}月`;
+  };
   const anchorMonthKey = monthKeyOf(firstDate) || '2026-09';
   const supportedMonthKeys = [
     shiftMonthKey(anchorMonthKey, -1),
@@ -104,6 +138,22 @@
     const demandQuantity = Number(value || 0);
     return isStandardProduct(item) ? Math.ceil(demandQuantity) : demandQuantity;
   };
+  const fixedQuantity = (value) => {
+    const text = String(value ?? '').trim();
+    if (!text) return '';
+    const parsed = Number(text);
+    return Number.isFinite(parsed) ? parsed.toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: false
+    }) : '';
+  };
+  const purchaseRowKey = (item) => String(item?.key || `${item?.productCode || item?.productName || ''}::${item?.unit || '--'}`);
+  const purchaseQuantityKey = (item, participantKey) => `${purchaseRowKey(item)}::${participantKey}`;
+  const orderTagName = (participant) => String(
+    participant?.orderTag
+      || `${participant?.label || participant?.tagName || '订单标签'}-${participant?.nutritious || '不区分'}`
+  );
 
   const storedMobileAuth = window.AppStorage?.read?.(mobileAuthStorageKey, null);
   const inheritedSession = window.DemoStore?.getSession?.() || null;
@@ -151,6 +201,9 @@
     toast: null,
     toastTimer: 0,
     confirmDates: new Set(),
+    confirmParticipantKey: '',
+    purchaseQtyOverrides: {},
+    purchaseQuantityEditingKey: '',
     expectedAt: '',
     submitting: false,
     recordKeyword: '',
@@ -486,17 +539,124 @@
       return;
     }
     state.confirmDates = new Set(filledDates);
-    state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30';
+    state.confirmParticipantKey = '';
+    state.purchaseQtyOverrides = {};
+    state.purchaseQuantityEditingKey = '';
+    state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30:00';
     state.screen = 'confirm';
     state.toast = null;
     render();
   }
 
+  function buildConfirmPreview() {
+    return state.confirmDates.size
+      ? demandService.buildPreview([...state.confirmDates], serviceOptions())
+      : { rows: [], participants: [], totalPersonTimes: 0, productCount: 0, canSubmit: false, message: '请选择已填报日期' };
+  }
+
+  function firstConfirmDate() {
+    return [...state.confirmDates].sort((a, b) => String(a).localeCompare(String(b)))[0] || '';
+  }
+
+  function expectedAtDateIsAllowed(date) {
+    const firstDate = firstConfirmDate();
+    return Boolean(date && (!firstDate || String(date) <= firstDate));
+  }
+
+  function expectedAtIsAllowed(value) {
+    return expectedAtDateIsAllowed(parseExpectedAtValue(value).date);
+  }
+
+  function alignExpectedAtToFirstDate() {
+    const firstDate = firstConfirmDate();
+    const current = parseExpectedAtValue(state.expectedAt);
+    if (firstDate && current.date && current.date > firstDate) {
+      state.expectedAt = expectedAtInputValue(firstDate, current.time);
+    }
+  }
+
+  function participantHasPurchaseDemand(preview, participant) {
+    const participantKey = participant?.key;
+    if (!participantKey) return false;
+    return (preview.rows || []).some((row) => (
+      row.mappingStatus === '已关联' && Number(row.participantQty?.[participantKey] || 0) > 0
+    ));
+  }
+
+  function confirmParticipants(preview) {
+    return (preview.participants || []).filter((participant) => participantHasPurchaseDemand(preview, participant));
+  }
+
+  function activeConfirmParticipant(preview) {
+    const available = confirmParticipants(preview);
+    const active = available.find((participant) => participant.key === state.confirmParticipantKey) || available[0] || null;
+    state.confirmParticipantKey = active?.key || '';
+    return active;
+  }
+
+  function purchaseQuantityValue(row, participant) {
+    const key = purchaseQuantityKey(row, participant.key);
+    return Object.prototype.hasOwnProperty.call(state.purchaseQtyOverrides, key)
+      ? state.purchaseQtyOverrides[key]
+      : purchaseQuantity(row.participantQty?.[participant.key], row);
+  }
+
+  function hasConfirmPurchaseQuantity(preview) {
+    return (preview.rows || [])
+      .filter((row) => row.mappingStatus === '已关联')
+      .some((row) => (preview.participants || []).some((participant) => Number(purchaseQuantityValue(row, participant)) > 0));
+  }
+
+  function rememberConfirmPurchaseQuantity(input) {
+    const key = input?.dataset?.purchaseKey;
+    if (!key) return;
+    input.dataset.purchaseOverridden = 'true';
+    state.purchaseQtyOverrides[key] = input.value;
+  }
+
+  function normalizeConfirmPurchaseQuantityInput(input) {
+    if (!input || input.value === '') return;
+    const parsed = Number(input.value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      input.value = '0.00';
+      return;
+    }
+    input.value = fixedQuantity(input.step === '1' ? Math.ceil(parsed) : parsed);
+  }
+
+  function syncConfirmPurchaseInputs() {
+    app.querySelectorAll('[data-action="confirm-purchase-quantity"]').forEach((input) => {
+      if (input.dataset.purchaseOverridden !== 'true') return;
+      normalizeConfirmPurchaseQuantityInput(input);
+      rememberConfirmPurchaseQuantity(input);
+    });
+  }
+
+  function updateConfirmSubmitState() {
+    const submitButton = app.querySelector('[data-action="submit-demand"]');
+    if (!submitButton || state.submitting) return;
+    const preview = buildConfirmPreview();
+    submitButton.disabled = !(preview.canSubmit && hasConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(state.expectedAt));
+  }
+
+  function renderConfirmOrderTags(preview, activeParticipant) {
+    const available = confirmParticipants(preview);
+    if (!available.length) return '<div class="school-mobile-empty">暂无可提交的订单标签</div>';
+    return '<div class="school-mobile-order-tag-list" role="tablist" aria-label="提交需求包含的订单标签">'
+      + available.map((participant) => '<button type="button" class="school-mobile-order-tag '
+        + (participant.key === activeParticipant?.key ? 'is-active' : '')
+        + '" data-action="confirm-order-tag" data-participant-key="' + escapeHtml(participant.key) + '" role="tab" aria-selected="' + (participant.key === activeParticipant?.key ? 'true' : 'false') + '">' + escapeHtml(orderTagName(participant)) + '</button>').join('')
+      + '</div>';
+  }
+
   function renderConfirm() {
     const summaries = currentFilledDateSummaries();
-    const preview = state.confirmDates.size
-      ? demandService.buildPreview([...state.confirmDates], serviceOptions())
-      : { rows: [], totalPersonTimes: 0, productCount: 0, canSubmit: false, message: '请选择已填报日期' };
+    const preview = buildConfirmPreview();
+    const activeParticipant = activeConfirmParticipant(preview);
+    const activeRows = (preview.rows || []).filter((row) => (
+      row.mappingStatus === '已关联'
+      && (!activeParticipant || Number(row.participantQty?.[activeParticipant.key] || 0) > 0)
+    ));
     const dateOptions = summaries.length
       ? summaries.map((summary) => '<button type="button" class="school-mobile-confirm-date '
         + (summary.status?.key === 'partial' ? 'is-partial ' : summary.status?.key === 'complete' ? 'is-complete ' : 'is-disabled ')
@@ -505,22 +665,36 @@
         + '<strong>' + escapeHtml(shortDate(summary.date)) + '</strong><small>' + number(summary.calculation.totalPeople) + ' 人次</small></button>').join('')
       : '<div class="school-mobile-empty">暂无可提交的填报日期</div>';
     const expectedAt = state.expectedAt || '';
-    const canSubmit = Boolean(preview.canSubmit && expectedAt);
+    const canSubmit = Boolean(preview.canSubmit && hasConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(expectedAt));
+    const isPurchaseQuantityEditing = Boolean(activeParticipant && state.purchaseQuantityEditingKey === activeParticipant.key);
+    const purchaseQuantityAction = isPurchaseQuantityEditing ? 'save-purchase-quantity' : 'edit-purchase-quantity';
+    const purchaseQuantityActionLabel = isPurchaseQuantityEditing ? '保存' : '编辑';
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
-      + '<section class="school-mobile-confirm-card"><h2>选择用料日期</h2><p>可一次提交多个已填报日期，每次提交均按当前选择独立生成需求。</p><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
-      + '<section class="school-mobile-confirm-card"><h2>订单信息</h2><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><label class="school-mobile-field"><span>期望送达时间</span><input type="datetime-local" value="' + escapeHtml(expectedAt) + '" data-action="expected-at" aria-label="期望送达时间"></label></section>'
+      + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
+      + '<section class="school-mobile-confirm-card"><h2>订单信息</h2><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
       + '<section class="school-mobile-confirm-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>提交日期</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
-      + '<section class="school-mobile-confirm-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong><small>共 ' + number((preview.rows || []).length) + ' 项</small></div>' + renderPreviewProductRows(preview) + '</section>'
+      + '<div class="school-mobile-order-tags-inline">' + renderConfirmOrderTags(preview, activeParticipant) + '</div>'
+      + '<section class="school-mobile-confirm-card school-mobile-purchase-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + (activeParticipant ? '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>' : '') + '</div>' + renderPreviewProductRows(preview, activeParticipant, isPurchaseQuantityEditing) + '</section>'
       + (preview.message && !preview.canSubmit ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
       + '</div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回填报</button><button type="button" class="school-mobile-button is-primary" data-action="submit-demand" ' + (canSubmit && !state.submitting ? '' : 'disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
   }
 
-  function renderPreviewProductRows(preview) {
-    const rows = (preview.rows || []).filter((row) => row.mappingStatus === '已关联');
+  function renderPreviewProductRows(preview, participant, isEditing = false) {
+    const rows = (preview.rows || []).filter((row) => (
+      row.mappingStatus === '已关联'
+      && (!participant || Number(row.participantQty?.[participant.key] || 0) > 0)
+    ));
     if (!rows.length) return '<div class="school-mobile-empty">暂无可提交商品</div>';
-    return '<div class="school-mobile-demand-list">' + rows.map((row) => '<div class="school-mobile-demand-row">'
-      + '<div><strong>' + escapeHtml(productName(row)) + '</strong><small>' + escapeHtml(row.productCode || '--') + ' · ' + escapeHtml(productUnit(row)) + '</small></div>'
-      + '<span class="school-mobile-demand-qty">' + quantity(purchaseQuantity(row.totalQty, row)) + ' ' + escapeHtml(productUnit(row)) + '</span>'
+    return '<div class="school-mobile-demand-list">' + rows.map((row, index) => '<div class="school-mobile-demand-row">'
+      + '<span class="school-mobile-demand-index">' + String(index + 1).padStart(2, '0') + '</span>'
+      + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(productName(row)) + '</strong><small>' + escapeHtml(row.productCode || '--') + ' · ' + escapeHtml(productUnit(row)) + '</small>'
+      + (participant ? '<small class="school-mobile-demand-calculated">需求量：' + quantity(row.participantQty?.[participant.key]) + '</small>' : '')
+      + '</div>'
+      + (participant ? '<div class="school-mobile-demand-quantity"><span class="school-mobile-demand-purchase-label">采购量</span>'
+        + (isEditing
+          ? '<div class="school-mobile-demand-purchase-control"><input class="school-mobile-demand-purchase-input" type="number" min="0" step="' + (isStandardProduct(row) ? '1' : 'any') + '" inputmode="' + (isStandardProduct(row) ? 'numeric' : 'decimal') + '" value="' + escapeHtml(fixedQuantity(purchaseQuantityValue(row, participant))) + '" data-action="confirm-purchase-quantity" data-purchase-key="' + escapeHtml(purchaseQuantityKey(row, participant.key)) + '" data-purchase-participant-key="' + escapeHtml(participant.key) + '" data-purchase-overridden="' + (Object.prototype.hasOwnProperty.call(state.purchaseQtyOverrides, purchaseQuantityKey(row, participant.key)) ? 'true' : 'false') + '" aria-label="' + escapeHtml(orderTagName(participant) + productName(row) + '采购量') + '"><span class="school-mobile-demand-purchase-unit">' + escapeHtml(productUnit(row)) + '</span></div>'
+          : '<div class="school-mobile-demand-purchase-display"><strong>' + escapeHtml(fixedQuantity(purchaseQuantityValue(row, participant))) + '</strong><span class="school-mobile-demand-purchase-unit">' + escapeHtml(productUnit(row)) + '</span></div>')
+        : '<span class="school-mobile-demand-qty">' + quantity(purchaseQuantity(row.totalQty, row)) + ' ' + escapeHtml(productUnit(row)) + '</span>')
       + '</div>').join('') + '</div>';
   }
 
@@ -661,6 +835,61 @@
       + '</section></div>';
   }
 
+  function renderExpectedAtTimeColumn(label, part, values, selectedValue) {
+    return '<div class="school-mobile-expected-at-time-column-wrap"><span class="school-mobile-expected-at-time-label">' + escapeHtml(label) + '</span><div class="school-mobile-expected-at-time-column" data-time-part="' + escapeHtml(part) + '">' + values.map((value) => {
+      const text = String(value).padStart(2, '0');
+      return '<button type="button" class="school-mobile-expected-at-time-option ' + (text === selectedValue ? 'is-selected' : '') + '" data-action="expected-at-time-value" data-time-part="' + escapeHtml(part) + '" data-time-value="' + text + '">' + text + '</button>';
+    }).join('') + '</div></div>';
+  }
+
+  function renderExpectedAtSheet() {
+    const sheetValue = state.sheet?.draftValue || state.expectedAt;
+    const parts = parseExpectedAtValue(sheetValue);
+    const monthKey = state.sheet?.monthKey || monthKeyOf(parts.date) || monthKeyOf(state.date) || anchorMonthKey;
+    const [year, month] = monthKey.split('-').map(Number);
+    const firstDay = new Date(year || 2026, (month || 1) - 1, 1);
+    const firstDayOffset = firstDay.getDay();
+    const totalDays = daysInMonth(monthKey);
+    const cellCount = Math.ceil((firstDayOffset + totalDays) / 7) * 7;
+    const calendarCells = Array.from({ length: cellCount }, (_, index) => {
+      const day = index - firstDayOffset + 1;
+      if (day < 1 || day > totalDays) return '<span class="school-mobile-expected-at-day is-empty" aria-hidden="true"></span>';
+      const date = dateKeyFor(monthKey, day);
+      const dateObject = new Date(date + 'T00:00:00');
+      const isToday = !Number.isNaN(dateObject.getTime()) && date === new Date().toISOString().slice(0, 10);
+      const isDisabled = !expectedAtDateIsAllowed(date);
+      return '<button type="button" class="school-mobile-expected-at-day ' + (date === parts.date ? 'is-selected ' : '') + (isToday ? 'is-today ' : '') + (isDisabled ? 'is-disabled' : '') + '" data-action="expected-at-date" data-date="' + escapeHtml(date) + '" aria-label="' + escapeHtml(date) + '"' + (isDisabled ? ' disabled aria-disabled="true"' : '') + '>' + day + '</button>';
+    }).join('');
+    const hours = Array.from({ length: 24 }, (_, value) => value);
+    const minutes = Array.from({ length: 60 }, (_, value) => value);
+    const seconds = Array.from({ length: 60 }, (_, value) => value);
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-expected-at-sheet" role="dialog" aria-modal="true" aria-label="选择期望送达时间">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>选择期望送达时间</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
+      + '<p class="school-mobile-sheet-subtitle">请选择送达日期和时间。</p>'
+      + '<div class="school-mobile-expected-at-current"><span>当前选择</span><strong>' + escapeHtml(expectedAtDisplayValue(expectedAtInputValue(parts.date, parts.time))) + '</strong></div>'
+      + '<div class="school-mobile-expected-at-calendar"><div class="school-mobile-expected-at-calendar-header"><button type="button" data-action="expected-at-month" data-month-delta="-1" aria-label="上个月">‹</button><strong>' + escapeHtml(expectedAtMonthText(monthKey)) + '</strong><button type="button" data-action="expected-at-month" data-month-delta="1" aria-label="下个月">›</button></div><div class="school-mobile-expected-at-weekdays">' + weekdayNames.map((day) => '<span>' + escapeHtml(day) + '</span>').join('') + '</div><div class="school-mobile-expected-at-days">' + calendarCells + '</div></div>'
+      + '<div class="school-mobile-expected-at-time"><div class="school-mobile-expected-at-time-heading"><strong>选择时间</strong><span>' + escapeHtml(parts.time) + '</span></div><div class="school-mobile-expected-at-time-columns">'
+      + renderExpectedAtTimeColumn('时', 'hour', hours, parts.time.slice(0, 2))
+      + renderExpectedAtTimeColumn('分', 'minute', minutes, parts.time.slice(3, 5))
+      + renderExpectedAtTimeColumn('秒', 'second', seconds, parts.time.slice(6, 8))
+      + '</div></div>'
+      + '<div class="school-mobile-expected-at-actions"><button type="button" class="school-mobile-button" data-action="close-sheet">取消</button><button type="button" class="school-mobile-button is-primary" data-action="confirm-expected-at">确定</button></div>'
+      + '</section></div>';
+  }
+
+  function openExpectedAtSheet() {
+    const current = parseExpectedAtValue(state.expectedAt || expectedAtInputValue(state.date, '07:30:00'));
+    const firstDate = firstConfirmDate();
+    const date = expectedAtDateIsAllowed(current.date) ? current.date : firstDate || state.date;
+    state.expectedAt = expectedAtInputValue(date, current.time);
+    state.sheet = {
+      type: 'expected-at',
+      draftValue: expectedAtInputValue(date, current.time),
+      monthKey: monthKeyOf(date) || monthKeyOf(state.date) || anchorMonthKey
+    };
+    render();
+  }
+
   function openDishSheet(target) {
     const menu = menuFor(target.dataset.menuDate || state.date);
     const meal = (menu?.meals || []).find((item) => item.key === target.dataset.mealKey)
@@ -673,6 +902,33 @@
     if (!detail) return;
     state.sheet = { type: 'dish', detail };
     render();
+  }
+
+  function syncExpectedAtTimeColumns() {
+    app.querySelectorAll('.school-mobile-expected-at-time-column').forEach((column) => {
+      const options = [...column.querySelectorAll('.school-mobile-expected-at-time-option')];
+      const selectedIndex = options.findIndex((option) => option.classList.contains('is-selected'));
+      if (selectedIndex < 0) return;
+      const itemHeight = options[0]?.offsetHeight || 34;
+      column.scrollTop = selectedIndex * itemHeight;
+    });
+  }
+
+  function updateExpectedAtTimeFromScroll(column) {
+    if (state.sheet?.type !== 'expected-at') return;
+    const options = [...column.querySelectorAll('.school-mobile-expected-at-time-option')];
+    if (!options.length) return;
+    const itemHeight = options[0].offsetHeight || 34;
+    const index = Math.max(0, Math.min(options.length - 1, Math.round(column.scrollTop / itemHeight)));
+    const selected = options[index];
+    const parts = parseExpectedAtValue(state.sheet.draftValue || state.expectedAt);
+    const timePart = column.dataset.timePart;
+    const timeValue = selected.dataset.timeValue || '00';
+    const nextTime = expectedAtTimePart(parts.time, timePart, timeValue);
+    state.sheet.draftValue = expectedAtInputValue(parts.date || state.date, nextTime);
+    options.forEach((option) => option.classList.toggle('is-selected', option === selected));
+    const currentTime = app.querySelector('.school-mobile-expected-at-time-heading span');
+    if (currentTime) currentTime.textContent = nextTime;
   }
 
   function render() {
@@ -689,6 +945,8 @@
       ? renderCanteenSheet()
       : state.sheet?.type === 'dish'
         ? renderDishSheet()
+        : state.sheet?.type === 'expected-at'
+          ? renderExpectedAtSheet()
         : '';
     app.innerHTML = '<div class="school-mobile-app">'
       + renderHeader()
@@ -697,6 +955,7 @@
       + sheet
       + '</div>';
     syncDateMonthControls();
+    syncExpectedAtTimeColumns();
   }
 
   function updateAttendanceLive() {
@@ -753,6 +1012,9 @@
     state.attendance = attendanceService.emptyRecord(state.date, currentCanteen());
     state.attendance.meals = {};
     state.confirmDates.clear();
+    state.confirmParticipantKey = '';
+    state.purchaseQtyOverrides = {};
+    state.purchaseQuantityEditingKey = '';
     state.expectedAt = '';
   }
 
@@ -811,14 +1073,19 @@
   async function submitDemand() {
     if (state.submitting) return;
     ensureDemoSession();
+    syncConfirmPurchaseInputs();
     const dates = [...state.confirmDates];
     if (!dates.length) {
       showToast('请至少选择一个用料日期', true);
       return;
     }
-    const preview = demandService.buildPreview(dates, serviceOptions());
+    const preview = buildConfirmPreview();
     if (!preview.canSubmit) {
       showToast(preview.message || '当前需求不能提交', true);
+      return;
+    }
+    if (!hasConfirmPurchaseQuantity(preview)) {
+      showToast('当前没有采购量，无法提交', true);
       return;
     }
     const expectedAt = normalizeExpectedAt(state.expectedAt);
@@ -826,12 +1093,18 @@
       showToast('请选择期望送达时间', true);
       return;
     }
+    if (!expectedAtIsAllowed(expectedAt)) {
+      showToast('期望送达时间不得晚于第一个用料日期', true);
+      return;
+    }
     state.submitting = true;
     render();
     try {
       const result = await demandService.submit(dates, {
+        ...serviceOptions(),
         expectedAt,
-        canteen: currentCanteen()
+        canteen: currentCanteen(),
+        purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }
       });
       clearAttendanceAfterFlow();
       state.submitting = false;
@@ -839,6 +1112,9 @@
       state.tab = 'profile';
       state.profileSection = 'submissions';
       state.record = result.record || null;
+      state.confirmParticipantKey = '';
+      state.purchaseQtyOverrides = {};
+      state.purchaseQuantityEditingKey = '';
       state.toast = null;
       render();
       showToast('需求已提交并生成订单');
@@ -874,6 +1150,9 @@
         preserveAttendanceOnReturn();
         loadAttendance();
         state.confirmDates.clear();
+        state.confirmParticipantKey = '';
+        state.purchaseQtyOverrides = {};
+        state.purchaseQuantityEditingKey = '';
         state.expectedAt = '';
       }
       state.screen = 'main';
@@ -909,6 +1188,48 @@
     }
     if (action === 'open-canteen') {
       state.sheet = { type: 'canteen' };
+      render();
+      return;
+    }
+    if (action === 'open-expected-at') {
+      openExpectedAtSheet();
+      return;
+    }
+    if (action === 'expected-at-month' && state.sheet?.type === 'expected-at') {
+      state.sheet.monthKey = shiftMonthKey(state.sheet.monthKey || monthKeyOf(state.date) || anchorMonthKey, Number(target.dataset.monthDelta) || 0);
+      render();
+      return;
+    }
+    if (action === 'expected-at-date' && state.sheet?.type === 'expected-at') {
+      const parts = parseExpectedAtValue(state.sheet.draftValue || state.expectedAt);
+      if (target.dataset.date && expectedAtDateIsAllowed(target.dataset.date)) {
+        state.sheet.draftValue = expectedAtInputValue(target.dataset.date, parts.time);
+        state.sheet.monthKey = monthKeyOf(target.dataset.date) || state.sheet.monthKey;
+        render();
+      }
+      return;
+    }
+    if (action === 'expected-at-time-value' && state.sheet?.type === 'expected-at') {
+      const parts = parseExpectedAtValue(state.sheet.draftValue || state.expectedAt);
+      const timePart = target.dataset.timePart;
+      const timeValue = String(target.dataset.timeValue || '').padStart(2, '0');
+      const nextTime = expectedAtTimePart(parts.time, timePart, timeValue);
+      state.sheet.draftValue = expectedAtInputValue(parts.date || state.date, nextTime);
+      render();
+      return;
+    }
+    if (action === 'confirm-expected-at' && state.sheet?.type === 'expected-at') {
+      const parts = parseExpectedAtValue(state.sheet.draftValue || state.expectedAt);
+      if (!parts.date) {
+        showToast('请选择期望送达日期', true);
+        return;
+      }
+      if (!expectedAtDateIsAllowed(parts.date)) {
+        showToast('期望送达时间不得晚于第一个用料日期', true);
+        return;
+      }
+      state.expectedAt = expectedAtInputValue(parts.date, parts.time);
+      state.sheet = null;
       render();
       return;
     }
@@ -954,6 +1275,32 @@
       }
       if (state.confirmDates.has(date)) state.confirmDates.delete(date);
       else state.confirmDates.add(date);
+      alignExpectedAtToFirstDate();
+      render();
+      return;
+    }
+    if (action === 'confirm-order-tag') {
+      const preview = buildConfirmPreview();
+      if (confirmParticipants(preview).some((participant) => participant.key === target.dataset.participantKey)) {
+        syncConfirmPurchaseInputs();
+        state.confirmParticipantKey = target.dataset.participantKey;
+        state.purchaseQuantityEditingKey = '';
+        render();
+      }
+      return;
+    }
+    if (action === 'edit-purchase-quantity') {
+      const preview = buildConfirmPreview();
+      if (confirmParticipants(preview).some((participant) => participant.key === target.dataset.purchaseParticipantKey)) {
+        state.confirmParticipantKey = target.dataset.purchaseParticipantKey;
+        state.purchaseQuantityEditingKey = target.dataset.purchaseParticipantKey;
+        render();
+      }
+      return;
+    }
+    if (action === 'save-purchase-quantity') {
+      syncConfirmPurchaseInputs();
+      state.purchaseQuantityEditingKey = '';
       render();
       return;
     }
@@ -992,6 +1339,11 @@
       updateAttendanceLive();
       return;
     }
+    if (action === 'confirm-purchase-quantity') {
+      rememberConfirmPurchaseQuantity(target);
+      updateConfirmSubmitState();
+      return;
+    }
     if (action === 'record-keyword') {
       state.recordKeyword = target.value;
       const list = app.querySelector('#schoolMobileRecordList');
@@ -1012,7 +1364,16 @@
     }
     if (action === 'expected-at') {
       state.expectedAt = target.value;
+      updateConfirmSubmitState();
     }
+  });
+
+  app.addEventListener('change', (event) => {
+    const target = event.target.closest?.('[data-action="confirm-purchase-quantity"]');
+    if (!target || !app.contains(target)) return;
+    normalizeConfirmPurchaseQuantityInput(target);
+    rememberConfirmPurchaseQuantity(target);
+    updateConfirmSubmitState();
   });
 
   app.addEventListener('submit', (event) => {
@@ -1022,6 +1383,11 @@
   });
 
   app.addEventListener('scroll', (event) => {
+    const timeColumn = event.target.closest?.('.school-mobile-expected-at-time-column');
+    if (timeColumn && app.contains(timeColumn)) {
+      updateExpectedAtTimeFromScroll(timeColumn);
+      return;
+    }
     const strip = event.target.closest?.('[data-date-strip]');
     if (!strip || !app.contains(strip)) return;
     const scrollKey = (strip.dataset.stripMode || '') + '|' + (strip.dataset.monthKey || '');

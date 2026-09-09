@@ -6,6 +6,8 @@
 
   /* ===== 常量 ===== */
   const warehouses = ['生鲜仓库', '公司市区仓库', '东南区域仓库'];
+  const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
+  const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
 
   const categoryOptions = [
     '全部',
@@ -90,6 +92,13 @@
                 <option value="全部">全部</option>
                 <option value="净菜">净菜</option>
                 <option value="非净菜">非净菜</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label" for="obMealName">订单餐次</label>
+              <select class="filter-select is-placeholder" id="obMealName" data-placeholder-only>
+                <option value="" disabled selected hidden>请选择</option>
+                ${orderMealOptions}
               </select>
             </div>
           </div>
@@ -204,6 +213,19 @@
     state.products = window.OutboundService.getProducts();
   }
 
+  function resolveMealName(value) {
+    return window.OrderMealNameByKey?.[value] || value || '';
+  }
+
+  function orderMealName(order) {
+    const ownMeal = resolveMealName(order.mealName || order.mealKey);
+    if (ownMeal) return ownMeal;
+    const relatedOrder = (window.DemoStore?.get?.('orders') || []).find((item) => (
+      (order.orderId && item.id === order.orderId) || (order.orderNo && item.orderNo === order.orderNo)
+    ));
+    return resolveMealName(relatedOrder?.mealName || relatedOrder?.mealKey);
+  }
+
   /* ===== 列表渲染 ===== */
   function renderTable(orders) {
     state.visibleOrders = orders || state.visibleOrders;
@@ -294,6 +316,7 @@
     const orderNo = val('obOrderNo').toLowerCase();
     const warehouse = val('obWarehouse');
     const netVegetable = val('obNetVegetable');
+    const mealName = val('obMealName');
 
     const result = state.orders.filter((order) => {
       // 出库日期
@@ -339,6 +362,8 @@
         });
         if (!hasMatch) return false;
       }
+      // 订单餐次
+      if (mealName && orderMealName(order) !== mealName) return false;
       return true;
     });
 
@@ -357,6 +382,11 @@
       const el = document.getElementById(id);
       if (el) el.value = '全部';
     });
+    const mealSelect = document.getElementById('obMealName');
+    if (mealSelect) {
+      mealSelect.value = '';
+      mealSelect.classList.add('is-placeholder');
+    }
     state.page = 1;
     filterOrders();
   }

@@ -31,6 +31,7 @@
   cursor: pointer;
 }
 .filter-select:focus { border-color: var(--primary); }
+.filter-select.is-placeholder { color: var(--text-tertiary); }
 
 /* ===== 全局区块标题标记 =====
    用法：<span class="section-title-mark">区块标题</span> */
