@@ -195,10 +195,6 @@
     return '';
   }
 
-  function renderCanteenTabs() {
-    return `<div class="school-recipe-canteen-switch" aria-label="当前食堂"><div class="school-recipe-canteen-tabs" role="tablist" aria-label="切换食堂">${canteenNames.map((name) => `<button type="button" class="school-recipe-canteen-tab${name === state.canteen ? ' is-active' : ''}" role="tab" aria-selected="${name === state.canteen}" data-recipe-canteen="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join('')}</div></div>`;
-  }
-
   function updateOverviewLayout(root) {
     const fields = root.querySelector('#schoolRecipeOverview .school-recipe-overview-fields');
     if (!fields) return;
@@ -423,11 +419,10 @@
 
   function renderDetail(menu) {
     const overview = renderOverview(menu);
-    if (!menu) return `<main class="school-recipe-detail-panel" aria-label="营养食谱详情">${renderModeTabs()}${renderCanteenTabs()}${overview}<div class="school-recipe-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>请选择有菜谱的日期</p></div></main>`;
+    if (!menu) return `<main class="school-recipe-detail-panel" aria-label="营养食谱详情">${renderModeTabs()}${overview}<div class="school-recipe-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>请选择有菜谱的日期</p></div></main>`;
     const meals = menu.meals || [];
     return `<main class="school-recipe-detail-panel" aria-label="营养食谱详情">
       ${renderModeTabs()}
-      ${renderCanteenTabs()}
       ${overview}
       <div class="school-recipe-meal-grid${meals.length > 3 ? ' is-scrollable' : ''}">${meals.length ? meals.map((meal) => renderMealCard(meal, menu.date)).join('') : '<div class="school-recipe-empty">当前日期暂无餐次菜谱</div>'}</div>
     </main>`;
