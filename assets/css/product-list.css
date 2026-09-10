@@ -1,4 +1,8 @@
 .filter-section { margin-bottom: 12px; flex-shrink: 0; }
+.product-list-page .table-panel {
+  --query-label-width: 132px;
+  --query-control-width: 180px;
+}
 .workspace-grid {
   display: grid;
   grid-template-columns: var(--category-tree-width) minmax(0, 1fr);

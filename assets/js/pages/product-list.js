@@ -51,6 +51,10 @@
                 <div class="filter-group">
                   <label class="filter-label" for="standardProductFilter">是否标品</label>
                   <select class="filter-select" id="standardProductFilter"><option value="全部" selected>全部</option><option value="是">是</option><option value="否">否</option></select>
+                </div>
+                <div class="filter-group">
+                  <label class="filter-label" for="purchaseQuantityFilter">是否允许修改采购量</label>
+                  <select class="filter-select" id="purchaseQuantityFilter"><option value="全部" selected>全部</option><option value="是">是</option><option value="否">否</option></select>
                 </div>`}
               </div>
               <div class="action-controls">
@@ -421,6 +425,7 @@
     const source = value('sourceFilter');
     const netVegetable = isSupplierProductPage ? '全部' : value('netVegetableFilter');
     const standardProduct = isSupplierProductPage ? '全部' : value('standardProductFilter');
+    const purchaseQuantity = isSupplierProductPage ? '全部' : value('purchaseQuantityFilter');
     const result = state.products.filter((product) => (
       (!nameOrCode || `${product.name} ${product.code}`.toLowerCase().includes(nameOrCode)) &&
       (!brand || product.brand.toLowerCase().includes(brand)) &&
@@ -428,7 +433,8 @@
       (purchaseType === '全部' || product.purchaseType === purchaseType) &&
       (source === '全部' || product.source === source) &&
       (isSupplierProductPage || netVegetable === '全部' || (netVegetable === '净菜' && product.isNetVegetable) || (netVegetable === '非净菜' && !product.isNetVegetable)) &&
-      (isSupplierProductPage || standardProduct === '全部' || (standardProduct === '是' && product.isStandardProduct) || (standardProduct === '否' && !product.isStandardProduct))
+      (isSupplierProductPage || standardProduct === '全部' || (standardProduct === '是' && product.isStandardProduct) || (standardProduct === '否' && !product.isStandardProduct)) &&
+      (isSupplierProductPage || purchaseQuantity === '全部' || (purchaseQuantity === '是' && canModifyPurchaseQuantity(product)) || (purchaseQuantity === '否' && !canModifyPurchaseQuantity(product)))
     ));
     state.filteredProducts = result;
     state.total = result.length;
@@ -442,6 +448,7 @@
     if (!isSupplierProductPage) document.getElementById('purchaseTypeFilter').value = '全部';
     if (!isSupplierProductPage) document.getElementById('netVegetableFilter').value = '全部';
     if (!isSupplierProductPage) document.getElementById('standardProductFilter').value = '全部';
+    if (!isSupplierProductPage) document.getElementById('purchaseQuantityFilter').value = '全部';
     filterProducts(true);
   }
 
