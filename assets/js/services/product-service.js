@@ -69,7 +69,8 @@
   function load() {
     return loadRaw().filter((product) => product && (product.code || product.id)).map((product, index) => ({
       ...product,
-      seq: product.seq ?? index + 1,
+      // 序号以当前商品列表顺序为准，避免沿用种子数据或旧缓存中的错误序号。
+      seq: index + 1,
       isNetVegetable: product.isNetVegetable ?? product.name === '土豆丝',
       isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
       allowSchoolModifyPurchaseQuantity: canModifyPurchaseQuantity(product),
