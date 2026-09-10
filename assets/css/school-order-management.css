@@ -373,7 +373,7 @@ body > #schoolOrderDateRangePanel {
   vertical-align: middle;
 }
 
-.school-order-recipe-tag-link {
+.school-order-demand-link {
   display: inline-block;
   max-width: 100%;
   margin-left: 6px;
@@ -390,7 +390,7 @@ body > #schoolOrderDateRangePanel {
   cursor: pointer;
 }
 
-.school-order-recipe-tag-link:hover { text-decoration: underline; }
+.school-order-demand-link:hover { text-decoration: underline; }
 
 .school-order-table .school-order-action-cell {
   overflow: visible;

@@ -105,7 +105,7 @@
       <td><button type="button" class="school-order-number" data-action="detail" data-id="${escapeHtml(row.id)}" title="查看订单详情"><span class="school-order-number-main">${escapeHtml(row.orderNo)}</span><span class="school-order-created-at">${showValue(row.createdAt)}</span></button></td>
       <td title="${escapeHtml(row.supplierName)}">${escapeHtml(row.supplierName)}</td>
       <td>${escapeHtml(row.canteen)}</td>
-      <td class="school-order-tag-cell"><span>${escapeHtml(row.orderTag)}</span>${row.recipeDemandRecordId ? `<button type="button" class="school-order-recipe-tag-link" data-action="recipe-record" data-record-id="${escapeHtml(row.recipeDemandRecordId)}" title="查看需求提交记录">${escapeHtml(row.recipeTag || '食谱Tag')}</button>` : ''}</td>
+      <td class="school-order-tag-cell"><span>${escapeHtml(row.orderTag)}</span>${row.recipeDemandRecordId ? `<button type="button" class="school-order-demand-link" data-action="recipe-record" data-record-id="${escapeHtml(row.recipeDemandRecordId)}" title="查看需求提交记录">查看需求记录</button>` : ''}</td>
       <td>${formatAmount(row.orderAmount)}</td>
       <td>${formatAmount(row.acceptedAmount)}</td>
       <td>${formatAmount(row.returnAmount)}</td>

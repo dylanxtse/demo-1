@@ -313,7 +313,6 @@
       supplement: String(payload.supplement || '否'),
       source: String(payload.source || '平台下单'),
       remark: String(payload.remark ?? '--'),
-      recipeTag: String(payload.recipeTag || '').trim(),
       recipeDemandRecordId: String(payload.recipeDemandRecordId || '').trim(),
       recipeDemandRecordNo: String(payload.recipeDemandRecordNo || '').trim(),
       recipeDemandDate: String(payload.recipeDemandDate || '').trim(),

@@ -22,7 +22,6 @@
     ['canteen', '食堂'],
     ['customerType', '客户类型'],
     ['orderTag', '订单标签'],
-    ['recipeTag', '食谱Tag'],
     ['orderAmount', '下单金额', 'money'],
     ['shippingAmount', '发货金额', 'money'],
     ['returnAmount', '退货金额', 'money'],

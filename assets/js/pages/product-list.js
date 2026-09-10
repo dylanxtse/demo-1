@@ -68,7 +68,7 @@
             <div class="action-main">
               <button class="btn btn-primary btn-sm btn-action" type="button" data-action="add-product">${addIcon}添加商品</button>
               ${isSupplierProductPage ? '' : `<div class="purchase-quantity-action-wrap" id="purchaseQuantityActionWrap">
-                <button id="batchPurchaseQuantityBtn" class="btn btn-sm btn-action btn-blue btn-disabled purchase-quantity-action" type="button" disabled title="请先勾选商品" aria-haspopup="menu">修改采购量<span class="purchase-quantity-action-arrow" aria-hidden="true">▾</span></button>
+                <button id="batchPurchaseQuantityBtn" class="btn btn-sm btn-action btn-blue btn-disabled purchase-quantity-action" type="button" disabled title="请先勾选商品" aria-haspopup="menu">修改采购量设置<span class="purchase-quantity-action-arrow" aria-hidden="true">▾</span></button>
                 <div class="purchase-quantity-menu" role="menu" aria-label="采购量修改权限">
                   <button class="purchase-quantity-menu-item" type="button" data-action="allow-purchase-quantity" role="menuitem">允许修改</button>
                   <button class="purchase-quantity-menu-item" type="button" data-action="deny-purchase-quantity" role="menuitem">禁止修改</button>

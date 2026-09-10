@@ -94,7 +94,7 @@
     'expectedAt', 'source', 'sourceType', 'createdAt', 'createTime', 'creator', 'shippingAt', 'driver', 'acceptedAt',
     'status', 'receiptStatus', 'receivedAt', 'supplement', 'remark', 'orderAmount', 'shippingAmount', 'acceptedAmount',
     'returnAmount', 'reconciliationAmount', 'productCount', 'orderLineCount', 'items', 'orderLines', 'warehouse', 'route',
-    'receiver', 'phone', 'address', 'printed', 'sortingCompleted', 'recipeTag', 'recipeDemandRecordId',
+    'receiver', 'phone', 'address', 'printed', 'sortingCompleted', 'recipeDemandRecordId',
     'recipeDemandRecordNo', 'recipeDemandDate', 'recipeParticipantType', 'purchaser', 'auditAt', 'auditor', 'rejectReason',
     'auditOpinion', 'updatedAt', 'orderType', 'netVegetable', 'operationLogs'
   ]);
@@ -120,6 +120,7 @@
     } else {
       delete result.purchaser;
     }
+    delete result.recipeTag;
     legacyOrderKeys.forEach((key) => delete result[key]);
     if (!partial) {
       const fields = orderDetailFields[side] || orderDetailFields.enterprise;
@@ -1307,6 +1308,14 @@
       return normalized;
     });
     state.orders = normalizedOrders;
+    if (Array.isArray(state.schoolOrders)) {
+      const normalizedSchoolOrders = state.schoolOrders.map((order) => {
+        const normalized = normalizeOrderShape(order, 'school');
+        if (JSON.stringify(normalized) !== JSON.stringify(order)) changed = true;
+        return normalized;
+      });
+      state.schoolOrders = normalizedSchoolOrders;
+    }
     normalizedOrders.forEach((order) => {
       (order.items || []).forEach((line) => normalizeLine(line, 'orders'));
       order.orderLines = order.items;
