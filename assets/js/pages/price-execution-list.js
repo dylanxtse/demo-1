@@ -146,7 +146,14 @@
     else if (field === 'purchaseType') values = ['企业自加工', '供应商送货', '市场自采'];
     else if (field === 'customerType') values = ['学校', '幼儿园', '机关单位'];
     else values = uniqueValues(field);
-    return [`<option value="">${escapeHtml(placeholder)}</option>`, ...values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join('');
+    const firstLabel = String(placeholder || '全部').trim();
+    const isPlaceholder = /^(请选择|请输入|选择)/.test(firstLabel);
+    const emptyOption = isPlaceholder
+      ? `<option value="" disabled hidden selected>${escapeHtml(firstLabel)}</option>`
+      : `<option value="">${escapeHtml(firstLabel)}</option>`;
+    return [emptyOption, ...values
+      .filter((value) => !/^(请选择|请输入|选择)/.test(String(value ?? '').trim()))
+      .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join('');
   }
 
   function renderFilterFields() {

@@ -44,17 +44,28 @@
       total: 0,
       items: [],
       selected: new Set(),
-      condition: {},
+      condition: { ...(config.initialCondition || {}) },
       pagination: null,
       activeTab: config.tabs?.[0]?.key,
       activeStatus: config.tabs?.[0]?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
     };
     const currentFilters = () => config.tabs?.find((tab) => tab.key === state.activeTab)?.filters || config.filters || [];
-    const renderFilter = (field) => `
+    const isPlaceholderOption = (value) => /^(请选择|请输入|选择)/.test(String(value ?? '').trim());
+    const renderFilter = (field) => {
+      const placeholderOnly = field.placeholderOnly === true || isPlaceholderOption(field.emptyLabel);
+      const emptyLabel = field.placeholderOnly ? (field.emptyLabel || '请选择') : (field.emptyLabel || '全部');
+      const emptyOption = placeholderOnly
+        ? `<option value="" disabled hidden selected>${escapeHtml(emptyLabel)}</option>`
+        : `<option value="">${escapeHtml(emptyLabel)}</option>`;
+      const options = (field.options || []).filter((option) => {
+        const label = typeof option === 'string' ? option : option?.label;
+        return !isPlaceholderOption(label);
+      });
+      return `
       <div class="operations-field">
         <label class="filter-label" for="filter-${field.key}">${field.label}</label>
         ${field.options
-          ? `<select class="filter-select${field.placeholderOnly ? ' is-placeholder' : ''}" id="filter-${field.key}"${field.placeholderOnly ? ' data-placeholder-only' : ''}>${field.placeholderOnly ? `<option value="" disabled selected hidden>${escapeHtml(field.emptyLabel || '请选择')}</option>` : `<option value="">${escapeHtml(field.emptyLabel || '全部')}</option>`}${field.options.map((option) => {
+          ? `<select class="filter-select${placeholderOnly ? ' is-placeholder' : ''}" id="filter-${field.key}"${placeholderOnly ? ' data-placeholder-only' : ''}>${emptyOption}${options.map((option) => {
             const value = typeof option === 'string' ? option : option.value;
             const label = typeof option === 'string' ? option : option.label;
             return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
@@ -62,12 +73,13 @@
           : field.type === 'dateRange'
             ? `<div class="date-range-picker operations-date-range" id="filter-wrap-${field.key}">
                 <input class="filter-input date-range-display" id="filter-${field.key}" type="text" readonly placeholder="${field.placeholder || '请选择日期范围'}">
-                <input type="hidden" data-date-start><input type="hidden" data-date-end>
+                <input type="hidden" data-date-start value="${escapeHtml(field.defaultStart || '')}"><input type="hidden" data-date-end value="${escapeHtml(field.defaultEnd || '')}">
               </div>`
             : field.type === 'date'
               ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
-              : `<input class="filter-input" id="filter-${field.key}" type="${field.type || 'text'}" placeholder="${field.placeholder || '请输入'}">`}
+              : `<input class="filter-input" id="filter-${field.key}" type="${field.type || 'text'}" value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请输入'}">`}
       </div>`;
+    };
     const filters = currentFilters();
     const filterHtml = filters.map(renderFilter).join('');
     const primaryFilterHtml = useDemoListLayout ? filterHtml : filters.slice(0, 3).map(renderFilter).join('');
@@ -153,7 +165,7 @@
       });
       currentFilters().filter((field) => field.type === 'dateRange').forEach((field) => {
         const container = $(`#filter-wrap-${field.key}`);
-        if (container && window.DateRangePicker) datePickers.set(field.key, window.DateRangePicker.create({ container }));
+        if (container && window.DateRangePicker) datePickers.set(field.key, window.DateRangePicker.create({ container, separator: field.separator || config.dateSeparator }));
       });
       root.querySelectorAll('[data-record-expanded-date]').forEach((input, index) => {
         if (!window.DatePicker) return;

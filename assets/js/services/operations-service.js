@@ -192,6 +192,11 @@
         const source = item.createdAt || item.expectedAt || item.occurredAt || item.inboundAt || item.countAt || '';
         return (!value[0] || source >= value[0]) && (!value[1] || source <= `${value[1]} 23:59:59`);
       }
+      if (Array.isArray(value) && value.length === 2 && /Range$/.test(key)) {
+        const sourceKey = key.replace(/Range$/, '');
+        const source = item[sourceKey] || '';
+        return (!value[0] || source >= value[0]) && (!value[1] || source <= `${value[1]} 23:59:59`);
+      }
       if (key === 'mealName') return matchesMealName(item, value, resource);
       if (resource === 'orders' && key === 'netVegetable') {
         const containsNetVegetable = orderContainsNetVegetable(item);

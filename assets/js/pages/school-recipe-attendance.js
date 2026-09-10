@@ -385,7 +385,7 @@
     const record = attendanceForDate(state.selectedDate);
     const validation = attendanceService.validate(menu, record, serviceOptions());
     const meals = menu?.meals || [];
-    if (!menu) return `<main class="school-recipe-attendance-detail-panel">${renderOverview(menu)}<div class="school-recipe-attendance-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>请选择有菜谱的日期</p></div></main>`;
+    if (!menu) return `<main class="school-recipe-attendance-detail-panel">${renderOverview(menu)}<div class="school-recipe-attendance-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>请选择有菜谱的日期</p></div></main>`;
     const isNonDiningMode = attendanceInputMode === 'non-dining';
     const canContinueAttempt = canAttemptContinue(menu, validation);
     const footer = isNonDiningMode
@@ -426,7 +426,7 @@
     input?.focus({ preventScroll: true });
     input?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
     const participantName = issue.participant.label || issue.participant.tagName || '人员';
-    showToast(`${issue.meal.name}${participantName}总人数不能为空，请填写0`, true);
+    showToast(`${issue.meal.name}${participantName}总人数不能为空`, true);
   }
 
   function saveNonDiningMode(page, root) {

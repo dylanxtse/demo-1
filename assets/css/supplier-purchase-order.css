@@ -90,7 +90,7 @@
 .supplier-purchase-date-range:focus-within { border-color: var(--primary); }
 
 .supplier-purchase-filter-item input::placeholder,
-.supplier-purchase-date-range input::placeholder { color: #9a9fa8; }
+.supplier-purchase-date-range input::placeholder { color: var(--text-tertiary); }
 
 .supplier-purchase-date-range {
   display: flex;
@@ -695,7 +695,7 @@
 }
 
 .supplier-purchase-production-date:focus { border-color: var(--primary); }
-.supplier-purchase-production-date::placeholder { color: #9a9fa8; }
+.supplier-purchase-production-date::placeholder { color: var(--text-tertiary); }
 
 .supplier-purchase-empty {
   height: 180px !important;
@@ -885,7 +885,7 @@
 
 .supplier-purchase-shipping-quantity:focus,
 .supplier-purchase-shipping-date:focus { border-color: var(--primary); }
-.supplier-purchase-shipping-date::placeholder { color: #9a9fa8; }
+.supplier-purchase-shipping-date::placeholder { color: var(--text-tertiary); }
 
 .supplier-purchase-shipping-total {
   display: flex;

@@ -289,8 +289,8 @@
       <header class="product-picker-header"><h3 id="orderProductPickerTitle">批量添加商品</h3><button class="product-picker-close" type="button" data-overlay-close aria-label="关闭">×</button></header>
       <div class="product-picker-body">
         <div class="product-picker-filters">
-          <label class="product-picker-filter"><span>采购类型</span><select data-picker-filter="purchaseType"><option value="">请选择</option>${purchaseTypes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
-          <label class="product-picker-filter"><span>商品分类</span><select data-picker-filter="category"><option value="">请选择商品分类</option>${categories.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
+          <label class="product-picker-filter"><span>采购类型</span><select data-picker-filter="purchaseType"><option value="" disabled hidden selected>请选择</option>${purchaseTypes.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
+          <label class="product-picker-filter"><span>商品分类</span><select data-picker-filter="category"><option value="" disabled hidden selected>请选择商品分类</option>${categories.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
           <div class="product-picker-filter-actions"><button class="btn btn-primary btn-sm" type="button" data-product-picker-action="query">查询</button><button class="btn btn-sm" type="button" data-product-picker-action="reset">重置</button></div>
         </div>
         <div class="product-picker-table-wrap"><table class="product-picker-table"><colgroup><col style="width:48px"><col style="width:110px"><col><col style="width:120px"><col style="width:180px"><col style="width:180px"></colgroup><thead><tr><th><input type="checkbox" data-picker-check-all aria-label="全选当前页"></th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>下单数量</th><th>备注</th></tr></thead><tbody id="orderProductPickerBody"></tbody></table></div>

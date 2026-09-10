@@ -104,14 +104,20 @@
   }
 
   function renderSelect(name, values, selected, first = '全部') {
-    const placeholder = first.startsWith('请选择');
-    const firstOption = placeholder ? '' : `<option value="">${esc(first)}</option>`;
-    const placeholderData = placeholder ? ` data-price-placeholder="${esc(first)}" data-price-empty="${selected ? 'false' : 'true'}"` : '';
-    return `<select class="filter-select" data-filter="${name}" aria-label="${name}"${placeholderData}>${firstOption}${values.map((value) => `<option value="${esc(value)}" ${value === selected ? 'selected' : ''}>${esc(value)}</option>`).join('')}</select>`;
+    const firstLabel = String(first || '全部').trim();
+    const placeholder = /^(请选择|请输入|选择)/.test(firstLabel);
+    const emptyOption = placeholder
+      ? `<option value="" disabled hidden${selected ? '' : ' selected'}>${esc(firstLabel)}</option>`
+      : `<option value="">${esc(firstLabel)}</option>`;
+    const placeholderData = placeholder ? ` data-price-placeholder="${esc(firstLabel)}" data-price-empty="${selected ? 'false' : 'true'}"` : '';
+    const valueOptions = values
+      .filter((value) => !/^(请选择|请输入|选择)/.test(String(value ?? '').trim()))
+      .map((value) => `<option value="${esc(value)}" ${value === selected ? 'selected' : ''}>${esc(value)}</option>`).join('');
+    return `<select class="filter-select" data-filter="${name}" aria-label="${name}"${placeholderData}>${emptyOption}${valueOptions}</select>`;
   }
 
   function filterField(label, name, control) {
-    return `<div class="operations-field"><label class="filter-label">${esc(label)}</label>${control}</div>`;
+    return `<div class="operations-field" data-price-filter="${esc(name)}"><label class="filter-label">${esc(label)}</label>${control}</div>`;
   }
 
   function renderFilters() {
@@ -179,7 +185,7 @@
 
   function readFilterValues() { host.querySelectorAll('[data-filter]').forEach((element) => { state.filters[element.dataset.filter] = element.value.trim(); }); }
   function renderPage() {
-    host.innerHTML = `<section class="page-card price-execution-source-page order-module-page"><div class="px-tabs" role="tablist"><button type="button" class="${state.mode === 'purchase' ? 'active' : ''}" data-px-mode="purchase">采购价执行清单</button><button type="button" class="${state.mode === 'sales' ? 'active' : ''}" data-px-mode="sales">销售价执行清单</button></div>${renderFilters()}${renderToolbar()}<div class="px-table-box"><div class="px-table-scroll"><table class="px-table"><thead id="pxTableHead"></thead><tbody id="pxTableBody"></tbody></table></div><div class="px-pagination" id="pxPagination"></div></div><div class="px-toast" id="priceExecutionSourceToast" role="status"></div></section>${state.modal ? renderModal() : ''}`;
+    host.innerHTML = `<section class="page-card price-execution-source-page order-module-page ${state.mode === 'purchase' ? 'purchase-mode' : 'sales-mode'}"><div class="px-tabs" role="tablist"><button type="button" class="${state.mode === 'purchase' ? 'active' : ''}" data-px-mode="purchase">采购价执行清单</button><button type="button" class="${state.mode === 'sales' ? 'active' : ''}" data-px-mode="sales">销售价执行清单</button></div>${renderFilters()}${renderToolbar()}<div class="px-table-box"><div class="px-table-scroll"><table class="px-table"><thead id="pxTableHead"></thead><tbody id="pxTableBody"></tbody></table></div><div class="px-pagination" id="pxPagination"></div></div><div class="px-toast" id="priceExecutionSourceToast" role="status"></div></section>${state.modal ? renderModal() : ''}`;
     renderTable();
     window.PriceSelectPlaceholder?.apply(host);
   }

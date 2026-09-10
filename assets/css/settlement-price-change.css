@@ -1,0 +1,714 @@
+/* 企业端结算改价页面：沿用项目查询区、表格和弹窗的基础设计变量。 */
+.settlement-price-change-page {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  color: var(--text-primary);
+}
+
+.settlement-price-change-page.is-editing {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.settlement-price-change-page .sc-tabs {
+  display: flex;
+  height: 60px;
+  align-items: stretch;
+  gap: 30px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.settlement-price-change-page .sc-tab {
+  position: relative;
+  height: 60px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-tab.is-active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.settlement-price-change-page .sc-tab.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--primary);
+  content: '';
+}
+
+.settlement-price-change-page .settlement-filter {
+  margin: 22px 22px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.settlement-price-change-page .sc-filter-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  min-width: 0;
+  align-items: start;
+  gap: 12px;
+}
+
+.settlement-price-change-page .sc-filter-body {
+  min-width: 0;
+}
+
+.settlement-price-change-page .sc-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px 28px;
+  min-width: 0;
+}
+
+.settlement-price-change-page .sc-field,
+.settlement-price-change-page .sc-mode-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.settlement-price-change-page .sc-optional-filter.is-hidden { display: none; }
+
+.settlement-price-change-page .sc-field .filter-label,
+.settlement-price-change-page .sc-mode-field .filter-label {
+  width: 104px;
+  flex: 0 0 104px;
+  margin-right: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-field > .filter-input,
+.settlement-price-change-page .sc-field > .filter-select,
+.settlement-price-change-page .sc-field > .sc-date-range {
+  width: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  flex: 1 1 0;
+}
+
+.settlement-price-change-page .sc-field > .filter-input,
+.settlement-price-change-page .sc-field > .filter-select {
+  font-size: 14px;
+}
+
+.settlement-price-change-page .sc-field > .filter-input::placeholder {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  opacity: 1;
+}
+
+.settlement-price-change-page .sc-date-range {
+  position: relative;
+  display: flex;
+  height: 32px;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.settlement-price-change-page .sc-date-range:focus-within {
+  border-color: var(--primary);
+}
+
+.settlement-price-change-page .sc-date-display {
+  width: 100%;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 30px 0 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-date-display::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
+.settlement-price-change-page .sc-date-range .date-range-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  color: var(--text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.settlement-price-change-page .sc-date-range .date-range-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.settlement-price-change-page .sc-mode-field {
+  min-height: 32px;
+  margin-top: 14px;
+}
+
+.settlement-price-change-page .sc-radio-list {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.settlement-price-change-page .sc-radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-radio-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.settlement-price-change-page .sc-select-order {
+  min-width: 84px;
+  margin-left: 2px;
+  justify-content: center;
+}
+
+.settlement-price-change-page .sc-filter-actions {
+  display: flex;
+  width: 100%;
+  min-height: 32px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0;
+}
+
+.settlement-price-change-page .sc-filter-actions .btn {
+  width: var(--query-action-width);
+  justify-content: center;
+}
+
+.settlement-price-change-page .sc-advanced-toggle {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-advanced-toggle:hover { opacity: .82; }
+.settlement-price-change-page .sc-advanced-arrow { font-size: 14px; line-height: 1; }
+
+.settlement-price-change-page .sc-batch-toolbar {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 22px 8px;
+}
+
+.settlement-price-change-page .sc-batch-toolbar .btn {
+  min-width: 84px;
+  justify-content: center;
+}
+
+.settlement-price-change-page .sc-table-box {
+  min-width: 0;
+  min-height: 160px;
+  margin: 18px 22px 0;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  background: #fff;
+}
+
+.settlement-price-change-page.is-editing .sc-table-box {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.settlement-price-change-page .sc-table {
+  width: 100%;
+  min-width: 1480px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.settlement-price-change-page .sc-table th,
+.settlement-price-change-page .sc-table td {
+  height: 44px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-table th {
+  height: 45px;
+  background: #f4f6fb;
+  color: #8b95a6;
+  font-weight: 500;
+}
+
+.settlement-price-change-page .sc-table tbody tr:hover { background: #f7fbff; }
+.settlement-price-change-page .sc-table th:last-child,
+.settlement-price-change-page .sc-table td:last-child { border-right: 0; }
+
+.settlement-price-change-page .sc-table .sc-product-name,
+.settlement-price-change-page .sc-table .sc-category {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settlement-price-change-page .sc-empty-cell {
+  height: 114px !important;
+  color: var(--text-tertiary);
+  text-align: center !important;
+}
+
+.settlement-price-change-page .sc-expand-button {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #c6ccd7;
+  border-radius: 50%;
+  background: #fff;
+  color: #8b95a6;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-expand-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.settlement-price-change-page .sc-table input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+  vertical-align: middle;
+}
+
+.settlement-price-change-page .sc-price-input {
+  width: 140px;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  outline: 0;
+  font: inherit;
+  text-align: left;
+}
+
+.settlement-price-change-page .sc-price-input:focus { border-color: var(--primary); }
+.settlement-price-change-page .sc-price-input::placeholder { color: var(--text-tertiary); opacity: 1; }
+
+.settlement-price-change-page .sc-cell-link,
+.settlement-price-change-page .sc-order-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-cell-link:hover,
+.settlement-price-change-page .sc-order-link:hover { opacity: .82; }
+
+.settlement-price-change-page .sc-status {
+  display: inline-flex;
+  min-width: 48px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.settlement-price-change-page .sc-status.is-green { background: #65c83d; color: #fff; }
+.settlement-price-change-page .sc-status.is-gray { background: #f2f3f5; color: var(--text-secondary); }
+
+.settlement-price-change-page .sc-detail-row td {
+  padding: 0 16px 12px;
+  background: #fff;
+}
+
+.settlement-price-change-page .sc-order-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #f6f8fc;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.settlement-price-change-page .sc-order-detail-table th,
+.settlement-price-change-page .sc-order-detail-table td {
+  height: 45px;
+  padding: 8px 12px;
+  border-right: 1px solid #e5e9f0;
+  border-bottom: 1px solid #e5e9f0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-order-detail-table th {
+  background: #f1f4fa;
+  color: #8b95a6;
+  font-weight: 500;
+}
+
+.settlement-price-change-page .sc-pagination {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  margin: 0 22px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.settlement-price-change-page .sc-pagination-total { margin-right: auto; white-space: nowrap; }
+
+.settlement-price-change-page .sc-page-size,
+.settlement-price-change-page .sc-page-jump {
+  height: 32px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.settlement-price-change-page .sc-page-size {
+  min-width: 96px;
+  padding: 0 25px 0 9px;
+}
+
+.settlement-price-change-page .sc-page-buttons { display: flex; align-items: center; gap: 6px; }
+
+.settlement-price-change-page .sc-page-button {
+  display: inline-flex;
+  min-width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+}
+
+.settlement-price-change-page .sc-page-button.is-current {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.settlement-price-change-page .sc-page-jump-wrap {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-page-jump { width: 48px; padding: 0 6px; text-align: center; }
+
+.settlement-price-change-page .sc-history-table-box { margin-top: 18px; }
+
+/* 选择订单和查看订单共用遮罩层，保持与企业端弹窗的间距和圆角规则一致。 */
+.settlement-price-change-page .sc-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, .58);
+}
+
+.settlement-price-change-page .sc-modal {
+  display: flex;
+  width: min(1228px, calc(100vw - 96px));
+  height: min(774px, calc(100vh - 48px));
+  min-height: 520px;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .2);
+}
+
+.settlement-price-change-page .sc-modal.is-detail {
+  width: min(1230px, calc(100vw - 96px));
+  height: min(466px, calc(100vh - 48px));
+  min-height: 360px;
+}
+
+.settlement-price-change-page .sc-modal-header {
+  display: flex;
+  height: 68px;
+  min-height: 68px;
+  align-items: center;
+  padding: 0 32px;
+}
+
+.settlement-price-change-page .sc-modal-header h2 {
+  flex: 1;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settlement-price-change-page .sc-modal-close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 22px;
+  line-height: 28px;
+  cursor: pointer;
+}
+
+.settlement-price-change-page .sc-modal-close:hover { color: var(--text-primary); }
+
+.settlement-price-change-page .sc-modal-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 20px 54px 0;
+}
+
+.settlement-price-change-page .sc-picker-filter {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 36px;
+}
+
+.settlement-price-change-page .sc-picker-field {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.settlement-price-change-page .sc-picker-field > label {
+  width: 64px;
+  flex: 0 0 64px;
+  margin-right: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-picker-field .sc-date-range {
+  width: 260px;
+  flex: 0 0 260px;
+}
+
+.settlement-price-change-page .sc-picker-order-input {
+  width: 164px;
+  flex: 0 0 164px;
+}
+
+.settlement-price-change-page .sc-picker-actions {
+  display: flex;
+  margin-left: auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.settlement-price-change-page .sc-picker-actions .btn { width: var(--query-action-width); justify-content: center; }
+
+.settlement-price-change-page .sc-picker-change {
+  width: 58px;
+  min-width: 58px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.settlement-price-change-page .sc-picker-table-box {
+  min-height: 0;
+  flex: 1 1 auto;
+  margin-top: 8px;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+}
+
+.settlement-price-change-page .sc-picker-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.settlement-price-change-page .sc-picker-table th,
+.settlement-price-change-page .sc-picker-table td {
+  height: 54px;
+  padding: 8px 12px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-picker-table th {
+  height: 45px;
+  background: #f3f5fa;
+  color: #8b95a6;
+  font-weight: 500;
+}
+
+.settlement-price-change-page .sc-picker-table input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--primary); }
+
+.settlement-price-change-page .sc-modal-pagination {
+  min-height: 62px;
+  margin: 0;
+  padding: 0 16px;
+}
+
+.settlement-price-change-page .sc-modal-footer {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 32px 20px;
+}
+
+.settlement-price-change-page .sc-modal-footer .btn { min-width: 58px; justify-content: center; }
+
+.settlement-price-change-page .sc-detail-body { padding: 0 32px; }
+
+.settlement-price-change-page .sc-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.settlement-price-change-page .sc-detail-table th,
+.settlement-price-change-page .sc-detail-table td {
+  height: 49px;
+  padding: 8px 10px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.settlement-price-change-page .sc-detail-table th {
+  background: #f3f5fa;
+  color: #8b95a6;
+  font-weight: 500;
+}
+
+.settlement-price-change-page .sc-detail-empty {
+  height: 90px !important;
+  color: var(--text-tertiary);
+}
+
+.settlement-price-change-page .sc-toast {
+  position: fixed;
+  z-index: 1100;
+  top: 78px;
+  left: 50%;
+  min-width: 160px;
+  padding: 10px 18px;
+  border-radius: 4px;
+  background: rgba(31, 36, 48, .9);
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1200px) {
+  .settlement-price-change-page .sc-filter-main {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .settlement-price-change-page .sc-filter-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 12px 28px;
+  }
+
+  .settlement-price-change-page .sc-filter-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .settlement-price-change-page .sc-picker-filter { flex-wrap: wrap; }
+  .settlement-price-change-page .sc-picker-actions { width: 100%; margin-left: 0; justify-content: flex-end; }
+}
+
+@media (max-width: 760px) {
+  .settlement-price-change-page .settlement-filter,
+  .settlement-price-change-page .sc-table-box,
+  .settlement-price-change-page .sc-batch-toolbar { margin-right: 12px; margin-left: 12px; }
+  .settlement-price-change-page .sc-tabs { padding: 0 12px; }
+  .settlement-price-change-page .sc-modal-backdrop { padding: 12px; }
+  .settlement-price-change-page .sc-modal { width: calc(100vw - 24px); min-height: 420px; }
+  .settlement-price-change-page .sc-modal-body { padding-right: 18px; padding-left: 18px; }
+  .settlement-price-change-page .sc-modal-header { padding-right: 18px; padding-left: 18px; }
+}

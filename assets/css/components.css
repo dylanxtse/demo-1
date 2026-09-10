@@ -33,6 +33,16 @@
 .filter-select:focus { border-color: var(--primary); }
 .filter-select.is-placeholder { color: var(--text-tertiary); }
 
+/* 所有原生下拉框的禁用隐藏占位项统一使用默认灰色。 */
+select:has(> option[disabled][hidden]:checked) { color: var(--text-tertiary); }
+
+/* 全局输入框占位文字基线，页面级样式不得使用另一套灰色。 */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
 /* ===== 全局区块标题标记 =====
    用法：<span class="section-title-mark">区块标题</span> */
 .section-title-mark {
@@ -48,6 +58,22 @@
   font-weight: 500;
   line-height: 20px;
   white-space: nowrap;
+}
+
+.config-help {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  border-radius: 50%;
+  color: #fff;
+  background: #2857c7;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 15px;
+  cursor: default;
 }
 
 .btn {

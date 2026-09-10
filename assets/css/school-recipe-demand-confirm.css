@@ -59,7 +59,8 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-table td:last-child { border-right: 0; }
 .school-recipe-demand-table tbody tr:hover td { background: #f8fbff; }
 .school-recipe-demand-table td.is-number { text-align: center; font-variant-numeric: tabular-nums; }
-.school-recipe-demand-table td.is-total { color: #354052; font-weight: 600; }
+.school-recipe-demand-table th.is-total,
+.school-recipe-demand-table td.is-total { color: #354052; font-weight: 600 !important; }
 .school-recipe-demand-date-table .col-date { width: 148px; }
 .school-recipe-demand-date-table .col-expand { width: 50px; }
 .school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button { width: 50px; min-width: 50px; max-width: 50px; }

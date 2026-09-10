@@ -127,7 +127,7 @@
 .school-order-basic-field .form-control.is-placeholder,
 .school-order-basic-field select.is-placeholder,
 .school-order-basic-field .form-control::placeholder {
-  color: #9aa4b2;
+  color: var(--text-tertiary);
   font-size: 14px;
   opacity: 1;
 }
@@ -284,9 +284,9 @@
 .school-order-product-control { display: flex; min-width: 0; align-items: center; gap: 4px; }
 .school-order-product-control .form-table-select { min-width: 0; flex: 1 1 auto; }
 .school-order-product-control .net-vegetable-tag[hidden] { display: none; }
-.school-order-form-table .form-table-select.is-placeholder { color: #9aa4b2; }
+.school-order-form-table .form-table-select.is-placeholder { color: var(--text-tertiary); }
 .school-order-form-table .form-table-select option { color: var(--text-primary); }
-.school-order-form-table .form-table-select option[value=""] { color: #9aa4b2; }
+.school-order-form-table .form-table-select option[value=""] { color: var(--text-tertiary); }
 
 .school-order-image-placeholder {
   display: inline-flex;
@@ -337,7 +337,7 @@
 }
 
 .school-order-remark textarea::placeholder {
-  color: #9aa4b2;
+  color: var(--text-tertiary);
   font-size: 14px;
   opacity: 1;
 }

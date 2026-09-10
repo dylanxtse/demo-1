@@ -9,7 +9,7 @@
       <div class="operations-filter-main">
         <div class="operations-filter-grid">
           <div class="operations-field"><label class="filter-label" for="goodsExpectedAt">期望送达时间</label><div class="date-input-control"><input class="filter-input" id="goodsExpectedAt" readonly placeholder="请选择日期"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div></div>
-          <div class="operations-field"><label class="filter-label" for="goodsCategory">商品分类</label><select class="filter-select" id="goodsCategory"><option value="">请选择商品分类</option><option>果蔬</option><option>蛋奶类</option><option>粮食类</option><option>水产品</option></select></div>
+          <div class="operations-field"><label class="filter-label" for="goodsCategory">商品分类</label><select class="filter-select" id="goodsCategory"><option value="" disabled hidden selected>请选择商品分类</option><option>果蔬</option><option>蛋奶类</option><option>粮食类</option><option>水产品</option></select></div>
           <div class="operations-field"><label class="filter-label" for="goodsKeyword">商品名称</label><input class="filter-input" id="goodsKeyword" placeholder="请输入"></div>
         </div>
         <div class="operations-filter-actions"><button class="operations-filter-toggle" type="button" id="goodsAdvancedToggle">高级筛选<span class="toggle-arrow">▾</span></button><button class="btn btn-primary btn-sm" id="goodsQuery">查询</button><button class="btn btn-sm" id="goodsReset">重置</button></div>

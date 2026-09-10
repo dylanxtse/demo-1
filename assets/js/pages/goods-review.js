@@ -156,6 +156,23 @@
     return 'review-status-rejected';
   }
 
+  function reviewDisplayState(item) {
+    const auditPending = item.auditStatus === 'PENDING';
+    const auditApproved = item.auditStatus === 'APPROVED';
+    const productEnabled = item.status === 'ENABLE' || item.status === '已上架';
+
+    if (auditApproved && !productEnabled) {
+      return { label: '待上架', className: 'review-status-pending', canShelf: true, canAudit: false };
+    }
+    if (auditApproved && productEnabled) {
+      return { label: '已上架', className: 'review-status-approved', canShelf: false, canAudit: false };
+    }
+    if (auditPending) {
+      return { label: '待审核', className: 'review-status-pending', canShelf: false, canAudit: true };
+    }
+    return { label: '已驳回', className: 'review-status-rejected', canShelf: false, canAudit: false };
+  }
+
   function setModal(id, visible) {
     const modal = document.getElementById(id);
     modal.classList.toggle('is-visible', visible);
@@ -242,7 +259,7 @@
       return;
     }
     body.innerHTML = state.items.map((item, index) => {
-      const pending = item.auditStatus === 'PENDING';
+      const displayState = reviewDisplayState(item);
       const sequence = (state.page - 1) * state.pageSize + index + 1;
       const compositeName = `${item.name}(${item.unit || '--'}/${item.brand || '--'}/${item.spec || '--'})`;
       return `
@@ -253,14 +270,14 @@
           <td class="name-cell" title="${escapeHtml(compositeName)}">${escapeHtml(compositeName)}</td>
           <td title="${escapeHtml(item.category)}">${escapeHtml(item.category || '--')}</td>
           <td>${escapeHtml(item.unit || '--')}</td>
-          <td><span class="status-tag ${statusClass(item.auditStatus)}">${escapeHtml(item.auditStatusName)}</span></td>
+          <td><span class="status-tag ${displayState.className}">${escapeHtml(displayState.label)}</span></td>
           <td>${escapeHtml(item.alias || '--')}</td>
           <td>${escapeHtml(item.origin || '--')}</td>
           <td>${escapeHtml(item.shelfLife || '--')}</td>
           <td>${escapeHtml(item.addTime || '--')}</td>
           <td class="action-cell">
-            <button class="btn-text ${pending ? 'disabled' : ''}" type="button" data-row-action="shelf" data-id="${escapeHtml(item.reviewId)}" ${pending ? 'disabled' : ''}>上架</button>
-            <button class="btn-text ${pending ? '' : 'disabled'}" type="button" data-row-action="audit" data-id="${escapeHtml(item.reviewId)}" ${pending ? '' : 'disabled'}>审核</button>
+            <button class="btn-text ${displayState.canShelf ? '' : 'disabled'}" type="button" data-row-action="shelf" data-id="${escapeHtml(item.reviewId)}" ${displayState.canShelf ? '' : 'disabled'}>上架</button>
+            <button class="btn-text ${displayState.canAudit ? '' : 'disabled'}" type="button" data-row-action="audit" data-id="${escapeHtml(item.reviewId)}" ${displayState.canAudit ? '' : 'disabled'}>审核</button>
           </td>
         </tr>
       `;

@@ -136,6 +136,7 @@
             <span>2.</span>${configSelect('orderPricePriority2', '', { includeBlank: true })}
             <span>3.</span>${configSelect('orderPricePriority3', '', { includeBlank: true })}
             <span>4.</span>${configSelect('orderPricePriority4', '', { includeBlank: true })}
+            <button class="config-apply" type="button" data-action="apply-order">应用</button>
           </div>
         </div>
         <div class="config-row permission-row">
@@ -346,6 +347,6 @@
       });
       persistSettings();
     }
-    if (event.target.closest('[data-action="apply-purchase"]')) persistSettings();
+    if (event.target.closest('[data-action="apply-order"], [data-action="apply-purchase"]')) persistSettings();
   });
 })();

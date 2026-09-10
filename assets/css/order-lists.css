@@ -375,6 +375,15 @@
   justify-content: center;
 }
 
+/* 订单退货按状态保留完整操作列，不能操作的按钮以禁用态呈现。 */
+.order-return-page .operations-table .cell-actions .btn-text:disabled,
+.order-return-page .operations-table .cell-actions .btn-text.danger:disabled {
+  color: #b8c0cb;
+  opacity: 1;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* 订单标签操作项按产品参考页使用竖线分隔。 */
 .order-module-page.order-tag-page .operations-table .operation-actions {
   gap: 0;

@@ -800,7 +800,7 @@
 
 .project-iteration-form-item input::placeholder,
 .project-iteration-form-item textarea::placeholder {
-  color: rgba(51, 65, 85, .72);
+  color: var(--text-tertiary);
   opacity: 1;
 }
 

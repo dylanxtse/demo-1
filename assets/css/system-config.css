@@ -140,7 +140,7 @@
 }
 
 .config-input { width: 204px; padding: 0 10px; }
-.config-input::placeholder { color: #a3a8b1; }
+.config-input::placeholder { color: var(--text-tertiary); }
 .config-input:focus,
 .config-select:focus { border-color: #2857c7; }
 
@@ -208,21 +208,6 @@
 
 .decimal-row { margin-bottom: 16px; }
 .decimal-row:last-child { margin-bottom: 0; }
-
-.config-help {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  margin-left: 4px;
-  border-radius: 50%;
-  background: #2857c7;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 15px;
-}
 
 .config-toast {
   position: absolute;

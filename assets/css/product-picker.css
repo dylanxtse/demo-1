@@ -122,7 +122,7 @@
 .product-picker-filter input:focus,
 .product-picker-filter select:focus { border-color: var(--primary); }
 
-.product-picker-filter input::placeholder { color: #a8afba; }
+.product-picker-filter input::placeholder { color: var(--text-tertiary); }
 
 .product-picker-filter-actions {
   display: flex;
@@ -205,7 +205,7 @@
 }
 
 .product-picker-table input:focus { border-color: var(--primary); }
-.product-picker-table input::placeholder { color: #a8afba; }
+.product-picker-table input::placeholder { color: var(--text-tertiary); }
 
 .product-picker-image {
   display: inline-flex;

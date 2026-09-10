@@ -84,7 +84,11 @@
       'purchase-order.html',
       'purchase-order-detail.html',
       'purchase-order-form.html',
-      'purchase-order-receipt.html'
+      'purchase-order-receipt.html',
+      'settlement-price-change.html',
+      'receipt-change.html',
+      'receipt-change-form.html',
+      'receipt-change-detail.html'
     ]),
     education: new Set([
       'education.html',
@@ -489,7 +493,7 @@ const toolkitAssets = Object.freeze({
   annotationData: './assets/js/data/project-annotation-data.js?v=20260904-save-1',
   componentsStyles: './assets/js/prototype-tools/src/components.css?v=20260904-display-1',
   iteration: './assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1',
-  iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260904-display-1',
+  iterationStyles: './assets/js/prototype-tools/src/project-iteration-panel.css?v=20260909-placeholder-gray-1',
   iterationData: './assets/js/data/project-iteration-records.js?v=20260904-ganxian-2'
 });
 

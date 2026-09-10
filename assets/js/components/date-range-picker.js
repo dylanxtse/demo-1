@@ -50,7 +50,8 @@
     }
 
     function updateDisplay() {
-      displayInput.value = state.startDate && state.endDate ? `${state.startDate} ~ ${state.endDate}` : state.startDate ? `${state.startDate} ~` : state.endDate ? `~ ${state.endDate}` : '';
+      const separator = options.separator || ' ~ ';
+      displayInput.value = state.startDate && state.endDate ? `${state.startDate}${separator}${state.endDate}` : state.startDate ? `${state.startDate}${separator.trimEnd()}` : state.endDate ? `${separator.trimStart()}${state.endDate}` : '';
       if (startInput) startInput.value = state.startDate;
       if (endInput) endInput.value = state.endDate;
     }

@@ -120,8 +120,6 @@
     })
     .map((meal) => meal.name)
     .join('、') || '--';
-  const attendanceValue = (value) => value === '' || value == null ? '--' : number(value);
-
   function navigate(url) {
     if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(url);
     else window.location.href = url;
@@ -151,10 +149,8 @@
       const total = hasPeople ? (mealSummary?.totalPeople ?? participants.reduce((sum, participant) => sum + attendanceService.effectivePeopleFor(summary.attendance, meal.key, participant), 0)) : '--';
       const personCells = participants.length
         ? participants.map((participant) => {
-          const diningValue = attendanceService.valueForParticipant(values, participant);
-          const nonDiningValue = attendanceService.temporaryNonDiningFor?.(summary.attendance, meal.key, participant) || '';
           const actualPeople = attendanceService.effectivePeopleFor(summary.attendance, meal.key, participant);
-          return `<td class="is-number"><div class="school-recipe-demand-attendance-person"><span>${diningValue === '' ? '--' : `总人数 ${attendanceValue(diningValue)} 人`}</span>${nonDiningValue !== '' ? `<small>不就餐 ${attendanceValue(nonDiningValue)} 人</small>` : ''}<em>实际 ${number(actualPeople)} 人</em></div></td>`;
+          return `<td class="is-number">${number(actualPeople)}</td>`;
         }).join('')
         : '<td class="is-number">--</td>';
       return `<tr><td>${escapeHtml(meal.name)}</td>${personCells}<td class="is-number is-total">${typeof total === 'number' ? number(total) : total}</td></tr>`;
@@ -186,7 +182,7 @@
     </tr><tr id="${detailId}" class="school-recipe-demand-date-detail-row" data-date-detail-row hidden><td colspan="${7 + participants.length}">${renderAttendanceDetail(summary)}</td></tr>`;
       }).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-date-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-meal"><col class="col-version">${participantColgroup}<col class="col-total"><col class="col-count"><col class="col-action"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>填报餐次</th><th>食谱名称</th>${participantHeaders}<th>总人次</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-date-table"><colgroup><col class="col-expand"><col class="col-date"><col class="col-meal"><col class="col-version">${participantColgroup}<col class="col-total"><col class="col-count"><col class="col-action"></colgroup><thead><tr><th aria-label="展开"></th><th>用料日期</th><th>填报餐次</th><th>食谱名称</th>${participantHeaders}<th class="is-total">总人次</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">暂无已填报日期</div>';
   }
 

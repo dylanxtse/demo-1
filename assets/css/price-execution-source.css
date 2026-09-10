@@ -7,6 +7,60 @@
   overflow: hidden;
 }
 
+/* 查询区与订单列表采用同一套规则：三列查询网格，右侧固定操作区。 */
+.price-execution-source-page.order-module-page {
+  /* 价格页只有查询/重置两个操作，按通用查询区预留 184px。 */
+  --order-filter-actions-width: 184px;
+}
+
+.price-execution-source-page.order-module-page .operations-filter-main {
+  grid-template-columns: minmax(0, 1fr) var(--order-filter-actions-width);
+  gap: 12px;
+}
+
+.price-execution-source-page.order-module-page .operations-filter-grid {
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px 28px;
+}
+
+.price-execution-source-page.order-module-page .operations-field .filter-label {
+  width: var(--query-label-width);
+  flex: 0 0 var(--query-label-width);
+  margin-right: 8px;
+  box-sizing: border-box;
+}
+
+.price-execution-source-page.order-module-page .operations-field > .filter-input,
+.price-execution-source-page.order-module-page .operations-field > .filter-select,
+.price-execution-source-page.order-module-page .operations-field > .price-select-shell {
+  width: 0;
+  min-width: 0;
+  flex: 1 1 var(--query-control-width);
+  max-width: var(--query-control-width);
+  box-sizing: border-box;
+}
+
+/* 占位下拉框外层参与布局时，内部 select 也必须跟随外层宽度。 */
+.price-execution-source-page.order-module-page .operations-field .price-select-shell > .filter-select {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.price-execution-source-page.order-module-page .operations-field .filter-input,
+.price-execution-source-page.order-module-page .operations-field .filter-select,
+.price-execution-source-page.order-module-page .operations-field .price-select-placeholder {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.price-execution-source-page.order-module-page .operations-field .filter-input::placeholder {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  opacity: 1;
+}
+
 .px-tabs {
   display: flex;
   min-height: 48px;
@@ -102,6 +156,34 @@
 .px-toast { position: fixed; z-index: 1100; top: 78px; left: 50%; display: none; min-width: 160px; padding: 10px 18px; border-radius: 4px; background: rgba(31, 36, 48, .9); color: #fff; font-size: 13px; text-align: center; transform: translateX(-50%); }
 .px-toast.visible { display: block; }
 .px-toast.error { background: rgba(198, 54, 54, .92); }
+
+@media (max-width: 1200px) {
+  .price-execution-source-page.order-module-page {
+    --order-filter-actions-width: 0px;
+  }
+
+  .price-execution-source-page.order-module-page .operations-filter-main {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .price-execution-source-page.order-module-page .operations-filter-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 12px 28px;
+  }
+
+  .price-execution-source-page.order-module-page .operations-filter-actions {
+    width: 100%;
+  }
+
+  .price-execution-source-page.order-module-page .operations-field > .filter-input,
+  .price-execution-source-page.order-module-page .operations-field > .filter-select,
+  .price-execution-source-page.order-module-page .operations-field > .price-select-shell {
+    width: 0;
+    flex: 1 1 0;
+    max-width: none;
+  }
+}
 
 @media (max-width: 860px) {
   .price-execution-source-page { padding: 0 12px 10px; }

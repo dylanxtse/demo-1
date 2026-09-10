@@ -1,7 +1,7 @@
 (function () {
   window.RecordPageConfig = {
     title: '订单退货',
-    pageClass: 'order-module-page',
+    pageClass: 'order-module-page order-return-page',
     useDemoListLayout: true,
     showSelectionSummary: false,
     resource: 'returns',
@@ -36,10 +36,9 @@
       { key: 'export', label: '导出' }
     ],
     rowActions: [
-      { key: 'approve', label: '审核', href: (item) => `./order-return-form.html?mode=audit&id=${encodeURIComponent(item.id)}`, visible: ['PENDING_AUDIT'] },
-      { key: 'edit', label: '编辑', visible: ['PENDING_AUDIT'] },
-      { key: 'close', label: '关闭', transition: 'close', visible: ['PENDING_AUDIT', 'APPROVED'], confirmTitle: '关闭退货', message: '确定要关闭该退货吗？' },
-      { key: 'delete', label: '删除', danger: true, visible: ['PENDING_AUDIT'] }
+      { key: 'approve', label: '审核', href: (item) => `./order-return-form.html?mode=audit&id=${encodeURIComponent(item.id)}`, disabled: (item) => !['PENDING', 'PENDING_AUDIT'].includes(item.status) },
+      { key: 'edit', label: '编辑', disabled: (item) => !['PENDING', 'PENDING_AUDIT'].includes(item.status) },
+      { key: 'close', label: '关闭', transition: 'close', disabled: (item) => !['PENDING', 'PENDING_AUDIT', 'APPROVED'].includes(item.status), confirmTitle: '关闭退货', message: '确定要关闭该退货吗？' }
     ],
     formFields: [
       { key: 'customerName', label: '客户名称', required: true },
@@ -51,6 +50,5 @@
       { key: 'reason', label: '退货原因', type: 'textarea', required: true }
     ],
     createDefaults: { status: 'PENDING_AUDIT', creator: '当前用户' },
-    deleteMessage: '删除后退货单将不再显示，且无法恢复，是否确认删除？'
   };
 })();

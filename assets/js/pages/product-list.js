@@ -92,7 +92,6 @@
                     <th>商品名称（计量单位/品牌/规格）</th>
                     <th>分类</th>
                     ${isSupplierProductPage ? '' : '<th>是否标品</th>'}
-                    ${isSupplierProductPage ? '' : '<th><span class="product-list-header-title"><span>是否允许修改</span><span class="product-list-header-help" data-tooltip="允许修改的商品在学校根据食谱下单时可自定义修改采购量" tabindex="0" role="img" aria-label="允许修改的商品在学校根据食谱下单时可自定义修改采购量">?</span></span></th>'}
                     <th>计量单位</th>
                     <th>市场价</th>
                     <th>状态</th>
@@ -100,6 +99,7 @@
                     <th>产地</th>
                     <th>保质期</th>
                     ${isSupplierProductPage ? '' : '<th>采购类型</th>'}
+                    ${isSupplierProductPage ? '' : '<th><span class="product-list-header-title"><span>是否允许修改采购量</span><span class="config-help" data-product-tooltip="允许修改的商品在学校根据食谱下单时可自定义修改采购量" tabindex="0" role="img" aria-label="允许修改的商品在学校根据食谱下单时可自定义修改采购量">?</span></span></th>'}
                     <th>商品来源</th>
                     <th>添加时间</th>
                     <th>操作</th>
@@ -259,7 +259,6 @@
           <td class="name-cell"><span class="product-display-text" title="${window.DomUtils.escapeHtml(productDisplay)}">${netVegetableTag}${window.DomUtils.escapeHtml(productDisplay)}</span></td>
           <td>${safe.category}</td>
           ${isSupplierProductPage ? '' : `<td>${product.isStandardProduct ? '是' : '否'}</td>`}
-          ${isSupplierProductPage ? '' : `<td class="center">${canModifyPurchaseQuantity(product) ? '是' : '否'}</td>`}
           <td>${safe.unit}</td>
           <td>${safe.marketPrice}</td>
           <td><span class="status-tag ${isEnabled ? 'online' : 'offline'}">${window.DomUtils.escapeHtml(statusLabel)}</span></td>
@@ -267,6 +266,7 @@
           <td>${safe.origin || '--'}</td>
           <td>${shelfLife}</td>
           ${isSupplierProductPage ? '' : `<td>${purchaseType}</td>`}
+          ${isSupplierProductPage ? '' : `<td class="center">${canModifyPurchaseQuantity(product) ? '是' : '否'}</td>`}
           <td>${safe.source}</td>
           <td>${safe.addTime}</td>
           <td class="action-cell"><div class="operation-actions">
@@ -287,6 +287,36 @@
   const isFalseFlag = (value) => value === false || value === 'false' || value === '否' || value === 0 || value === '0';
   const canModifyPurchaseQuantity = (product) => !isFalseFlag(product?.allowSchoolModifyPurchaseQuantity);
   let pendingPurchaseQuantityCodes = [];
+  let productHeaderTooltip = null;
+
+  function hideProductHeaderTooltip() {
+    productHeaderTooltip?.remove();
+    productHeaderTooltip = null;
+  }
+
+  function showProductHeaderTooltip(target) {
+    const text = target?.dataset.productTooltip;
+    if (!text) return;
+    hideProductHeaderTooltip();
+    const tooltip = document.createElement('div');
+    tooltip.className = 'product-list-header-tooltip';
+    tooltip.textContent = text;
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+    const targetRect = target.getBoundingClientRect();
+    const tooltipHeight = tooltip.offsetHeight;
+    const preferredTop = targetRect.top - tooltipHeight - 8;
+    const top = preferredTop >= 8
+      ? preferredTop
+      : Math.min(window.innerHeight - tooltipHeight - 8, targetRect.bottom + 8);
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const center = targetRect.left + targetRect.width / 2;
+    const left = Math.min(window.innerWidth - tooltipRect.width / 2 - 8, Math.max(tooltipRect.width / 2 + 8, center));
+    tooltip.style.top = `${Math.max(8, top)}px`;
+    tooltip.style.left = `${left}px`;
+    productHeaderTooltip = tooltip;
+    window.requestAnimationFrame(() => tooltip.classList.add('is-visible'));
+  }
 
   function updatePurchaseQuantityButton() {
     const button = document.getElementById('batchPurchaseQuantityBtn');
@@ -480,6 +510,13 @@
       if (window.AppNavigation?.navigate) window.AppNavigation.navigate(target);
       else window.location.href = target;
     };
+    const headerHelp = root.querySelector('.config-help[data-product-tooltip]');
+    headerHelp?.addEventListener('mouseenter', () => showProductHeaderTooltip(headerHelp));
+    headerHelp?.addEventListener('mouseleave', hideProductHeaderTooltip);
+    headerHelp?.addEventListener('focus', () => showProductHeaderTooltip(headerHelp));
+    headerHelp?.addEventListener('blur', hideProductHeaderTooltip);
+    window.addEventListener('scroll', hideProductHeaderTooltip, true);
+    window.addEventListener('resize', hideProductHeaderTooltip);
     root.addEventListener('click', (event) => {
       const action = event.target.closest('[data-action]')?.dataset.action;
       const selectedCodes = selectedProductCodes;

@@ -75,7 +75,7 @@
 
 .supplier-filter-item > input:focus,
 .supplier-filter-item > select:focus { border-color: var(--primary); }
-.supplier-filter-item > input::placeholder { color: #9a9fa8; }
+.supplier-filter-item > input::placeholder { color: var(--text-tertiary); }
 
 .supplier-date-range {
   display: flex;
@@ -90,7 +90,7 @@
 
 .supplier-date-range:focus-within { border-color: var(--primary); }
 .supplier-date-range input { min-width: 0; width: 50%; height: 30px; padding: 0 8px; border: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: 14px; outline: none; }
-.supplier-date-range input::placeholder { color: #9a9fa8; }
+.supplier-date-range input::placeholder { color: var(--text-tertiary); }
 .supplier-date-range span { flex: 0 0 18px; color: #777; text-align: center; }
 .supplier-calendar-icon { flex: 0 0 16px; width: 16px; height: 16px; margin-right: 9px; fill: none; stroke: #8c939d; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 

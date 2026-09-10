@@ -165,7 +165,7 @@ button { cursor: pointer; }
   color: var(--register-text);
 }
 .register-input:focus { border-color: #6f94df; box-shadow: 0 0 0 2px rgba(36, 84, 198, .08); }
-.register-input::placeholder { color: #b3bac5; }
+.register-input::placeholder { color: var(--text-tertiary); }
 .register-input.is-invalid { border-color: #f04e4e; box-shadow: 0 0 0 1px rgba(240, 78, 78, .08); }
 .register-money { display: flex; align-items: center; }
 .register-money .register-input { border-radius: 4px 0 0 4px; }

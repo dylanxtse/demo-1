@@ -1,0 +1,728 @@
+/* 实收变更页面：沿用企业端查询、表格和弹窗组件，仅补充该业务的尺寸与状态呈现。 */
+
+.receipt-change-page {
+  --order-filter-actions-width: 228px;
+}
+
+.receipt-change-page .operations-filter-grid {
+  grid-template-columns: repeat(3, minmax(230px, 1fr));
+  gap: 14px 32px;
+}
+
+.receipt-change-page .operations-field .filter-label {
+  width: 76px;
+  flex: 0 0 76px;
+  margin-right: 8px;
+}
+
+.receipt-change-page .operations-field > .filter-input,
+.receipt-change-page .operations-field > .filter-select,
+.receipt-change-page .operations-field > .date-range-picker {
+  width: 0;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.receipt-change-page .operations-field .date-range-display {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-right: 10px;
+  cursor: pointer;
+}
+
+.receipt-change-page .operations-filter-actions {
+  gap: 10px;
+}
+
+.receipt-change-page .operations-toolbar-main .btn {
+  min-width: 84px;
+  width: auto;
+}
+
+.receipt-change-page .operations-toolbar-side .btn {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.receipt-change-page .operations-toolbar-side .btn:hover {
+  color: var(--primary);
+}
+
+.receipt-change-page .operations-table {
+  min-width: 1900px;
+  table-layout: fixed;
+}
+
+.receipt-change-page .operations-table th,
+.receipt-change-page .operations-table td {
+  min-width: 0;
+  height: 44px;
+  padding: 8px 10px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.receipt-change-page .operations-table th {
+  background: #f4f6fb;
+  color: #8a94a6;
+  font-weight: 500;
+}
+
+.receipt-change-page .operations-table th:nth-child(1),
+.receipt-change-page .operations-table td:nth-child(1) { width: 46px; }
+.receipt-change-page .operations-table th:nth-child(2),
+.receipt-change-page .operations-table td:nth-child(2) { width: 58px; }
+.receipt-change-page .operations-table th:nth-child(3),
+.receipt-change-page .operations-table td:nth-child(3) { width: 190px; }
+.receipt-change-page .operations-table th:nth-child(4),
+.receipt-change-page .operations-table td:nth-child(4),
+.receipt-change-page .operations-table th:nth-child(5),
+.receipt-change-page .operations-table td:nth-child(5),
+.receipt-change-page .operations-table th:nth-child(6),
+.receipt-change-page .operations-table td:nth-child(6) { width: 108px; }
+.receipt-change-page .operations-table th:nth-child(7),
+.receipt-change-page .operations-table td:nth-child(7) { width: 120px; }
+.receipt-change-page .operations-table th:nth-child(8),
+.receipt-change-page .operations-table td:nth-child(8) { width: 112px; }
+.receipt-change-page .operations-table th:nth-child(9),
+.receipt-change-page .operations-table td:nth-child(9) { width: 104px; }
+.receipt-change-page .operations-table th:nth-child(10),
+.receipt-change-page .operations-table td:nth-child(10) { width: 196px; }
+.receipt-change-page .operations-table th:nth-child(11),
+.receipt-change-page .operations-table td:nth-child(11) { width: 104px; }
+.receipt-change-page .operations-table th:nth-child(12),
+.receipt-change-page .operations-table td:nth-child(12) { width: 104px; }
+.receipt-change-page .operations-table th:nth-child(13),
+.receipt-change-page .operations-table td:nth-child(13) { width: 180px; }
+.receipt-change-page .operations-table th:last-child,
+.receipt-change-page .operations-table td:last-child {
+  width: 184px;
+  min-width: 184px;
+}
+
+.receipt-change-page .operations-table .cell-actions {
+  justify-content: center;
+  gap: 8px;
+}
+
+.receipt-change-page .operations-table .cell-actions .btn-text:disabled,
+.receipt-change-page .operations-table .cell-actions .btn-text.danger:disabled {
+  color: #b7bfcc;
+  opacity: 1;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.receipt-change-form-page,
+.receipt-change-detail-page {
+  border-radius: 14px;
+  padding: 0;
+}
+
+.receipt-change-form-page .order-form-header,
+.receipt-change-detail-page .order-form-header {
+  min-height: 58px;
+  padding: 0 38px;
+}
+
+.receipt-change-form-page .order-form-header h1,
+.receipt-change-detail-page .order-form-header h1 {
+  font-size: 16px;
+}
+
+.receipt-change-form-page .order-form,
+.receipt-change-detail-page .order-form {
+  padding: 28px 62px 96px;
+}
+
+.receipt-change-form-page .receipt-change-basic-section h2,
+.receipt-change-form-page .receipt-change-goods-section > h2 {
+  display: none;
+}
+
+.receipt-change-form-page .order-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 48px;
+}
+
+.receipt-change-form-page .order-form-field {
+  align-items: center;
+}
+
+.receipt-change-form-page .order-form-field > .field-label {
+  width: 100px;
+  flex: 0 0 100px;
+}
+
+.receipt-change-form-page .order-form-field > div:not(.inline-picker-control) {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.receipt-change-form-page .order-form-field .form-control {
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border-color: #e1e5ec;
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+.receipt-change-form-page .order-form-field .inline-picker-control {
+  min-width: 0;
+  flex: 1 1 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.receipt-change-form-page .inline-picker-control .btn {
+  min-width: 84px;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.receipt-change-form-page .receipt-change-hidden-date {
+  display: none;
+}
+
+.receipt-change-form-page .goods-section {
+  margin-top: 30px;
+}
+
+.receipt-change-form-page .order-goods-table-wrap,
+.receipt-change-detail-page .order-goods-table-wrap {
+  border-color: #e7ebf2;
+}
+
+.receipt-change-form-page .change-goods-table,
+.receipt-change-detail-page .change-goods-table {
+  min-width: 1640px;
+  table-layout: fixed;
+}
+
+.receipt-change-form-page .change-goods-table th,
+.receipt-change-form-page .change-goods-table td,
+.receipt-change-detail-page .change-goods-table th,
+.receipt-change-detail-page .change-goods-table td {
+  height: 62px;
+  padding: 8px 10px;
+  border-color: #e8ecf2;
+  text-align: center;
+  color: #3c414b;
+}
+
+.receipt-change-form-page .change-goods-table th,
+.receipt-change-detail-page .change-goods-table th {
+  height: 46px;
+  background: #f2f5fa;
+  color: #8590a3;
+  font-weight: 500;
+}
+
+.receipt-change-form-page .change-goods-table th:nth-child(1),
+.receipt-change-form-page .change-goods-table td:nth-child(1),
+.receipt-change-detail-page .change-goods-table th:nth-child(1),
+.receipt-change-detail-page .change-goods-table td:nth-child(1) { width: 62px; }
+.receipt-change-form-page .change-goods-table th:nth-child(2),
+.receipt-change-form-page .change-goods-table td:nth-child(2),
+.receipt-change-detail-page .change-goods-table th:nth-child(2),
+.receipt-change-detail-page .change-goods-table td:nth-child(2) { width: 86px; }
+.receipt-change-form-page .change-goods-table th:nth-child(3),
+.receipt-change-form-page .change-goods-table td:nth-child(3),
+.receipt-change-detail-page .change-goods-table th:nth-child(3),
+.receipt-change-detail-page .change-goods-table td:nth-child(3) { width: 280px; }
+.receipt-change-form-page .change-goods-table th:nth-child(4),
+.receipt-change-form-page .change-goods-table td:nth-child(4),
+.receipt-change-detail-page .change-goods-table th:nth-child(4),
+.receipt-change-detail-page .change-goods-table td:nth-child(4) { width: 88px; }
+.receipt-change-form-page .change-goods-table th:nth-child(5),
+.receipt-change-form-page .change-goods-table td:nth-child(5),
+.receipt-change-form-page .change-goods-table th:nth-child(6),
+.receipt-change-form-page .change-goods-table td:nth-child(6),
+.receipt-change-detail-page .change-goods-table th:nth-child(5),
+.receipt-change-detail-page .change-goods-table td:nth-child(5),
+.receipt-change-detail-page .change-goods-table th:nth-child(6),
+.receipt-change-detail-page .change-goods-table td:nth-child(6) { width: 96px; }
+.receipt-change-form-page .change-goods-table th:nth-child(7),
+.receipt-change-form-page .change-goods-table td:nth-child(7),
+.receipt-change-detail-page .change-goods-table th:nth-child(7),
+.receipt-change-detail-page .change-goods-table td:nth-child(7) { width: 112px; }
+.receipt-change-form-page .change-goods-table th:nth-child(8),
+.receipt-change-form-page .change-goods-table td:nth-child(8),
+.receipt-change-detail-page .change-goods-table th:nth-child(8),
+.receipt-change-detail-page .change-goods-table td:nth-child(8) { width: 96px; }
+.receipt-change-form-page .change-goods-table th:nth-child(9),
+.receipt-change-form-page .change-goods-table td:nth-child(9),
+.receipt-change-detail-page .change-goods-table th:nth-child(9),
+.receipt-change-detail-page .change-goods-table td:nth-child(9) { width: 100px; }
+.receipt-change-form-page .change-goods-table th:nth-child(10),
+.receipt-change-form-page .change-goods-table td:nth-child(10),
+.receipt-change-detail-page .change-goods-table th:nth-child(10),
+.receipt-change-detail-page .change-goods-table td:nth-child(10) { width: 108px; }
+.receipt-change-form-page .change-goods-table th:nth-child(11),
+.receipt-change-form-page .change-goods-table td:nth-child(11),
+.receipt-change-detail-page .change-goods-table th:nth-child(11),
+.receipt-change-detail-page .change-goods-table td:nth-child(11) { width: 112px; }
+.receipt-change-form-page .change-goods-table th:nth-child(12),
+.receipt-change-form-page .change-goods-table td:nth-child(12),
+.receipt-change-detail-page .change-goods-table th:nth-child(12),
+.receipt-change-detail-page .change-goods-table td:nth-child(12) { width: 112px; }
+.receipt-change-form-page .change-goods-table th:nth-child(13),
+.receipt-change-form-page .change-goods-table td:nth-child(13),
+.receipt-change-detail-page .change-goods-table th:nth-child(13),
+.receipt-change-detail-page .change-goods-table td:nth-child(13) { width: 190px; }
+
+.receipt-change-form-page .change-goods-table .goods-name-cell,
+.receipt-change-detail-page .change-goods-table .goods-name-cell {
+  min-width: 0;
+  text-align: center !important;
+}
+
+.receipt-change-form-page .goods-thumb,
+.receipt-change-detail-page .goods-thumb {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 2px;
+  background: #e9eef5;
+  color: #aeb8c7;
+  font-size: 10px;
+}
+
+.receipt-change-form-page .table-input {
+  width: 104px;
+  height: 32px;
+  border-color: #e1e5ec;
+  border-radius: 3px;
+  text-align: left;
+}
+
+.receipt-change-form-page .table-input.remark-input {
+  width: 150px;
+}
+
+.receipt-change-form-page .change-summary-grid {
+  grid-template-columns: repeat(4, max-content);
+  gap: 30px;
+  min-height: 46px;
+  margin-top: 0;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0;
+  background: #f1f4fa;
+}
+
+.receipt-change-form-page .change-summary-grid > div {
+  min-height: 46px;
+  gap: 4px;
+  justify-content: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #222b3a;
+  white-space: nowrap;
+}
+
+.receipt-change-form-page .change-summary-grid strong {
+  color: #222b3a;
+  font-weight: 500;
+}
+
+.receipt-change-note-panel {
+  margin-top: 20px;
+  padding: 18px 18px 22px;
+  background: #f5f6f8;
+}
+
+.receipt-change-note-panel .order-remark-row {
+  position: relative;
+  margin: 0 0 24px;
+}
+
+.receipt-change-note-panel .order-remark-row:last-child {
+  margin-bottom: 0;
+}
+
+.receipt-change-note-panel .order-remark-row > label {
+  display: block;
+  margin-bottom: 8px;
+  color: #3c414b;
+  font-size: 14px;
+}
+
+.receipt-change-note-panel .order-remark-row textarea {
+  display: block;
+  width: 100%;
+  height: 72px;
+  box-sizing: border-box;
+  border: 1px solid #e2e6ed;
+  border-radius: 3px;
+  padding: 10px;
+  resize: none;
+  font: inherit;
+  outline: none;
+}
+
+.receipt-change-note-panel .remark-count {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: #9aa4b2;
+  font-size: 12px;
+}
+
+.receipt-change-note-panel .attachment-control {
+  min-height: 32px;
+}
+
+.receipt-change-note-panel .attachment-control .btn {
+  min-width: 84px;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.receipt-change-form-page .order-form-actions {
+  height: 78px;
+  gap: 18px;
+}
+
+.receipt-change-form-page .order-form-actions .btn {
+  width: 174px;
+  height: 38px;
+  justify-content: center;
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.receipt-change-form-page .order-form-actions .btn-danger {
+  background: #fff;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.receipt-change-form-page .order-form-actions #changeReject {
+  width: auto;
+}
+
+.receipt-detail-status {
+  margin-left: auto;
+  color: #303846;
+  font-size: 14px;
+}
+
+.receipt-detail-status strong {
+  font-weight: 500;
+}
+
+.receipt-status-success { color: #39a85a; }
+.receipt-status-warning { color: #e68a00; }
+.receipt-status-danger { color: #d54941; }
+
+.receipt-change-detail-page .order-form {
+  overflow: auto;
+  padding-top: 26px;
+}
+
+.receipt-detail-info-section {
+  padding: 0 0 8px;
+}
+
+.receipt-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 36px;
+  row-gap: 24px;
+  margin: 0;
+}
+
+.receipt-detail-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  min-height: 28px;
+}
+
+.receipt-detail-field dt {
+  flex: 0 0 auto;
+  margin-right: 10px;
+  color: #3c414b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.receipt-detail-field dd {
+  min-width: 0;
+  overflow: hidden;
+  color: #3c414b;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-detail-goods-section {
+  margin-top: 14px;
+}
+
+.receipt-detail-goods-table tfoot td,
+.receipt-change-detail-page .change-goods-table tfoot td {
+  height: 46px;
+  padding: 0 16px;
+  border-bottom: 0;
+  background: #fff;
+  color: #222b3a;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.receipt-change-detail-page .change-goods-table tfoot strong {
+  font-weight: 600;
+}
+
+.receipt-detail-note-section {
+  display: grid;
+  gap: 20px;
+  margin: 18px 0 0;
+  padding: 0 22px;
+  color: #333;
+  line-height: 22px;
+}
+
+.receipt-detail-note-section strong {
+  display: inline-block;
+  min-width: 76px;
+  font-weight: 500;
+}
+
+.receipt-operation-section {
+  margin: 28px 0 0;
+  padding: 0 22px;
+}
+
+.receipt-operation-section h2 {
+  margin: 0 0 18px;
+  color: #222b3a;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.receipt-operation-list {
+  display: grid;
+  gap: 16px;
+}
+
+.receipt-operation-item {
+  position: relative;
+  min-height: 44px;
+  padding-left: 22px;
+}
+
+.receipt-operation-dot {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.receipt-operation-action {
+  color: #333;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.receipt-operation-meta {
+  display: flex;
+  gap: 24px;
+  color: #a0a8b4;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.receipt-change-picker-modal {
+  width: min(960px, calc(100vw - 48px));
+  max-height: calc(100vh - 32px);
+}
+
+.receipt-change-picker-modal .operations-modal-body {
+  padding: 24px 40px 12px;
+}
+
+.receipt-picker-filter {
+  display: grid;
+  grid-template-columns: 240px 260px minmax(0, 1fr);
+  align-items: end;
+  gap: 20px;
+}
+
+.receipt-picker-filter .operations-field .filter-label,
+.receipt-picker-date-row > .filter-label {
+  width: 60px;
+  flex: 0 0 60px;
+  margin-right: 10px;
+}
+
+.receipt-picker-filter .filter-input,
+.receipt-picker-filter .filter-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.receipt-picker-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.receipt-picker-date-row {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.receipt-picker-date-range {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.receipt-picker-date-range .filter-input {
+  width: 164px;
+}
+
+.receipt-picker-date-range .date-range-icon {
+  color: #9aa4b2;
+  font-size: 13px;
+}
+
+.receipt-picker-table-wrap {
+  max-height: 530px;
+  margin-top: 16px;
+  overflow: auto;
+}
+
+.receipt-picker-table {
+  min-width: 800px;
+  table-layout: fixed;
+}
+
+.receipt-picker-table th,
+.receipt-picker-table td {
+  height: 54px;
+  text-align: center;
+}
+
+.receipt-picker-table th:nth-child(1),
+.receipt-picker-table td:nth-child(1) { width: 40%; }
+.receipt-picker-table th:nth-child(2),
+.receipt-picker-table td:nth-child(2) { width: 28%; }
+.receipt-picker-table th:nth-child(3),
+.receipt-picker-table td:nth-child(3) { width: 17%; }
+.receipt-picker-table th:nth-child(4),
+.receipt-picker-table td:nth-child(4) { width: 15%; }
+
+.receipt-picker-table .change-picker-action:disabled {
+  color: #b9c9e7;
+  opacity: 1;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.return-tag {
+  display: inline-flex;
+  width: 26px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  border-radius: 2px;
+  background: #f0f2f5;
+  color: #737d8d;
+  font-size: 12px;
+}
+
+.receipt-picker-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 48px;
+  color: #6f7785;
+  font-size: 13px;
+}
+
+.receipt-picker-pagination > span:first-child {
+  margin-right: auto;
+}
+
+.picker-page-size {
+  padding: 7px 10px;
+  border: 1px solid #e1e5ec;
+  border-radius: 3px;
+  color: #3c414b;
+}
+
+.picker-page-number {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: var(--primary);
+  color: #fff;
+}
+
+.receipt-picker-pagination input {
+  width: 42px;
+  height: 30px;
+  box-sizing: border-box;
+  border: 1px solid #e1e5ec;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.receipt-change-picker-modal .operations-modal-footer {
+  justify-content: flex-end;
+  min-height: 56px;
+  padding: 10px 40px;
+}
+
+@media (max-width: 1200px) {
+  .receipt-change-page .operations-filter-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+
+  .receipt-change-form-page .order-form,
+  .receipt-change-detail-page .order-form {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
+  .receipt-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .receipt-change-page .operations-filter-grid,
+  .receipt-change-form-page .order-form-grid,
+  .receipt-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-picker-filter {
+    grid-template-columns: 1fr;
+  }
+}
