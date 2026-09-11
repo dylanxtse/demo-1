@@ -477,14 +477,17 @@
     const record = attendanceForDate(state.selectedDate);
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
     const validation = attendanceService.validate(menu, record, serviceOptions());
+    const isNonDiningMode = attendanceInputMode === 'non-dining';
     const demand = page.querySelector('#schoolRecipeAttendanceDemand');
     if (demand) demand.innerHTML = renderDemand(menu, record);
     const overviewTotal = page.querySelector('#schoolRecipeAttendanceOverviewTotal');
-    if (overviewTotal) overviewTotal.textContent = number(calculation.totalPeople);
     const overviewNonDining = page.querySelector('[data-attendance-overview-non-dining]');
     const overviewNonDiningTotal = page.querySelector('[data-attendance-overview-non-dining-total]');
-    overviewNonDiningTotal && (overviewNonDiningTotal.textContent = number(calculation.totalNonDiningPeople));
-    overviewNonDining?.classList.toggle('school-recipe-attendance-is-hidden', calculation.totalNonDiningPeople <= 0);
+    if (!isNonDiningMode) {
+      if (overviewTotal) overviewTotal.textContent = number(calculation.totalPeople);
+      overviewNonDiningTotal && (overviewNonDiningTotal.textContent = number(calculation.totalNonDiningPeople));
+      overviewNonDining?.classList.toggle('school-recipe-attendance-is-hidden', calculation.totalNonDiningPeople <= 0);
+    }
     const continueButton = page.querySelector('[data-attendance-action="continue"]');
     if (continueButton) {
       const canContinueAttempt = canAttemptContinue(menu, validation);
@@ -503,10 +506,12 @@
       input.toggleAttribute('aria-invalid', isEmptyHighlight);
     });
     const participants = participantsForState();
-    page.querySelectorAll('[data-attendance-meal-total]').forEach((element) => {
-      const mealRow = calculation.mealRows.find((row) => row.key === element.dataset.attendanceMealTotal);
-      element.textContent = number(mealRow?.totalPeople || 0);
-    });
+    if (!isNonDiningMode) {
+      page.querySelectorAll('[data-attendance-meal-total]').forEach((element) => {
+        const mealRow = calculation.mealRows.find((row) => row.key === element.dataset.attendanceMealTotal);
+        element.textContent = number(mealRow?.totalPeople || 0);
+      });
+    }
     page.querySelectorAll('[data-attendance-non-dining-error]').forEach((element) => {
       const participant = participants.find((item) => item.key === element.dataset.participantKey);
       const issue = participant ? nonDiningIssue(record, element.dataset.mealKey, participant) : '';
