@@ -615,7 +615,7 @@
           recipeDemandRecordNo: record.recordNo,
           recipeDemandDate: orderDates.join('、'),
           recipeParticipantType: participant.label,
-          expectedAt,
+          expectedAt: record.expectedAt,
           supplement: '否',
           source: '食谱下单',
           status: '待审核',
@@ -643,7 +643,7 @@
           orderTagId: participant.tagId || participant.key,
           orderTagName: participant.tagName || participant.label,
           nutritious: participant.nutritious || '不区分',
-          expectedAt
+          expectedAt: record.expectedAt
         });
         writeAll([...records, record]);
       }

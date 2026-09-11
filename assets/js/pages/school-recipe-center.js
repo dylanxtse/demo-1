@@ -115,6 +115,7 @@
     demandRecordKeyword: '',
     demandRecordSubmittedDate: '',
     demandRecordUsageDate: '',
+    demandRecordExpectedAtDate: '',
     attendanceByDate: {}
   };
   const draftsByCanteen = {};
@@ -172,7 +173,7 @@
 
   function mountDemandRecordDatePickers(root) {
     if (!window.DatePicker) return;
-    ['schoolRecipeDemandRecordSubmittedDate', 'schoolRecipeDemandRecordUsageDate'].forEach((id, index) => {
+    ['schoolRecipeDemandRecordSubmittedDate', 'schoolRecipeDemandRecordUsageDate', 'schoolRecipeDemandRecordExpectedAt'].forEach((id, index) => {
       const input = root.querySelector(`#${id}`);
       if (input) demandRecordDatePickers.push(window.DatePicker.create({ input, panelId: `${id}Panel${index}` }));
     });
@@ -443,6 +444,10 @@
     return dates.length > 3 ? `${dates.slice(0, 3).join('、')} 等${dates.length}天` : dates.join('、') || '--';
   }
 
+  function demandRecordExpectedAt(record) {
+    return record?.expectedAt || record?.orders?.find((order) => order?.expectedAt)?.expectedAt || '';
+  }
+
   function demandRecordParticipantValue(record, participant) {
     const direct = record?.participantPersonTimes?.[participant.key];
     if (direct != null) return direct;
@@ -461,16 +466,19 @@
     const keyword = state.demandRecordKeyword.trim();
     const submittedDate = state.demandRecordSubmittedDate;
     const usageDate = state.demandRecordUsageDate;
+    const expectedAtDate = state.demandRecordExpectedAtDate;
     const records = demandService.getAll().filter((record) => {
       if (keyword && !String(record.recordNo || '').includes(keyword)) return false;
       if (submittedDate && String(record.submittedAt || '').slice(0, 10) !== submittedDate) return false;
       if (usageDate && !(Array.isArray(record.dates) && record.dates.includes(usageDate))) return false;
+      if (expectedAtDate && String(demandRecordExpectedAt(record)).slice(0, 10) !== expectedAtDate) return false;
       return true;
     });
     const participants = participantsForState();
     return records.length ? records.map((record) => `<tr>
       <td><button type="button" class="school-recipe-demand-record-number" data-demand-record-action="detail" data-id="${escapeHtml(record.id)}"><strong>${escapeHtml(record.recordNo || '--')}</strong></button></td>
       <td class="school-recipe-demand-record-dates">${escapeHtml(demandRecordDateText(record.dates))}</td>
+      <td>${escapeHtml(demandRecordExpectedAt(record) || '--')}</td>
       ${participants.map((participant) => `<td class="is-number">${number(demandRecordParticipantValue(record, participant))}</td>`).join('')}
       <td class="is-number is-total">${number(record.totalPersonTimes)}</td>
       <td class="is-number">${number(record.productCount)}</td>
@@ -478,7 +486,7 @@
       <td>${escapeHtml(record.submittedBy || '--')}</td>
       <td>${escapeHtml(record.submittedAt || '--')}</td>
       <td><button type="button" class="btn-text school-recipe-demand-record-view" data-demand-record-action="detail" data-id="${escapeHtml(record.id)}">查看详情</button></td>
-    </tr>`).join('') : `<tr><td class="school-recipe-demand-records-empty" colspan="${8 + participants.length}">暂无需求提交记录</td></tr>`;
+    </tr>`).join('') : `<tr><td class="school-recipe-demand-records-empty" colspan="${9 + participants.length}">暂无需求提交记录</td></tr>`;
   }
 
   function renderDemandRecords() {
@@ -486,8 +494,8 @@
     return `<main class="school-recipe-demand-records-embedded-panel" aria-label="需求提交记录">
       ${renderModeTabs()}
       <section class="school-recipe-demand-records-page" id="schoolRecipeDemandRecordsEmbeddedPage">
-        <form class="operations-filter filter-section school-recipe-demand-records-filter" id="schoolRecipeDemandRecordsFilter"><div class="operations-filter-main"><div class="operations-filter-grid"><div class="operations-field"><label class="filter-label" for="schoolRecipeDemandRecordKeyword">记录编号</label><input class="filter-input" id="schoolRecipeDemandRecordKeyword" type="text" value="${escapeHtml(state.demandRecordKeyword)}" placeholder="请输入记录编号" aria-label="记录编号"></div>${dateFilter('schoolRecipeDemandRecordSubmittedDate', '提交日期', state.demandRecordSubmittedDate)}${dateFilter('schoolRecipeDemandRecordUsageDate', '用料日期', state.demandRecordUsageDate)}</div><div class="operations-filter-actions"><button type="submit" class="btn btn-primary btn-sm">查询</button><button type="button" class="btn btn-sm" data-demand-record-action="reset">重置</button></div></div></form>
-        <div class="school-recipe-demand-records-table-wrap"><table class="school-recipe-demand-records-table"><colgroup><col class="col-record-no"><col class="col-date">${participants.map(() => '<col class="col-person">').join('')}<col class="col-total"><col class="col-product"><col class="col-order"><col class="col-operator"><col class="col-time"><col class="col-action"></colgroup><thead><tr><th>记录编号</th><th>用料日期</th>${participants.map((participant) => `<th>${escapeHtml(participantDisplayLabel(participant))}人次</th>`).join('')}<th>总人次</th><th>商品种数</th><th>生成订单数</th><th>操作人</th><th>提交时间</th><th>操作</th></tr></thead><tbody id="schoolRecipeDemandRecordsBody">${renderDemandRecordRows()}</tbody></table></div>
+        <form class="operations-filter filter-section school-recipe-demand-records-filter" id="schoolRecipeDemandRecordsFilter"><div class="operations-filter-main"><div class="operations-filter-grid"><div class="operations-field"><label class="filter-label" for="schoolRecipeDemandRecordKeyword">记录编号</label><input class="filter-input" id="schoolRecipeDemandRecordKeyword" type="text" value="${escapeHtml(state.demandRecordKeyword)}" placeholder="请输入记录编号" aria-label="记录编号"></div>${dateFilter('schoolRecipeDemandRecordSubmittedDate', '提交日期', state.demandRecordSubmittedDate)}${dateFilter('schoolRecipeDemandRecordUsageDate', '用料日期', state.demandRecordUsageDate)}${dateFilter('schoolRecipeDemandRecordExpectedAt', '期望送达时间', state.demandRecordExpectedAtDate)}</div><div class="operations-filter-actions"><button type="submit" class="btn btn-primary btn-sm">查询</button><button type="button" class="btn btn-sm" data-demand-record-action="reset">重置</button></div></div></form>
+        <div class="school-recipe-demand-records-table-wrap"><table class="school-recipe-demand-records-table"><colgroup><col class="col-record-no"><col class="col-date"><col class="col-expected-time">${participants.map(() => '<col class="col-person">').join('')}<col class="col-total"><col class="col-product"><col class="col-order"><col class="col-operator"><col class="col-time"><col class="col-action"></colgroup><thead><tr><th>记录编号</th><th>用料日期</th><th>期望送达时间</th>${participants.map((participant) => `<th>${escapeHtml(participantDisplayLabel(participant))}人次</th>`).join('')}<th>总人次</th><th>商品种数</th><th>生成订单数</th><th>操作人</th><th>提交时间</th><th>操作</th></tr></thead><tbody id="schoolRecipeDemandRecordsBody">${renderDemandRecordRows()}</tbody></table></div>
       </section>
     </main>`;
   }
@@ -701,6 +709,7 @@
     state.demandRecordKeyword = form.querySelector('#schoolRecipeDemandRecordKeyword')?.value.trim() || '';
     state.demandRecordSubmittedDate = form.querySelector('#schoolRecipeDemandRecordSubmittedDate')?.value || '';
     state.demandRecordUsageDate = form.querySelector('#schoolRecipeDemandRecordUsageDate')?.value || '';
+    state.demandRecordExpectedAtDate = form.querySelector('#schoolRecipeDemandRecordExpectedAt')?.value || '';
     renderBody(root);
   });
 
@@ -741,6 +750,7 @@
         state.demandRecordKeyword = '';
         state.demandRecordSubmittedDate = '';
         state.demandRecordUsageDate = '';
+        state.demandRecordExpectedAtDate = '';
         renderBody(root);
         return;
       }

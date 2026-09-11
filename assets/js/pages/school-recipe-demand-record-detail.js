@@ -46,14 +46,10 @@
     return `<section class="page-card processing-detail-page school-recipe-demand-record-detail-page" id="schoolRecipeDemandRecordDetailPage"><header class="processing-detail-page-header"><button type="button" class="back-link" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>需求提交记录详情</h1></header><div class="processing-detail-page-body school-recipe-demand-record-detail-empty"><p>未找到该需求提交记录</p><button type="button" class="btn btn-sm" data-action="back">返回</button></div></section>`;
   }
 
-  function attendanceValue(value) {
-    return value === '' || value == null ? '--' : number(value);
-  }
-
   function renderAttendanceDetail(summary) {
     const attendanceService = window.SchoolRecipeAttendanceService;
     const recipeService = window.SchoolRecipeService;
-    const attendance = summary.attendance || attendanceService?.get?.(summary.date, service.currentCanteen?.(record?.canteen)) || {};
+    const attendance = summary?.attendance || {};
     const menu = recipeService?.getMenu?.(summary.date);
     const fallbackMeals = attendanceService?.mealTypes || [
       { key: 'breakfast', name: '早餐' },
@@ -70,17 +66,14 @@
     const rows = meals.map((meal) => {
       const values = attendance.meals?.[meal.key] || {};
       const hasPeople = participants.some((participant) => valueForParticipant(values, participant) !== '');
-      const mealSummary = summary?.calculation?.mealRows?.find((row) => row.key === meal.key);
-      const total = hasPeople ? (mealSummary?.totalPeople ?? participants.reduce((sum, participant) => sum + attendanceService.effectivePeopleFor(attendance, meal.key, participant), 0)) : '--';
+      const actualPeople = participants.reduce((sum, participant) => sum + attendanceService.effectivePeopleFor(attendance, meal.key, participant), 0);
       const cells = participants.length
         ? participants.map((participant) => {
-          const diningValue = valueForParticipant(values, participant);
-          const nonDiningValue = attendanceService.temporaryNonDiningFor?.(attendance, meal.key, participant) || '';
-          const actualPeople = attendanceService.effectivePeopleFor(attendance, meal.key, participant);
-          return `<td class="is-number"><div class="school-recipe-demand-attendance-person"><span>${diningValue === '' ? '--' : `总人数 ${attendanceValue(diningValue)} 人`}</span>${nonDiningValue !== '' ? `<small>不就餐 ${attendanceValue(nonDiningValue)} 人</small>` : ''}<em>实际 ${number(actualPeople)} 人</em></div></td>`;
+          const personActualPeople = attendanceService.effectivePeopleFor(attendance, meal.key, participant);
+          return `<td class="is-number">${hasPeople ? number(personActualPeople) : '--'}</td>`;
         }).join('')
         : '<td class="is-number">--</td>';
-      return `<tr><td>${escapeHtml(meal.name)}</td>${cells}<td class="is-number is-total">${typeof total === 'number' ? number(total) : total}</td></tr>`;
+      return `<tr><td>${escapeHtml(meal.name)}</td>${cells}<td class="is-number is-total">${hasPeople ? number(actualPeople) : '--'}</td></tr>`;
     }).join('');
     const personColgroup = Array.from({ length: Math.max(1, participants.length) }, () => '<col class="col-person">').join('');
     const emptyColspan = 2 + Math.max(1, participants.length);
