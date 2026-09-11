@@ -141,11 +141,11 @@
 .school-recipe-modal th { background: #fafbfc; color: #687486; font-weight: 500; }
 .school-recipe-modal td { color: #3f4b5b; }
 .school-recipe-modal-col-index { width: 8%; }
-.school-recipe-modal-col-ingredient { width: 14%; }
+.school-recipe-modal-col-ingredient { width: 16%; }
 .school-recipe-modal-col-product { width: 34%; }
 .school-recipe-modal-col-code { width: 16%; }
-.school-recipe-modal-col-quantity { width: 15%; }
-.school-recipe-modal-col-unit { width: 13%; }
+.school-recipe-modal-col-quantity { width: 14%; }
+.school-recipe-modal-col-unit { width: 12%; }
 .school-recipe-modal .is-number { font-variant-numeric: tabular-nums; text-align: center; }
 .school-recipe-modal > footer { display: flex; min-height: 62px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 22px; border-top: 1px solid #edf0f5; color: #8d98a8; font-size: 13px; }
 .school-recipe-modal > footer .btn { min-width: 70px; justify-content: center; }

@@ -8,10 +8,35 @@
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
+  const recipeMeasureUnit = 'g';
+  const recipeUnitFactors = Object.freeze({
+    g: 1,
+    克: 1,
+    斤: 500,
+    市斤: 500,
+    KG: 1000,
+    kg: 1000,
+    公斤: 1000,
+    千克: 1000,
+    瓶: 250
+  });
+  const normalizeIngredient = (item) => {
+    const unit = String(item?.unit || '').trim();
+    const factor = recipeUnitFactors[unit];
+    if (!factor) return item;
+    const rawValue = item?.perCapitaQty
+      ?? item?.quantity
+      ?? item?.qty
+      ?? item?.dosage
+      ?? item?.amount
+      ?? 0;
+    const perCapitaQty = Number((number(rawValue) * factor).toFixed(2));
+    return { ...item, perCapitaQty, unit: recipeMeasureUnit };
+  };
   const timestamp = () => window.BusinessRules?.now?.()
     || new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-  const ingredient = (name, productName, productCode, perCapitaQty, unit) => ({
+  const ingredient = (name, productName, productCode, perCapitaQty, unit) => normalizeIngredient({
     name,
     productName,
     productCode,
@@ -433,7 +458,20 @@
 
   function readMenus() {
     if (!window.DemoStore) return buildSeedMenus();
-    const current = window.DemoStore.get(MENU_RESOURCE);
+    const storedMenus = window.DemoStore.get(MENU_RESOURCE);
+    const current = Array.isArray(storedMenus)
+      ? storedMenus.map((menu) => ({
+        ...menu,
+        meals: (menu.meals || []).map((meal) => ({
+          ...meal,
+          dishes: (meal.dishes || []).map((dish) => ({
+            ...dish,
+            ingredients: (dish.ingredients || []).map(normalizeIngredient)
+          }))
+        }))
+      }))
+      : storedMenus;
+    const normalizedChanged = Array.isArray(storedMenus) && JSON.stringify(current) !== JSON.stringify(storedMenus);
     const seed = buildSeedMenus();
     if (Array.isArray(current) && current.length) {
       const seedById = new Map(seed.map((menu) => [menu.id, menu]));
@@ -461,7 +499,10 @@
         changed = true;
         merged.push(...additions);
       }
-      if (!changed) return current;
+      if (!changed) {
+        if (normalizedChanged) window.DemoStore.replace(MENU_RESOURCE, current);
+        return current;
+      }
       merged.sort((a, b) => String(a.date).localeCompare(String(b.date)));
       window.DemoStore.replace(MENU_RESOURCE, merged);
       return merged;

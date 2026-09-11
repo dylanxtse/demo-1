@@ -20,6 +20,17 @@
     useGrouping: false
   });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
+  const recipeMeasureUnit = 'g';
+  const ingredientQuantity = (item) => {
+    const rawValue = item?.perCapitaQty
+      ?? item?.quantity
+      ?? item?.qty
+      ?? item?.dosage
+      ?? item?.amount
+      ?? 0;
+    const parsed = typeof rawValue === 'string' ? Number.parseFloat(rawValue) : Number(rawValue);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
   const purchaseQuantity = (value, item) => {
     const amount = Number(value);
     return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
@@ -503,11 +514,11 @@
     const { menu, meal, dish } = result;
     const rows = (dish.ingredients || []).map((item, index) => {
       const product = productSummary(item);
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(item.name)}</td><td>${escapeHtml(product.label)}</td><td>${escapeHtml(product.code)}</td><td class="is-number">${quantity(item.perCapitaQty)}</td><td>${escapeHtml(item.unit || '--')}</td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(item.name)}</td><td class="is-number">${quantity(ingredientQuantity(item))}</td><td>${recipeMeasureUnit}</td><td>${escapeHtml(product.label)}</td><td>${escapeHtml(product.code)}</td></tr>`;
     }).join('');
     const backdrop = document.createElement('div');
     backdrop.className = 'school-recipe-modal-backdrop';
-    backdrop.innerHTML = `<div class="school-recipe-modal" role="dialog" aria-modal="true" aria-label="${escapeHtml(dish.name)}食材详情"><header><div><h3>${escapeHtml(dish.name)}</h3><p>${escapeHtml(longDate(menu.date))} · ${escapeHtml(meal.name)}</p></div><button type="button" data-recipe-modal-close aria-label="关闭">×</button></header><div class="school-recipe-modal-body"><table><colgroup><col class="school-recipe-modal-col-index"><col class="school-recipe-modal-col-ingredient"><col class="school-recipe-modal-col-product"><col class="school-recipe-modal-col-code"><col class="school-recipe-modal-col-quantity"><col class="school-recipe-modal-col-unit"></colgroup><thead><tr><th>序号</th><th>食材</th><th>关联商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>人均用量</th><th>用量单位</th></tr></thead><tbody>${rows}</tbody></table></div><footer><span>共 ${number((dish.ingredients || []).length)} 项食材</span><button type="button" class="btn btn-primary btn-sm" data-recipe-modal-close>确定</button></footer></div>`;
+    backdrop.innerHTML = `<div class="school-recipe-modal" role="dialog" aria-modal="true" aria-label="${escapeHtml(dish.name)}食材详情"><header><div><h3>${escapeHtml(dish.name)}</h3><p>${escapeHtml(longDate(menu.date))} · ${escapeHtml(meal.name)}</p></div><button type="button" data-recipe-modal-close aria-label="关闭">×</button></header><div class="school-recipe-modal-body"><table><colgroup><col class="school-recipe-modal-col-index"><col class="school-recipe-modal-col-ingredient"><col class="school-recipe-modal-col-quantity"><col class="school-recipe-modal-col-unit"><col class="school-recipe-modal-col-product"><col class="school-recipe-modal-col-code"></colgroup><thead><tr><th>序号</th><th>食材</th><th>人均用量</th><th>用量单位</th><th>关联商品</th><th>商品编号</th></tr></thead><tbody>${rows}</tbody></table></div><footer><span>共 ${number((dish.ingredients || []).length)} 项食材</span><button type="button" class="btn btn-primary btn-sm" data-recipe-modal-close>确定</button></footer></div>`;
     document.body.appendChild(backdrop);
     const close = () => backdrop.remove();
     backdrop.addEventListener('click', (event) => {
