@@ -1,4 +1,5 @@
 (function () {
+  const recipeService = window.SchoolRecipeService;
   const RESOURCE = 'recipeAttendance';
   const FLOW_RESET_KEY = 'school-recipe-attendance-reset-on-return-v1';
   const MIN_COUNT = 0;
@@ -213,6 +214,27 @@
     return participantsFor(options.canteen);
   }
 
+  function getProductCatalog() {
+    return window.SchoolOrderService?.getProductCatalog?.()
+      || window.DemoStore?.get?.('products')
+      || window.MockProducts
+      || [];
+  }
+
+  function productFor(item) {
+    const code = item?.productCode || item?.productId || item?.goodsCode || '';
+    if (!code) return null;
+    return getProductCatalog().find((product) => String(product.code || product.id) === String(code)) || null;
+  }
+
+  function productQuantityContext(item) {
+    const product = productFor(item);
+    const factor = product && recipeService?.productUnitFactor?.(product);
+    const productUnit = String(product?.unit || '').trim();
+    if (factor && productUnit) return { product, factor, unit: productUnit, quantityUnit: 'product' };
+    return { product: null, factor: 1, unit: item?.unit || '--', quantityUnit: 'recipe' };
+  }
+
   function valueForParticipant(values, participant) {
     const source = values || {};
     const keys = [...new Set([participant?.key, participant?.tagId, participant?.legacyKey, participant?.orderTag].filter(Boolean))];
@@ -359,7 +381,8 @@
 
       const addRow = (targetRows, item, dish) => {
         const mapped = Boolean(item.productCode) && item.mappingStatus === '已关联';
-        const unit = item.unit || '--';
+        const quantityContext = mapped ? productQuantityContext(item) : { factor: 1, unit: item.unit || '--', quantityUnit: 'recipe' };
+        const unit = quantityContext.unit;
         const code = mapped ? item.productCode : `UNMAPPED-${item.name}`;
         const key = `${code}::${unit}`;
         const current = targetRows.get(key) || {
@@ -368,6 +391,8 @@
           productName: mapped ? (item.productName || item.name) : '未关联采购商品',
           ingredientNames: [],
           unit,
+          quantityUnit: quantityContext.quantityUnit,
+          recipeUnit: recipeService?.recipeMeasureUnit || 'g',
           perCapitaQty: 0,
           participantQty: Object.fromEntries(participants.map((participant) => [participant.key, 0])),
           studentQty: 0,
@@ -377,7 +402,7 @@
           dishNames: [],
           mappingStatus: mapped ? '已关联' : '待关联'
         };
-        const perCapitaQty = number(item.perCapitaQty);
+        const perCapitaQty = Number((number(item.perCapitaQty) / quantityContext.factor).toFixed(6));
         current.perCapitaQty += perCapitaQty;
         participants.forEach((participant) => {
           const participantQty = perCapitaQty * number(mealPeople[participant.key]);

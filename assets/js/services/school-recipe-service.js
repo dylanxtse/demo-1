@@ -20,6 +20,42 @@
     千克: 1000,
     瓶: 250
   });
+  const productUnitFactors = Object.freeze({
+    g: 1,
+    克: 1,
+    斤: 500,
+    市斤: 500,
+    KG: 1000,
+    kg: 1000,
+    公斤: 1000,
+    千克: 1000,
+    L: 1000,
+    l: 1000,
+    升: 1000,
+    瓶: 250
+  });
+  const unitFactor = (unit) => {
+    const value = String(unit || '').trim();
+    return productUnitFactors[value]
+      ?? productUnitFactors[value.toLowerCase()]
+      ?? productUnitFactors[value.toUpperCase()]
+      ?? null;
+  };
+  const gramsPerProductUnit = (product) => {
+    const unit = String(product?.unit || '').trim();
+    if (!unit) return null;
+    if (unit === '瓶') {
+      const spec = String(product?.spec || '').trim();
+      const match = spec.match(/(\d+(?:\.\d+)?)\s*(kg|公斤|千克|g|克|l|升)\s*\/\s*(?:瓶|桶)/i);
+      if (match) return Number(match[1]) * unitFactor(match[2]);
+    }
+    return unitFactor(unit);
+  };
+  const convertGramsToProductUnit = (value, product) => {
+    const factor = gramsPerProductUnit(product);
+    if (!factor) return number(value);
+    return Number((number(value) / factor).toFixed(6));
+  };
   const normalizeIngredient = (item) => {
     const unit = String(item?.unit || '').trim();
     const factor = recipeUnitFactors[unit];
@@ -598,6 +634,9 @@
   window.SchoolRecipeService = {
     SOURCE_NAME,
     MENU_VERSION,
+    recipeMeasureUnit,
+    productUnitFactor: gramsPerProductUnit,
+    convertGramsToProductUnit,
     mealTypes: [
       { key: 'breakfast', name: '早餐' },
       { key: 'lunch', name: '午餐' },

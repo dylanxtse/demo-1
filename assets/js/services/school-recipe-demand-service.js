@@ -6,7 +6,7 @@
   const RESOURCE = 'recipeDemandRecords';
   const DEMO_RECORD_DATE = '2026-09-07';
   const DEMO_RECORD_CREATED_AT = '2026-08-29 16:20:00';
-  const DEMO_RECORD_VERSION = '20260908-meal-split-v1';
+  const DEMO_RECORD_VERSION = '20260911-product-unit-v1';
   const RECORD_NO_PATTERN = /^XQ\d{8}\d{5}$/;
   const DEMO_ATTENDANCE = {
     id: 'RECIPE-ATTENDANCE-DEMO-20260907',
