@@ -108,7 +108,7 @@
           const routes = {
             enterprise: './index.html',
             education: './education.html',
-            supplier: './supplier-bidding-quotation.html',
+            supplier: './supplier.html',
             operations: './operations.html',
             school: './school-product-management.html',
             mobile: './school-mobile.html'
