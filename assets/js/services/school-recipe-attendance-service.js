@@ -102,14 +102,35 @@
     return normalized;
   }
 
+  function nonDiningValidationMessage(meals = {}, temporaryNonDining = {}) {
+    for (const [mealKey, values] of Object.entries(temporaryNonDining || {})) {
+      for (const [participantKey, count] of Object.entries(values || {})) {
+        const nonDiningPeople = Number(count);
+        if (!hasNonDiningValue(count)) continue;
+        const diningPeople = meals?.[mealKey]?.[participantKey];
+        if (nonDiningPeople > 0 && !hasValue(diningPeople)) return '请先填写总人数';
+        if (hasValue(diningPeople) && nonDiningPeople > Number(diningPeople)) return '不就餐人数不能大于总人数';
+      }
+    }
+    return '';
+  }
+
   function save(date, meals, recipeVersion = '', canteen, temporaryNonDining = {}) {
     const scope = resolveCanteen(canteen);
+    const normalizedMeals = normalizeMeals(meals);
+    const normalizedNonDining = normalizeNonDining(temporaryNonDining);
+    const nonDiningError = nonDiningValidationMessage(normalizedMeals, normalizedNonDining);
+    if (nonDiningError) {
+      const error = new Error(nonDiningError);
+      error.code = 'INVALID_NON_DINING_COUNT';
+      throw error;
+    }
     const next = {
       ...emptyRecord(date, scope),
       recipeVersion,
       updatedAt: timestamp(),
-      meals: normalizeMeals(meals),
-      temporaryNonDining: normalizeNonDining(temporaryNonDining)
+      meals: normalizedMeals,
+      temporaryNonDining: normalizedNonDining
     };
     const current = readAll();
     const index = current.findIndex((item) => item.date === date && sameScope(item, scope));
