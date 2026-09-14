@@ -2817,7 +2817,8 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-record-card > footer small {
   color: var(--mobile-ink-3);
-  font-size: 9px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .school-mobile-record-card > footer .school-mobile-button {

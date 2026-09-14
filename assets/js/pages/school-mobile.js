@@ -1612,7 +1612,6 @@
 
   function renderProfileSubmissions(records) {
     return '<div class="school-mobile-scroll school-mobile-profile-scroll">'
-      + '<div class="school-mobile-profile-subpage-note">共 ' + number(records.length) + ' 条提交记录</div>'
       + '<div class="school-mobile-record-search"><input type="search" placeholder="搜索记录编号" value="' + escapeHtml(state.recordKeyword) + '" data-action="record-keyword" aria-label="搜索记录编号"></div>'
       + '<div id="schoolMobileRecordList">' + renderRecordList(records) + '</div>'
       + '</div>';
