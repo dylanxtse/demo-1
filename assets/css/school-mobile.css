@@ -1152,6 +1152,43 @@ button {
   transform: translateX(0);
 }
 
+.school-mobile-date-strip-shell.is-locked {
+  grid-template-columns: 0 minmax(0, 1fr) 0;
+}
+
+.school-mobile-date-strip-shell.is-locked .school-mobile-date-month-button {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  flex-basis: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: none;
+}
+
+.school-mobile-date-strip.is-locked {
+  overflow-x: hidden;
+  touch-action: none;
+}
+
+.school-mobile-date-strip.is-locked .school-mobile-date-item:not(.is-selected) {
+  border-color: #e7edf4;
+  color: #aab5c4;
+  background: #f7f9fc;
+  box-shadow: none;
+  opacity: .62;
+}
+
+.school-mobile-date-strip.is-locked .school-mobile-date-item.is-selected {
+  border-color: var(--mobile-blue) !important;
+  color: var(--mobile-blue) !important;
+  background: #edf5ff !important;
+  box-shadow: 0 0 0 2px rgba(42, 117, 212, .16) !important;
+  opacity: 1;
+}
+
 .school-mobile-date-item {
   display: flex;
   width: 50px;
@@ -1306,7 +1343,12 @@ button {
 }
 
 .school-mobile-attendance-summary-card > div {
+  display: flex;
   min-width: 0;
+  min-height: 36px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
@@ -1320,7 +1362,7 @@ button {
   color: #2e466b;
   font-size: 12px;
   font-weight: 400;
-  line-height: 16px;
+  line-height: 18px;
   white-space: nowrap;
 }
 
@@ -1332,14 +1374,20 @@ button {
   color: #2e466b;
   font-size: 12px;
   font-weight: 400;
-  line-height: 16px;
+  line-height: 18px;
   white-space: nowrap;
 }
 
 .school-mobile-attendance-summary-card .school-mobile-attendance-canteen {
   display: block;
-  margin-top: 2px;
-  line-height: 16px;
+  margin-top: 0;
+  line-height: 18px;
+}
+
+.school-mobile-attendance-summary-card .is-primary > span {
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .school-mobile-attendance-summary-actions {
@@ -1347,7 +1395,7 @@ button {
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   justify-self: stretch;
 }
 
@@ -1356,6 +1404,8 @@ button {
   min-width: 64px;
   justify-self: end;
   padding: 0 2px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .school-mobile-attendance-total-row {
@@ -1374,7 +1424,7 @@ button {
 .school-mobile-summary-action {
   width: 100%;
   min-width: 0;
-  height: 26px;
+  height: 18px;
   flex: 0 0 auto;
   padding: 0 4px;
   border: 0;
@@ -1382,6 +1432,7 @@ button {
   color: var(--mobile-blue);
   background: transparent;
   font-size: 10px;
+  line-height: 18px;
   white-space: nowrap;
 }
 
@@ -1488,8 +1539,9 @@ button {
 
 .school-mobile-attendance-summary-card .is-primary strong {
   color: #2e466b;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
+  line-height: 18px;
 }
 
 .school-mobile-recipe-summary-card .is-primary strong {
@@ -1738,17 +1790,36 @@ button {
 }
 
 .school-mobile-person-non-dining-summary {
-  grid-column: 2;
-  grid-row: 1;
-  max-width: 66px;
+  position: absolute;
+  right: 7px;
+  bottom: 1px;
+  width: auto;
+  max-width: calc(100% - 14px);
   overflow: hidden;
-  justify-self: end;
   color: var(--mobile-ink-3);
   font-size: 9px;
   line-height: 13px;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.school-mobile-number-input.has-non-dining-summary {
+  position: relative;
+  height: 42px;
+  align-items: flex-start;
+}
+
+.school-mobile-number-input.has-non-dining-summary input {
+  height: 28px;
+  padding-right: 24px;
+}
+
+.school-mobile-number-input.has-non-dining-summary > em {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  padding-right: 0;
 }
 
 .school-mobile-person-field:not(.school-mobile-person-field-non-dining) .school-mobile-number-input {
@@ -2240,17 +2311,17 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-confirm-date {
   display: flex;
-  min-height: 52px;
-  align-items: flex-start;
+  min-height: 63px;
+  align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 2px;
-  padding: 0 5px;
+  gap: 1px;
+  padding: 5px 2px;
   border: 1px solid #dfe7f0;
   border-radius: 10px;
   color: var(--mobile-ink-2);
   background: #fff;
-  text-align: left;
+  text-align: center;
 }
 
 .school-mobile-confirm-date.is-selected {
@@ -2285,12 +2356,19 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-confirm-date strong {
+  line-height: 16px;
   font-size: 12px;
 }
 
 .school-mobile-confirm-date small {
   color: var(--mobile-ink-3);
+  line-height: 13px;
   font-size: 10px;
+  white-space: nowrap;
+}
+
+.school-mobile-confirm-date-weekday {
+  color: var(--mobile-ink-2) !important;
 }
 
 .school-mobile-field {
@@ -2359,27 +2437,51 @@ button.school-mobile-demand-row:active {
 .school-mobile-confirm-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
+  gap: 0;
+  align-items: stretch;
+}
+
+.school-mobile-confirm-summary-card {
+  margin-bottom: 7px;
+  padding: 7px 14px 6px;
+  border-radius: 14px;
+  background: var(--mobile-card);
+  box-shadow: none;
+}
+
+.school-mobile-confirm-summary-card h2 {
+  margin-bottom: 5px;
 }
 
 .school-mobile-confirm-summary > div {
-  padding: 10px 7px;
-  border-radius: 10px;
+  display: flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 7px;
+  border-radius: 0;
   text-align: center;
-  background: #f6f9fd;
+  background: transparent;
+}
+
+.school-mobile-confirm-summary > div + div {
+  border-left: 1px solid #e5ecf4;
 }
 
 .school-mobile-confirm-summary span {
   display: block;
   color: var(--mobile-ink-3);
   font-size: 10px;
+  line-height: 13px;
 }
 
 .school-mobile-confirm-summary strong {
   display: block;
-  margin-top: 4px;
+  margin-top: 1px;
   color: var(--mobile-blue);
   font-size: 17px;
+  line-height: 20px;
 }
 
 .school-mobile-record-search {
@@ -2583,10 +2685,11 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-profile-order-card > header span {
   flex: 0 0 auto;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   color: var(--mobile-blue);
-  background: #eaf3ff;
+  background: transparent;
   font-size: 9px;
 }
 
@@ -3585,21 +3688,25 @@ button.school-mobile-demand-row:active {
 /* 商品下单模块（移动端首页） */
 .school-mobile-product-topbar {
   display: flex;
-  min-height: 72px;
-  flex: 0 0 72px;
-  align-items: flex-end;
+  min-height: 82px;
+  flex: 0 0 82px;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 26px 14px 11px 15px;
+  padding: 32px 14px 12px 15px;
   border-bottom: 1px solid #edf0f4;
   color: #111a34;
   background: #fff;
 }
 
 .school-mobile-product-topbar-label {
+  display: inline-flex;
+  height: 34px;
   flex: 0 0 auto;
+  align-items: center;
   color: #111a34;
   font-size: 13px;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -3795,8 +3902,13 @@ button.school-mobile-demand-row:active {
   flex: 1 1 auto;
   align-items: stretch;
   gap: 2px;
-  overflow: hidden;
-  padding: 7px 31px 7px 6px;
+  overflow-x: auto;
+  padding: 7px 39px 7px 6px;
+  scrollbar-width: none;
+}
+
+.school-mobile-product-category-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .school-mobile-product-category {
@@ -3870,16 +3982,20 @@ button.school-mobile-demand-row:active {
   font-size: 12px;
   line-height: 16px;
   letter-spacing: 1px;
-  writing-mode: vertical-rl;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
 }
 
 .school-mobile-product-all-trigger i {
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg);
+  width: 14px;
+  height: 2px;
+  margin-top: 4px;
+  border: 0;
+  background: currentColor;
+  box-shadow: 0 4px 0 currentColor, 0 8px 0 currentColor;
+  transform: none;
 }
 
 .school-mobile-product-content {
@@ -4407,7 +4523,7 @@ button.school-mobile-demand-row:active {
   padding: 0 5px;
   color: #111a34;
   background: #fff;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .school-mobile-product-order-filters > button.is-active {
@@ -4499,6 +4615,34 @@ button.school-mobile-demand-row:active {
   margin-bottom: 9px;
   color: #7e8794;
   font-size: 11px;
+}
+
+.school-mobile-product-order-body > .school-mobile-product-order-field-row {
+  min-height: 19px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.school-mobile-product-order-body > .school-mobile-product-order-field-row > span {
+  flex: 0 0 auto;
+  color: #7e8794;
+}
+
+.school-mobile-product-order-body > .school-mobile-product-order-field-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #111a34;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-product-order-body > .school-mobile-product-order-field-row:last-of-type {
+  margin-bottom: 0;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #edf0f3;
 }
 
 .school-mobile-product-order-body > div span:last-child {
@@ -4658,6 +4802,27 @@ button.school-mobile-demand-row:active {
   background: #fff;
 }
 
+.school-mobile-product-category-backdrop {
+  display: block;
+  overflow: hidden;
+}
+
+.school-mobile-product-category-backdrop .school-mobile-product-category-sheet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 8px 24px rgba(31, 43, 67, .18);
+}
+
+.school-mobile-product-category-backdrop .school-mobile-sheet-handle {
+  display: none;
+}
+
 .school-mobile-product-category-sheet h2 {
   margin: 0;
   padding: 18px 0 15px;
@@ -4777,6 +4942,10 @@ button.school-mobile-demand-row:active {
   padding-bottom: 18px;
 }
 
+.school-mobile-product-checkout-date-sheet {
+  max-height: 78%;
+}
+
 .school-mobile-product-checkout-sheet h2 {
   margin: 0;
   padding: 17px 0 9px;
@@ -4798,6 +4967,11 @@ button.school-mobile-demand-row:active {
   color: #2a3344;
   background: #fff;
   font-size: 13px;
+  text-align: left;
+}
+
+.school-mobile-product-checkout-date-trigger {
+  width: 100%;
   text-align: left;
 }
 
@@ -4949,4 +5123,972 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-toast.is-error {
   background: rgba(210, 72, 72, .92);
+}
+
+/* “我的”首页按下单助手参考页重组为账户信息、订单状态和记录入口。 */
+.school-mobile-profile-page {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f5f6f8;
+}
+
+.school-mobile-profile-home-scroll {
+  padding: 0 16px 96px;
+  background: #f5f6f8;
+}
+
+.school-mobile-profile-hero {
+  margin: 0 -16px;
+  padding: 34px 16px 62px;
+  color: #fff;
+  background: linear-gradient(145deg, #54a8f2 0%, #3f97e5 62%, #3b8cda 100%);
+}
+
+.school-mobile-profile-hero-inner {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 11px;
+}
+
+.school-mobile-profile-hero-avatar {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, .92);
+  border-radius: 50%;
+  color: #4399e7;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(34, 105, 176, .2);
+}
+
+.school-mobile-profile-hero-avatar svg {
+  width: 28px;
+  height: 28px;
+}
+
+.school-mobile-profile-hero-identity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.school-mobile-profile-hero-identity strong,
+.school-mobile-profile-hero-identity span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-profile-hero-identity strong {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 23px;
+}
+
+.school-mobile-profile-hero-identity span {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, .84);
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.school-mobile-profile-switch {
+  min-width: 64px;
+  height: 28px;
+  flex: 0 0 auto;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 15px;
+  color: #fff;
+  background: rgba(255, 255, 255, .14);
+  font-size: 10px;
+}
+
+.school-mobile-profile-switch:active {
+  background: rgba(255, 255, 255, .24);
+}
+
+.school-mobile-profile-home-content {
+  position: relative;
+  z-index: 1;
+  margin-top: -36px;
+}
+
+.school-mobile-profile-order-summary {
+  display: block;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 3px 13px rgba(41, 79, 123, .1);
+}
+
+.school-mobile-profile-order-summary > header {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid #f0f3f7;
+}
+
+.school-mobile-profile-order-summary > header strong {
+  color: #26374f;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.school-mobile-profile-order-summary > header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8d9bad;
+  background: transparent;
+  font-size: 10px;
+}
+
+.school-mobile-profile-order-summary > header button span {
+  color: #aab5c2;
+  font-size: 17px;
+  line-height: 11px;
+}
+
+.school-mobile-profile-order-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.school-mobile-profile-order-status {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 92px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px 3px 12px;
+  color: #54657a;
+  background: #fff;
+  text-align: center;
+}
+
+.school-mobile-profile-order-status:active {
+  background: #f8fbff;
+}
+
+.school-mobile-profile-order-summary .school-mobile-profile-order-status-icon {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #4399e7;
+  background: #edf6ff;
+}
+
+.school-mobile-profile-order-status-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.school-mobile-profile-order-status-label {
+  overflow: hidden;
+  max-width: 100%;
+  color: #5c6a7d;
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-profile-order-status em {
+  position: absolute;
+  top: 9px;
+  right: 7px;
+  display: inline-flex;
+  min-width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid #fff;
+  border-radius: 9px;
+  color: #fff;
+  background: #f35b5b;
+  box-shadow: 0 1px 3px rgba(224, 76, 76, .2);
+  font-size: 9px;
+  font-style: normal;
+  line-height: 14px;
+}
+
+.school-mobile-profile-entry {
+  display: flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0 14px;
+  border-radius: 12px;
+  color: var(--mobile-ink);
+  background: #fff;
+  box-shadow: var(--mobile-shadow);
+  text-align: left;
+}
+
+.school-mobile-profile-entry:active {
+  background: #f8fbff;
+}
+
+.school-mobile-profile-entry-icon {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: #4399e7;
+  background: #edf6ff;
+}
+
+.school-mobile-profile-entry-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.school-mobile-profile-entry-main {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.school-mobile-profile-entry-main strong {
+  color: #31425a;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.school-mobile-profile-entry-main small {
+  overflow: hidden;
+  color: #9aa7b8;
+  font-size: 9px;
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-profile-entry-arrow {
+  flex: 0 0 auto;
+  color: #b7c1ce;
+  font-size: 21px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.school-mobile-profile-logout-entry {
+  margin-top: 10px;
+}
+
+.school-mobile-profile-logout-entry .school-mobile-profile-entry-icon {
+  color: #8998aa;
+  background: #f0f3f6;
+}
+
+.school-mobile-profile-subpage-note {
+  margin: 0 1px 9px;
+  color: var(--mobile-ink-3);
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.school-mobile-profile-order-filter {
+  display: flex;
+  gap: 5px;
+  margin: 0 0 11px;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: 10px;
+  background: #e8eef6;
+  scrollbar-width: none;
+}
+
+.school-mobile-profile-order-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.school-mobile-profile-order-filter button {
+  min-width: 51px;
+  height: 28px;
+  flex: 1 0 auto;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: var(--mobile-ink-2);
+  background: transparent;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.school-mobile-profile-order-filter button.is-active {
+  color: var(--mobile-blue);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(45, 79, 126, .1);
+  font-weight: 600;
+}
+
+.school-mobile-profile-order-list {
+  padding: 0 0 12px;
+}
+
+.school-mobile-profile-order-card[data-action="open-profile-order"],
+.school-mobile-product-order-card[data-action="open-product-order"] {
+  cursor: pointer;
+}
+
+.school-mobile-profile-order-card[data-action="open-profile-order"]:active,
+.school-mobile-product-order-card[data-action="open-product-order"]:active {
+  box-shadow: 0 0 0 1px rgba(65, 153, 231, .18), 0 2px 8px rgba(33, 54, 84, .08);
+}
+
+.school-mobile-order-detail-page {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f5f5f6;
+}
+
+.school-mobile-order-detail-scroll {
+  padding: 0 0 20px;
+  background: #f5f5f6;
+}
+
+.school-mobile-order-detail-info {
+  padding: 10px 15px 11px;
+  background: #fff;
+}
+
+.school-mobile-order-detail-info-row {
+  display: grid;
+  min-height: 24px;
+  grid-template-columns: 89px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.school-mobile-order-detail-status-row {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.school-mobile-order-detail-status-row > span {
+  color: #1f2d42;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-info-row > span {
+  color: #1f2d42;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-info-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #9ba3ad;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-info-row.is-editable > .school-mobile-order-detail-edit-trigger {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  color: #9ba3ad;
+  background: transparent;
+}
+
+.school-mobile-order-detail-edit-trigger > strong {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: #9ba3ad;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-edit-trigger > span {
+  flex: 0 0 auto;
+  color: #aab3bf;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.school-mobile-order-detail-status-row > em {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: 16px;
+  color: #f2a63e;
+  background: #fff0d5;
+  font-size: 12px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-status-row > em.is-closed {
+  color: #8d96a1;
+  background: #f0f2f4;
+}
+
+.school-mobile-order-detail-summary {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 15px;
+  color: #485a72;
+  background: #f5f5f6;
+  font-size: 13px;
+}
+
+.school-mobile-order-detail-summary strong {
+  color: #34465f;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-products {
+  padding: 0 14px;
+}
+
+.school-mobile-order-detail-product {
+  display: flex;
+  min-height: 122px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.school-mobile-order-detail-product > img {
+  width: 92px;
+  height: 92px;
+  flex: 0 0 92px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: #e8edf4;
+}
+
+.school-mobile-order-detail-product-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.school-mobile-order-detail-product-main > header {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.school-mobile-order-detail-product-main > header strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #18253b;
+  font-size: 15px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-product-main > header span {
+  flex: 0 0 auto;
+  color: #778397;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-product-fields {
+  display: flex;
+  gap: 5px;
+  margin-top: 18px;
+  flex-direction: column;
+}
+
+.school-mobile-order-detail-product-fields > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  color: #202d42;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.school-mobile-order-detail-product-fields > div > span {
+  flex: 0 0 auto;
+}
+
+.school-mobile-order-detail-product-fields > div > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #9aa1ac;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.school-mobile-order-detail-product-fields > div:last-child {
+  align-items: flex-start;
+}
+
+.school-mobile-order-detail-product-fields > div:last-child > strong {
+  overflow: visible;
+}
+
+.school-mobile-order-detail-product.is-editing {
+  min-height: 156px;
+  align-items: flex-start;
+}
+
+.school-mobile-order-detail-product.is-editing .school-mobile-order-detail-product-main {
+  min-width: 0;
+}
+
+.school-mobile-order-detail-product-fields.is-editing {
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing > label {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 6px;
+  color: #202d42;
+  font-size: 11px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing > label > span {
+  flex: 0 0 24px;
+  line-height: 28px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing input,
+.school-mobile-order-detail-product-fields.is-editing textarea {
+  min-width: 0;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  color: #26344a;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing input {
+  width: 100%;
+  height: 28px;
+  padding: 0 7px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing textarea {
+  min-height: 28px;
+  padding: 5px 7px;
+  resize: vertical;
+  line-height: 16px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing input::placeholder,
+.school-mobile-order-detail-product-fields.is-editing textarea::placeholder {
+  color: #a2abb7;
+}
+
+.school-mobile-order-detail-product-delete {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  margin: -2px -3px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #a0aab6;
+  background: #f1f4f7;
+  font-size: 10px;
+}
+
+.school-mobile-order-detail-product-delete:active {
+  color: #fff;
+  background: #ec7171;
+}
+
+.school-mobile-order-detail-add-product {
+  display: flex;
+  width: calc(100% - 28px);
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 14px 12px;
+  border: 1px solid #4199e7;
+  border-radius: 6px;
+  color: #4199e7;
+  background: #fff;
+  font-size: 13px;
+}
+
+.school-mobile-order-detail-add-product:active {
+  color: #fff;
+  background: #4199e7;
+}
+
+.school-mobile-order-detail-edit-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 14px 20px;
+}
+
+.school-mobile-order-detail-edit-actions button {
+  height: 38px;
+  border: 1px solid #4199e7;
+  border-radius: 6px;
+  color: #4199e7;
+  background: #fff;
+  font-size: 13px;
+}
+
+.school-mobile-order-detail-edit-actions button.is-primary {
+  color: #fff;
+  background: #4199e7;
+}
+
+/* 订单详情编辑控件统一视觉，避免浏览器默认控件样式破坏移动端布局。 */
+.school-mobile-order-detail-info-row.is-editable > .school-mobile-order-detail-edit-trigger {
+  min-height: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #64758b;
+  background: transparent;
+  box-shadow: none;
+}
+
+.school-mobile-order-detail-info-row.is-editable > .school-mobile-order-detail-edit-trigger:active {
+  border-color: transparent;
+  background: transparent;
+}
+
+.school-mobile-order-detail-edit-trigger > strong {
+  color: #455b75;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.school-mobile-order-detail-edit-trigger > span {
+  color: #8ba0b6;
+  font-size: 16px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing > label {
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  color: #586b82;
+  font-size: 11px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing > label > span {
+  flex: 0 0 auto;
+  color: #586b82;
+  line-height: 18px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing input,
+.school-mobile-order-detail-product-fields.is-editing textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  appearance: none;
+  outline: none;
+  border: 1px solid #d5e0ec;
+  border-radius: 8px;
+  color: #263b55;
+  background: #f9fbfe;
+  box-shadow: inset 0 1px 2px rgba(47, 83, 119, .04);
+  font-size: 12px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing input {
+  height: 32px;
+  padding: 0 9px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing > label:first-child input {
+  max-width: 92px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing textarea {
+  min-height: 36px;
+  padding: 7px 9px;
+  resize: none;
+  line-height: 18px;
+}
+
+.school-mobile-order-detail-product-fields.is-editing input:focus,
+.school-mobile-order-detail-product-fields.is-editing textarea:focus {
+  border-color: #61a8e8;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(65, 153, 231, .12);
+}
+
+.school-mobile-order-detail-product-fields.is-editing input::placeholder,
+.school-mobile-order-detail-product-fields.is-editing textarea::placeholder {
+  color: #a4b1c0;
+}
+
+.school-mobile-order-detail-product-delete {
+  width: 34px;
+  height: 32px;
+  flex-basis: 34px;
+  margin: -2px -1px 0 0;
+  border: 1px solid #ffd8d4;
+  border-radius: 8px;
+  color: #df6560;
+  background: #fff5f3;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.school-mobile-order-detail-product-delete:active {
+  border-color: #e66b65;
+  color: #fff;
+  background: #e66b65;
+}
+
+.school-mobile-order-detail-product-delete svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.school-mobile-order-detail-product-fields.is-editing .school-mobile-order-detail-quantity-stepper {
+  display: flex;
+  width: 100%;
+  max-width: 122px;
+  height: 32px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #d5e0ec;
+  border-radius: 8px;
+  background: #f9fbfe;
+}
+
+.school-mobile-order-detail-quantity-stepper button {
+  display: inline-flex;
+  width: 30px;
+  height: 100%;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  color: #6d8aa7;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.school-mobile-order-detail-quantity-stepper button:active {
+  color: #378bd3;
+  background: #eef7ff;
+}
+
+.school-mobile-order-detail-product-fields.is-editing .school-mobile-order-detail-quantity-stepper input {
+  width: auto;
+  max-width: none;
+  height: 100%;
+  flex: 1 1 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  color: #263b55;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.school-mobile-order-detail-quantity-stepper input::-webkit-inner-spin-button,
+.school-mobile-order-detail-quantity-stepper input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.school-mobile-order-detail-add-product {
+  display: flex;
+  width: calc(100% - 28px);
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 14px 10px;
+  padding: 0;
+  border: 1px solid #5aa9e8;
+  border-radius: 8px;
+  color: #378bd3;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.school-mobile-order-detail-add-product:active {
+  color: #378bd3;
+  background: #eef7ff;
+}
+
+.school-mobile-order-detail-edit-actions {
+  flex: 0 0 auto;
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid #edf1f5;
+  background: #fff;
+  gap: 9px;
+}
+
+.school-mobile-order-detail-edit-actions button {
+  height: 42px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.school-mobile-order-detail-edit-actions button.is-primary {
+  box-shadow: 0 4px 10px rgba(65, 153, 231, .18);
+}
+
+.school-mobile-order-detail-info .school-mobile-order-detail-status-row,
+.school-mobile-order-detail-info .school-mobile-order-detail-info-row {
+  height: 30px;
+  min-height: 30px;
+  box-sizing: border-box;
+}
+
+.school-mobile-account-confirm-backdrop {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 16px;
+  background: rgba(0, 0, 0, .56);
+}
+
+.school-mobile-account-confirm {
+  position: relative;
+  width: min(280px, 100%);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 18px 16px 16px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(25, 38, 57, .2);
+  text-align: center;
+}
+
+.school-mobile-account-confirm-close {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  display: inline-flex;
+  width: 27px;
+  height: 27px;
+  align-items: center;
+  justify-content: center;
+  color: #a0a0a0;
+  background: transparent;
+  font-size: 25px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.school-mobile-account-confirm p {
+  margin: 16px 0 18px;
+  color: #777;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+.school-mobile-account-confirm-submit {
+  display: flex;
+  width: 100%;
+  height: 35px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #fff;
+  background: #1599e8;
+  font-size: 14px;
+}
+
+.school-mobile-account-confirm-submit:active {
+  background: #0e8cd6;
 }

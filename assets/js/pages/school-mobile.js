@@ -316,6 +316,47 @@
     const source = window.AppStorage?.read?.(productOrderOrdersStorageKey, []);
     return Array.isArray(source) ? clone(source) : [];
   };
+  const simulatedPendingProductOrderId = 'MOBILE-ORDER-SIMULATED-PENDING';
+  const simulatedPendingProductOrder = () => ({
+    id: simulatedPendingProductOrderId,
+    orderNo: 'DD202609140400001',
+    supplierName: productOrderSupplierNames[0],
+    canteen: '111',
+    orderTag: '其他-不区分',
+    expectedAt: nextProductOrderDate(),
+    status: '待确认',
+    source: '商品下单',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    productCount: 2,
+    orderAmount: 69,
+    items: [
+      {
+        productId: 'order-staple-black-rice',
+        productCode: 'SP0300034',
+        productName: '黑大米',
+        unit: '斤',
+        orderPrice: 10,
+        orderQty: 5,
+        remark: '请按食堂要求分装'
+      },
+      {
+        productId: 'order-staple-rice',
+        productCode: 'SP0300025',
+        productName: '大米',
+        unit: 'KG',
+        orderPrice: 19,
+        orderQty: 1,
+        remark: '送货时请联系食堂管理员'
+      }
+    ]
+  });
+  const ensureSimulatedPendingOrder = (orders) => {
+    const source = Array.isArray(orders) ? orders : [];
+    return source.some((order) => String(order?.id || '') === simulatedPendingProductOrderId)
+      ? source
+      : [simulatedPendingProductOrder(), ...source];
+  };
 
   const state = {
     screen: 'main',
@@ -339,6 +380,16 @@
     submitting: false,
     recordKeyword: '',
     record: null,
+    profileOrder: null,
+    orderDetailEditing: false,
+    orderDetailDraft: null,
+    orderDetailPickerField: '',
+    orderDetailPickerDraft: '',
+    orderDetailReturn: '',
+    profileView: 'home',
+    profileOrderFilter: '全部',
+    profileOrderSearchValue: '',
+    profileOrderKeyword: '',
     profileSection: 'submissions',
     loginUsername: '',
     loginPassword: '',
@@ -351,16 +402,21 @@
     productSearchValue: '',
     productKeyword: '',
     productCart: readProductOrderCart(),
-    productOrders: readProductOrderOrders(),
+    productOrders: ensureSimulatedPendingOrder(readProductOrderOrders()),
     productOrderFilter: '全部',
     productOrderSearchValue: '',
     productOrderKeyword: '',
     productCheckout: { canteen: '', expectedDate: nextProductOrderDate(), tag: '' },
+    productCheckoutDatePickerMonth: '',
+    productCheckoutDatePickerDraft: '',
     productPickerField: '',
     productPickerDraft: '',
-    productEditingOrderId: ''
+    productEditingOrderId: '',
+    orderDetailProductAddMode: false,
+    orderDetailProductCartBackup: null
   };
   let mealSwipeStart = null;
+  let productSwipeStart = null;
 
   function currentCanteen() {
     return canteenConfig?.getCanteen?.(state.canteen) || { id: '', name: state.canteen };
@@ -495,7 +551,7 @@
         note: String(state.productCart[productId]?.note || '')
       };
     }
-    persistProductOrderCart();
+    if (!state.orderDetailProductAddMode) persistProductOrderCart();
   }
 
   function productOrderProducts() {
@@ -510,6 +566,17 @@
     });
   }
 
+  function advanceProductSubcategory() {
+    const category = productOrderCategory();
+    const currentIndex = category.subcategories.findIndex(([key]) => key === state.productSubcategory);
+    const next = category.subcategories[currentIndex + 1];
+    if (!next) return;
+    state.productSubcategory = next[0];
+    state.productSearchValue = '';
+    state.productKeyword = '';
+    render();
+  }
+
   function productOrderDateTime(date) {
     return date ? String(date).slice(0, 10) + ' 00:00:00' : '--';
   }
@@ -521,7 +588,14 @@
       recipe: '<path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h3"/>',
       cart: '<path d="M3 4h2l1.4 10.1a2 2 0 0 0 2 1.7h7.5a2 2 0 0 0 1.9-1.4L20 8H7"/><path d="M10 20h.01M17 20h.01"/>',
       profile: '<circle cx="12" cy="8" r="3.2"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
-      delete: '<path d="M5 7h14M10 3h4l1 2H9l1-2ZM8 7v12h8V7M10.5 10.5v5M13.5 10.5v5"/>'
+      delete: '<path d="M5 7h14M10 3h4l1 2H9l1-2ZM8 7v12h8V7M10.5 10.5v5M13.5 10.5v5"/>',
+      'order-review': '<path d="M7 3.5h7l3 3V20H7z"/><path d="M14 3.5V7h3M9.5 11h5M9.5 14h3"/><path d="m15.5 15.5 1.5 1.5 3-3"/>',
+      'order-shipping': '<path d="m4 7.5 8-3 8 3v9l-8 3-8-3z"/><path d="m4 7.5 8 4 8-4M12 11.5v8"/>',
+      'order-receipt': '<path d="M3.5 6.5h10v9h-10zM13.5 9.5h3.2l3.3 3v3h-6.5z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+      'order-return': '<path d="M8 7H4l4-4"/><path d="M4 7a8 8 0 1 1 0 10h3"/>',
+      record: '<path d="M7 3.5h7l3 3V20H7z"/><path d="M14 3.5V7h3M9.5 11h5M9.5 14h5M9.5 17h3"/>',
+      switch: '<path d="M4 7h12l-3-3M20 17H8l3 3"/><path d="M16 7a5 5 0 0 1 4 5M8 17a5 5 0 0 1-4-5"/>',
+      chevron: '<path d="m9 5 7 7-7 7"/>'
     };
     return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (paths[kind] || paths.order) + '</svg>';
   }
@@ -543,6 +617,11 @@
       return '<header class="school-mobile-product-topbar school-mobile-product-topbar-list">'
         + '<button type="button" class="school-mobile-product-back" data-action="back" aria-label="返回">‹</button>'
         + '<strong>订单列表</strong><span aria-hidden="true"></span></header>';
+    }
+    if (state.orderDetailProductAddMode) {
+      return '<header class="school-mobile-product-topbar school-mobile-product-topbar-list">'
+        + '<button type="button" class="school-mobile-product-back" data-action="back" aria-label="返回订单详情">‹</button>'
+        + '<strong>添加商品</strong><span aria-hidden="true"></span></header>';
     }
     return '<header class="school-mobile-product-topbar">'
       + '<span class="school-mobile-product-topbar-label">供货企业</span>'
@@ -569,7 +648,7 @@
         : '<span class="school-mobile-product-category-emoji" aria-hidden="true">' + escapeHtml(category.emoji || '•') + '</span>';
       return '<button type="button" class="school-mobile-product-category ' + (active ? 'is-active' : '') + '" data-action="select-product-category" data-category="' + escapeHtml(category.key) + '" aria-pressed="' + (active ? 'true' : 'false') + '">' + icon + '<span>' + escapeHtml(category.name) + '</span></button>';
     }).join('');
-    return '<div class="school-mobile-product-category-wrap"><div class="school-mobile-product-category-strip">' + categories + '</div><button type="button" class="school-mobile-product-all-trigger" data-action="open-product-categories"><span>全<br>部</span><i aria-hidden="true"></i></button></div>';
+    return '<div class="school-mobile-product-category-wrap"><div class="school-mobile-product-category-strip">' + categories + '</div><button type="button" class="school-mobile-product-all-trigger" data-action="open-product-categories" aria-label="全部分类"><span>全部</span><i aria-hidden="true"></i></button></div>';
   }
 
   function renderProductSidebar() {
@@ -598,7 +677,7 @@
   function renderProductSelectionBar() {
     const count = productOrderCartCount();
     if (!count) return '';
-    return '<div class="school-mobile-product-selection-bar"><div class="school-mobile-product-selection-cart">' + productOrderIcon('cart') + '<strong>已选' + number(count) + '种商品</strong></div><button type="button" class="school-mobile-product-next" data-action="product-next">下一步</button></div>';
+    return '<div class="school-mobile-product-selection-bar"><div class="school-mobile-product-selection-cart">' + productOrderIcon('cart') + '<strong>' + number(count) + '种商品</strong></div><button type="button" class="school-mobile-product-next" data-action="product-next">下一步</button></div>';
   }
 
   function renderProductHome() {
@@ -631,7 +710,7 @@
     const total = productOrderCartTotal();
     return '<div class="school-mobile-product-cart-page">'
       + '<div class="school-mobile-product-cart-scroll">'
-      + '<div class="school-mobile-product-cart-summary"><span>已选' + number(count) + '种商品&nbsp;合计：￥' + total.toFixed(2) + '元</span><button type="button" data-action="product-clear-cart"' + (count ? '' : ' disabled') + '>清空购物车</button></div>'
+      + '<div class="school-mobile-product-cart-summary"><span>' + number(count) + '种商品&nbsp;合计：￥' + total.toFixed(2) + '元</span><button type="button" data-action="product-clear-cart"' + (count ? '' : ' disabled') + '>清空购物车</button></div>'
       + '<div class="school-mobile-product-refresh">下拉刷新数据</div>'
       + '<div class="school-mobile-product-cart-list">' + (rows.length ? rows.map(renderProductCartItem).join('') : '<div class="school-mobile-product-cart-empty"><div class="school-mobile-product-cart-empty-icon">' + productOrderIcon('cart') + '</div><strong>购物车还是空的哦</strong><span>您的购物车还空着呢，快去逛逛吧</span><button type="button" data-action="product-continue-shopping">去下单</button></div>') + '</div>'
       + '</div>'
@@ -641,6 +720,11 @@
 
   function productOrderStatusLabel(status) {
     return status === '待确认' ? '待确认' : status || '--';
+  }
+
+  function renderOrderFieldRow(label, value) {
+    const displayValue = value == null || value === '' ? '--' : String(value);
+    return '<div class="school-mobile-product-order-field-row"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(displayValue) + '</strong></div>';
   }
 
   function renderProductOrders() {
@@ -657,7 +741,7 @@
       + '<div class="school-mobile-product-order-filters">' + tabs.map((tab) => '<button type="button" class="' + (state.productOrderFilter === tab ? 'is-active' : '') + '" data-action="product-order-filter" data-filter="' + escapeHtml(tab) + '">' + escapeHtml(tab) + '</button>').join('') + '<button type="button" class="school-mobile-product-order-filter-icon" aria-label="筛选">⌄<small>筛选</small></button></div>'
       + '<form class="school-mobile-product-order-search" data-product-order-search-form><span class="school-mobile-product-search-icon" aria-hidden="true">' + productOrderIcon('search') + '</span><input type="search" value="' + escapeHtml(state.productOrderSearchValue) + '" placeholder="请输入" data-action="product-order-search-input" aria-label="搜索订单"><button type="submit" data-action="search-product-orders">搜索</button></form>'
       + '<div class="school-mobile-product-order-list">'
-      + (orders.length ? orders.map((order) => '<article class="school-mobile-product-order-card"><header><strong>' + escapeHtml(order.supplierName || state.productSupplier) + '</strong><span class="is-' + (order.status === '已关闭' ? 'closed' : 'pending') + '">' + escapeHtml(productOrderStatusLabel(order.status)) + '</span></header><div class="school-mobile-product-order-body"><div><span>' + escapeHtml(order.supplierName || state.productSupplier) + '</span><span>' + escapeHtml(order.orderNo || '--') + '</span></div><div><span>下单品种数：' + number(order.productCount) + '</span><span>下单金额：' + Number(order.orderAmount || 0).toFixed(2) + '</span></div><p>订单标签：' + escapeHtml(order.orderTag || '--') + ' <em>期望送达日期：' + escapeHtml(productOrderDateTime(order.expectedAt)) + '</em></p><footer><button type="button" data-action="product-order-reorder" data-order-id="' + escapeHtml(order.id) + '">再来一单</button>' + (order.status !== '已关闭' ? '<button type="button" data-action="product-order-edit" data-order-id="' + escapeHtml(order.id) + '">编辑</button><button type="button" class="is-outline" data-action="product-order-close" data-order-id="' + escapeHtml(order.id) + '">关闭</button>' : '') + '</footer></div></article>').join('') : '<div class="school-mobile-product-order-empty"><strong>暂无订单</strong><span>完成一次商品下单后，订单会显示在这里</span></div>')
+      + (orders.length ? orders.map((order) => '<article class="school-mobile-product-order-card" data-action="open-product-order" data-order-id="' + escapeHtml(order.id) + '" role="button" tabindex="0" aria-label="查看订单 ' + escapeHtml(order.orderNo || order.id) + '"><header><strong>' + escapeHtml(order.supplierName || state.productSupplier || '--') + '</strong><span class="is-' + (order.status === '已关闭' ? 'closed' : 'pending') + '">' + escapeHtml(productOrderStatusLabel(order.status)) + '</span></header><div class="school-mobile-product-order-body">' + renderOrderFieldRow('订单号：', order.orderNo || '--') + renderOrderFieldRow('订单标签：', order.orderTag || '--') + renderOrderFieldRow('下单品种数：', number(order.productCount)) + renderOrderFieldRow('下单金额：', Number(order.orderAmount || 0).toFixed(2)) + renderOrderFieldRow('期望送达时间：', productOrderDateTime(order.expectedAt)) + '<footer><button type="button" data-action="product-order-reorder" data-order-id="' + escapeHtml(order.id) + '">再来一单</button>' + (order.status !== '已关闭' ? '<button type="button" data-action="product-order-edit" data-order-id="' + escapeHtml(order.id) + '">编辑</button><button type="button" class="is-outline" data-action="product-order-close" data-order-id="' + escapeHtml(order.id) + '">关闭</button>' : '') + '</footer></div></article>').join('') : '<div class="school-mobile-product-order-empty"><strong>暂无订单</strong><span>完成一次商品下单后，订单会显示在这里</span></div>')
       + '</div></div>';
   }
 
@@ -666,7 +750,7 @@
   }
 
   function renderProductCategorySheet() {
-    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-category-sheet" role="dialog" aria-modal="true" aria-label="全部分类"><div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>全部分类</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header><div class="school-mobile-product-all-grid">' + productOrderCategories.map((category) => {
+    return '<div class="school-mobile-sheet-backdrop school-mobile-product-category-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-category-sheet" role="dialog" aria-modal="true" aria-label="全部分类"><div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>全部分类</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header><div class="school-mobile-product-all-grid">' + productOrderCategories.map((category) => {
       const icon = category.image ? '<img src="' + escapeHtml(category.image) + '" alt="">' : '<span class="school-mobile-product-category-emoji" aria-hidden="true">' + escapeHtml(category.emoji || '•') + '</span>';
       return '<button type="button" class="' + (category.key === state.productCategory ? 'is-selected' : '') + '" data-action="select-product-category" data-category="' + escapeHtml(category.key) + '">' + icon + '<span>' + escapeHtml(category.name) + '</span></button>';
     }).join('') + '</div><button type="button" class="school-mobile-product-collapse" data-action="close-sheet">点击收起</button></section></div>';
@@ -679,12 +763,41 @@
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-picker-sheet" role="dialog" aria-modal="true" aria-label="' + title + '"><div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" class="school-mobile-product-sheet-text" data-action="product-picker-cancel">取消</button><h2>' + title + '</h2><button type="button" class="school-mobile-product-sheet-text is-primary" data-action="product-picker-confirm">确认</button></header><div class="school-mobile-product-picker-options">' + options.map((option) => '<button type="button" class="' + (option === state.productPickerDraft ? 'is-selected' : '') + '" data-action="product-picker-option" data-picker-value="' + escapeHtml(option) + '">' + escapeHtml(option) + (option === state.productPickerDraft ? '<span>✓</span>' : '') + '</button>').join('') + '</div></section></div>';
   }
 
+  function renderOrderDetailPickerSheet() {
+    const field = state.orderDetailPickerField === 'tag' ? 'tag' : 'canteen';
+    const options = field === 'tag' ? productOrderTags : productOrderCanteens;
+    const title = field === 'tag' ? '请选择订单标签' : '请选择食堂';
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-picker-sheet" role="dialog" aria-modal="true" aria-label="' + title + '"><div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" class="school-mobile-product-sheet-text" data-action="order-detail-picker-cancel">取消</button><h2>' + title + '</h2><button type="button" class="school-mobile-product-sheet-text is-primary" data-action="order-detail-picker-confirm">确认</button></header><div class="school-mobile-product-picker-options">' + options.map((option) => '<button type="button" class="' + (option === state.orderDetailPickerDraft ? 'is-selected' : '') + '" data-action="order-detail-picker-option" data-picker-value="' + escapeHtml(option) + '">' + escapeHtml(option) + (option === state.orderDetailPickerDraft ? '<span>✓</span>' : '') + '</button>').join('') + '</div></section></div>';
+  }
+
+  function renderProductCheckoutDateSheet() {
+    const selectedDate = state.productCheckoutDatePickerDraft || state.productCheckout.expectedDate || nextProductOrderDate();
+    const monthKey = state.productCheckoutDatePickerMonth || monthKeyOf(selectedDate) || monthKeyOf(nextProductOrderDate());
+    const [year, month] = monthKey.split('-').map(Number);
+    const firstDay = new Date(year || 2026, (month || 1) - 1, 1);
+    const firstDayOffset = firstDay.getDay();
+    const totalDays = daysInMonth(monthKey);
+    const cellCount = Math.ceil((firstDayOffset + totalDays) / 7) * 7;
+    const today = new Date().toISOString().slice(0, 10);
+    const calendarCells = Array.from({ length: cellCount }, (_, index) => {
+      const day = index - firstDayOffset + 1;
+      if (day < 1 || day > totalDays) return '<span class="school-mobile-expected-at-day is-empty" aria-hidden="true"></span>';
+      const date = dateKeyFor(monthKey, day);
+      return '<button type="button" class="school-mobile-expected-at-day ' + (date === selectedDate ? 'is-selected ' : '') + (date === today ? 'is-today' : '') + '" data-action="product-checkout-date-option" data-date="' + escapeHtml(date) + '" aria-label="' + escapeHtml(dateText(date)) + '">' + day + '</button>';
+    }).join('');
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-picker-sheet school-mobile-product-checkout-date-sheet" role="dialog" aria-modal="true" aria-label="选择期望送达日期">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" class="school-mobile-product-sheet-text" data-action="product-checkout-date-cancel">取消</button><h2>选择期望送达日期</h2><button type="button" class="school-mobile-product-sheet-text is-primary" data-action="product-checkout-date-confirm">确认</button></header>'
+      + '<div class="school-mobile-expected-at-current"><span>当前选择</span><strong>' + escapeHtml(productOrderDateTime(selectedDate)) + '</strong></div>'
+      + '<div class="school-mobile-expected-at-calendar"><div class="school-mobile-expected-at-calendar-header"><button type="button" data-action="product-checkout-date-month" data-month-delta="-1" aria-label="上个月">‹</button><strong>' + escapeHtml(expectedAtMonthText(monthKey)) + '</strong><button type="button" data-action="product-checkout-date-month" data-month-delta="1" aria-label="下个月">›</button></div><div class="school-mobile-expected-at-weekdays">' + weekdayNames.map((day) => '<span>' + escapeHtml(day) + '</span>').join('') + '</div><div class="school-mobile-expected-at-days">' + calendarCells + '</div></div>'
+      + '</section></div>';
+  }
+
   function renderProductCheckoutSheet() {
     const checkout = state.productCheckout;
     const editing = Boolean(state.productEditingOrderId);
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-checkout-sheet" role="dialog" aria-modal="true" aria-label="填写订单信息"><div class="school-mobile-sheet-handle"></div>'
       + '<div class="school-mobile-product-checkout-cell" data-action="open-product-picker" data-picker-field="canteen"><span>请选择食堂</span><strong>' + escapeHtml(checkout.canteen || '请选择') + '</strong><i aria-hidden="true"></i></div>'
-      + '<label class="school-mobile-product-checkout-cell"><span>期望送达日期</span><strong>' + escapeHtml(productOrderDateTime(checkout.expectedDate)) + '</strong><input type="date" value="' + escapeHtml(checkout.expectedDate) + '" data-action="product-checkout-date" aria-label="期望送达日期"></label>'
+      + '<button type="button" class="school-mobile-product-checkout-cell school-mobile-product-checkout-date-trigger" data-action="open-product-checkout-date" aria-label="选择期望送达日期"><span>期望送达日期</span><strong>' + escapeHtml(productOrderDateTime(checkout.expectedDate)) + '</strong><i aria-hidden="true"></i></button>'
       + '<div class="school-mobile-product-checkout-cell" data-action="open-product-picker" data-picker-field="tag"><span>请选择订单标签</span><strong>' + escapeHtml(checkout.tag || '请选择') + '</strong><i aria-hidden="true"></i></div>'
       + '<div class="school-mobile-product-checkout-actions"><button type="button" data-action="product-checkout-back">返回</button><button type="button" class="is-primary" data-action="save-product-order">' + (editing ? '保存订单' : '保存订单') + '</button></div>'
       + '</section></div>';
@@ -718,6 +831,8 @@
       expectedDate: String(order?.expectedAt || nextProductOrderDate()).slice(0, 10),
       tag: order?.orderTag || ''
     };
+    state.productCheckoutDatePickerMonth = '';
+    state.productCheckoutDatePickerDraft = '';
     state.productPickerField = '';
     state.productPickerDraft = '';
     state.sheet = { type: 'product-checkout' };
@@ -781,6 +896,8 @@
       persistProductOrderCart();
     }
     state.productEditingOrderId = '';
+    state.productCheckoutDatePickerMonth = '';
+    state.productCheckoutDatePickerDraft = '';
     state.productPickerField = '';
     state.productPickerDraft = '';
     state.sheet = null;
@@ -795,17 +912,28 @@
       return renderProductHeader();
     }
     const loginPage = state.screen === 'main' && state.tab === 'profile' && !currentMobileSession();
+    const profileHome = state.screen === 'main'
+      && state.tab === 'profile'
+      && Boolean(currentMobileSession())
+      && (state.profileView || 'home') === 'home';
+    const profileSubpage = state.screen === 'main'
+      && state.tab === 'profile'
+      && Boolean(currentMobileSession())
+      && (state.profileView || 'home') !== 'home';
+    if (profileHome) return '';
     const attendanceBackToRecipe = state.screen === 'main' && state.tab === 'attendance';
     const title = loginPage
       ? '登录'
-      : state.screen === 'confirm'
+        : state.screen === 'confirm'
         ? '确认需求'
+        : state.screen === 'order-detail'
+          ? '订单详情'
         : state.screen === 'detail'
           ? '提交记录详情'
-          : state.tab === 'attendance'
-            ? '需求填报'
-            : state.tab === 'profile'
-              ? '个人中心'
+        : state.tab === 'attendance'
+          ? '需求填报'
+          : state.tab === 'profile'
+              ? (profileSubpage && state.profileView === 'orders' ? '订单列表' : profileSubpage ? '提交记录' : '个人中心')
               : state.tab === 'home'
                 ? '首页'
                 : state.tab === 'recipe'
@@ -813,11 +941,13 @@
                   : '食谱中心';
     const shouldShowBack = state.screen === 'confirm'
       || state.screen === 'detail'
-      || attendanceBackToRecipe;
+      || state.screen === 'order-detail'
+      || attendanceBackToRecipe
+      || profileSubpage;
     const back = shouldShowBack
       ? '<button type="button" class="school-mobile-back-button" data-action="back" aria-label="返回">←</button>'
       : '';
-    const canteenDisplay = state.tab === 'attendance' || state.screen === 'detail'
+    const canteenDisplay = state.tab === 'attendance' || state.screen === 'detail' || state.screen === 'order-detail' || profileSubpage
       ? ''
       : '<button type="button" class="school-mobile-canteen-button" data-action="open-canteen" title="切换食堂"><span class="school-mobile-canteen-name">' + escapeHtml(state.canteen) + '</span><span class="school-mobile-canteen-arrow" aria-hidden="true"></span></button>';
     return '<header class="school-mobile-topbar">'
@@ -832,6 +962,7 @@
 
   function renderDateStrip(mode) {
     const currentParticipants = participants();
+    const isAttendanceLocked = mode === 'attendance' && state.attendanceInputMode === 'non-dining';
     const monthKey = isSupportedMonth(state.monthKey) ? state.monthKey : anchorMonthKey;
     const items = Array.from({ length: daysInMonth(monthKey) }, (_, index) => {
       const date = dateKeyFor(monthKey, index + 1);
@@ -850,15 +981,15 @@
         : menu ? '已发布' : '暂无菜谱';
       return '<button type="button" class="school-mobile-date-item '
         + (date === state.date ? 'is-selected ' : '') + statusClass
-        + '" data-action="select-date" data-date="' + escapeHtml(date) + '" aria-label="' + escapeHtml(dateText(date) + ' ' + statusLabel) + '" title="' + escapeHtml(statusLabel) + '">'
+        + '" data-action="select-date" data-date="' + escapeHtml(date) + '" aria-label="' + escapeHtml(dateText(date) + ' ' + statusLabel) + '" title="' + escapeHtml(statusLabel) + '"' + (isAttendanceLocked ? ' disabled aria-disabled="true"' : '') + '>'
         + '<strong>' + escapeHtml(date.slice(8, 10)) + '</strong>'
         + '<small class="school-mobile-date-weekday">' + escapeHtml(weekdayText(date)) + '</small>'
         + '</button>';
     }).join('');
-    return '<div class="school-mobile-date-strip-shell school-mobile-date-strip-shell-' + escapeHtml(mode) + '" data-date-strip-shell data-month-key="' + escapeHtml(monthKey) + '">'
-      + '<button type="button" class="school-mobile-date-month-button school-mobile-date-month-button-prev" data-action="change-month" data-month-delta="-1" aria-label="上一月">上一月</button>'
-      + '<div class="school-mobile-date-strip school-mobile-date-strip-' + escapeHtml(mode) + '" data-date-strip data-strip-mode="' + escapeHtml(mode) + '" data-month-key="' + escapeHtml(monthKey) + '" aria-label="用料日期列表">' + items + '</div>'
-      + '<button type="button" class="school-mobile-date-month-button school-mobile-date-month-button-next" data-action="change-month" data-month-delta="1" aria-label="下一月">下一月</button>'
+    return '<div class="school-mobile-date-strip-shell school-mobile-date-strip-shell-' + escapeHtml(mode) + (isAttendanceLocked ? ' is-locked' : '') + '" data-date-strip-shell data-month-key="' + escapeHtml(monthKey) + '">'
+      + '<button type="button" class="school-mobile-date-month-button school-mobile-date-month-button-prev" data-action="change-month" data-month-delta="-1" aria-label="上一月"' + (isAttendanceLocked ? ' disabled aria-disabled="true"' : '') + '>上一月</button>'
+      + '<div class="school-mobile-date-strip school-mobile-date-strip-' + escapeHtml(mode) + (isAttendanceLocked ? ' is-locked' : '') + '" data-date-strip data-strip-mode="' + escapeHtml(mode) + '" data-month-key="' + escapeHtml(monthKey) + '" aria-label="用料日期列表' + (isAttendanceLocked ? '，当前日期不可切换' : '') + '"' + (isAttendanceLocked ? ' aria-disabled="true"' : '') + '>' + items + '</div>'
+      + '<button type="button" class="school-mobile-date-month-button school-mobile-date-month-button-next" data-action="change-month" data-month-delta="1" aria-label="下一月"' + (isAttendanceLocked ? ' disabled aria-disabled="true"' : '') + '>下一月</button>'
       + '</div>';
   }
 
@@ -867,6 +998,12 @@
     if (!shell) return;
     const previous = shell.querySelector('.school-mobile-date-month-button-prev');
     const next = shell.querySelector('.school-mobile-date-month-button-next');
+    if (strip.classList.contains('is-locked')) {
+      shell.classList.remove('has-prev', 'has-next');
+      if (previous) previous.disabled = true;
+      if (next) next.disabled = true;
+      return;
+    }
     const monthKey = strip.dataset.monthKey || anchorMonthKey;
     const hadNext = shell.classList.contains('has-next');
     const atStart = strip.scrollLeft <= 2;
@@ -892,7 +1029,7 @@
       const scrollKey = (strip.dataset.stripMode || '') + '|' + (strip.dataset.monthKey || '');
       const savedScrollLeft = state.dateStripScroll[scrollKey];
       const selected = strip.querySelector('.school-mobile-date-item.is-selected');
-      if (Number.isFinite(savedScrollLeft)) {
+      if (!strip.classList.contains('is-locked') && Number.isFinite(savedScrollLeft)) {
         strip.scrollLeft = savedScrollLeft;
       } else if (selected) {
         const maxScrollLeft = Math.max(0, strip.scrollWidth - strip.clientWidth);
@@ -981,7 +1118,9 @@
       && Number(calculation.totalDiningPeople || 0) > 0;
     const resetAction = isNonDiningMode ? '' : '<button type="button" class="school-mobile-summary-action school-mobile-summary-reset-action" data-action="reset-attendance">重置</button>';
     const modeAction = '<button type="button" class="school-mobile-section-heading-action school-mobile-attendance-mode-action' + (isNonDiningMode ? ' is-active' : '') + '" data-action="toggle-attendance-mode"' + (isNonDiningMode && !canSaveNonDining ? ' disabled' : '') + '>' + (isNonDiningMode ? '保存' : '填写不就餐人数') + '</button>';
-    const summaryActions = '<div class="school-mobile-attendance-summary-actions"><button type="button" class="school-mobile-summary-action" data-action="fill-defaults">默认人数</button>' + resetAction + '</div>';
+    const summaryActions = isNonDiningMode
+      ? ''
+      : '<div class="school-mobile-attendance-summary-actions"><button type="button" class="school-mobile-summary-action" data-action="fill-defaults">默认人数</button>' + resetAction + '</div>';
     return '<div class="school-mobile-attendance-page">'
       + '<div class="school-mobile-scroll school-mobile-attendance-scroll">'
       + renderDateStrip('attendance')
@@ -1034,8 +1173,7 @@
             && (values[index] === '' || values[index] == null);
           return '<label class="school-mobile-person-field">'
             + '<span>' + escapeHtml(participantName) + '</span>'
-            + '<div class="school-mobile-number-input' + (isEmptyHighlight ? ' is-empty' : '') + '"><input type="number" min="0" max="' + MAX_ATTENDANCE_PEOPLE + '" step="1" inputmode="numeric" placeholder="请输入" value="' + escapeHtml(values[index]) + '" data-action="attendance-input" data-meal="' + escapeHtml(meal.key) + '" data-participant="' + escapeHtml(participant.key) + '" aria-label="' + escapeHtml(meal.name + (participant.label || '人员') + '人数') + '"' + (isEmptyHighlight ? ' aria-invalid="true"' : '') + '><em>人</em></div>'
-            + nonDiningSummary
+            + '<div class="school-mobile-number-input' + (isEmptyHighlight ? ' is-empty' : '') + (nonDiningSummary ? ' has-non-dining-summary' : '') + '"><input type="number" min="0" max="' + MAX_ATTENDANCE_PEOPLE + '" step="1" inputmode="numeric" placeholder="请输入" value="' + escapeHtml(values[index]) + '" data-action="attendance-input" data-meal="' + escapeHtml(meal.key) + '" data-participant="' + escapeHtml(participant.key) + '" aria-label="' + escapeHtml(meal.name + (participant.label || '人员') + '人数') + '"' + (isEmptyHighlight ? ' aria-invalid="true"' : '') + '><em>人</em>' + nonDiningSummary + '</div>'
             + '</label>';
         }
         const diningValue = values[index];
@@ -1048,7 +1186,7 @@
         return '<div class="school-mobile-person-field school-mobile-person-field-non-dining">'
           + '<span>' + escapeHtml(participantName) + '</span>'
           + '<div class="school-mobile-non-dining-total"><span>总人数</span><strong>' + (hasDiningValue ? number(diningPeople) : '--') + ' 人</strong></div>'
-          + '<div class="school-mobile-non-dining-input-row"><span>不就餐</span><div class="school-mobile-number-input"><input type="number" min="0" max="' + nonDiningMax + '" step="1" inputmode="numeric" placeholder="0" value="' + escapeHtml(nonDiningValue) + '" data-action="attendance-non-dining-input" data-meal="' + escapeHtml(meal.key) + '" data-participant="' + escapeHtml(participant.key) + '" aria-label="' + escapeHtml(meal.name + (participant.label || '人员') + '不就餐人数') + '"' + (issue ? ' aria-invalid="true"' : '') + '><em>人</em></div></div>'
+          + '<div class="school-mobile-non-dining-input-row"><span>不就餐</span><div class="school-mobile-number-input"><input type="number" min="0" max="' + nonDiningMax + '" step="1" inputmode="numeric" placeholder="0" value="' + escapeHtml(nonDiningValue) + '" data-action="attendance-non-dining-input" data-meal="' + escapeHtml(meal.key) + '" data-participant="' + escapeHtml(participant.key) + '" aria-label="' + escapeHtml(meal.name + (participant.label || '人员') + '不就餐人数') + '"' + (issue ? ' aria-invalid="true"' : '') + '></div></div>'
           + '<small class="school-mobile-non-dining-error' + (issue ? ' is-visible' : '') + '" data-attendance-non-dining-error data-meal="' + escapeHtml(meal.key) + '" data-participant="' + escapeHtml(participant.key) + '">' + escapeHtml(issue) + '</small>'
           + '</div>';
       }).join('')
@@ -1303,7 +1441,7 @@
         + (summary.status?.key === 'partial' ? 'is-partial ' : summary.status?.key === 'complete' ? 'is-complete ' : 'is-disabled ')
         + (state.confirmDates.has(summary.date) ? 'is-selected ' : '')
         + '" data-action="confirm-date" data-date="' + escapeHtml(summary.date) + '">'
-        + '<strong>' + escapeHtml(shortDate(summary.date)) + '</strong><small>' + number(summary.calculation.totalPeople) + ' 人次</small></button>').join('')
+        + '<strong>' + escapeHtml(shortDate(summary.date)) + '</strong><small class="school-mobile-confirm-date-weekday">星期' + escapeHtml(weekdayText(summary.date)) + '</small><small>' + number(summary.calculation.totalPeople) + ' 人次</small></button>').join('')
       : '<div class="school-mobile-empty">暂无可提交的填报日期</div>';
     const expectedAt = state.expectedAt || '';
     const canSubmit = Boolean(preview.canSubmit && hasConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(expectedAt));
@@ -1313,7 +1451,7 @@
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
       + '<section class="school-mobile-confirm-card"><h2>订单信息</h2><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
-      + '<section class="school-mobile-confirm-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>提交日期</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
+      + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>提交日期</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
       + '<div class="school-mobile-order-tags-inline">' + renderConfirmOrderTags(preview, activeParticipant) + '</div>'
       + '<section class="school-mobile-confirm-card school-mobile-purchase-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + (activeParticipant ? '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>' : '') + '</div>' + renderPreviewProductRows(preview, activeParticipant, isPurchaseQuantityEditing) + '</section>'
       + (preview.message && !preview.canSubmit ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
@@ -1363,12 +1501,29 @@
     const recordIds = new Set(records.map((record) => String(record.id || '')).filter(Boolean));
     const recordNumbers = new Set(records.map((record) => String(record.recordNo || '')).filter(Boolean));
     const names = new Set([session.username, session.displayName].map((value) => String(value || '')).filter(Boolean));
-    const orders = orderService.getAll().filter((order) => (
+    const linkedOrders = orderService.getAll().filter((order) => (
       recordIds.has(String(order.recipeDemandRecordId || ''))
       || recordNumbers.has(String(order.recipeDemandRecordNo || ''))
       || (order.source === '食谱下单' && names.has(String(order.creator || '')))
     ));
-    return orders.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    const schoolName = String(orderService.SCHOOL_NAME || '');
+    const schoolOrders = orderService.getAll().filter((order) => {
+      const customerName = String(order.customerName || order.schoolName || '');
+      const canteenName = String(order.canteen || '');
+      return (schoolName && customerName === schoolName) || (schoolName && canteenName.includes(schoolName));
+    });
+    const productOrders = state.productOrders.map((order) => ({
+      ...clone(order),
+      expectedAt: order.expectedAt || order.expectedDate || '',
+      receiptStatus: order.receiptStatus || '未收货',
+      source: order.source || '商品下单'
+    }));
+    const uniqueOrders = new Map();
+    [...schoolOrders, ...linkedOrders, ...productOrders].forEach((order) => {
+      const key = String(order.id || order.orderNo || '');
+      if (key) uniqueOrders.set(key, order);
+    });
+    return [...uniqueOrders.values()].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
   }
 
   function renderLogin() {
@@ -1383,28 +1538,114 @@
       + '</section></div>';
   }
 
+  function profileOrderHasReturn(order) {
+    const status = String(order?.status || '');
+    return ['退货', '退货中', '已退货'].includes(status)
+      || Number(order?.returnAmount || 0) > 0
+      || (order?.items || []).some((line) => Number(line?.returnQty || 0) > 0);
+  }
+
+  function profileOrderMatchesFilter(order, filter) {
+    const status = String(order?.status || '');
+    const receiptStatus = String(order?.receiptStatus || '');
+    if (!filter || filter === '全部') return true;
+    if (filter === '待审核') return ['待审核', '待确认'].includes(status);
+    if (filter === '待发货') return ['待发货', '待出库'].includes(status);
+    if (filter === '待收货') {
+      return ['待收货', '已发货', '运输中'].includes(status)
+        || (Boolean(order?.shippingAt)
+          && !['已完成', '已关闭', '已驳回'].includes(status)
+          && receiptStatus !== '已收货');
+    }
+    if (filter === '退货') return profileOrderHasReturn(order);
+    return false;
+  }
+
+  function profileOrderStatusItems(orders) {
+    return [
+      { label: '待审核', filter: '待审核', icon: 'order-review' },
+      { label: '待发货', filter: '待发货', icon: 'order-shipping' },
+      { label: '待收货', filter: '待收货', icon: 'order-receipt' },
+      { label: '退货', filter: '退货', icon: 'order-return' }
+    ].map((item) => ({
+      ...item,
+      count: orders.filter((order) => profileOrderMatchesFilter(order, item.filter)).length
+    }));
+  }
+
+  function renderProfileHome(session, records, orders) {
+    const schoolName = session.schoolName || session.companyName || orderService.SCHOOL_NAME || '静安第一中学';
+    const phone = session.phone || session.mobile || session.phoneNumber || '13523145672';
+    const statusItems = profileOrderStatusItems(orders);
+    const statusMarkup = statusItems.map((item) => '<button type="button" class="school-mobile-profile-order-status" data-action="open-profile-orders" data-order-filter="' + escapeHtml(item.filter) + '" aria-label="' + escapeHtml(item.label + ' ' + item.count + ' 笔') + '">'
+      + '<span class="school-mobile-profile-order-status-icon">' + productOrderIcon(item.icon) + '</span>'
+      + '<span class="school-mobile-profile-order-status-label">' + escapeHtml(item.label) + '</span>'
+      + (item.count ? '<em>' + number(item.count) + '</em>' : '')
+      + '</button>').join('');
+    return '<div class="school-mobile-profile-page">'
+      + '<div class="school-mobile-scroll school-mobile-profile-scroll school-mobile-profile-home-scroll">'
+      + '<section class="school-mobile-profile-hero" aria-label="账户信息">'
+      + '<div class="school-mobile-profile-hero-inner">'
+      + '<div class="school-mobile-profile-hero-avatar">' + productOrderIcon('profile') + '</div>'
+      + '<div class="school-mobile-profile-hero-identity"><strong>' + escapeHtml(schoolName) + '</strong><span>联系电话：' + escapeHtml(phone) + '</span></div>'
+      + '</div>'
+      + '</section>'
+      + '<div class="school-mobile-profile-home-content">'
+      + '<section class="school-mobile-profile-order-summary" aria-label="全部订单">'
+      + '<header><strong>全部订单</strong><button type="button" data-action="open-profile-orders" data-order-filter="全部">查看全部订单<span aria-hidden="true">›</span></button></header>'
+      + '<div class="school-mobile-profile-order-status-grid">' + statusMarkup + '</div>'
+      + '</section>'
+      + '<button type="button" class="school-mobile-profile-entry" data-action="open-profile-submissions">'
+      + '<span class="school-mobile-profile-entry-icon">' + productOrderIcon('record') + '</span>'
+      + '<span class="school-mobile-profile-entry-main"><strong>提交记录</strong><small>' + (records.length ? '共 ' + number(records.length) + ' 条记录' : '查看已提交的需求记录') + '</small></span>'
+      + '<span class="school-mobile-profile-entry-arrow" aria-hidden="true">›</span>'
+      + '</button>'
+      + '<button type="button" class="school-mobile-profile-entry school-mobile-profile-logout-entry" data-action="logout">'
+      + '<span class="school-mobile-profile-entry-icon">' + productOrderIcon('switch') + '</span>'
+      + '<span class="school-mobile-profile-entry-main"><strong>退出登录</strong><small>退出当前账号</small></span>'
+      + '<span class="school-mobile-profile-entry-arrow" aria-hidden="true">›</span>'
+      + '</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function renderProfileSubmissions(records) {
+    return '<div class="school-mobile-scroll school-mobile-profile-scroll">'
+      + '<div class="school-mobile-profile-subpage-note">共 ' + number(records.length) + ' 条提交记录</div>'
+      + '<div class="school-mobile-record-search"><input type="search" placeholder="搜索记录编号" value="' + escapeHtml(state.recordKeyword) + '" data-action="record-keyword" aria-label="搜索记录编号"></div>'
+      + '<div id="schoolMobileRecordList">' + renderRecordList(records) + '</div>'
+      + '</div>';
+  }
+
+  function renderProfileOrders(orders) {
+    const filter = state.profileOrderFilter || '全部';
+    const keyword = String(state.profileOrderKeyword || '').trim().toLocaleLowerCase();
+    const filteredOrders = orders.filter((order) => {
+      if (!profileOrderMatchesFilter(order, filter)) return false;
+      const orderTag = order.orderTag || (order.orderTagName ? order.orderTagName + '-' + (order.nutritious || '不区分') : '');
+      const searchable = [order.orderNo, order.id, order.supplierName, order.canteen, orderTag].join(' ').toLocaleLowerCase();
+      return !keyword || searchable.includes(keyword);
+    });
+    const filters = ['全部', '待审核', '待发货', '待收货', '退货'];
+    return '<div class="school-mobile-scroll school-mobile-profile-scroll">'
+      + '<div class="school-mobile-profile-order-filter" role="tablist" aria-label="订单状态筛选">'
+      + filters.map((item) => '<button type="button" class="' + (item === filter ? 'is-active' : '') + '" data-action="profile-order-filter" data-order-filter="' + escapeHtml(item) + '" role="tab" aria-selected="' + (item === filter ? 'true' : 'false') + '">' + escapeHtml(item) + '</button>').join('')
+      + '</div>'
+      + '<form class="school-mobile-product-order-search school-mobile-profile-order-search" data-profile-order-search-form><span class="school-mobile-product-search-icon" aria-hidden="true">' + productOrderIcon('search') + '</span><input type="search" value="' + escapeHtml(state.profileOrderSearchValue) + '" placeholder="请输入" data-action="profile-order-search-input" aria-label="搜索订单"><button type="submit" data-action="search-profile-orders">搜索</button></form>'
+      + renderOrderList(filteredOrders)
+      + '</div>';
+  }
+
   function renderProfile() {
     const session = currentMobileSession();
     if (!session) return renderLogin();
     const records = currentUserRecords();
     const orders = currentUserOrders(records);
-    const username = session.username || session.displayName || '当前用户';
-    const displayName = session.displayName || username;
-    const content = state.profileSection === 'orders'
-      ? renderOrderList(orders)
-      : '<div class="school-mobile-record-search"><input type="search" placeholder="搜索记录编号" value="' + escapeHtml(state.recordKeyword) + '" data-action="record-keyword" aria-label="搜索记录编号"></div><div id="schoolMobileRecordList">' + renderRecordList(records) + '</div>';
-    return '<div class="school-mobile-scroll school-mobile-profile-scroll">'
-      + '<section class="school-mobile-profile-card">'
-      + '<div class="school-mobile-mine-avatar">' + escapeHtml(String(username).slice(0, 1).toUpperCase()) + '</div>'
-      + '<div class="school-mobile-profile-identity"><strong>' + escapeHtml(username) + '</strong><span>' + escapeHtml(displayName) + '</span></div>'
-      + '<button type="button" class="school-mobile-profile-logout" data-action="logout">退出登录</button>'
-      + '</section>'
-      + '<div class="school-mobile-profile-tabs" role="tablist" aria-label="个人记录分类">'
-      + '<button type="button" class="' + (state.profileSection === 'submissions' ? 'is-active' : '') + '" data-action="profile-section" data-profile-section="submissions" role="tab">提交记录 <small>' + number(records.length) + '</small></button>'
-      + '<button type="button" class="' + (state.profileSection === 'orders' ? 'is-active' : '') + '" data-action="profile-section" data-profile-section="orders" role="tab">订单记录 <small>' + number(orders.length) + '</small></button>'
-      + '</div>'
-      + content
-      + '</div>';
+    const profileView = state.profileView || 'home';
+    if (profileView === 'orders') return renderProfileOrders(orders);
+    if (profileView === 'submissions') return renderProfileSubmissions(records);
+    return renderProfileHome(session, records, orders);
   }
 
   function renderRecordList(sourceRecords = currentUserRecords()) {
@@ -1421,11 +1662,338 @@
 
   function renderOrderList(orders = currentUserOrders()) {
     if (!orders.length) return '<div class="school-mobile-empty">暂无创建的订单记录</div>';
-    return '<div class="school-mobile-profile-order-list">' + orders.map((order) => '<article class="school-mobile-profile-order-card">'
-      + '<header><strong>' + escapeHtml(order.orderNo || order.id || '--') + '</strong><span>' + escapeHtml(order.status || '--') + '</span></header>'
-      + '<div class="school-mobile-profile-order-meta"><div><span>期望送达时间：' + escapeHtml(order.expectedAt || '--') + '</span><small>创建时间：' + escapeHtml(order.createdAt || '--') + '</small></div><span>' + escapeHtml(order.orderTag || (order.orderTagName ? order.orderTagName + '-' + (order.nutritious || '不区分') : '--')) + '</span></div>'
-      + '<div class="school-mobile-profile-order-summary"><div><span>商品种数</span><strong>' + number(order.productCount || (order.items || []).length) + '</strong></div><div><span>订单金额</span><strong>¥' + quantity(order.orderAmount) + '</strong></div></div>'
-      + '</article>').join('') + '</div>';
+    return '<div class="school-mobile-profile-order-list">' + orders.map((order) => {
+      const orderId = String(order.id || order.orderNo || '');
+      const isProductOrder = order.source === '商品下单' || orderId.indexOf('MOBILE-ORDER-') === 0;
+      const isClosed = String(order.status || '') === '已关闭';
+      const orderTag = order.orderTag || (order.orderTagName ? order.orderTagName + '-' + (order.nutritious || '不区分') : '--');
+      const actionButtons = (isProductOrder && !isClosed ? '<button type="button" data-action="profile-order-edit" data-order-id="' + escapeHtml(orderId) + '">编辑</button>' : '')
+        + '<button type="button" data-action="profile-order-reorder" data-order-id="' + escapeHtml(orderId) + '">再来一单</button>'
+        + (isProductOrder && !isClosed ? '<button type="button" class="is-outline" data-action="profile-order-close" data-order-id="' + escapeHtml(orderId) + '">关闭</button>' : '');
+      return '<article class="school-mobile-profile-order-card school-mobile-product-order-card" data-action="open-profile-order" data-order-id="' + escapeHtml(orderId) + '" role="button" tabindex="0" aria-label="查看订单 ' + escapeHtml(order.orderNo || orderId) + '">'
+        + '<header><strong>' + escapeHtml(order.supplierName || '--') + '</strong><span class="' + (isClosed ? 'is-closed' : '') + '">' + escapeHtml(order.status || '--') + '</span></header>'
+        + '<div class="school-mobile-product-order-body">'
+        + renderOrderFieldRow('订单号：', order.orderNo || orderId || '--')
+        + renderOrderFieldRow('订单标签：', orderTag)
+        + renderOrderFieldRow('下单品种数：', number(order.productCount || (order.items || []).length))
+        + renderOrderFieldRow('下单金额：', formatProfileMoney(order.orderAmount))
+        + renderOrderFieldRow('期望送达时间：', profileOrderExpectedAt(order))
+        + '<footer>' + actionButtons + '</footer>'
+        + '</div>'
+        + '</article>';
+    }).join('') + '</div>';
+  }
+
+  function formatProfileMoney(value) {
+    return Number(value || 0).toLocaleString('zh-CN', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+      useGrouping: false
+    });
+  }
+
+  function profileOrderExpectedAt(order) {
+    const value = String(order?.expectedAt || order?.expectedDate || '').trim();
+    if (!value) return '--';
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value + ' 00:00:00' : value;
+  }
+
+  function profileOrderLine(item) {
+    const productId = item?.productId || item?.productCode || item?.goodsCode || item?.goodsId || item?.id || '';
+    return {
+      ...item,
+      productId,
+      productName: item?.productName || item?.goodsName || item?.name || '--',
+      unit: item?.unit || '--',
+      orderPrice: Number(item?.orderPrice ?? item?.unitPrice ?? item?.price ?? 0),
+      orderQty: Number(item?.orderQty ?? item?.quantity ?? item?.qty ?? 0),
+      remark: item?.remark ?? ''
+    };
+  }
+
+  function profileOrderProduct(item) {
+    const line = profileOrderLine(item);
+    return productOrderFindProduct(line.productId)
+      || productOrderCategories.flatMap((category) => category.products || []).find((product) => String(product.code || '') === String(line.productId || ''))
+      || null;
+  }
+
+  function addProfileOrderToCart(order) {
+    const nextCart = {};
+    (order?.items || []).forEach((item) => {
+      const line = profileOrderLine(item);
+      const product = profileOrderProduct(line);
+      if (!product) return;
+      nextCart[product.id] = {
+        qty: Math.min(product.stock, Math.max(1, Number(line.orderQty) || 1)),
+        note: String(line.remark || '')
+      };
+    });
+    const count = Object.keys(nextCart).length;
+    if (!count) return 0;
+    state.productCart = nextCart;
+    persistProductOrderCart();
+    return count;
+  }
+
+  function restoreOrderDetailProductCart() {
+    if (state.orderDetailProductCartBackup !== null) {
+      state.productCart = clone(state.orderDetailProductCartBackup) || {};
+      state.orderDetailProductCartBackup = null;
+    }
+    state.orderDetailProductAddMode = false;
+  }
+
+  function openOrderDetailProductAdd() {
+    if (!state.orderDetailEditing || !state.orderDetailDraft) return;
+    state.orderDetailProductCartBackup = clone(state.productCart) || {};
+    state.productCart = {};
+    state.productCategory = 'staple';
+    state.productSubcategory = productOrderCategories[0]?.subcategories?.[0]?.[0] || '';
+    state.productSearchValue = '';
+    state.productKeyword = '';
+    state.productEditingOrderId = '';
+    state.productPickerField = '';
+    state.productPickerDraft = '';
+    state.orderDetailProductAddMode = true;
+    state.screen = 'main';
+    state.tab = 'home';
+    state.sheet = null;
+    render();
+  }
+
+  function closeOrderDetailProductAdd() {
+    if (!state.orderDetailProductAddMode) return;
+    restoreOrderDetailProductCart();
+    state.screen = 'order-detail';
+    state.tab = state.orderDetailReturn === 'product-orders' ? 'home' : 'profile';
+    state.sheet = null;
+    render();
+  }
+
+  function appendProductCartToOrderDetail() {
+    const rows = productOrderCartRows();
+    if (!rows.length || !state.orderDetailDraft) {
+      showToast('请先选择商品', true);
+      return;
+    }
+    const items = (state.orderDetailDraft.items || []).map(profileOrderLine);
+    const itemIndexes = new Map();
+    items.forEach((item, index) => {
+      const productId = String(item.productId || '');
+      if (productId) itemIndexes.set(productId, index);
+    });
+    for (const { product, entry } of rows) {
+      const quantity = Math.max(1, Math.floor(Number(entry.qty) || 0));
+      const existingIndex = itemIndexes.get(String(product.id));
+      if (existingIndex != null) {
+        const existing = items[existingIndex];
+        const nextQuantity = Number(existing.orderQty || 0) + quantity;
+        if (nextQuantity > Number(product.stock || 0)) {
+          showToast(product.name + '库存不足', true);
+          return;
+        }
+      }
+    }
+    rows.forEach(({ product, entry }) => {
+      const quantity = Math.max(1, Math.floor(Number(entry.qty) || 0));
+      const productId = String(product.id);
+      const existingIndex = itemIndexes.get(productId);
+      if (existingIndex != null) {
+        items[existingIndex].orderQty = Number(items[existingIndex].orderQty || 0) + quantity;
+        return;
+      }
+      itemIndexes.set(productId, items.length);
+      items.push({
+        productId: product.id,
+        productCode: product.code,
+        productName: product.name,
+        unit: product.unit,
+        orderPrice: Number(product.price || 0),
+        orderQty: quantity,
+        remark: String(entry.note || '')
+      });
+    });
+    state.orderDetailDraft.items = items;
+    const addedCount = rows.length;
+    restoreOrderDetailProductCart();
+    state.screen = 'order-detail';
+    state.tab = state.orderDetailReturn === 'product-orders' ? 'home' : 'profile';
+    state.sheet = null;
+    render();
+    showToast('已添加' + number(addedCount) + '种商品');
+  }
+
+  function openOrderDetailEdit(order, returnTo) {
+    if (!order || String(order.status || '') !== '待确认') return;
+    state.profileOrder = clone(order);
+    state.orderDetailDraft = clone(order);
+    state.orderDetailEditing = true;
+    state.orderDetailPickerField = '';
+    state.orderDetailPickerDraft = '';
+    state.orderDetailReturn = returnTo || 'profile-orders';
+    state.screen = 'order-detail';
+    state.tab = state.orderDetailReturn === 'product-orders' ? 'home' : 'profile';
+    state.sheet = null;
+    render();
+  }
+
+  function clearOrderDetailEditState() {
+    restoreOrderDetailProductCart();
+    state.orderDetailEditing = false;
+    state.orderDetailDraft = null;
+    state.orderDetailPickerField = '';
+    state.orderDetailPickerDraft = '';
+  }
+
+  function closeOrderDetail() {
+    const returnToProductOrders = state.orderDetailReturn === 'product-orders';
+    state.profileOrder = null;
+    state.orderDetailReturn = '';
+    clearOrderDetailEditState();
+    state.sheet = null;
+    if (returnToProductOrders) {
+      state.screen = 'product-orders';
+      state.tab = 'home';
+    } else {
+      state.screen = 'main';
+      state.tab = 'profile';
+      state.profileView = 'orders';
+      state.profileSection = 'orders';
+    }
+    render();
+  }
+
+  function saveOrderDetailEdit() {
+    const draft = state.orderDetailDraft;
+    if (!draft) return;
+    const canteen = String(draft.canteen || '').trim();
+    const orderTag = String(draft.orderTag || '').trim();
+    if (!canteen) {
+      showToast('请选择食堂', true);
+      return;
+    }
+    if (!orderTag) {
+      showToast('请选择订单标签', true);
+      return;
+    }
+    const rawItems = Array.isArray(draft.items) ? draft.items : [];
+    const items = [];
+    for (const rawItem of rawItems) {
+      const line = profileOrderLine(rawItem);
+      const orderQty = Number(line.orderQty);
+      const product = profileOrderProduct(line);
+      if (!Number.isInteger(orderQty) || orderQty < 1) {
+        showToast('商品数量需大于0', true);
+        return;
+      }
+      if (product && orderQty > Number(product.stock || 0)) {
+        showToast(line.productName + '库存不足', true);
+        return;
+      }
+      items.push({
+        ...line,
+        orderQty,
+        remark: String(line.remark || '')
+      });
+    }
+    if (!items.length) {
+      showToast('请至少保留一个商品', true);
+      return;
+    }
+    const saved = {
+      ...clone(draft),
+      canteen,
+      orderTag,
+      items,
+      productCount: items.length,
+      orderAmount: items.reduce((total, item) => total + Number(item.orderPrice || 0) * item.orderQty, 0),
+      status: '待确认',
+      source: draft.source || '商品下单',
+      updatedAt: productOrderNow()
+    };
+    const orderId = String(saved.id || '');
+    const exists = state.productOrders.some((order) => String(order.id || '') === orderId);
+    state.productOrders = exists
+      ? state.productOrders.map((order) => String(order.id || '') === orderId ? saved : order)
+      : [saved, ...state.productOrders];
+    persistProductOrderOrders();
+    state.profileOrder = clone(saved);
+    clearOrderDetailEditState();
+    state.sheet = null;
+    render();
+    showToast('订单已保存');
+  }
+
+  function renderOrderDetailProduct(item, index, editing) {
+    const product = profileOrderProduct(item);
+    const image = product?.image || product?.img || productOrderAssetRoot + 'product-placeholder.jpg';
+    if (editing) {
+      return '<article class="school-mobile-order-detail-product is-editing">'
+        + '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(item.productName) + '">'
+        + '<div class="school-mobile-order-detail-product-main">'
+        + '<header><strong>' + escapeHtml(item.productName) + '</strong><span>' + formatProfileMoney(item.orderPrice) + '元/' + escapeHtml(item.unit) + '</span></header>'
+        + '<div class="school-mobile-order-detail-product-fields is-editing" role="group" aria-label="' + escapeHtml(item.productName + '数量和备注') + '">'
+        + '<label><span>数量</span><div class="school-mobile-order-detail-quantity-stepper" role="group" aria-label="' + escapeHtml(item.productName + '数量调整') + '"><button type="button" class="school-mobile-order-detail-quantity-step is-minus" data-action="order-detail-quantity-step" data-step="-1" data-order-item-index="' + index + '" aria-label="减少' + escapeHtml(item.productName) + '数量">−</button><input type="number" min="1" max="' + escapeHtml(product?.stock || '') + '" step="1" inputmode="numeric" value="' + escapeHtml(item.orderQty) + '" data-action="order-detail-quantity" data-order-item-index="' + index + '" aria-label="' + escapeHtml(item.productName + '数量') + '"><button type="button" class="school-mobile-order-detail-quantity-step is-plus" data-action="order-detail-quantity-step" data-step="1" data-order-item-index="' + index + '" aria-label="增加' + escapeHtml(item.productName) + '数量">+</button></div></label>'
+        + '<label><span>备注</span><textarea rows="2" placeholder="请输入" data-action="order-detail-remark" data-order-item-index="' + index + '" aria-label="' + escapeHtml(item.productName + '备注') + '">' + escapeHtml(item.remark || '') + '</textarea></label>'
+        + '</div>'
+        + '</div>'
+        + '<button type="button" class="school-mobile-order-detail-product-delete" data-action="remove-order-detail-item" data-order-item-index="' + index + '" aria-label="删除' + escapeHtml(item.productName) + '">' + productOrderIcon('delete') + '</button>'
+        + '</article>';
+    }
+    const remark = String(item.remark || '').trim() || '请输入';
+    return '<article class="school-mobile-order-detail-product">'
+      + '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(item.productName) + '">'
+      + '<div class="school-mobile-order-detail-product-main">'
+      + '<header><strong>' + escapeHtml(item.productName) + '</strong><span>' + formatProfileMoney(item.orderPrice) + '元/' + escapeHtml(item.unit) + '</span></header>'
+      + '<div class="school-mobile-order-detail-product-fields" role="group" aria-label="' + escapeHtml(item.productName + '数量和备注') + '"><div><span>数量</span><strong aria-label="' + escapeHtml(item.productName + '数量') + '">' + escapeHtml(item.orderQty) + '</strong></div><div><span>备注</span><strong class="' + (remark === '请输入' ? 'is-placeholder' : '') + '" aria-label="' + escapeHtml(item.productName + '备注') + '">' + escapeHtml(remark) + '</strong></div></div>'
+      + '</div>'
+      + '</article>';
+  }
+
+  function renderOrderDetail() {
+    const editing = Boolean(state.orderDetailEditing);
+    const order = editing ? state.orderDetailDraft : state.profileOrder;
+    if (!order) return '<div class="school-mobile-scroll"><div class="school-mobile-empty">未找到该订单</div></div>';
+    const items = (order.items || []).map(profileOrderLine);
+    const supplier = order.supplierName || '--';
+    const status = order.status || '--';
+    const orderTag = order.orderTag || (order.orderTagName ? order.orderTagName + '-' + (order.nutritious || '不区分') : '--');
+    const selectedCount = editing ? items.length : Number(order.productCount || items.length);
+    const orderAmount = editing
+      ? items.reduce((total, item) => total + Number(item.orderPrice || 0) * Number(item.orderQty || 0), 0)
+      : order.orderAmount;
+    const canteenValue = order.canteen || '--';
+    const canteenField = editing
+      ? '<button type="button" class="school-mobile-order-detail-edit-trigger" data-action="open-order-detail-picker" data-picker-field="canteen" aria-label="编辑食堂：' + escapeHtml(canteenValue) + '"><strong>' + escapeHtml(canteenValue) + '</strong><span aria-hidden="true">›</span></button>'
+      : '<strong>' + escapeHtml(canteenValue) + '</strong>';
+    const tagField = editing
+      ? '<button type="button" class="school-mobile-order-detail-edit-trigger" data-action="open-order-detail-picker" data-picker-field="tag" aria-label="编辑订单标签：' + escapeHtml(orderTag) + '"><strong>' + escapeHtml(orderTag) + '</strong><span aria-hidden="true">›</span></button>'
+      : '<strong>' + escapeHtml(orderTag) + '</strong>';
+    const productCards = items.length
+      ? items.map((item, index) => renderOrderDetailProduct(item, index, editing)).join('')
+      : '<div class="school-mobile-empty">' + (editing ? '请至少保留一个商品' : '暂无商品明细') + '</div>';
+    const addProductAction = editing
+      ? '<button type="button" class="school-mobile-order-detail-add-product" data-action="continue-order-detail-products">继续添加商品</button>'
+      : '';
+    const editActions = editing
+      ? '<div class="school-mobile-order-detail-edit-actions"><button type="button" data-action="cancel-order-detail-edit">取消</button><button type="button" class="is-primary" data-action="save-order-detail-edit">保存订单</button></div>'
+      : '';
+    return '<div class="school-mobile-order-detail-page">'
+      + '<div class="school-mobile-scroll school-mobile-order-detail-scroll">'
+      + '<section class="school-mobile-order-detail-info" aria-label="订单信息">'
+      + '<div class="school-mobile-order-detail-status-row"><span>订单状态：</span><em class="' + (status === '已关闭' ? 'is-closed' : '') + '">' + escapeHtml(status) + '</em></div>'
+      + '<div class="school-mobile-order-detail-info-row"><span>供货企业：</span><strong>' + escapeHtml(supplier) + '</strong></div>'
+      + '<div class="school-mobile-order-detail-info-row' + (editing ? ' is-editable' : '') + '"><span>食堂：</span>' + canteenField + '</div>'
+      + '<div class="school-mobile-order-detail-info-row"><span>期望送达时间：</span><strong>' + escapeHtml(profileOrderExpectedAt(order)) + '</strong></div>'
+      + '<div class="school-mobile-order-detail-info-row' + (editing ? ' is-editable' : '') + '"><span>订单标签：</span>' + tagField + '</div>'
+      + '</section>'
+      + '<div class="school-mobile-order-detail-summary"><span>' + number(selectedCount) + '种商品</span><strong>合计：¥' + formatProfileMoney(orderAmount) + '元</strong></div>'
+      + '<div class="school-mobile-order-detail-products">' + productCards + '</div>'
+      + addProductAction
+      + '</div>'
+      + editActions
+      + '</div>';
   }
 
   function renderRecordDetail() {
@@ -1461,6 +2029,20 @@
       + '<p class="school-mobile-sheet-subtitle">切换后将同步当前食谱和需求填报范围。</p>'
       + canteenNames.map((name) => '<button type="button" class="school-mobile-canteen-option ' + (name === state.canteen ? 'is-selected' : '') + '" data-action="select-canteen" data-canteen="' + escapeHtml(name) + '"><span>' + escapeHtml(name) + '</span>' + (name === state.canteen ? '<span>✓</span>' : '<span>›</span>') + '</button>').join('')
       + '</section></div>';
+  }
+
+  function renderAccountSwitchSheet() {
+    const isLogout = state.sheet?.type === 'account-logout';
+    const message = isLogout
+      ? '确定要退出吗？退出后需重新登录<br>才可使用该软件'
+      : '确定要切换账号吗？切换后需重新登录<br>才可使用该软件';
+    return '<div class="school-mobile-account-confirm-backdrop" data-sheet-backdrop>'
+      + '<section class="school-mobile-account-confirm" role="dialog" aria-modal="true" aria-labelledby="schoolMobileAccountConfirmTitle">'
+      + '<button type="button" class="school-mobile-account-confirm-close" data-action="close-sheet" aria-label="关闭">×</button>'
+      + '<p id="schoolMobileAccountConfirmTitle">' + message + '</p>'
+      + '<button type="button" class="school-mobile-account-confirm-submit" data-action="confirm-switch-account">确定</button>'
+      + '</section>'
+      + '</div>';
   }
 
   function renderDishSheet() {
@@ -1624,7 +2206,9 @@
     const content = state.screen === 'confirm'
       ? renderConfirm()
       : state.screen === 'product-orders'
-        ? renderProductOrders()
+      ? renderProductOrders()
+      : state.screen === 'order-detail'
+        ? renderOrderDetail()
       : state.screen === 'detail'
         ? renderRecordDetail()
         : state.tab === 'home'
@@ -1638,12 +2222,18 @@
             : renderRecipePage();
     const sheet = state.sheet?.type === 'canteen'
       ? renderCanteenSheet()
+      : ['account-switch', 'account-logout'].includes(state.sheet?.type)
+        ? renderAccountSwitchSheet()
       : state.sheet?.type === 'product-supplier'
         ? renderProductSupplierSheet()
       : state.sheet?.type === 'product-categories'
         ? renderProductCategorySheet()
       : state.sheet?.type === 'product-picker'
         ? renderProductPickerSheet()
+      : state.sheet?.type === 'order-detail-picker'
+        ? renderOrderDetailPickerSheet()
+      : state.sheet?.type === 'product-checkout-date'
+        ? renderProductCheckoutDateSheet()
       : state.sheet?.type === 'product-checkout'
         ? renderProductCheckoutSheet()
       : state.sheet?.type === 'dish'
@@ -1656,7 +2246,7 @@
     app.innerHTML = '<div class="school-mobile-app">'
       + renderHeader()
       + '<main class="school-mobile-main">' + content + '</main>'
-      + (state.screen === 'main' && state.tab !== 'attendance' && !(state.tab === 'profile' && !currentMobileSession()) ? renderBottomNav() : '')
+      + (state.screen === 'main' && !state.orderDetailProductAddMode && state.tab !== 'attendance' && !(state.tab === 'profile' && !currentMobileSession()) ? renderBottomNav() : '')
       + sheet
       + (state.toast ? '<div class="school-mobile-toast ' + (state.toast.isError ? 'is-error' : '') + '" role="status">' + escapeHtml(state.toast.message) + '</div>' : '')
       + '</div>';
@@ -1815,6 +2405,12 @@
     state.loginPassword = '';
     state.screen = 'main';
     state.tab = 'home';
+    state.profileOrder = null;
+    state.orderDetailReturn = '';
+    state.profileView = 'home';
+    state.profileOrderFilter = '全部';
+    state.profileOrderSearchValue = '';
+    state.profileOrderKeyword = '';
     state.profileSection = 'submissions';
     render();
   }
@@ -1826,6 +2422,12 @@
     state.loginAgreement = false;
     state.recordKeyword = '';
     state.record = null;
+    state.profileOrder = null;
+    state.orderDetailReturn = '';
+    state.profileView = 'home';
+    state.profileOrderFilter = '全部';
+    state.profileOrderSearchValue = '';
+    state.profileOrderKeyword = '';
     state.screen = 'main';
     state.tab = 'profile';
     render();
@@ -1872,6 +2474,12 @@
       state.submitting = false;
       state.screen = 'main';
       state.tab = 'profile';
+      state.profileOrder = null;
+      state.orderDetailReturn = '';
+      state.profileView = 'home';
+      state.profileOrderFilter = '全部';
+      state.profileOrderSearchValue = '';
+      state.profileOrderKeyword = '';
       state.profileSection = 'submissions';
       state.record = result.record || null;
       state.confirmParticipantKey = '';
@@ -1888,8 +2496,14 @@
   }
 
   app.addEventListener('click', (event) => {
-    if (event.target.classList.contains('school-mobile-sheet-backdrop')) {
-      state.sheet = null;
+    if (event.target.matches?.('[data-sheet-backdrop]')) {
+      if (state.sheet?.type === 'product-checkout-date') {
+        state.productCheckoutDatePickerMonth = '';
+        state.productCheckoutDatePickerDraft = '';
+        state.sheet = { type: 'product-checkout' };
+      } else {
+        state.sheet = null;
+      }
       render();
       return;
     }
@@ -1968,6 +2582,10 @@
         showToast('请先选择商品', true);
         return;
       }
+      if (action === 'product-next' && state.orderDetailProductAddMode) {
+        appendProductCartToOrderDetail();
+        return;
+      }
       state.screen = 'main';
       state.tab = action === 'product-continue-shopping' ? 'home' : 'cart';
       state.sheet = null;
@@ -1995,9 +2613,55 @@
     }
     if (action === 'product-checkout-back') {
       state.productEditingOrderId = '';
+      state.productCheckoutDatePickerMonth = '';
+      state.productCheckoutDatePickerDraft = '';
       state.productPickerField = '';
       state.productPickerDraft = '';
       state.sheet = null;
+      render();
+      return;
+    }
+    if (action === 'open-product-checkout-date' && state.sheet?.type === 'product-checkout') {
+      const currentDate = state.productCheckout.expectedDate || nextProductOrderDate();
+      state.productCheckoutDatePickerDraft = currentDate;
+      state.productCheckoutDatePickerMonth = monthKeyOf(currentDate) || monthKeyOf(nextProductOrderDate());
+      state.sheet = { type: 'product-checkout-date' };
+      render();
+      return;
+    }
+    if (action === 'product-checkout-date-month' && state.sheet?.type === 'product-checkout-date') {
+      state.productCheckoutDatePickerMonth = shiftMonthKey(
+        state.productCheckoutDatePickerMonth || monthKeyOf(state.productCheckoutDatePickerDraft),
+        Number(target.dataset.monthDelta) || 0
+      );
+      render();
+      return;
+    }
+    if (action === 'product-checkout-date-option' && state.sheet?.type === 'product-checkout-date') {
+      const selectedDate = target.dataset.date || '';
+      if (selectedDate) {
+        state.productCheckoutDatePickerDraft = selectedDate;
+        state.productCheckoutDatePickerMonth = monthKeyOf(selectedDate);
+        render();
+      }
+      return;
+    }
+    if (action === 'product-checkout-date-cancel' && state.sheet?.type === 'product-checkout-date') {
+      state.productCheckoutDatePickerMonth = '';
+      state.productCheckoutDatePickerDraft = '';
+      state.sheet = { type: 'product-checkout' };
+      render();
+      return;
+    }
+    if (action === 'product-checkout-date-confirm' && state.sheet?.type === 'product-checkout-date') {
+      if (!state.productCheckoutDatePickerDraft) {
+        showToast('请选择期望送达日期', true);
+        return;
+      }
+      state.productCheckout.expectedDate = state.productCheckoutDatePickerDraft;
+      state.productCheckoutDatePickerMonth = '';
+      state.productCheckoutDatePickerDraft = '';
+      state.sheet = { type: 'product-checkout' };
       render();
       return;
     }
@@ -2046,18 +2710,76 @@
     }
     if (action === 'product-order-edit') {
       const order = state.productOrders.find((item) => item.id === target.dataset.orderId);
-      if (order) openProductCheckout(order);
+      if (!order) return;
+      if (String(order.status || '') === '待确认') openOrderDetailEdit(order, 'product-orders');
+      else openProductCheckout(order);
+      return;
+    }
+    if (action === 'open-order-detail-picker' && state.orderDetailEditing) {
+      state.orderDetailPickerField = target.dataset.pickerField === 'tag' ? 'tag' : 'canteen';
+      state.orderDetailPickerDraft = state.orderDetailPickerField === 'tag'
+        ? String(state.orderDetailDraft?.orderTag || '')
+        : String(state.orderDetailDraft?.canteen || '');
+      state.sheet = { type: 'order-detail-picker' };
+      render();
+      return;
+    }
+    if (action === 'order-detail-picker-option' && state.sheet?.type === 'order-detail-picker') {
+      state.orderDetailPickerDraft = target.dataset.pickerValue || '';
+      render();
+      return;
+    }
+    if (action === 'order-detail-picker-cancel' && state.sheet?.type === 'order-detail-picker') {
+      state.orderDetailPickerField = '';
+      state.orderDetailPickerDraft = '';
+      state.sheet = null;
+      render();
+      return;
+    }
+    if (action === 'order-detail-picker-confirm' && state.sheet?.type === 'order-detail-picker') {
+      if (state.orderDetailPickerField === 'tag') state.orderDetailDraft.orderTag = state.orderDetailPickerDraft;
+      else state.orderDetailDraft.canteen = state.orderDetailPickerDraft;
+      state.orderDetailPickerField = '';
+      state.orderDetailPickerDraft = '';
+      state.sheet = null;
+      render();
+      return;
+    }
+    if (action === 'order-detail-quantity-step' && state.orderDetailEditing) {
+      const index = Number(target.dataset.orderItemIndex);
+      const item = Number.isInteger(index) ? state.orderDetailDraft?.items?.[index] : null;
+      if (!item) return;
+      const product = profileOrderProduct(item);
+      const stock = Number(product?.stock);
+      const max = Number.isFinite(stock) && stock > 0 ? stock : Number.MAX_SAFE_INTEGER;
+      const current = Math.max(1, Math.floor(Number(item.orderQty) || 1));
+      const delta = Number(target.dataset.step) || 0;
+      item.orderQty = Math.max(1, Math.min(max, current + delta));
+      render();
+      return;
+    }
+    if (action === 'remove-order-detail-item' && state.orderDetailEditing) {
+      const index = Number(target.dataset.orderItemIndex);
+      if (!Number.isInteger(index) || !Array.isArray(state.orderDetailDraft?.items)) return;
+      state.orderDetailDraft.items.splice(index, 1);
+      render();
+      return;
+    }
+    if (action === 'cancel-order-detail-edit' && state.orderDetailEditing) {
+      closeOrderDetail();
+      return;
+    }
+    if (action === 'save-order-detail-edit' && state.orderDetailEditing) {
+      saveOrderDetailEdit();
       return;
     }
     if (action === 'product-order-reorder') {
       const order = state.productOrders.find((item) => item.id === target.dataset.orderId);
       if (!order) return;
-      state.productCart = {};
-      (order.items || []).forEach((item) => {
-        const product = productOrderFindProduct(item.productId) || productOrderCategories.flatMap((category) => category.products || []).find((candidate) => candidate.code === item.productCode);
-        if (product) state.productCart[product.id] = { qty: Math.min(product.stock, Math.max(1, Number(item.orderQty) || 1)), note: String(item.remark || '') };
-      });
-      persistProductOrderCart();
+      if (!addProfileOrderToCart(order)) {
+        showToast('订单商品已不在当前商品目录中', true);
+        return;
+      }
       state.screen = 'main';
       state.tab = 'cart';
       state.sheet = null;
@@ -2070,6 +2792,10 @@
       persistProductOrderOrders();
       render();
       showToast('订单已关闭');
+      return;
+    }
+    if (action === 'continue-order-detail-products' && state.orderDetailEditing) {
+      openOrderDetailProductAdd();
       return;
     }
 
@@ -2104,6 +2830,14 @@
       if (state.screen === 'main' && state.tab === 'attendance' && nextTab !== 'attendance') clearAttendanceAfterFlow();
       state.screen = 'main';
       state.tab = nextTab;
+      if (nextTab === 'profile') {
+        state.profileView = 'home';
+        state.profileOrderFilter = '全部';
+        state.profileOrderSearchValue = '';
+        state.profileOrderKeyword = '';
+        state.profileSection = 'submissions';
+        state.record = null;
+      }
       state.attendanceInputMode = 'dining';
       state.attendanceReturnTab = '';
       state.sheet = null;
@@ -2119,10 +2853,41 @@
         render();
         return;
       }
+      if (state.screen === 'main' && state.orderDetailProductAddMode) {
+        closeOrderDetailProductAdd();
+        return;
+      }
       if (state.screen === 'main' && state.tab === 'attendance') {
         state.tab = state.attendanceReturnTab || 'recipe';
         state.attendanceInputMode = 'dining';
         state.attendanceReturnTab = '';
+        state.sheet = null;
+        render();
+        return;
+      }
+      if (state.screen === 'order-detail') {
+        closeOrderDetail();
+        return;
+      }
+      if (state.screen === 'main' && state.tab === 'profile' && state.profileView !== 'home') {
+        state.profileView = 'home';
+        state.profileOrderFilter = '全部';
+        state.profileOrderSearchValue = '';
+        state.profileOrderKeyword = '';
+        state.profileSection = 'submissions';
+        state.record = null;
+        state.profileOrder = null;
+        state.sheet = null;
+        render();
+        return;
+      }
+      if (state.screen === 'detail') {
+        state.screen = 'main';
+        state.tab = 'profile';
+        state.profileView = 'submissions';
+        state.profileSection = 'submissions';
+        state.record = null;
+        state.profileOrder = null;
         state.sheet = null;
         render();
         return;
@@ -2299,13 +3064,112 @@
       submitDemand();
       return;
     }
-    if (action === 'profile-section') {
-      state.profileSection = target.dataset.profileSection === 'orders' ? 'orders' : 'submissions';
+    if (action === 'open-profile-orders') {
+      state.screen = 'main';
+      state.tab = 'profile';
+      state.profileView = 'orders';
+      state.profileOrderFilter = target.dataset.orderFilter || '全部';
+      state.profileOrderSearchValue = '';
+      state.profileOrderKeyword = '';
+      state.profileSection = 'orders';
+      state.record = null;
+      state.sheet = null;
       render();
       return;
     }
-    if (action === 'logout') {
+    if (action === 'profile-order-filter') {
+      state.profileOrderFilter = target.dataset.orderFilter || '全部';
+      render();
+      return;
+    }
+    if (action === 'open-profile-order') {
+      const order = currentUserOrders().find((item) => String(item.id || item.orderNo || '') === String(target.dataset.orderId || ''));
+      if (!order) return;
+      clearOrderDetailEditState();
+      state.profileOrder = clone(order);
+      state.orderDetailReturn = 'profile-orders';
+      state.screen = 'order-detail';
+      state.tab = 'profile';
+      state.sheet = null;
+      render();
+      return;
+    }
+    if (action === 'open-product-order') {
+      const order = state.productOrders.find((item) => String(item.id || item.orderNo || '') === String(target.dataset.orderId || ''));
+      if (!order) return;
+      clearOrderDetailEditState();
+      state.profileOrder = clone(order);
+      state.orderDetailReturn = 'product-orders';
+      state.screen = 'order-detail';
+      state.tab = 'home';
+      state.sheet = null;
+      render();
+      return;
+    }
+    if (action === 'profile-order-edit') {
+      const order = state.productOrders.find((item) => String(item.id || item.orderNo || '') === String(target.dataset.orderId || ''));
+      if (!order) return;
+      if (String(order.status || '') === '待确认') openOrderDetailEdit(order, 'profile-orders');
+      else openProductCheckout(order);
+      return;
+    }
+    if (action === 'profile-order-reorder') {
+      const order = currentUserOrders().find((item) => String(item.id || item.orderNo || '') === String(target.dataset.orderId || ''));
+      if (!order) return;
+      if (!addProfileOrderToCart(order)) {
+        showToast('订单商品已不在当前商品目录中', true);
+        return;
+      }
+      state.screen = 'main';
+      state.tab = 'cart';
+      state.profileView = 'home';
+      state.sheet = null;
+      render();
+      showToast('已加入购物车');
+      return;
+    }
+    if (action === 'profile-order-close') {
+      const orderId = String(target.dataset.orderId || '');
+      state.productOrders = state.productOrders.map((order) => String(order.id || '') === orderId
+        ? { ...order, status: '已关闭', updatedAt: productOrderNow() }
+        : order);
+      persistProductOrderOrders();
+      state.profileOrder = null;
+      render();
+      showToast('订单已关闭');
+      return;
+    }
+    if (action === 'open-profile-submissions') {
+      state.screen = 'main';
+      state.tab = 'profile';
+      state.profileView = 'submissions';
+      state.profileSection = 'submissions';
+      state.record = null;
+      state.sheet = null;
+      render();
+      return;
+    }
+    if (action === 'profile-section') {
+      state.profileSection = target.dataset.profileSection === 'orders' ? 'orders' : 'submissions';
+      state.profileView = state.profileSection;
+      render();
+      return;
+    }
+    if (action === 'switch-account') {
+      state.sheet = { type: 'account-switch' };
+      render();
+      app.querySelector('[data-action="confirm-switch-account"]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (action === 'confirm-switch-account') {
+      state.sheet = null;
       logoutMobile();
+      return;
+    }
+    if (action === 'logout') {
+      state.sheet = { type: 'account-logout' };
+      render();
+      app.querySelector('[data-action="confirm-switch-account"]')?.focus({ preventScroll: true });
       return;
     }
     if (action === 'record') {
@@ -2320,12 +3184,25 @@
     const target = event.target.closest('[data-action]');
     if (!target || !app.contains(target)) return;
     const action = target.dataset.action;
+    if ((action === 'order-detail-quantity' || action === 'order-detail-remark') && state.orderDetailEditing) {
+      const index = Number(target.dataset.orderItemIndex);
+      const item = Number.isInteger(index) ? state.orderDetailDraft?.items?.[index] : null;
+      if (item) {
+        if (action === 'order-detail-quantity') item.orderQty = target.value;
+        else item.remark = target.value;
+      }
+      return;
+    }
     if (action === 'product-search-input') {
       state.productSearchValue = target.value;
       return;
     }
     if (action === 'product-order-search-input') {
       state.productOrderSearchValue = target.value;
+      return;
+    }
+    if (action === 'profile-order-search-input') {
+      state.profileOrderSearchValue = target.value;
       return;
     }
     if (action === 'product-cart-note') {
@@ -2424,6 +3301,12 @@
       render();
       return;
     }
+    if (event.target.matches('[data-profile-order-search-form]')) {
+      event.preventDefault();
+      state.profileOrderKeyword = String(state.profileOrderSearchValue || '').trim();
+      render();
+      return;
+    }
     if (!event.target.matches('[data-mobile-login-form]')) return;
     event.preventDefault();
     loginMobile();
@@ -2465,6 +3348,38 @@
 
   app.addEventListener('pointercancel', () => {
     mealSwipeStart = null;
+    productSwipeStart = null;
+  }, { passive: true });
+
+  app.addEventListener('pointerdown', (event) => {
+    const productList = event.target.closest?.('.school-mobile-product-list');
+    const productScroll = event.target.closest?.('.school-mobile-product-scroll');
+    if ((!productList && !productScroll) || !app.contains(productList || productScroll) || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    productSwipeStart = {
+      element: productList || productScroll,
+      kind: productList ? 'list' : 'page',
+      x: event.clientX,
+      y: event.clientY
+    };
+  }, { passive: true });
+
+  app.addEventListener('pointerup', (event) => {
+    if (!productSwipeStart) return;
+    const start = productSwipeStart;
+    productSwipeStart = null;
+    if (state.sheet || state.screen !== 'main' || state.tab !== 'home') return;
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaY) < 44 || Math.abs(deltaY) <= Math.abs(deltaX)) return;
+    if (start.kind === 'page' && deltaY > 0 && start.element.scrollTop <= 1) {
+      state.sheet = { type: 'product-categories' };
+      render();
+      return;
+    }
+    if (start.kind === 'list' && deltaY < 0) {
+      const isAtBottom = start.element.scrollHeight - start.element.scrollTop - start.element.clientHeight <= 2;
+      if (isAtBottom) advanceProductSubcategory();
+    }
   }, { passive: true });
 
   window.addEventListener('pagehide', () => {
