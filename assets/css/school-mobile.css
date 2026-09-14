@@ -2899,7 +2899,7 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-detail-date {
-  align-items: flex-start;
+  align-items: flex-end;
   padding: 7px 0;
 }
 
