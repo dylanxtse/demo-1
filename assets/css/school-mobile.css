@@ -2834,9 +2834,17 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.school-mobile-info-grid > div {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 11px 8px;
+  min-height: 22px;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
 }
 
 .school-mobile-info-grid span {
@@ -2847,11 +2855,13 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-info-grid strong {
   display: block;
-  margin-top: 3px;
+  min-width: 0;
+  margin-top: 0;
   overflow: hidden;
   color: var(--mobile-ink-2);
   font-size: 11px;
   font-weight: 600;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2864,6 +2874,11 @@ button.school-mobile-demand-row:active {
   justify-content: space-between;
   gap: 8px;
   border-bottom: 1px solid #f0f2f6;
+}
+
+.school-mobile-order-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
 .school-mobile-detail-date:last-child,
@@ -2881,6 +2896,66 @@ button.school-mobile-demand-row:active {
 .school-mobile-order-row span {
   color: var(--mobile-ink-3);
   font-size: 10px;
+}
+
+.school-mobile-detail-date {
+  align-items: flex-start;
+  padding: 7px 0;
+}
+
+.school-mobile-detail-date-main,
+.school-mobile-order-row-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.school-mobile-detail-date-main {
+  flex: 1 1 auto;
+}
+
+.school-mobile-detail-date-meals,
+.school-mobile-order-row-main > span {
+  line-height: 14px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.school-mobile-detail-date-meals {
+  color: var(--mobile-ink-3);
+}
+
+.school-mobile-detail-date > span {
+  flex: 0 0 auto;
+  max-width: 45%;
+  text-align: right;
+}
+
+.school-mobile-order-row > span {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.school-mobile-order-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-mobile-order-meal {
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.school-mobile-record-order-tag {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .school-mobile-order-row strong {

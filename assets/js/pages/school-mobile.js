@@ -1660,6 +1660,44 @@
       + '</article>').join('');
   }
 
+  function recordMealName(value) {
+    const fallbackNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
+    const raw = String(value || '').trim();
+    if (!raw) return '--';
+    return raw.split(/[、,，/]/).map((part) => {
+      const key = part.trim();
+      return window.OrderMealNameByKey?.[key] || fallbackNames[key] || key;
+    }).filter(Boolean).join('、');
+  }
+
+  function recordMealDefinitions(summary) {
+    const fallbackMeals = attendanceService?.mealTypes || [
+      { key: 'breakfast', name: '早餐' },
+      { key: 'lunch', name: '午餐' },
+      { key: 'dinner', name: '晚餐' },
+      { key: 'snack', name: '加餐' }
+    ];
+    const menuMeals = menuFor(summary?.date)?.meals || [];
+    const knownMeals = [...menuMeals, ...fallbackMeals];
+    const attendanceMealKeys = Object.keys(summary?.attendance?.meals || {});
+    const mealKeys = [...new Set([
+      ...knownMeals.map((meal) => meal.key),
+      ...attendanceMealKeys
+    ])].filter(Boolean);
+    return mealKeys.map((key) => knownMeals.find((meal) => meal.key === key) || { key, name: recordMealName(key) });
+  }
+
+  function recordFilledMealNames(summary) {
+    const attendance = summary?.attendance?.meals || {};
+    return recordMealDefinitions(summary)
+      .filter((meal) => Object.values(attendance[meal.key] || {}).some((value) => value !== '' && value != null && String(value).trim() !== ''))
+      .map((meal) => meal.name || recordMealName(meal.key));
+  }
+
+  function recordOrderMealName(order) {
+    return recordMealName(order?.mealName || order?.mealKey);
+  }
+
   function renderOrderList(orders = currentUserOrders()) {
     if (!orders.length) return '<div class="school-mobile-empty">暂无创建的订单记录</div>';
     return '<div class="school-mobile-profile-order-list">' + orders.map((order) => {
@@ -1999,13 +2037,18 @@
   function renderRecordDetail() {
     const record = state.record;
     if (!record) return '<div class="school-mobile-scroll"><div class="school-mobile-empty">未找到该提交记录</div></div>';
-    const summaries = (record.dateSummaries || []).map((summary) => '<div class="school-mobile-detail-date"><strong>' + escapeHtml(summary.date) + '</strong><span>' + number(summary.totalPersonTimes) + ' 人次 · ' + number(summary.productCount) + ' 种商品</span></div>').join('');
-    const orders = (record.orders || []).map((order) => '<div class="school-mobile-order-row"><strong>' + escapeHtml(order.orderNo || order.id || '--') + '</strong><span>' + escapeHtml(order.recipeParticipantType || order.orderTag || '食谱需求') + '</span></div>').join('');
+    const summaries = (record.dateSummaries || []).map((summary) => {
+      const filledMeals = recordFilledMealNames(summary);
+      const mealText = filledMeals.length ? filledMeals.join('、') : '未填写';
+      return '<div class="school-mobile-detail-date"><div class="school-mobile-detail-date-main"><strong>' + escapeHtml(summary.date) + '</strong><span class="school-mobile-detail-date-meals">' + escapeHtml(mealText) + '</span></div><span>' + number(summary.totalPersonTimes) + ' 人次 · ' + number(summary.productCount) + ' 种商品</span></div>';
+    }).join('');
+    const orders = (record.orders || []).map((order) => '<div class="school-mobile-order-row"><strong>' + escapeHtml(order.orderNo || order.id || '--') + '</strong><span class="school-mobile-order-meal">' + escapeHtml(recordOrderMealName(order)) + '</span><span class="school-mobile-record-order-tag">' + escapeHtml(order.orderTag || order.orderTagName || order.recipeParticipantType || '食谱需求') + '</span></div>').join('');
     return '<div class="school-mobile-scroll">'
       + '<section class="school-mobile-info-card"><h2>基本信息</h2><div class="school-mobile-info-grid">'
       + '<div><span>记录编号</span><strong>' + escapeHtml(record.recordNo || '--') + '</strong></div>'
       + '<div><span>食堂</span><strong>' + escapeHtml(record.canteen || state.canteen) + '</strong></div>'
       + '<div><span>操作人</span><strong>' + escapeHtml(record.submittedBy || '--') + '</strong></div>'
+      + '<div><span>期望送达时间</span><strong>' + escapeHtml(record.expectedAt || '--') + '</strong></div>'
       + '<div><span>提交时间</span><strong>' + escapeHtml(record.submittedAt || '--') + '</strong></div>'
       + '</div></section>'
       + '<section class="school-mobile-info-card"><h2>用料日期</h2>' + (summaries || '<div class="school-mobile-empty">暂无日期明细</div>') + '</section>'
