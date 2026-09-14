@@ -1,0 +1,23 @@
+{
+  "sourceUrl": "https://shxyc.canantong.com:4409/productOrderList",
+  "capturedAt": "2026-09-14",
+  "localBundle": "/Users/dashui/Desktop/mobile-order-assistant-4409/index.html",
+  "sourceBundleEntry": "/Users/dashui/Desktop/mobile-order-assistant-4409/source-index.html",
+  "localEntryMode": "standalone-html",
+  "localStructure": {
+    "styles": "assets/css/mobile-order-assistant.css",
+    "pageScript": "assets/js/pages/mobile-order-assistant.js",
+    "images": "assets/images/"
+  },
+  "routeStatesCaptured": [
+    "商品下单",
+    "食谱下单",
+    "购物车",
+    "我的"
+  ],
+  "staticAssetCount": 50,
+  "notes": [
+    "原始 Vite 构建资源已保留；index.html 使用项目现有的根 HTML、assets/css、assets/js/pages 结构提供可直接打开的本地入口。",
+    "后端 API 请求路径保留原系统路径，未复制接口响应数据。"
+  ]
+}

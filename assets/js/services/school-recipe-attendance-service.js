@@ -289,10 +289,13 @@
     if (!menu) return { key: 'empty', label: '暂无菜谱', filled: 0, total: 0 };
     if (!participants.length) return { key: 'empty', label: '未配置人员类型', filled: 0, total: requiredMeals(menu).length };
     const meals = requiredMeals(menu);
-    const filled = meals.filter((meal) => hasPeople(record?.meals?.[meal.key] || {}, participants)).length;
-    const key = filled === 0 ? 'empty' : filled === meals.length ? 'complete' : 'partial';
+    const total = meals.length * participants.length;
+    const filled = meals.reduce((count, meal) => count + participants.filter((participant) => (
+      hasValue(valueForParticipant(record?.meals?.[meal.key] || {}, participant))
+    )).length, 0);
+    const key = filled === 0 ? 'empty' : filled === total ? 'complete' : 'partial';
     const label = key === 'complete' ? '已完成' : key === 'partial' ? '部分填写' : '未填写';
-    return { key, label, filled, total: meals.length };
+    return { key, label, filled, total };
   }
 
   function validate(menu, record, options = {}) {
