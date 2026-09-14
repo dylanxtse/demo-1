@@ -1380,8 +1380,14 @@ button {
 
 .school-mobile-attendance-summary-card .school-mobile-attendance-canteen {
   display: block;
+  width: 100%;
+  max-width: 100%;
   margin-top: 0;
+  overflow: hidden;
+  box-sizing: border-box;
   line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .school-mobile-attendance-summary-card .is-primary > span {
@@ -1395,17 +1401,42 @@ button {
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 5px;
   justify-self: stretch;
 }
 
 .school-mobile-attendance-summary-card .school-mobile-summary-action {
-  width: 64px;
-  min-width: 64px;
+  width: 76px;
+  min-width: 76px;
+  height: 28px;
   justify-self: end;
-  padding: 0 2px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid #b9d5f3;
+  border-radius: 14px;
   font-size: 12px;
-  line-height: 18px;
+  font-weight: 500;
+  line-height: 26px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(46, 124, 240, .08);
+}
+
+.school-mobile-attendance-summary-card .school-mobile-summary-action:active {
+  border-color: var(--mobile-blue);
+  color: var(--mobile-blue);
+  background: #edf5ff;
+}
+
+.school-mobile-attendance-summary-card .school-mobile-summary-reset-action {
+  border-color: #d6e0ec;
+  color: var(--mobile-ink-2);
+  background: #fff;
+}
+
+.school-mobile-attendance-summary-card .school-mobile-summary-reset-action:active {
+  border-color: #b9d5f3;
+  color: var(--mobile-blue);
+  background: #edf5ff;
 }
 
 .school-mobile-attendance-total-row {
@@ -5019,7 +5050,7 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-product-checkout-date-sheet {
-  max-height: 78%;
+  max-height: 90%;
 }
 
 .school-mobile-product-checkout-sheet h2 {

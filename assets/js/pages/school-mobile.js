@@ -577,8 +577,24 @@
     render();
   }
 
-  function productOrderDateTime(date) {
-    return date ? String(date).slice(0, 10) + ' 00:00:00' : '--';
+  function productOrderDateTimeParts(value) {
+    const raw = String(value || '').trim().replace('T', ' ');
+    const match = raw.match(/^(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (!match) return { date: '', time: '00:00:00' };
+    const time = match[2]
+      ? normalizeExpectedAtTime(`${match[2]}:${match[3] || '00'}:${match[4] || '00'}`)
+      : '00:00:00';
+    return { date: match[1], time };
+  }
+
+  function productOrderDateValue(value) {
+    const parts = productOrderDateTimeParts(value);
+    return parts.date ? `${parts.date}T${parts.time}` : '';
+  }
+
+  function productOrderDateTime(value) {
+    const parts = productOrderDateTimeParts(value);
+    return parts.date ? `${parts.date} ${parts.time}` : '--';
   }
 
   function productOrderIcon(kind) {
@@ -771,7 +787,12 @@
   }
 
   function renderProductCheckoutDateSheet() {
-    const selectedDate = state.productCheckoutDatePickerDraft || state.productCheckout.expectedDate || nextProductOrderDate();
+    const draftValue = state.productCheckoutDatePickerDraft
+      || productOrderDateValue(state.productCheckout.expectedDate || nextProductOrderDate());
+    const draftParts = productOrderDateTimeParts(draftValue);
+    const selectedDate = draftParts.date || nextProductOrderDate();
+    const selectedTime = draftParts.date ? draftParts.time : '00:00:00';
+    const selectedValue = productOrderDateValue(`${selectedDate} ${selectedTime}`);
     const monthKey = state.productCheckoutDatePickerMonth || monthKeyOf(selectedDate) || monthKeyOf(nextProductOrderDate());
     const [year, month] = monthKey.split('-').map(Number);
     const firstDay = new Date(year || 2026, (month || 1) - 1, 1);
@@ -785,10 +806,18 @@
       const date = dateKeyFor(monthKey, day);
       return '<button type="button" class="school-mobile-expected-at-day ' + (date === selectedDate ? 'is-selected ' : '') + (date === today ? 'is-today' : '') + '" data-action="product-checkout-date-option" data-date="' + escapeHtml(date) + '" aria-label="' + escapeHtml(dateText(date)) + '">' + day + '</button>';
     }).join('');
-    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-picker-sheet school-mobile-product-checkout-date-sheet" role="dialog" aria-modal="true" aria-label="选择期望送达日期">'
-      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" class="school-mobile-product-sheet-text" data-action="product-checkout-date-cancel">取消</button><h2>选择期望送达日期</h2><button type="button" class="school-mobile-product-sheet-text is-primary" data-action="product-checkout-date-confirm">确认</button></header>'
-      + '<div class="school-mobile-expected-at-current"><span>当前选择</span><strong>' + escapeHtml(productOrderDateTime(selectedDate)) + '</strong></div>'
+    const hours = Array.from({ length: 24 }, (_, value) => value);
+    const minutes = Array.from({ length: 60 }, (_, value) => value);
+    const seconds = Array.from({ length: 60 }, (_, value) => value);
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-picker-sheet school-mobile-product-checkout-date-sheet" role="dialog" aria-modal="true" aria-label="选择期望送达时间">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" class="school-mobile-product-sheet-text" data-action="product-checkout-date-cancel">取消</button><h2>选择期望送达时间</h2><button type="button" class="school-mobile-product-sheet-text is-primary" data-action="product-checkout-date-confirm">确认</button></header>'
+      + '<div class="school-mobile-expected-at-current"><span>当前选择</span><strong>' + escapeHtml(productOrderDateTime(selectedValue)) + '</strong></div>'
       + '<div class="school-mobile-expected-at-calendar"><div class="school-mobile-expected-at-calendar-header"><button type="button" data-action="product-checkout-date-month" data-month-delta="-1" aria-label="上个月">‹</button><strong>' + escapeHtml(expectedAtMonthText(monthKey)) + '</strong><button type="button" data-action="product-checkout-date-month" data-month-delta="1" aria-label="下个月">›</button></div><div class="school-mobile-expected-at-weekdays">' + weekdayNames.map((day) => '<span>' + escapeHtml(day) + '</span>').join('') + '</div><div class="school-mobile-expected-at-days">' + calendarCells + '</div></div>'
+      + '<div class="school-mobile-expected-at-time"><div class="school-mobile-expected-at-time-heading"><strong>选择时间</strong><span>' + escapeHtml(selectedTime) + '</span></div><div class="school-mobile-expected-at-time-columns">'
+      + renderExpectedAtTimeColumn('时', 'hour', hours, selectedTime.slice(0, 2), 'product-checkout-time-value')
+      + renderExpectedAtTimeColumn('分', 'minute', minutes, selectedTime.slice(3, 5), 'product-checkout-time-value')
+      + renderExpectedAtTimeColumn('秒', 'second', seconds, selectedTime.slice(6, 8), 'product-checkout-time-value')
+      + '</div></div>'
       + '</section></div>';
   }
 
@@ -797,7 +826,7 @@
     const editing = Boolean(state.productEditingOrderId);
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-product-checkout-sheet" role="dialog" aria-modal="true" aria-label="填写订单信息"><div class="school-mobile-sheet-handle"></div>'
       + '<div class="school-mobile-product-checkout-cell" data-action="open-product-picker" data-picker-field="canteen"><span>请选择食堂</span><strong>' + escapeHtml(checkout.canteen || '请选择') + '</strong><i aria-hidden="true"></i></div>'
-      + '<button type="button" class="school-mobile-product-checkout-cell school-mobile-product-checkout-date-trigger" data-action="open-product-checkout-date" aria-label="选择期望送达日期"><span>期望送达日期</span><strong>' + escapeHtml(productOrderDateTime(checkout.expectedDate)) + '</strong><i aria-hidden="true"></i></button>'
+      + '<button type="button" class="school-mobile-product-checkout-cell school-mobile-product-checkout-date-trigger" data-action="open-product-checkout-date" aria-label="选择期望送达时间"><span>期望送达时间</span><strong>' + escapeHtml(productOrderDateTime(checkout.expectedDate)) + '</strong><i aria-hidden="true"></i></button>'
       + '<div class="school-mobile-product-checkout-cell" data-action="open-product-picker" data-picker-field="tag"><span>请选择订单标签</span><strong>' + escapeHtml(checkout.tag || '请选择') + '</strong><i aria-hidden="true"></i></div>'
       + '<div class="school-mobile-product-checkout-actions"><button type="button" data-action="product-checkout-back">返回</button><button type="button" class="is-primary" data-action="save-product-order">' + (editing ? '保存订单' : '保存订单') + '</button></div>'
       + '</section></div>';
@@ -828,7 +857,7 @@
     state.productEditingOrderId = order?.id || '';
     state.productCheckout = {
       canteen: order?.canteen || '',
-      expectedDate: String(order?.expectedAt || nextProductOrderDate()).slice(0, 10),
+      expectedDate: productOrderDateValue(order?.expectedAt || nextProductOrderDate()) || nextProductOrderDate(),
       tag: order?.orderTag || ''
     };
     state.productCheckoutDatePickerMonth = '';
@@ -2138,10 +2167,10 @@
       + '</section></div>';
   }
 
-  function renderExpectedAtTimeColumn(label, part, values, selectedValue) {
+  function renderExpectedAtTimeColumn(label, part, values, selectedValue, action = 'expected-at-time-value') {
     return '<div class="school-mobile-expected-at-time-column-wrap"><span class="school-mobile-expected-at-time-label">' + escapeHtml(label) + '</span><div class="school-mobile-expected-at-time-column" data-time-part="' + escapeHtml(part) + '">' + values.map((value) => {
       const text = String(value).padStart(2, '0');
-      return '<button type="button" class="school-mobile-expected-at-time-option ' + (text === selectedValue ? 'is-selected' : '') + '" data-action="expected-at-time-value" data-time-part="' + escapeHtml(part) + '" data-time-value="' + text + '">' + text + '</button>';
+      return '<button type="button" class="school-mobile-expected-at-time-option ' + (text === selectedValue ? 'is-selected' : '') + '" data-action="' + escapeHtml(action) + '" data-time-part="' + escapeHtml(part) + '" data-time-value="' + text + '">' + text + '</button>';
     }).join('') + '</div></div>';
   }
 
@@ -2664,9 +2693,10 @@
       return;
     }
     if (action === 'open-product-checkout-date' && state.sheet?.type === 'product-checkout') {
-      const currentDate = state.productCheckout.expectedDate || nextProductOrderDate();
-      state.productCheckoutDatePickerDraft = currentDate;
-      state.productCheckoutDatePickerMonth = monthKeyOf(currentDate) || monthKeyOf(nextProductOrderDate());
+      const currentValue = productOrderDateValue(state.productCheckout.expectedDate || nextProductOrderDate()) || productOrderDateValue(nextProductOrderDate());
+      const currentParts = productOrderDateTimeParts(currentValue);
+      state.productCheckoutDatePickerDraft = currentValue;
+      state.productCheckoutDatePickerMonth = monthKeyOf(currentParts.date) || monthKeyOf(nextProductOrderDate());
       state.sheet = { type: 'product-checkout-date' };
       render();
       return;
@@ -2682,10 +2712,20 @@
     if (action === 'product-checkout-date-option' && state.sheet?.type === 'product-checkout-date') {
       const selectedDate = target.dataset.date || '';
       if (selectedDate) {
-        state.productCheckoutDatePickerDraft = selectedDate;
+        const currentParts = productOrderDateTimeParts(state.productCheckoutDatePickerDraft);
+        state.productCheckoutDatePickerDraft = productOrderDateValue(`${selectedDate} ${currentParts.time}`);
         state.productCheckoutDatePickerMonth = monthKeyOf(selectedDate);
         render();
       }
+      return;
+    }
+    if (action === 'product-checkout-time-value' && state.sheet?.type === 'product-checkout-date') {
+      const currentParts = productOrderDateTimeParts(state.productCheckoutDatePickerDraft);
+      const timePart = target.dataset.timePart;
+      const timeValue = String(target.dataset.timeValue || '').padStart(2, '0');
+      const nextTime = expectedAtTimePart(currentParts.time, timePart, timeValue);
+      state.productCheckoutDatePickerDraft = productOrderDateValue(`${currentParts.date || nextProductOrderDate()} ${nextTime}`);
+      render();
       return;
     }
     if (action === 'product-checkout-date-cancel' && state.sheet?.type === 'product-checkout-date') {
@@ -2696,11 +2736,12 @@
       return;
     }
     if (action === 'product-checkout-date-confirm' && state.sheet?.type === 'product-checkout-date') {
-      if (!state.productCheckoutDatePickerDraft) {
+      const selectedParts = productOrderDateTimeParts(state.productCheckoutDatePickerDraft);
+      if (!selectedParts.date) {
         showToast('请选择期望送达日期', true);
         return;
       }
-      state.productCheckout.expectedDate = state.productCheckoutDatePickerDraft;
+      state.productCheckout.expectedDate = productOrderDateValue(`${selectedParts.date} ${selectedParts.time}`);
       state.productCheckoutDatePickerMonth = '';
       state.productCheckoutDatePickerDraft = '';
       state.sheet = { type: 'product-checkout' };
