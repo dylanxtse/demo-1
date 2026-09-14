@@ -2120,18 +2120,19 @@
     const detail = state.sheet?.detail;
     if (!detail) return '';
     const ingredients = detail.dish.ingredients || [];
+    const ingredientUnit = (item) => item?.unit || recipeService.recipeMeasureUnit || 'g';
     const rows = ingredients.map((item) => '<div class="school-mobile-ingredient-row" role="row">'
-      + '<span role="cell" title="' + escapeHtml(productName(item)) + '">' + escapeHtml(productName(item)) + '</span>'
-      + '<span role="cell" title="' + escapeHtml(productCode(item)) + '">' + escapeHtml(productCode(item)) + '</span>'
-      + '<em role="cell">' + quantity(ingredientQuantity(item)) + '</em>'
-      + '<span role="cell">' + escapeHtml(productUnit(item)) + '</span>'
+      + '<span class="school-mobile-ingredient-name" role="cell" title="' + escapeHtml(item?.name || item?.ingredientName || '--') + '">' + escapeHtml(item?.name || item?.ingredientName || '--') + '</span>'
+      + '<span class="school-mobile-ingredient-quantity" role="cell">' + quantity(ingredientQuantity(item)) + ' ' + escapeHtml(ingredientUnit(item)) + '</span>'
+      + '<span class="school-mobile-ingredient-product" role="cell" title="' + escapeHtml(productName(item)) + '">' + escapeHtml(productName(item)) + '</span>'
+      + '<span class="school-mobile-ingredient-code" role="cell" title="' + escapeHtml(productCode(item)) + '">' + escapeHtml(productCode(item)) + '</span>'
       + '</div>').join('');
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet" role="dialog" aria-modal="true" aria-label="菜品食材详情">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(detail.dish.name) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<p class="school-mobile-sheet-subtitle">' + escapeHtml(dateText(detail.menu.date)) + ' · ' + escapeHtml(detail.meal.name) + '</p>'
       + '<div class="school-mobile-dish-detail-heading"><strong>食材含量与人均用量</strong><span>共 ' + number(ingredients.length) + ' 项</span></div>'
-      + '<div class="school-mobile-ingredient-list" role="table" aria-label="商品与人均用量明细">'
-      + '<div class="school-mobile-ingredient-head" role="row"><span role="columnheader">商品名称</span><span role="columnheader">编号</span><span role="columnheader">人均用量</span><span role="columnheader">单位</span></div>'
+      + '<div class="school-mobile-ingredient-list" role="table" aria-label="食材、用量及关联商品明细">'
+      + '<div class="school-mobile-ingredient-head" role="row"><span role="columnheader">食材</span><span role="columnheader">人均用量</span><span role="columnheader">关联商品名称</span><span role="columnheader">关联商品编号</span></div>'
       + (rows || '<div class="school-mobile-empty">暂无食材明细</div>')
       + '</div>'
       + '</section></div>';
