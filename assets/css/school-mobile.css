@@ -5495,6 +5495,7 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-profile-entry {
+  position: relative;
   display: flex;
   width: 100%;
   min-height: 64px;
@@ -5539,10 +5540,31 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-profile-entry-main strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: #31425a;
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
+}
+
+.school-mobile-profile-entry-badge {
+  display: inline-flex;
+  min-width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid #fff;
+  border-radius: 9px;
+  color: #fff;
+  background: #f35b5b;
+  box-shadow: 0 1px 3px rgba(224, 76, 76, .2);
+  font-size: 9px;
+  font-style: normal;
+  line-height: 14px;
+  vertical-align: middle;
 }
 
 .school-mobile-profile-entry-main small {

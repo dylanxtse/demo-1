@@ -1157,7 +1157,6 @@
       + notice
       + '<div class="school-mobile-section-heading"><div class="school-mobile-section-heading-content"><strong>餐次就餐人数</strong></div><div class="school-mobile-attendance-heading-actions">' + modeAction + '</div></div>'
       + '<div class="school-mobile-attendance-meal-grid">' + (meals || '<div class="school-mobile-empty">当前食谱暂无餐次</div>') + '</div>'
-      + '<div class="school-mobile-section-heading"><strong>商品需求测算</strong></div>'
       + '<div id="schoolMobileAttendanceDemand">' + renderDemandRows(menu, state.attendance) + '</div>'
       + '</div>'
       + renderAttendanceActions(validation)
@@ -1631,12 +1630,12 @@
       + '</section>'
       + '<button type="button" class="school-mobile-profile-entry" data-action="open-profile-submissions">'
       + '<span class="school-mobile-profile-entry-icon">' + productOrderIcon('record') + '</span>'
-      + '<span class="school-mobile-profile-entry-main"><strong>提交记录</strong><small>' + (records.length ? '共 ' + number(records.length) + ' 条记录' : '查看已提交的需求记录') + '</small></span>'
+      + '<span class="school-mobile-profile-entry-main"><strong>提交记录' + (records.length ? '<em class="school-mobile-profile-entry-badge">' + number(records.length) + '</em>' : '') + '</strong></span>'
       + '<span class="school-mobile-profile-entry-arrow" aria-hidden="true">›</span>'
       + '</button>'
       + '<button type="button" class="school-mobile-profile-entry school-mobile-profile-logout-entry" data-action="logout">'
       + '<span class="school-mobile-profile-entry-icon">' + productOrderIcon('switch') + '</span>'
-      + '<span class="school-mobile-profile-entry-main"><strong>退出登录</strong><small>退出当前账号</small></span>'
+      + '<span class="school-mobile-profile-entry-main"><strong>退出登录</strong></span>'
       + '<span class="school-mobile-profile-entry-arrow" aria-hidden="true">›</span>'
       + '</button>'
       + '</div>'
@@ -2163,9 +2162,9 @@
     }).join('');
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-detail-sheet" role="dialog" aria-modal="true" aria-label="商品需求明细">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(productName(row)) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
-      + '<p class="school-mobile-sheet-subtitle">' + escapeHtml(productCode(row)) + ' · ' + escapeHtml(unit) + ' · ' + (standard ? '标品，采购量向上取整' : '非标品，采购量等于需求量') + '</p>'
+      + '<p class="school-mobile-sheet-subtitle">' + escapeHtml(productCode(row)) + ' · ' + escapeHtml(unit) + ' · ' + (standard ? '标品，采购量向上取整' : '非标品') + '</p>'
       + '<div class="school-mobile-demand-detail-total"><div><span>需求总量</span><strong>' + quantity(row.totalQty) + ' ' + escapeHtml(unit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(purchaseTotalQuantity(row, currentParticipants)) + ' ' + escapeHtml(unit) + '</strong></div></div>'
-      + '<div class="school-mobile-demand-detail-heading"><strong>人员类型明细</strong><span>需求量 / 采购量</span></div>'
+      + '<div class="school-mobile-demand-detail-heading"><strong>人员类型明细</strong></div>'
       + '<div class="school-mobile-demand-detail-list" role="table" aria-label="不同人员类型需求量和采购量明细">'
       + '<div class="school-mobile-demand-detail-head" role="row"><span role="columnheader">人员类型</span><span role="columnheader">需求量</span><span role="columnheader">采购量</span></div>'
       + (participantRows || '<div class="school-mobile-empty">暂无人员类型明细</div>')
