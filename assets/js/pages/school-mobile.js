@@ -1477,12 +1477,17 @@
     const isPurchaseQuantityEditing = Boolean(activeParticipant && state.purchaseQuantityEditingKey === activeParticipant.key);
     const purchaseQuantityAction = isPurchaseQuantityEditing ? 'save-purchase-quantity' : 'edit-purchase-quantity';
     const purchaseQuantityActionLabel = isPurchaseQuantityEditing ? '保存' : '编辑';
+    const purchaseQuantityActions = activeParticipant
+      ? (isPurchaseQuantityEditing
+        ? '<div class="school-mobile-purchase-actions"><button type="button" class="school-mobile-purchase-reset-button" data-action="restore-default-purchase-quantity" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">恢复默认</button><button type="button" class="school-mobile-order-tag-save" data-action="save-purchase-quantity" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">保存</button></div>'
+        : '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>')
+      : '';
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
-      + '<section class="school-mobile-confirm-card"><h2>订单信息</h2><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
-      + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>提交日期</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
+      + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>需求天数</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
       + '<div class="school-mobile-order-tags-inline">' + renderConfirmOrderTags(preview, activeParticipant) + '</div>'
-      + '<section class="school-mobile-confirm-card school-mobile-purchase-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + (activeParticipant ? '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>' : '') + '</div>' + renderPreviewProductRows(preview, activeParticipant, isPurchaseQuantityEditing) + '</section>'
+      + '<section class="school-mobile-confirm-card school-mobile-purchase-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + purchaseQuantityActions + '</div>' + renderPreviewProductRows(preview, activeParticipant, isPurchaseQuantityEditing) + '</section>'
       + (preview.message && !preview.canSubmit ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
       + '</div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回填报</button><button type="button" class="school-mobile-button is-primary" data-action="submit-demand" ' + (canSubmit && !state.submitting ? '' : 'disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
   }
@@ -3136,6 +3141,19 @@
         state.purchaseQuantityEditingKey = target.dataset.purchaseParticipantKey;
         render();
       }
+      return;
+    }
+    if (action === 'restore-default-purchase-quantity') {
+      const preview = buildConfirmPreview();
+      const participantKey = target.dataset.purchaseParticipantKey || '';
+      if (!confirmParticipants(preview).some((participant) => participant.key === participantKey)) return;
+      syncConfirmPurchaseInputs();
+      (preview.rows || []).forEach((row) => {
+        if (row.mappingStatus === '已关联') delete state.purchaseQtyOverrides[purchaseQuantityKey(row, participantKey)];
+      });
+      state.confirmParticipantKey = participantKey;
+      state.purchaseQuantityEditingKey = participantKey;
+      render();
       return;
     }
     if (action === 'save-purchase-quantity') {
