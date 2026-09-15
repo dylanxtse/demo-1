@@ -373,14 +373,15 @@
   z-index: 120;
   transform: translateX(-50%);
   padding: 10px 18px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: #303846;
-  color: #fff;
+  background: #fff;
+  color: var(--success);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   font-size: 14px;
 }
 
-.sales-toast.is-error { background: #c7393f; }
+.sales-toast.is-error { background: #fff; color: var(--danger); }
 
 @media (max-width: 1200px) {
   .sales-filter-bar { grid-template-columns: repeat(2, minmax(260px, 1fr)); }

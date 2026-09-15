@@ -1101,10 +1101,10 @@
   max-width: min(440px, calc(100vw - 32px));
   box-sizing: border-box;
   padding: 9px 16px;
-  border: 1px solid rgba(213, 73, 65, .28);
+  border: 1px solid rgba(15, 23, 42, .12);
   border-radius: 12px;
-  color: #b42318;
-  background: rgba(255, 248, 247, .96);
+  color: #d54941;
+  background: #fff;
   box-shadow: 0 10px 26px rgba(15, 23, 42, .16);
   font-size: 13px;
   line-height: 1.5;
@@ -1124,9 +1124,9 @@
 }
 
 .project-iteration-toast[data-type="success"] {
-  border-color: var(--iteration-accent-border);
-  color: var(--iteration-accent-strong);
-  background: rgba(255, 255, 255, .96);
+  border-color: rgba(15, 23, 42, .12);
+  color: #2ba471;
+  background: #fff;
 }
 
 .project-iteration-records {

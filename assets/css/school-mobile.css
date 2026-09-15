@@ -5255,24 +5255,31 @@ button.school-mobile-demand-row:active {
 }
 
 .school-mobile-toast {
-  position: fixed;
+  position: absolute;
   z-index: 30;
+  top: 50%;
   left: 50%;
-  bottom: 86px;
-  max-width: calc(100% - 48px);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  max-height: calc(100% - 32px);
   padding: 9px 14px;
+  overflow-y: auto;
   border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, .12);
   color: #fff;
-  background: rgba(27, 36, 56, .88);
+  background: rgba(35, 43, 59, .94);
   font-size: 12px;
   line-height: 18px;
   text-align: center;
-  transform: translateX(-50%);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  transform: translate(-50%, -50%);
   pointer-events: none;
+  box-shadow: 0 8px 22px rgba(20, 30, 48, .2);
 }
 
 .school-mobile-toast.is-error {
-  background: rgba(210, 72, 72, .92);
+  background: rgba(35, 43, 59, .96);
 }
 
 /* “我的”首页按下单助手参考页重组为账户信息、订单状态和记录入口。 */

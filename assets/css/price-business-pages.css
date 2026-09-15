@@ -487,9 +487,9 @@ body[data-price-page="salesAgreement"] .pb-form-table td:nth-child(5) {
 .pb-detail-footer { display: flex; min-height: 68px; flex: 0 0 68px; align-items: center; justify-content: center; padding: 14px 24px; border-top: 1px solid #f0f0f0; }
 .pb-detail-footer .btn { width: 100px; justify-content: center; }
 
-.pb-toast { position: fixed; z-index: 1200; top: 78px; left: 50%; display: none; min-width: 160px; padding: 10px 18px; border-radius: 4px; background: rgba(31, 36, 48, .9); color: #fff; font-size: 13px; text-align: center; transform: translateX(-50%); }
+.pb-toast { position: fixed; z-index: 1200; top: 78px; left: 50%; display: none; min-width: 160px; padding: 10px 18px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; color: var(--success); font-size: 13px; text-align: center; transform: translateX(-50%); box-shadow: 0 8px 24px rgba(15,23,42,.14); }
 .pb-toast.is-visible { display: block; }
-.pb-toast.error { background: rgba(198, 54, 54, .92); }
+.pb-toast.error { background: #fff; color: var(--danger); }
 
 /* 协议价商品选择列表：分类字段按完整路径展示，超出弹窗宽度时横向查看。 */
 body[data-price-page="purchaseAgreement"] .product-picker-table,

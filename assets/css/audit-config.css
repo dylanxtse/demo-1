@@ -173,12 +173,13 @@
   top: 20px;
   right: 24px;
   padding: 7px 14px;
-  border: 1px solid #cde8d9;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: #f0fbf4;
-  color: #2b8a57;
+  background: #fff;
+  color: var(--success);
   font-size: 13px;
   line-height: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
 }
 
 .audit-config-toast[hidden] { display: none; }

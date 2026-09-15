@@ -461,9 +461,9 @@
 .bidding-category-option input { width: 16px; height: 16px; accent-color: var(--primary); }
 .bidding-dialog .bidding-category-options { margin-top: 4px; }
 
-.bidding-toast { position: fixed; z-index: 1100; top: 92px; left: 50%; transform: translateX(-50%); display: none; max-width: min(520px, calc(100vw - 32px)); padding: 10px 18px; border-radius: 4px; background: #2f3a4d; color: #fff; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+.bidding-toast { position: fixed; z-index: 1100; top: 92px; left: 50%; transform: translateX(-50%); display: none; max-width: min(520px, calc(100vw - 32px)); padding: 10px 18px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; color: var(--success); font-size: 13px; box-shadow: 0 8px 24px rgba(15,23,42,.14); }
 .bidding-toast.show { display: block; }
-.bidding-toast.error { background: #c0392b; }
+.bidding-toast.error { background: #fff; color: var(--danger); }
 
 .bidding-file-row { display: flex; align-items: center; gap: 10px; }
 .bidding-file-name { color: var(--text-secondary); font-size: 13px; }

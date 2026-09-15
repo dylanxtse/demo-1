@@ -124,7 +124,7 @@
 .school-recipe-detail-empty .operation-empty-icon svg { display: block; }
 .school-recipe-detail-empty p { margin: 0; color: var(--text-tertiary); font-size: 14px; line-height: 22px; white-space: nowrap; }
 
-.school-recipe-toast { position: fixed; z-index: 120; bottom: 30px; left: 50%; display: none; transform: translateX(-50%); padding: 9px 16px; border-radius: 3px; color: #fff; background: rgba(39, 52, 70, .9); box-shadow: 0 4px 14px rgba(31, 43, 67, .18); font-size: 13px; }
+.school-recipe-toast { position: fixed; z-index: 120; bottom: 30px; left: 50%; display: none; transform: translateX(-50%); padding: 9px 16px; border: 1px solid var(--border-color); border-radius: 3px; color: var(--success); background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.14); font-size: 13px; }
 .school-recipe-toast.is-visible { display: block; }
 .school-recipe-modal-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(19, 31, 49, .42); }
 .school-recipe-modal { display: flex; width: min(1060px, 100%); max-height: min(680px, 90vh); flex-direction: column; overflow: hidden; border-radius: 4px; background: #fff; box-shadow: 0 14px 38px rgba(31, 43, 67, .25); }

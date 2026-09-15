@@ -584,9 +584,10 @@
   display: none;
   min-width: 180px;
   padding: 10px 18px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: rgba(31, 36, 48, .9);
-  color: #fff;
+  background: #fff;
+  color: var(--success);
   font-size: 14px;
   text-align: center;
   transform: translateX(-50%);
@@ -597,7 +598,8 @@
 }
 
 .school-missing-page .school-toast.is-error {
-  background: rgba(198, 54, 54, .94);
+  background: #fff;
+  color: var(--danger);
 }
 
 /* 详情/表单页 */

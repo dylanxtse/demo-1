@@ -34,3 +34,26 @@ body {
   font-size: 15px;
   overflow: hidden;
 }
+
+/* Web 端 Toast 统一使用白底和语义文字色，移动端预览保留独立样式。 */
+body:not(.school-mobile-preview-body) [class*="toast"] {
+  box-sizing: border-box;
+  max-width: min(560px, calc(100vw - 32px));
+  border: 1px solid var(--border-color) !important;
+  background: #fff !important;
+  color: var(--success) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .14) !important;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+body:not(.school-mobile-preview-body) [class*="toast"].error,
+body:not(.school-mobile-preview-body) [class*="toast"].is-error,
+body:not(.school-mobile-preview-body) [class*="toast"][data-type="error"] {
+  color: var(--danger) !important;
+}
+
+body:not(.school-mobile-preview-body) [class*="toast"].success,
+body:not(.school-mobile-preview-body) [class*="toast"][data-type="success"] {
+  color: var(--success) !important;
+}

@@ -388,9 +388,10 @@ img.review-product-image {
   display: none;
   min-width: 180px;
   padding: 10px 18px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: #176b47;
-  color: #fff;
+  background: #fff;
+  color: var(--success);
   font-size: 14px;
   text-align: center;
   transform: translateX(-50%);
@@ -402,7 +403,8 @@ img.review-product-image {
 }
 
 .review-toast.error {
-  background: #a61b1b;
+  background: #fff;
+  color: var(--danger);
 }
 
 @media (max-width: 1200px) {

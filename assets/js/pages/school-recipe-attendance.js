@@ -435,7 +435,7 @@
     input?.focus({ preventScroll: true });
     input?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
     const participantName = issue.participant.label || issue.participant.tagName || '人员';
-    showToast(`${issue.meal.name}${participantName}总人数不能为空`, true);
+    showToast('总人数不能为空', true);
   }
 
   function saveNonDiningMode(page, root) {

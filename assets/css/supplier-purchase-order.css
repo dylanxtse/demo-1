@@ -907,15 +907,16 @@
   display: none;
   transform: translateX(-50%);
   padding: 9px 16px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: #1f2937;
-  color: #fff;
+  background: #fff;
+  color: var(--success);
   font-size: 14px;
   box-shadow: 0 5px 16px rgba(0, 0, 0, .18);
 }
 
 .supplier-purchase-toast.is-visible { display: block; }
-.supplier-purchase-toast.is-error { background: #c0392b; }
+.supplier-purchase-toast.is-error { background: #fff; color: var(--danger); }
 
 @media (max-width: 1200px) {
   .supplier-purchase-order-page {

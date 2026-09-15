@@ -188,8 +188,10 @@
   display: none;
   min-width: 180px;
   padding: 10px 18px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  color: #fff;
+  color: var(--success);
+  background: #fff;
   font-size: 14px;
   text-align: center;
   transform: translateX(-50%);
@@ -201,11 +203,13 @@
 }
 
 .unit-toast.success {
-  background: #176b47;
+  background: #fff;
+  color: var(--success);
 }
 
 .unit-toast.error {
-  background: #a61b1b;
+  background: #fff;
+  color: var(--danger);
 }
 
 .unit-empty-row td {

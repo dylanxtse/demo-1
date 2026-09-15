@@ -1568,19 +1568,20 @@
   min-width: 220px;
   max-width: min(560px, calc(100vw - 48px));
   padding: 11px 18px;
-  border: 1px solid #d9e6ff;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   background: #fff;
   box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
-  color: var(--text-primary);
+  color: var(--success);
   font-size: 14px;
   text-align: center;
   transform: translateX(-50%);
 }
 
 .purchase-toast.error {
-  border-color: #ffd7d7;
-  color: #d92d20;
+  border-color: var(--border-color);
+  background: #fff;
+  color: var(--danger);
 }
 
 .purchase-modal-backdrop {

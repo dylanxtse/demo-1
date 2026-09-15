@@ -678,7 +678,7 @@
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'obListToast';
-      toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:4px;font-size:14px;z-index:9999;background:#2ba471;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.2s;';
+      toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);box-sizing:border-box;max-width:calc(100vw - 32px);padding:10px 24px;border:1px solid #e7e7e7;border-radius:4px;font-size:14px;z-index:9999;background:#fff;color:#2ba471;box-shadow:0 8px 24px rgba(15,23,42,.14);overflow-wrap:anywhere;white-space:normal;opacity:0;transition:opacity 0.2s;';
       toast.setAttribute('role', 'status');
       document.body.appendChild(toast);
     }

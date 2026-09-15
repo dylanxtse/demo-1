@@ -248,13 +248,14 @@ button { cursor: pointer; }
   max-width: calc(100% - 32px);
   transform: translateX(-50%);
   padding: 10px 18px;
+  border: 1px solid #e7e7e7;
   border-radius: 4px;
-  background: #26364f;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+  background: #fff;
+  color: #2ba471;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
 }
 .register-toast.is-visible { display: block; }
-.register-toast.is-error { background: #c0392b; }
+.register-toast.is-error { background: #fff; color: #d54941; }
 
 @media (max-width: 900px) {
   .supplier-register-section-inner { width: min(100% - 40px, 720px); margin-left: 20px; }
