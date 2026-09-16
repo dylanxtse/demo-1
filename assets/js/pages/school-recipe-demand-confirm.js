@@ -561,13 +561,9 @@
         .filter((selectedDate) => Number(dateSummaryFor(selectedDate)?.calculation?.totalPeople || 0) > 0)
         .length;
       if (button.disabled || selectedDateCount <= 1) return;
-      if (!attendanceService.remove(date, currentCanteenScope)) {
-        showToast('未找到该日期的填报数据', true);
-        return;
-      }
       state.selectedDates.delete(date);
-      renderBody();
-      showToast(`${date} 的人数填报已删除`);
+      renderBody({ preserveViewport: true });
+      showToast(`${date} 已从本次确认中移除`);
       return;
     }
     if (action !== 'submit' || state.submitting) return;
