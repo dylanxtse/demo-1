@@ -515,7 +515,7 @@
     ].map(([code, name, unit, marketPrice], index) => ({ code, name, unit, marketPrice, status: '已上架', brand: '--', spec: '--', category: '其他材料-其他二级', seq: index + 1 }));
     const source = Array.isArray(window.MockProducts) && window.MockProducts.length ? window.MockProducts : fallbackProducts;
     const seededNetVegetables = new Set([
-      'SP0300019', 'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
+      'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
       'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
     ]);
     return source.filter((product) => product && (product.code || product.id)).map((product, index) => ({
@@ -858,9 +858,9 @@
   }
 
   function normalizeProductMetadata(state) {
-    const revision = 'products-v8-standard-product-demo';
+    const revision = 'products-v9-processing-net-rule';
     const seededNetVegetables = new Set([
-      'SP0300019', 'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
+      'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
       'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
     ]);
     const refreshedProductCodes = new Set([
