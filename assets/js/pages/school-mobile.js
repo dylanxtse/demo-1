@@ -1768,6 +1768,11 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value + ' 00:00:00' : value;
   }
 
+  function profileOrderMealName(order) {
+    const mealKey = String(order?.mealKey || '').trim();
+    return mealKey ? recordMealName(order?.mealName || mealKey) : '--';
+  }
+
   function profileOrderLine(item) {
     const productId = item?.productId || item?.productCode || item?.goodsCode || item?.goodsId || item?.id || '';
     return {
@@ -2056,6 +2061,7 @@
       + '<div class="school-mobile-order-detail-info-row"><span>供货企业：</span><strong>' + escapeHtml(supplier) + '</strong></div>'
       + '<div class="school-mobile-order-detail-info-row' + (editing ? ' is-editable' : '') + '"><span>食堂：</span>' + canteenField + '</div>'
       + '<div class="school-mobile-order-detail-info-row"><span>期望送达时间：</span><strong>' + escapeHtml(profileOrderExpectedAt(order)) + '</strong></div>'
+      + '<div class="school-mobile-order-detail-info-row"><span>订单餐次：</span><strong>' + escapeHtml(profileOrderMealName(order)) + '</strong></div>'
       + '<div class="school-mobile-order-detail-info-row' + (editing ? ' is-editable' : '') + '"><span>订单标签：</span>' + tagField + '</div>'
       + '</section>'
       + '<div class="school-mobile-order-detail-summary"><span>' + number(selectedCount) + '种商品</span><strong>合计：¥' + formatProfileMoney(orderAmount) + '元</strong></div>'
