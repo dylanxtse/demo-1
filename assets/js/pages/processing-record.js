@@ -120,16 +120,40 @@
     return window.DomUtils.escapeHtml(value);
   }
 
-  function productNetTag(productCode) {
-    if (!productCode) return '';
+  function isFlag(value) {
+    return value === true || value === 'true' || value === '是';
+  }
+
+  function getRecordProduct(itemOrCode = {}) {
+    const code = typeof itemOrCode === 'string'
+      ? itemOrCode
+      : itemOrCode?.productCode || itemOrCode?.goodsCode || itemOrCode?.code || '';
     const products = window.ProductService?.getList?.() || window.MockProducts || [];
-    const product = products.find((p) => p.code === productCode);
+    return products.find((product) => product.code === code) || {};
+  }
+
+  function isStandardProduct(item) {
+    const product = getRecordProduct(item);
+    return isFlag(item?.isStandardProduct)
+      || isFlag(item?.isStandard)
+      || isFlag(product.isStandardProduct)
+      || isFlag(product.isStandard);
+  }
+
+  function productTypeTags(item) {
+    const product = getRecordProduct(item);
+    const isNetVegetable = isFlag(item?.isNetVegetable) || isFlag(product.isNetVegetable);
+    return `${isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span class="${isStandardProduct(item) ? 'standard-product-tag' : 'non-standard-product-tag'}">${isStandardProduct(item) ? '标品' : '非标品'}</span>`;
+  }
+
+  function productNetTag(productCode) {
+    const product = getRecordProduct(productCode);
     return product?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
   }
 
   function renderProductName(productCode, productName, unit, nameSuffix = '') {
     const display = window.DomUtils.formatProductDisplay({ productCode, productName, unit });
-    return `<span class="processing-record-product-line"><span class="name-cell processing-record-product-name">${productNetTag(productCode)}<span class="processing-record-product-label">${escapeHtml(display)}</span></span>${nameSuffix}</span>`;
+    return `<span class="processing-record-product-line"><span class="name-cell processing-record-product-name">${productTypeTags({ productCode })}<span class="processing-record-product-label">${escapeHtml(display)}</span></span>${nameSuffix}</span>`;
   }
 
   function getOperationNodeType(log) {
@@ -505,14 +529,14 @@
   }
 
   function getEditProductInfo(item = {}) {
-    const products = window.ProductService?.getList?.() || window.MockProducts || [];
-    const product = products.find((candidate) => candidate.code === item.productCode) || {};
+    const product = getRecordProduct(item);
     return {
       name: product.name || item.productName || '--',
       unit: product.unit || item.unit || '--',
       brand: product.brand || item.brand || '--',
       spec: product.spec || item.spec || '--',
-      marketPrice: Number(product.marketPrice)
+      marketPrice: Number(product.marketPrice),
+      isStandardProduct: isStandardProduct(item)
     };
   }
 
@@ -544,10 +568,38 @@
 
   function calculateEditRefQty() {
     if (!editFormState) return;
+    const hasInvalidStandardMaterial = editFormState.materials.some((material) => {
+      const rawValue = String(material.consumeQty ?? '').trim();
+      const quantity = Number(rawValue);
+      return isStandardProduct(material) && rawValue && Number.isFinite(quantity) && !Number.isInteger(quantity);
+    });
+    if (hasInvalidStandardMaterial) {
+      editFormState.outputs.forEach((output) => {
+        output.refQty = '';
+        output.refQtyError = '';
+      });
+      return;
+    }
     const totalConsume = editFormState.materials.reduce((sum, material) => sum + (Number(material.consumeQty) || 0), 0);
     editFormState.outputs.forEach((output) => {
       const coefficient = Number(output.refCoefficient) || 0;
-      output.refQty = coefficient > 0 && totalConsume > 0 ? (totalConsume * coefficient).toFixed(2) : '';
+      output.refQtyError = '';
+      if (!(coefficient > 0 && totalConsume > 0)) {
+        output.refQty = '';
+        return;
+      }
+      const referenceQty = totalConsume * coefficient;
+      if (isStandardProduct(output)) {
+        const integerQty = Math.floor(referenceQty);
+        if (integerQty < 1) {
+          output.refQty = '';
+          output.refQtyError = '获得量<1，请修改原料消耗量';
+        } else {
+          output.refQty = String(integerQty);
+        }
+      } else {
+        output.refQty = referenceQty.toFixed(2);
+      }
     });
   }
 
@@ -588,12 +640,14 @@
     if (!body || !editFormState) return;
     body.innerHTML = editFormState.materials.map((item, index) => {
       const product = getEditProductInfo(item);
+      const standard = product.isStandardProduct;
+      const invalid = standard && item.consumeQty !== '' && item.consumeQty != null && !Number.isInteger(Number(item.consumeQty));
       return `<tr data-edit-material-index="${index}">
-        <td><span class="sub-table-readonly">${productNetTag(item.productCode)}${escapeHtml(formatEditProduct(item))}</span></td>
+        <td><span class="sub-table-readonly processing-product-display">${productTypeTags(item)}${escapeHtml(formatEditProduct(item))}</span></td>
         <td><span class="sub-table-readonly">${escapeHtml(product.unit)}</span></td>
         <td><span class="sub-table-readonly">${item.stock ?? '--'}</span></td>
         <td><span class="sub-table-readonly">${item.avgPrice ?? '--'}</span></td>
-        <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-edit-material-field="consumeQty" value="${escapeHtml(item.consumeQty ?? '')}"></td>
+        <td><input class="sub-table-input" type="number" min="0" step="${standard ? '1' : '0.01'}" inputmode="${standard ? 'numeric' : 'decimal'}" placeholder="请输入" data-edit-material-field="consumeQty" value="${escapeHtml(item.consumeQty ?? '')}"${invalid ? ' aria-invalid="true"' : ''}></td>
       </tr>`;
     }).join('');
   }
@@ -604,8 +658,13 @@
     const allocations = editFormState.costMode === 'auto' ? calculateEditAutoAllocations() : [];
     body.innerHTML = editFormState.outputs.map((item, index) => {
       const product = getEditProductInfo(item);
+      const standard = product.isStandardProduct;
       const allocation = allocations[index] || {};
       const costPrice = editFormState.costMode === 'auto' ? allocation.costPrice || item.costPrice || '' : item.costPrice || '';
+      const referenceQty = item.refQtyError
+        ? `<div class="processing-reference-qty-box is-error" data-edit-output-ref-qty role="alert">${escapeHtml(item.refQtyError)}</div>`
+        : `<div class="processing-reference-qty-box" data-edit-output-ref-qty>${escapeHtml(item.refQty || '--')}</div>`;
+      const actualInvalid = standard && item.actualQty !== '' && item.actualQty != null && !Number.isInteger(Number(item.actualQty));
       const orderFields = editFormState.processingMode === 'order'
         ? `<td><span class="sub-table-readonly">${item.sortingQty ?? '--'}</span></td><td><span class="sub-table-readonly">${item.remainingQty ?? '--'}</span></td>`
         : '';
@@ -613,17 +672,17 @@
         ? `<div class="unit-price-control unit-price-readonly"><span class="unit-price-value" data-edit-auto-cost-index="${index}">${escapeHtml(costPrice || '--')}</span></div>`
         : `<div class="unit-price-control"><input class="sub-table-input cost-price-input" type="number" min="0" step="0.01" placeholder="请输入" data-edit-output-field="costPrice" value="${escapeHtml(costPrice)}"></div>`;
       return `<tr data-edit-output-index="${index}">
-        <td><span class="sub-table-readonly">${productNetTag(item.productCode)}${escapeHtml(formatEditProduct(item))}</span></td>
+        <td><span class="sub-table-readonly processing-product-display">${productTypeTags(item)}${escapeHtml(formatEditProduct(item))}</span></td>
         <td><span class="sub-table-readonly">${escapeHtml(product.unit)}</span></td>
         <td><span class="sub-table-readonly">${item.refCoefficient || '--'}</span></td>
-        <td><span class="sub-table-readonly">${item.refQty || '--'}</span></td>
-        <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-edit-output-field="actualQty" value="${escapeHtml(item.actualQty ?? '')}"></td>
+        <td>${referenceQty}</td>
+        <td><input class="sub-table-input" type="number" min="0" step="${standard ? '1' : '0.01'}" inputmode="${standard ? 'numeric' : 'decimal'}" placeholder="请输入" data-edit-output-field="actualQty" value="${escapeHtml(item.actualQty ?? '')}"${actualInvalid ? ' aria-invalid="true"' : ''}></td>
         ${orderFields}
         <td>${costField}</td>
       </tr>`;
     }).join('');
     const fillButton = document.querySelector('[data-action="edit-fill-reference"]');
-    if (fillButton) fillButton.disabled = !editFormState.outputs.some((output) => output.refQty !== '' && output.refQty != null);
+    if (fillButton) fillButton.disabled = !editFormState.outputs.some((output) => !output.refQtyError && output.refQty !== '' && output.refQty != null);
   }
 
   function updateEditAutoCostPrices() {
@@ -692,7 +751,7 @@
           <div class="form-section-body" style="padding:0"><table class="processing-sub-table"><thead><tr><th style="width:200px">原料商品</th><th style="width:80px">单位</th><th style="width:90px">当前库存</th><th style="width:90px">库存均价</th><th style="width:120px">消耗量</th></tr></thead><tbody id="recEditMaterialBody"></tbody></table></div>
         </div>
         <div class="operation-cost-section"><div class="operation-cost-header"><span class="cost-price-label section-title-mark">成品入库单价</span><div class="cost-mode-row"><label class="radio-option"><input type="radio" name="recEditCostMode" value="auto" ${editFormState.costMode === 'auto' ? 'checked' : ''}>按原料成本及实际获得量计算</label><label class="radio-option"><input type="radio" name="recEditCostMode" value="manual" ${editFormState.costMode === 'manual' ? 'checked' : ''}>手动输入成品入库单价</label></div></div></div>
-        <div class="form-section"><div class="form-section-header"><span class="section-title-mark">加工成品</span><button class="btn btn-sm btn-blue reference-fill-btn" type="button" data-action="edit-fill-reference" ${editFormState.outputs.some((output) => output.refQty !== '' && output.refQty != null) ? '' : 'disabled'}>按参考值填充实际获得量</button></div><div class="form-section-body" style="padding:0"><table class="processing-sub-table"><thead><tr><th style="width:180px">成品商品</th><th style="width:70px">单位</th><th style="width:100px">参考加工系数</th><th style="width:90px">参考获得量</th><th style="width:90px">实际获得量</th>${editFormState.processingMode === 'order' ? '<th style="width:90px">订单分拣量</th><th style="width:90px">剩余量</th>' : ''}<th style="width:130px">成品入库单价</th></tr></thead><tbody id="recEditOutputBody"></tbody></table></div></div>
+        <div class="form-section"><div class="form-section-header"><span class="section-title-mark">加工成品</span><button class="btn btn-sm btn-blue reference-fill-btn" type="button" data-action="edit-fill-reference" ${editFormState.outputs.some((output) => !output.refQtyError && output.refQty !== '' && output.refQty != null) ? '' : 'disabled'}>按参考值填充实际获得量</button></div><div class="form-section-body" style="padding:0"><table class="processing-sub-table"><thead><tr><th style="width:180px">成品商品</th><th style="width:70px">单位</th><th style="width:100px">参考加工系数</th><th style="width:90px">参考获得量</th><th style="width:90px">实际获得量</th>${editFormState.processingMode === 'order' ? '<th style="width:90px">订单分拣量</th><th style="width:90px">剩余量</th>' : ''}<th style="width:130px">成品入库单价</th></tr></thead><tbody id="recEditOutputBody"></tbody></table></div></div>
         <div class="form-section operation-remark-section"><div class="form-section-header"><span class="section-title-mark">加工备注</span></div><div class="form-section-body"><div class="operation-remark-field"><div class="remark-input-wrap"><textarea class="form-control" id="recEditRemark" maxlength="200" rows="3" placeholder="请输入">${escapeHtml(editFormState.remark)}</textarea><span class="remark-counter" id="recEditRemarkCounter">${editFormState.remark.length}/200</span></div><div class="remark-upload-area"><button class="btn btn-sm btn-blue remark-upload-btn" type="button" data-action="edit-upload-attachment">上传附件</button><input type="file" id="recEditAttachmentInput" accept="image/*,.txt,.doc,.docx,.pdf,.xls,.xlsx" multiple style="display:none"><div class="remark-attachment-list" id="recEditAttachmentList"></div></div></div></div></div>
       </div>
       <div class="processing-form-footer"><button class="btn btn-primary" type="button" data-action="${submitAction}" data-id="${escapeHtml(order.id)}">${submitText}</button><button class="btn" type="button" data-action="cancel-edit">取消编辑</button></div>
@@ -784,7 +843,9 @@
       if (action === 'cancel-edit') { closeEditPage(false); return; }
       if (action === 'edit-submit-confirm' || action === 'edit-resubmit') { submitEditedOrder(); return; }
       if (action === 'edit-fill-reference') {
-        editFormState.outputs.forEach((output) => { if (output.refQty !== '' && output.refQty != null) output.actualQty = output.refQty; });
+        editFormState.outputs.forEach((output) => {
+          if (!output.refQtyError && output.refQty !== '' && output.refQty != null) output.actualQty = output.refQty;
+        });
         renderEditOutputTable();
         return;
       }
@@ -807,11 +868,71 @@
         renderEditAttachments();
       }
     });
+    form.addEventListener('focusout', (event) => {
+      const materialInput = event.target.closest('[data-edit-material-field="consumeQty"]');
+      if (materialInput) {
+        const index = Number(materialInput.closest('[data-edit-material-index]').dataset.editMaterialIndex);
+        const material = editFormState.materials[index];
+        if (!material) return;
+        const rawValue = materialInput.value.trim();
+        const quantity = Number(rawValue);
+        materialInput.removeAttribute('aria-invalid');
+        if (!rawValue) {
+          material.consumeQty = '';
+          calculateEditRefQty();
+          renderEditOutputTable();
+          return;
+        }
+        if (!Number.isFinite(quantity) || (isStandardProduct(material) && !Number.isInteger(quantity))) {
+          materialInput.setAttribute('aria-invalid', 'true');
+          if (isStandardProduct(material)) showEditStatus('标品原料消耗量必须为整数');
+          return;
+        }
+        const normalizedValue = isStandardProduct(material) ? String(quantity) : quantity.toFixed(2);
+        materialInput.value = normalizedValue;
+        material.consumeQty = normalizedValue;
+        calculateEditRefQty();
+        renderEditOutputTable();
+        return;
+      }
+      const outputInput = event.target.closest('[data-edit-output-field="actualQty"]');
+      if (!outputInput) return;
+      const index = Number(outputInput.closest('[data-edit-output-index]').dataset.editOutputIndex);
+      const output = editFormState.outputs[index];
+      if (!output) return;
+      const rawValue = outputInput.value.trim();
+      const quantity = Number(rawValue);
+      outputInput.removeAttribute('aria-invalid');
+      if (!rawValue) {
+        output.actualQty = '';
+        updateEditAutoCostPrices();
+        return;
+      }
+      if (!Number.isFinite(quantity) || (isStandardProduct(output) && !Number.isInteger(quantity))) {
+        outputInput.setAttribute('aria-invalid', 'true');
+        if (isStandardProduct(output)) showEditStatus('标品成品实际获得量必须为整数');
+        return;
+      }
+      const normalizedValue = isStandardProduct(output) ? String(quantity) : quantity.toFixed(2);
+      outputInput.value = normalizedValue;
+      output.actualQty = normalizedValue;
+      updateEditAutoCostPrices();
+    });
     form.addEventListener('input', (event) => {
       const materialInput = event.target.closest('[data-edit-material-field="consumeQty"]');
       if (materialInput) {
         const index = Number(materialInput.closest('[data-edit-material-index]').dataset.editMaterialIndex);
-        editFormState.materials[index].consumeQty = materialInput.value;
+        const material = editFormState.materials[index];
+        if (!material) return;
+        const rawValue = materialInput.value.trim();
+        const quantity = Number(rawValue);
+        const standardInputInvalid = isStandardProduct(material)
+          && rawValue
+          && Number.isFinite(quantity)
+          && !Number.isInteger(quantity);
+        if (standardInputInvalid) materialInput.setAttribute('aria-invalid', 'true');
+        else materialInput.removeAttribute('aria-invalid');
+        material.consumeQty = materialInput.value;
         calculateEditRefQty();
         renderEditOutputTable();
         return;
@@ -819,7 +940,19 @@
       const outputInput = event.target.closest('[data-edit-output-field]');
       if (outputInput) {
         const index = Number(outputInput.closest('[data-edit-output-index]').dataset.editOutputIndex);
-        editFormState.outputs[index][outputInput.dataset.editOutputField] = outputInput.value;
+        const output = editFormState.outputs[index];
+        if (!output) return;
+        if (outputInput.dataset.editOutputField === 'actualQty') {
+          const rawValue = outputInput.value.trim();
+          const quantity = Number(rawValue);
+          const standardInputInvalid = isStandardProduct(output)
+            && rawValue
+            && Number.isFinite(quantity)
+            && !Number.isInteger(quantity);
+          if (standardInputInvalid) outputInput.setAttribute('aria-invalid', 'true');
+          else outputInput.removeAttribute('aria-invalid');
+        }
+        output[outputInput.dataset.editOutputField] = outputInput.value;
         updateEditAutoCostPrices();
         return;
       }
@@ -839,7 +972,7 @@
     const templateName = order.templateName || processingTemplate?.name || '';
     const materialRows = (order.materials || []).map((m) => `
       <tr>
-        <td><span class="product-display-text">${productNetTag(m.productCode)}${escapeHtml(window.DomUtils.formatProductDisplay(m))}</span></td>
+        <td><span class="product-display-text">${productTypeTags(m)}${escapeHtml(window.DomUtils.formatProductDisplay(m))}</span></td>
         <td>${escapeHtml(m.unit)}</td>
         <td>${m.stock ?? '--'}</td>
         <td>${m.avgPrice ?? '--'}</td>
@@ -850,7 +983,7 @@
 
     const outputRows = (order.outputs || []).map((o) => `
       <tr>
-        <td><span class="product-display-text">${productNetTag(o.productCode)}${escapeHtml(window.DomUtils.formatProductDisplay(o))}</span></td>
+        <td><span class="product-display-text">${productTypeTags(o)}${escapeHtml(window.DomUtils.formatProductDisplay(o))}</span></td>
         <td>${escapeHtml(o.unit)}</td>
         <td>${o.refCoefficient ?? '--'}</td>
         <td>${o.refQty ?? '--'}</td>

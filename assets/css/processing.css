@@ -449,6 +449,38 @@
   color: var(--text-primary);
 }
 .processing-sub-table td:last-child { border-right: none; }
+.standard-product-tag,
+.non-standard-product-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 20px;
+  margin-right: 4px;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: middle;
+}
+.standard-product-tag {
+  border: 1px solid #b8d3ff;
+  color: #2f76d2;
+  background: #f3f8ff;
+}
+.non-standard-product-tag {
+  border: 1px solid #d8dee8;
+  color: #7a8796;
+  background: #f7f9fb;
+}
+.processing-product-display {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  gap: 4px;
+}
 .processing-sub-table .sub-table-select,
 .processing-sub-table .sub-table-input {
   width: 100%;
@@ -470,8 +502,33 @@
 }
 /* 加工成品的实际获得量与入库单价输入内容居中显示 */
 #opOutputBody [data-op-output-field="actualQty"],
-#opOutputBody .cost-price-input {
+#opOutputBody .cost-price-input,
+#recEditOutputBody [data-edit-output-field="actualQty"],
+#recEditOutputBody .cost-price-input {
   text-align: center;
+}
+.processing-reference-qty-box {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  background: #fff;
+  font-size: 13px;
+  line-height: 18px;
+}
+.processing-reference-qty-box.is-error {
+  min-width: 190px;
+  border-color: var(--danger);
+  color: var(--danger);
+  background: #fff7f7;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .unit-price-control {
   display: flex;
@@ -1553,6 +1610,8 @@
 .product-combobox-input::placeholder { color: var(--text-tertiary); }
 .template-product-select.is-open .template-product-label { width: 100%; }
 .template-product-select.is-open .template-product-label > .net-vegetable-tag,
+.template-product-select.is-open .template-product-label > .standard-product-tag,
+.template-product-select.is-open .template-product-label > .non-standard-product-tag,
 .template-product-select.is-open .template-product-label > .custom-select-text { display: none; }
 .template-product-select.is-open .product-combobox-input { display: block; }
 .product-select-empty {

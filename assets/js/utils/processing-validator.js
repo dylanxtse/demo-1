@@ -4,6 +4,24 @@
     return Number.isFinite(num) && num > 0;
   }
 
+  function isFlag(value) {
+    return value === true || value === 'true' || value === '是';
+  }
+
+  function getProduct(item) {
+    const code = item?.productCode || item?.productId || item?.goodsCode || '';
+    const products = window.ProductService?.getList?.() || window.MockProducts || [];
+    return products.find((product) => product.code === code) || {};
+  }
+
+  function isStandardProduct(item) {
+    const product = getProduct(item);
+    return isFlag(item?.isStandardProduct)
+      || isFlag(item?.isStandard)
+      || isFlag(product.isStandardProduct)
+      || isFlag(product.isStandard);
+  }
+
   window.ProcessingValidator = {
     validate(data) {
       const errors = {};
@@ -27,6 +45,8 @@
           }
           if (!isPositiveNumber(item.consumeQty)) {
             errors[`material_${index}_consumeQty`] = '消耗量必须大于0';
+          } else if (isStandardProduct(item) && !Number.isInteger(Number(item.consumeQty))) {
+            errors[`material_${index}_consumeQty`] = '标品原料消耗量必须为整数';
           } else if (isPositiveNumber(item.stock) && Number(item.consumeQty) > Number(item.stock)) {
             errors[`material_${index}_consumeQty`] = '消耗量不能超过当前库存';
           }
@@ -47,8 +67,13 @@
           if (!item.productCode) {
             errors[`output_${index}_product`] = '请选择成品商品';
           }
+          if (item.refQtyError) {
+            errors[`output_${index}_refQty`] = item.refQtyError;
+          }
           if (!isPositiveNumber(item.actualQty)) {
             errors[`output_${index}_actualQty`] = '实际获得量必须大于0';
+          } else if (isStandardProduct(item) && !Number.isInteger(Number(item.actualQty))) {
+            errors[`output_${index}_actualQty`] = '标品成品实际获得量必须为整数';
           }
           if (!isPositiveNumber(item.costPrice)) {
             errors[`output_${index}_costPrice`] = '成品入库单价必须填写';

@@ -284,6 +284,32 @@
     return state.products.find((p) => p.code === code) || null;
   }
 
+  function isFlag(value) {
+    return value === true || value === 'true' || value === '是';
+  }
+
+  function productFor(item) {
+    const code = typeof item === 'string' ? item : item?.productCode || item?.goodsCode || item?.code || '';
+    return findProduct(code) || {};
+  }
+
+  function isStandardProduct(item) {
+    const product = productFor(item);
+    return isFlag(item?.isStandardProduct)
+      || isFlag(item?.isStandard)
+      || isFlag(product.isStandardProduct)
+      || isFlag(product.isStandard);
+  }
+
+  function productStandardTag(item) {
+    return `<span class="${isStandardProduct(item) ? 'standard-product-tag' : 'non-standard-product-tag'}">${isStandardProduct(item) ? '标品' : '非标品'}</span>`;
+  }
+
+  function productTypeTags(item) {
+    const product = productFor(item);
+    return `${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${productStandardTag(item)}`;
+  }
+
   function isProductTypeAllowed(fieldType, product) {
     if (!product) return false;
     return fieldType === 'output'
@@ -332,13 +358,13 @@
   }
 
   function productNetTag(productCode) {
-    const product = findProduct(productCode);
+    const product = productFor(productCode);
     return product?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
   }
 
   function renderProductSelect(fieldType, selectedCode, isTemplateProduct = false, outputIndex = null) {
     const selectedProduct = selectedCode ? findProduct(selectedCode) : null;
-    const netTag = selectedProduct?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
+    const productTags = selectedProduct ? productTypeTags(selectedProduct) : '';
     const displayText = selectedProduct ? escapeHtml(formatProductDisplay(selectedProduct)) : '';
     const closedDisplayText = selectedProduct ? displayText : (fieldType === 'output' ? '请选择净菜商品' : '请选择非净菜商品');
     const selectableProducts = state.products.filter((product) => isProductTypeAllowed(fieldType, product));
@@ -354,7 +380,7 @@
       <div class="custom-select ${isTemplateProduct ? 'template-product-select' : ''}" data-select-type="${fieldType}">
         <div class="custom-select-trigger" data-action="toggle-select">
           <span class="template-product-label">
-            ${netTag}
+            ${productTags}
             <span class="custom-select-text ${!selectedProduct ? 'is-placeholder' : ''}">${closedDisplayText}</span>
             <input class="product-combobox-input" type="text" value="${displayText}" data-display-value="${displayText}" placeholder="搜索商品名称/编码" autocomplete="off" aria-label="搜索并选择商品" aria-autocomplete="list" aria-expanded="false" data-action="product-combobox-input">
           </span>
@@ -363,7 +389,7 @@
         <div class="custom-select-dropdown">
           <div class="product-select-options">
             ${selectableProducts.map((p) => {
-              const tag = p.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
+              const tag = productTypeTags(p);
               const isDuplicate = fieldType === 'output'
                 ? p.code !== selectedCode && selectedOutputCodes.includes(p.code)
                 : isManyToOneMaterial
@@ -642,6 +668,7 @@
               <thead>
                 <tr>
                   <th style="width:200px">原料商品</th>
+                  <th style="width:80px">是否标品</th>
                   <th style="width:80px">单位</th>
                   <th style="width:90px">当前库存</th>
                   <th style="width:90px">库存均价</th>
@@ -674,6 +701,7 @@
               <thead>
                 <tr>
                   <th style="width:180px">成品商品</th>
+                  <th style="width:80px">是否标品</th>
                   <th style="width:70px">单位</th>
                   <th style="width:100px;display:${tpl.relationType === 'many-to-one' ? 'none' : 'table-cell'}">参考加工系数</th>
                   <th style="width:90px">参考获得量</th>
@@ -766,14 +794,16 @@
     tbody.innerHTML = state.materials.map((item, index) => {
       const product = findProduct(item.productCode);
       const unit = product ? product.unit : (item.unit || '--');
+      const standard = isStandardProduct(item);
       return `
         <tr data-op-material-index="${index}">
-          <td><span class="sub-table-readonly">${productNetTag(item.productCode)}${escapeHtml(formatProductDisplay(item))}</span></td>
+          <td><span class="sub-table-readonly processing-product-display">${productNetTag(item.productCode)}${escapeHtml(formatProductDisplay(item))}</span></td>
+          <td><span class="sub-table-readonly">${standard ? '是' : '否'}</span></td>
           <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
           <td><span class="sub-table-readonly">${item.stock !== '' && item.stock != null ? item.stock : '--'}</span></td>
           <td><span class="sub-table-readonly">${item.avgPrice !== '' && item.avgPrice != null ? item.avgPrice : '--'}</span></td>
           ${isManyToOne ? `<td><span class="sub-table-readonly">${item.refConsumeQty || '--'}</span></td>` : ''}
-          <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-op-material-field="consumeQty" value="${item.consumeQty || ''}"></td>
+          <td><input class="sub-table-input" type="number" min="0" step="${standard ? '1' : '0.01'}" inputmode="${standard ? 'numeric' : 'decimal'}" placeholder="请输入" data-op-material-field="consumeQty" value="${escapeHtml(item.consumeQty ?? '')}"></td>
         </tr>
       `;
     }).join('');
@@ -789,9 +819,14 @@
     state.materials.forEach((material, index) => {
       if (index === baseIndex) return;
       const refConsumeQty = Number(material.refConsumeQty);
-      material.consumeQty = refConsumeQty > 0
-        ? (outputQty * refConsumeQty).toFixed(2)
-        : '';
+      if (!(refConsumeQty > 0)) {
+        material.consumeQty = '';
+        return;
+      }
+      const calculatedQty = outputQty * refConsumeQty;
+      material.consumeQty = isStandardProduct(material)
+        ? String(Math.max(1, Math.ceil(calculatedQty)))
+        : calculatedQty.toFixed(2);
     });
   }
 
@@ -814,8 +849,13 @@
     tbody.innerHTML = state.outputs.map((item, index) => {
       const product = findProduct(item.productCode);
       const unit = product ? product.unit : (item.unit || '--');
+      const standard = isStandardProduct(item);
       const allocation = state.costMode === 'auto' ? calculateAutoCostAllocations()[index] : null;
       const unitPrice = state.costMode === 'auto' ? allocation?.costPrice || '' : (item.costPrice || '');
+      const referenceQty = item.refQtyError
+        ? `<div class="processing-reference-qty-box is-error" data-op-output-ref-qty role="alert">${escapeHtml(item.refQtyError)}</div>`
+        : `<div class="processing-reference-qty-box" data-op-output-ref-qty>${escapeHtml(item.refQty || '--')}</div>`;
+      const actualInvalid = standard && item.actualQty !== '' && item.actualQty != null && !Number.isInteger(Number(item.actualQty));
       const orderOutputFields = showOrderDemandColumns ? `
           <td><span class="sub-table-readonly" data-op-output-sorting>${getSortingQty(item)}</span></td>
           <td><span class="sub-table-readonly" data-op-output-remaining>${calculateRemainingQty(item)}</span></td>
@@ -829,11 +869,12 @@
           </div>`;
       return `
         <tr data-op-output-index="${index}">
-          <td><span class="sub-table-readonly">${productNetTag(item.productCode)}${escapeHtml(formatProductDisplay(item))}</span></td>
+          <td><span class="sub-table-readonly processing-product-display">${productNetTag(item.productCode)}${escapeHtml(formatProductDisplay(item))}</span></td>
+          <td><span class="sub-table-readonly">${standard ? '是' : '否'}</span></td>
           <td><span class="sub-table-readonly">${escapeHtml(unit)}</span></td>
           <td style="display:${isManyToOne ? 'none' : 'table-cell'}"><span class="sub-table-readonly">${item.refCoefficient || '--'}</span></td>
-          <td><span class="sub-table-readonly">${item.refQty || '--'}</span></td>
-          <td><input class="sub-table-input" type="number" min="0" step="0.01" placeholder="请输入" data-op-output-field="actualQty" value="${item.actualQty || ''}"></td>
+          <td>${referenceQty}</td>
+          <td><input class="sub-table-input" type="number" min="0" step="${standard ? '1' : '0.01'}" inputmode="${standard ? 'numeric' : 'decimal'}" placeholder="请输入" data-op-output-field="actualQty" value="${escapeHtml(item.actualQty ?? '')}"${actualInvalid ? ' aria-invalid="true"' : ''}></td>
           ${orderOutputFields}
           <td>${costPriceContent}</td>
         </tr>
@@ -886,12 +927,12 @@
   function updateReferenceFillButton() {
     const button = document.querySelector('[data-action="fill-reference-qty"]');
     if (!button) return;
-    button.disabled = !state.outputs.some((output) => output.refQty !== '' && output.refQty != null);
+    button.disabled = !state.outputs.some((output) => !output.refQtyError && output.refQty !== '' && output.refQty != null);
   }
 
   function fillActualQtyByReference() {
     state.outputs.forEach((output) => {
-      if (output.refQty !== '' && output.refQty != null) output.actualQty = output.refQty;
+      if (!output.refQtyError && output.refQty !== '' && output.refQty != null) output.actualQty = output.refQty;
     });
     renderOpOutputTable();
     updateAutoCostPrices();
@@ -957,8 +998,40 @@
     // 当前模式区域仅用于配置计算方式。
   }
 
+  function setReferenceQuantity(output, rawQuantity) {
+    const quantity = Number(rawQuantity);
+    output.refQtyError = '';
+    if (!(quantity > 0) || !Number.isFinite(quantity)) {
+      output.refQty = '';
+      return;
+    }
+    if (isStandardProduct(output)) {
+      const integerQuantity = Math.floor(quantity);
+      if (integerQuantity < 1) {
+        output.refQty = '';
+        output.refQtyError = '获得量<1，请修改原料消耗量';
+        return;
+      }
+      output.refQty = String(integerQuantity);
+      return;
+    }
+    output.refQty = quantity.toFixed(2);
+  }
+
   function calculateRefQty() {
     const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
+    const hasInvalidStandardMaterial = state.materials.some((material) => {
+      const rawValue = String(material.consumeQty ?? '').trim();
+      const quantity = Number(rawValue);
+      return isStandardProduct(material) && rawValue && Number.isFinite(quantity) && !Number.isInteger(quantity);
+    });
+    if (hasInvalidStandardMaterial) {
+      state.outputs.forEach((output) => {
+        output.refQty = '';
+        output.refQtyError = '';
+      });
+      return;
+    }
     if (selectedTemplate?.relationType === 'many-to-one') {
       const possibleOutputQty = state.materials.map((material) => {
         const consumeQty = Number(material.consumeQty);
@@ -973,7 +1046,7 @@
         ? (state.manyToOneAutoFillLocked ? Math.min(...possibleOutputQty) : baseRefQty)
         : 0;
       state.outputs.forEach((output) => {
-        output.refQty = refQty > 0 ? refQty.toFixed(2) : '';
+        setReferenceQuantity(output, refQty);
       });
       return;
     }
@@ -981,9 +1054,10 @@
     state.outputs.forEach((output) => {
       const coefficient = Number(output.refCoefficient) || 0;
       if (coefficient > 0 && totalConsume > 0) {
-        output.refQty = (totalConsume * coefficient).toFixed(2);
+        setReferenceQuantity(output, totalConsume * coefficient);
       } else {
         output.refQty = '';
+        output.refQtyError = '';
       }
     });
   }
@@ -1040,6 +1114,7 @@
         unit: product?.unit || o.unit,
         refCoefficient: o.refCoefficient || '',
         refQty: '',
+        refQtyError: '',
         actualQty: '',
         // 手动模式不预填方案成本价，避免误认为是自动回显结果
         costPrice: ''
@@ -1086,6 +1161,7 @@
         unit: product?.unit || o.unit,
         refCoefficient: o.refCoefficient || '',
         refQty: '',
+        refQtyError: '',
         actualQty: '',
         // 手动模式不预填方案成本价，避免误认为是自动回显结果
         costPrice: ''
@@ -1117,7 +1193,8 @@
       materials: state.materials.map((m) => ({
         ...m,
         productName: findProduct(m.productCode)?.name || m.productName,
-        unit: findProduct(m.productCode)?.unit || m.unit
+        unit: findProduct(m.productCode)?.unit || m.unit,
+        isStandardProduct: isStandardProduct(m)
       })),
       outputs: state.outputs.map((o, index) => {
         const allocation = allocations[index] || {};
@@ -1125,6 +1202,7 @@
         ...o,
         productName: findProduct(o.productCode)?.name || o.productName,
         unit: findProduct(o.productCode)?.unit || o.unit,
+        isStandardProduct: isStandardProduct(o),
         sortingQty: state.operationMode === 'order' ? getSortingQty(o) : (o.sortingQty || ''),
         remainingQty: state.operationMode === 'order' ? calculateRemainingQty(o) : (o.remainingQty || ''),
         orderLineRefs: state.operationMode === 'order' ? getOrderLineRefs(o.productCode) : (o.orderLineRefs || []),
@@ -1167,7 +1245,9 @@
         const index = Number(parts[1]);
         const fieldName = parts[2];
         const row = document.querySelector(`[data-op-output-index="${index}"]`);
-        const input = row?.querySelector(`[data-op-output-field="${fieldName}"]`);
+        const input = fieldName === 'refQty'
+          ? row?.querySelector('[data-op-output-ref-qty]')
+          : row?.querySelector(`[data-op-output-field="${fieldName}"]`);
         if (input) input.setAttribute('aria-invalid', 'true');
       }
     });
@@ -1315,18 +1395,60 @@
     });
 
     form.addEventListener('focusout', (event) => {
+      const actualQtyInput = event.target.closest('[data-op-output-field="actualQty"]');
+      if (actualQtyInput) {
+        const row = actualQtyInput.closest('[data-op-output-index]');
+        const index = Number(row?.dataset.opOutputIndex);
+        const output = state.outputs[index];
+        if (!output) return;
+        const rawValue = actualQtyInput.value.trim();
+        const quantity = Number(rawValue);
+        actualQtyInput.removeAttribute('aria-invalid');
+        if (!rawValue) {
+          output.actualQty = '';
+          updateRemainingQty(index);
+          updateAutoCostPrices();
+          return;
+        }
+        if (!Number.isFinite(quantity)
+          || (isStandardProduct(output) && !Number.isInteger(quantity))) {
+          actualQtyInput.setAttribute('aria-invalid', 'true');
+          if (isStandardProduct(output)) showOpFormStatus('标品成品实际获得量必须为整数', 'error');
+          return;
+        }
+        const normalizedValue = isStandardProduct(output) ? String(quantity) : quantity.toFixed(2);
+        actualQtyInput.value = normalizedValue;
+        output.actualQty = normalizedValue;
+        updateRemainingQty(index);
+        updateAutoCostPrices();
+        return;
+      }
       const consumeInput = event.target.closest('[data-op-material-field="consumeQty"]');
       if (!consumeInput) return;
       const rawValue = consumeInput.value.trim();
       const quantity = Number(rawValue);
-      if (!rawValue || !Number.isFinite(quantity)) return;
-
-      const normalizedValue = quantity.toFixed(2);
-      consumeInput.value = normalizedValue;
       const row = consumeInput.closest('[data-op-material-index]');
       const index = Number(row?.dataset.opMaterialIndex);
-      if (!state.materials[index]) return;
-      state.materials[index].consumeQty = normalizedValue;
+      const material = state.materials[index];
+      if (!material) return;
+      consumeInput.removeAttribute('aria-invalid');
+      if (!rawValue) {
+        material.consumeQty = '';
+        calculateRefQty();
+        renderOpOutputTable();
+        updateOpCostModeVisibility();
+        return;
+      }
+      if (!Number.isFinite(quantity)
+        || (isStandardProduct(material) && !Number.isInteger(quantity))) {
+        consumeInput.setAttribute('aria-invalid', 'true');
+        if (isStandardProduct(material)) showOpFormStatus('标品原料消耗量必须为整数', 'error');
+        return;
+      }
+
+      const normalizedValue = isStandardProduct(material) ? String(quantity) : quantity.toFixed(2);
+      consumeInput.value = normalizedValue;
+      material.consumeQty = normalizedValue;
       calculateRefQty();
       renderOpOutputTable();
       updateOpCostModeVisibility();
@@ -1337,12 +1459,22 @@
       if (consumeInput) {
         const row = consumeInput.closest('[data-op-material-index]');
         const index = Number(row.dataset.opMaterialIndex);
-        state.materials[index].consumeQty = consumeInput.value;
+        const material = state.materials[index];
+        if (!material) return;
+        const rawValue = consumeInput.value.trim();
+        const quantity = Number(rawValue);
+        const standardInputInvalid = isStandardProduct(material)
+          && rawValue
+          && Number.isFinite(quantity)
+          && !Number.isInteger(quantity);
+        if (standardInputInvalid) consumeInput.setAttribute('aria-invalid', 'true');
+        else consumeInput.removeAttribute('aria-invalid');
+        material.consumeQty = consumeInput.value;
         const selectedTemplate = state.templates.find((template) => template.id === state.selectedTemplateId);
         const isManyToOne = selectedTemplate?.relationType === 'many-to-one';
         if (isManyToOne) {
           const previousBaseIndex = state.manyToOneBaseMaterialIndex;
-          const isPositiveConsumeQty = Number(consumeInput.value) > 0;
+          const isPositiveConsumeQty = !standardInputInvalid && Number(consumeInput.value) > 0;
           const isInitialBaseEntry = previousBaseIndex === index
             && consumeInput.dataset.manyToOneValueOnFocus === 'false'
             && !state.manyToOneAutoFillLocked;
@@ -1375,7 +1507,17 @@
       if (actualQtyInput) {
         const row = actualQtyInput.closest('[data-op-output-index]');
         const index = Number(row.dataset.opOutputIndex);
-        state.outputs[index].actualQty = actualQtyInput.value;
+        const output = state.outputs[index];
+        if (!output) return;
+        const rawValue = actualQtyInput.value.trim();
+        const quantity = Number(rawValue);
+        const standardInputInvalid = isStandardProduct(output)
+          && rawValue
+          && Number.isFinite(quantity)
+          && !Number.isInteger(quantity);
+        if (standardInputInvalid) actualQtyInput.setAttribute('aria-invalid', 'true');
+        else actualQtyInput.removeAttribute('aria-invalid');
+        output.actualQty = actualQtyInput.value;
         updateRemainingQty(index);
         updateAutoCostPrices();
         return;
@@ -1798,7 +1940,7 @@
     tbody.innerHTML = state.templateEditData.materials.map((item, index) => {
       const displayData = getProductDisplayData(item);
       const materialDisplay = item.productCode
-        ? `${displayData.product?.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}<span>${escapeHtml(formatProductDisplay(item))}</span>`
+        ? `${productTypeTags(item)}<span>${escapeHtml(formatProductDisplay(item))}</span>`
         : '';
       const materialReadonly = isEdit && !isManyToOne;
       const productCell = materialReadonly
@@ -1837,7 +1979,7 @@
       const product = item.productCode ? findProduct(item.productCode) : null;
       const unit = product ? product.unit : (item.unit || '--');
       const outputProductCell = state.templateEditMode === 'edit' && isManyToOne
-        ? `<span class="sub-table-readonly template-product-display">${item.productCode ? escapeHtml(formatProductDisplay(item)) : '--'}</span>`
+        ? `<span class="sub-table-readonly template-product-display">${item.productCode ? `${productTypeTags(item)}${escapeHtml(formatProductDisplay(item))}` : '--'}</span>`
         : renderProductSelect('output', item.productCode, true, index);
       return `
         <tr data-tpl-output-index="${index}">
