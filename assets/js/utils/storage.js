@@ -377,6 +377,7 @@
     purchasePricePriority4: '供应商报价',
     purchasePricePriority5: '手动定价',
     purchasePricePriority6: '',
+    allowClientEditPrice: true,
     splitOrderByMeal: true,
     amountDecimal: '2',
     quantityDecimal: '0',
