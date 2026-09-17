@@ -105,7 +105,7 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-delete { padding: 0; border: 0; color: #477fca; background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
 .school-recipe-demand-delete:hover { color: #477fca; }
 .school-recipe-demand-delete:disabled { color: #b8c0cb; cursor: not-allowed; }
-.school-recipe-demand-product-table { min-width: 1140px; font-size: 13px; }
+.school-recipe-demand-product-table { min-width: 1240px; font-size: 13px; }
 .school-recipe-demand-product-table th,
 .school-recipe-demand-product-table td { height: 42px; padding: 6px 8px; }
 .school-recipe-demand-product-table th { height: 38px; }
@@ -115,6 +115,7 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-product-table .col-standard { width: 80px; }
 .school-recipe-demand-product-table .col-code { width: 110px; }
 .school-recipe-demand-product-table .col-unit { width: 56px; }
+.school-recipe-demand-product-table .col-price { width: 100px; }
 .school-recipe-demand-product-table .col-quantity { width: 112px; }
 .school-recipe-demand-product-table .col-purchase { width: 116px; }
 .school-recipe-demand-product-table .col-action { width: 92px; }
@@ -152,6 +153,17 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-product-name { overflow: hidden; color: #3d4a5c !important; text-align: center !important; text-overflow: ellipsis; white-space: nowrap; }
 .school-recipe-net-vegetable-tag { display: inline-flex; height: 20px; align-items: center; justify-content: center; margin-right: 6px; padding: 0 5px; border: 1px solid var(--success); border-radius: 3px; color: var(--success); background: #f3fbf6; font-size: 12px; font-weight: 400; line-height: 1; vertical-align: middle; }
 .school-recipe-demand-product-name { font-weight: 400; }
+.school-recipe-demand-unit-price-cell { padding: 4px 6px !important; }
+.school-recipe-demand-unit-price-cell.is-readonly { background: #fafbfc; }
+.school-recipe-demand-unit-price-input { display: block; width: 100%; height: 30px; box-sizing: border-box; padding: 0 5px; border: 1px solid transparent; border-radius: 3px; color: #3d4a5c; background: transparent; font: inherit; text-align: center; outline: none; }
+.school-recipe-demand-unit-price-input:hover,
+.school-recipe-demand-unit-price-input:focus { border-color: #a9c8fa; background: #fff; }
+.school-recipe-demand-unit-price-input[aria-invalid="true"],
+.school-recipe-demand-unit-price-input[aria-invalid="true"]:focus { border-color: #f04e4e; background: #fff7f7; box-shadow: 0 0 0 1px rgba(240, 78, 78, .08); }
+.school-recipe-demand-unit-price-input:disabled { border-color: #eef1f5; color: #9aa4b2; background: #f7f8fa; cursor: not-allowed; }
+.school-recipe-demand-unit-price-input:disabled:hover { border-color: #eef1f5; background: #f7f8fa; }
+.school-recipe-demand-unit-price-input::-webkit-inner-spin-button,
+.school-recipe-demand-unit-price-input::-webkit-outer-spin-button { margin: 0; appearance: none; }
 .school-recipe-demand-purchase-cell { padding: 4px 6px !important; }
 .school-recipe-demand-purchase-control { position: relative; min-width: 0; }
 .school-recipe-demand-purchase-input { display: block; width: 100%; height: 30px; box-sizing: border-box; padding: 0 22px 0 5px; border: 1px solid transparent; border-radius: 3px; color: #3d4a5c; background: transparent; font: inherit; text-align: center; outline: none; }

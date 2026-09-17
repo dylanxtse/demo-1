@@ -20,6 +20,7 @@
     expectedAt: '',
     expectedAtManuallyChanged: false,
     submitting: false,
+    unitPriceOverrides: {},
     purchaseQtyOverrides: {}
   };
   const defaultExpectedAt = (dates = []) => {
@@ -56,6 +57,19 @@
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
+  const amountDecimalPlaces = () => window.SchoolOrderService?.amountDecimalPlaces?.() ?? 2;
+  const minimumAmount = () => window.SchoolOrderService?.minimumAmount?.() ?? 10 ** -amountDecimalPlaces();
+  const isValidPrice = (value) => window.SchoolOrderService?.isValidPrice?.(value) ?? (() => {
+    const text = String(value ?? '').trim();
+    const parsed = Number(text);
+    return Boolean(text) && Number.isFinite(parsed) && parsed >= minimumAmount();
+  })();
+  const priceErrorMessage = (value) => window.SchoolOrderService?.priceErrorMessage?.(value) || (() => {
+    const text = String(value ?? '').trim();
+    if (!text) return '单价不能为空';
+    if (Number(text) === 0) return '单价不能为0';
+    return `单价必须大于等于${minimumAmount().toFixed(amountDecimalPlaces())}`;
+  })();
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -70,6 +84,14 @@
       useGrouping: false
     }) : '';
   };
+  const fixedPrice = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed.toLocaleString('zh-CN', {
+      minimumFractionDigits: amountDecimalPlaces(),
+      maximumFractionDigits: amountDecimalPlaces(),
+      useGrouping: false
+    }) : '';
+  };
   const productDisplay = (item) => window.DomUtils?.formatProductDisplay
     ? window.DomUtils.formatProductDisplay(item)
     : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
@@ -78,6 +100,9 @@
     const catalog = window.SchoolOrderService?.getProductCatalog?.() || window.DemoStore?.get?.('products') || window.MockProducts || [];
     return catalog.find((product) => String(product.code || product.id) === String(code)) || {};
   };
+  const currentSalesPrice = (item) => demandService.currentSalesPrice?.(productForIngredient(item)) ?? 0;
+  const canModifyUnitPrice = () => Boolean(demandService.canModifyClientOrderPrice?.());
+  const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
   const canModifyPurchaseQuantity = (item) => {
     const product = productForIngredient(item);
     const value = item?.allowSchoolModifyPurchaseQuantity ?? product?.allowSchoolModifyPurchaseQuantity;
@@ -93,6 +118,13 @@
   };
   const purchaseRowKey = (item) => String(item?.key || `${item?.productCode || item?.productName || ''}::${item?.unit || '--'}`);
   const purchaseQuantityKey = (item, participantKey) => `${purchaseRowKey(item)}::${participantKey}`;
+  const unitPriceKey = (item) => purchaseRowKey(item);
+  const unitPriceValue = (item) => {
+    const key = unitPriceKey(item);
+    return canModifyUnitPrice() && hasOwn(state.unitPriceOverrides, key)
+      ? state.unitPriceOverrides[key]
+      : currentSalesPrice(item);
+  };
   const hasPurchaseQuantityOverride = (item, participantKey) => Object.prototype.hasOwnProperty.call(
     state.purchaseQtyOverrides,
     purchaseQuantityKey(item, participantKey)
@@ -189,6 +221,7 @@
   function renderProductTable(preview) {
     const participants = preview.participants || [];
     const linkedRows = preview.rows.filter((row) => row.mappingStatus === '已关联');
+    const priceEditable = canModifyUnitPrice();
     const participantColumns = participants.map((participant) => {
       const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
       return `<th colspan="2">${escapeHtml(name)}</th>`;
@@ -203,8 +236,14 @@
       .filter((row) => row.mappingStatus === '已关联')
       .map((row, index) => {
         const productKey = purchaseRowKey(row);
+        const priceKey = unitPriceKey(row);
+        const unitPrice = unitPriceValue(row);
+        const priceOverridden = priceEditable && hasOwn(state.unitPriceOverrides, priceKey);
         const editable = canModifyPurchaseQuantity(row);
         const hasRowPurchaseQuantity = editable && participants.some((participant) => Number(purchaseQuantityValue(row, participant)) > 0);
+        const priceReadonlyTitle = priceEditable ? '' : ' title="企业端已关闭客户端下单修改单价权限"';
+        const priceInputValue = priceOverridden ? String(unitPrice ?? '') : fixedPrice(unitPrice);
+        const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell${priceEditable ? '' : ' is-readonly'}"${priceReadonlyTitle}><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${escapeHtml(priceInputValue)}" data-unit-price data-unit-price-key="${escapeHtml(priceKey)}" data-unit-price-overridden="${priceOverridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${row.productName || '商品'}单价${priceEditable ? '' : '（企业端关闭修改）'}`)}"${priceEditable ? '' : ' disabled'}></td>`;
         const participantCells = participants.map((participant) => {
           const demandCell = `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td>`;
           const key = purchaseQuantityKey(row, participant.key);
@@ -222,12 +261,13 @@
           <td>${isStandardProduct(row) ? '是' : '否'}</td>
           <td>${escapeHtml(row.productCode || '--')}</td>
           <td>${escapeHtml(row.unit || '--')}</td>
+          ${priceCell}
           ${participantCells}
           <td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="clear-purchase-row" data-product-key="${escapeHtml(productKey)}" data-product-name="${escapeHtml(productDisplay(row))}" title="${editable ? '清空该商品全部采购量' : '企业端已关闭学校修改采购量'}"${hasRowPurchaseQuantity ? '' : ' disabled'}>清空采购量</button></td>
         </tr>`;
       }).join('');
     return rows
-      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${participantColgroup}<col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${participantColumns}<th rowspan="2">操作</th></tr><tr>${participantSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>`
+      ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit"><col class="col-price">${participantColgroup}<col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th><th rowspan="2">单价</th>${participantColumns}<th rowspan="2">操作</th></tr><tr>${participantSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>`
       : '<div class="school-recipe-demand-empty">当前选中日期暂无可提交的商品需求</div>';
   }
 
@@ -289,6 +329,44 @@
     if (!key || input.disabled) return;
     input.dataset.purchaseOverridden = 'true';
     state.purchaseQtyOverrides[key] = input.value;
+  }
+
+  function rememberUnitPrice(input) {
+    const key = input?.dataset?.unitPriceKey;
+    if (!key || input.disabled || !canModifyUnitPrice()) return;
+    input.dataset.unitPriceOverridden = 'true';
+    state.unitPriceOverrides[key] = input.value;
+  }
+
+  function clearUnitPriceValidation(input) {
+    if (!input || input.disabled) return;
+    input.setCustomValidity('');
+    input.classList.remove('is-invalid');
+    input.removeAttribute('aria-invalid');
+  }
+
+  function validateUnitPriceInput(input, { format = false } = {}) {
+    if (!input || input.disabled) return true;
+    const valid = isValidPrice(input.value);
+    input.setCustomValidity(valid ? '' : priceErrorMessage(input.value));
+    input.classList.toggle('is-invalid', !valid);
+    input.setAttribute('aria-invalid', String(!valid));
+    if (valid && format) input.value = fixedPrice(input.value);
+    return valid;
+  }
+
+  function syncUnitPriceInputs() {
+    let firstInvalid = null;
+    body.querySelectorAll('[data-unit-price]').forEach((input) => {
+      if (!validateUnitPriceInput(input, { format: true }) && !firstInvalid) firstInvalid = input;
+      if (input.dataset.unitPriceOverridden === 'true') rememberUnitPrice(input);
+    });
+    if (firstInvalid) {
+      firstInvalid.focus();
+      showToast(priceErrorMessage(firstInvalid.value), true);
+      return false;
+    }
+    return true;
   }
 
   function normalizePurchaseQuantityInput(input) {
@@ -419,6 +497,7 @@
     demandService.submit([...state.selectedDates], {
       expectedAt: state.expectedAt,
       canteen: currentCanteenScope,
+      unitPriceOverrides: { ...state.unitPriceOverrides },
       purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }
       })
       .then(() => {
@@ -497,6 +576,12 @@
   }
 
   page.addEventListener('change', (event) => {
+    const unitPriceInput = event.target.closest('[data-unit-price]');
+    if (unitPriceInput) {
+      clearUnitPriceValidation(unitPriceInput);
+      rememberUnitPrice(unitPriceInput);
+      return;
+    }
     const purchaseInput = event.target.closest('[data-purchase-quantity]');
     if (purchaseInput) {
       normalizePurchaseQuantityInput(purchaseInput);
@@ -507,6 +592,12 @@
   });
 
   page.addEventListener('input', (event) => {
+    const unitPriceInput = event.target.closest('[data-unit-price]');
+    if (unitPriceInput) {
+      clearUnitPriceValidation(unitPriceInput);
+      rememberUnitPrice(unitPriceInput);
+      return;
+    }
     const purchaseInput = event.target.closest('[data-purchase-quantity]');
     if (purchaseInput) {
       rememberPurchaseQuantity(purchaseInput);
@@ -525,6 +616,7 @@
     if (!button) return;
     const action = button.dataset.action;
     if (action === 'restore-default') {
+      state.unitPriceOverrides = {};
       state.purchaseQtyOverrides = {};
       renderBody({ preserveViewport: true });
       showToast('已恢复默认采购量');
@@ -567,6 +659,7 @@
       return;
     }
     if (action !== 'submit' || state.submitting) return;
+    if (!syncUnitPriceInputs()) return;
     syncPurchaseQuantityInputs();
     const preview = demandService.buildPreview([...state.selectedDates], {
       canteen: currentCanteenScope
