@@ -8,7 +8,7 @@
     orderPricePriority2: '市场价',
     orderPricePriority3: '近一次销售价',
     orderPricePriority4: '手动定价',
-    allowClientEditPrice: false,
+    allowClientEditPrice: true,
     splitOrderByMeal: true,
     purchasePriceMode: '订价模式',
     purchasePricePriority1: '协议价',
