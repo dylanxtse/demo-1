@@ -530,6 +530,13 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+#recEditOutputBody .processing-reference-qty-box {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 .unit-price-control {
   display: flex;
   align-items: center;

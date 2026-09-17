@@ -156,6 +156,11 @@
     return `<span class="processing-record-product-line"><span class="name-cell processing-record-product-name">${productTypeTags({ productCode })}<span class="processing-record-product-label">${escapeHtml(display)}</span></span>${nameSuffix}</span>`;
   }
 
+  function renderListProductName(productCode, productName, unit, nameSuffix = '') {
+    const display = window.DomUtils.formatProductDisplay({ productCode, productName, unit });
+    return `<span class="processing-record-product-line"><span class="name-cell processing-record-product-name">${productNetTag(productCode)}<span class="processing-record-product-label">${escapeHtml(display)}</span></span>${nameSuffix}</span>`;
+  }
+
   function getOperationNodeType(log) {
     const action = String(log?.action || '');
     const desc = String(log?.desc || '');
@@ -328,8 +333,8 @@
 
   function summarizeMaterials(materials) {
     if (!materials || materials.length === 0) return '--';
-    if (materials.length === 1) return renderProductName(materials[0].productCode, materials[0].productName, materials[0].unit);
-    return `${renderProductName(materials[0].productCode, materials[0].productName, materials[0].unit)}<span class="processing-record-product-more">等${materials.length}种</span>`;
+    if (materials.length === 1) return renderListProductName(materials[0].productCode, materials[0].productName, materials[0].unit);
+    return `${renderListProductName(materials[0].productCode, materials[0].productName, materials[0].unit)}<span class="processing-record-product-more">等${materials.length}种</span>`;
   }
 
   function renderRowActions(order) {
@@ -379,11 +384,11 @@
     return materials.map((material, index) => `
       <tr class="processing-record-sub-row is-multi-material" data-order-id="${escapeHtml(order.id)}">
         ${renderRecordIdentityCells(order, rowSpan, index)}
-        <td class="processing-record-material-col">${renderProductName(material.productCode, material.productName, material.unit, materialCount > materials.length && index === materials.length - 1 ? `<button class="btn-text record-material-more" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">更多</button>` : '')}</td>
+        <td class="processing-record-material-col">${renderListProductName(material.productCode, material.productName, material.unit, materialCount > materials.length && index === materials.length - 1 ? `<button class="btn-text record-material-more" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">更多</button>` : '')}</td>
         <td>${escapeHtml(material.consumeQty !== '' && material.consumeQty != null ? `${material.consumeQty}${material.unit || ''}` : '--')}</td>
         ${index === 0 ? `
           <td class="record-output-product-cell processing-record-product-col" rowspan="${rowSpan}">
-            <div class="record-output-product">${renderProductName(output.productCode, output.productName, output.unit)}</div>
+            <div class="record-output-product">${renderListProductName(output.productCode, output.productName, output.unit)}</div>
           </td>
           <td class="record-output-qty-cell" rowspan="${rowSpan}">${escapeHtml(output.actualQty !== '' && output.actualQty != null ? `${output.actualQty}${output.unit || ''}` : '--')}</td>
         ` : ''}
@@ -411,7 +416,7 @@
       <tr class="processing-record-sub-row ${rowClass}" data-order-id="${escapeHtml(order.id)}">
         ${sharedCells(index)}
         <td class="record-output-product-cell processing-record-product-col">
-          <div class="record-output-product">${renderProductName(output.productCode, output.productName, output.unit, outputCount > 2 && index === 1 ? `<button class="btn-text record-output-more" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">更多</button>` : '')}</div>
+          <div class="record-output-product">${renderListProductName(output.productCode, output.productName, output.unit, outputCount > 2 && index === 1 ? `<button class="btn-text record-output-more" type="button" data-row-action="detail" data-id="${escapeHtml(order.id)}">更多</button>` : '')}</div>
         </td>
         <td class="record-output-qty-cell">${escapeHtml(output.actualQty !== '' && output.actualQty != null ? `${output.actualQty}${output.unit || ''}` : '--')}</td>
         ${renderRecordTailCells(order, rowSpan, index)}
