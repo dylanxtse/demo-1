@@ -35,6 +35,16 @@
     return Number.isFinite(parsed) ? parsed : fallback;
   };
   const quantity = (value) => Number(number(value).toFixed(2));
+  const amountDecimalPlaces = () => schoolOrderService.amountDecimalPlaces?.() ?? 2;
+  const minimumAmount = () => schoolOrderService.minimumAmount?.() ?? 10 ** -amountDecimalPlaces();
+  const normalizeAmount = (value) => {
+    const parsed = number(value);
+    return Number(parsed.toFixed(amountDecimalPlaces()));
+  };
+  const isEnabled = (value) => value === true || value === 'true' || value === '是' || value === 1 || value === '1';
+  const canModifyClientOrderPrice = () => isEnabled(window.DemoStore?.getSettings?.()?.allowClientEditPrice);
+  const currentSalesPrice = (product) => schoolOrderService.currentSalesPrice?.(product)
+    ?? normalizeAmount(product?.currentSalesPrice ?? product?.currentPrice ?? product?.salesPrice ?? product?.salePrice ?? product?.marketPrice);
   const demandQuantity = (value) => number(value);
   const isStandardProduct = (product) => product?.isStandardProduct === true || product?.isStandardProduct === 'true' || product?.isStandardProduct === '是'
     || product?.isStandard === true || product?.isStandard === 'true' || product?.isStandard === '是';
@@ -152,12 +162,15 @@
 
   function aggregateRows(summaries, participants = summaries.find((summary) => summary?.participants?.length)?.participants || []) {
     const rows = new Map();
+    const productMap = new Map((schoolOrderService.getProductCatalog?.() || []).map((product) => [String(product.code || product.id), product]));
     summaries.forEach((summary) => {
       (summary.calculation.rows || []).forEach((row) => {
         const key = row.key || `${row.productCode || row.productName}::${row.unit || '--'}`;
+        const product = productMap.get(String(row.productCode || '')) || {};
         const current = rows.get(key) || {
           ...clone(row),
           key,
+          unitPrice: currentSalesPrice(product),
           ingredientNames: [],
           mealNames: [],
           dishNames: [],
@@ -389,6 +402,23 @@
     return editable;
   }
 
+  function normalizeUnitPrice(value, product) {
+    return schoolOrderService.assertValidPrice?.(value) || normalizeAmount(value);
+  }
+
+  function editableUnitPriceOverrides(preview, overrides, productMap) {
+    if (!canModifyClientOrderPrice()) return {};
+    const editable = {};
+    (preview.rows || []).forEach((row) => {
+      if (row.mappingStatus !== '已关联') return;
+      const key = purchaseRowKey(row);
+      if (!hasOwn(overrides, key)) return;
+      const product = productMap.get(String(row.productCode)) || {};
+      editable[key] = normalizeUnitPrice(overrides[key], product);
+    });
+    return editable;
+  }
+
   function participantItems(summary, participantKey, productMap, meal = null, options = {}) {
     const qtyKey = `${participantKey}Qty`;
     const sourceRows = meal?.rows || summary.items || [];
@@ -404,7 +434,10 @@
         const participant = (summary.participants || []).find((item) => item.key === participantKey)
           || LEGACY_PARTICIPANTS.find((item) => item.key === participantKey)
           || { label: participantKey, orderTag: participantKey };
-        const orderPrice = quantity(product.marketPrice || 0);
+        const priceKey = purchaseRowKey(row);
+        const orderPrice = canModifyClientOrderPrice() && hasOwn(options.unitPriceOverrides, priceKey)
+          ? normalizeUnitPrice(options.unitPriceOverrides[priceKey], product)
+          : currentSalesPrice(product);
         return {
           productCode: row.productCode,
           productName: row.productName || product.name || row.ingredientNames?.[0] || '采购商品',
@@ -415,6 +448,7 @@
           isStandardProduct: isStandardProduct(product),
           orderQty,
           orderPrice,
+          currentSalesPrice: currentSalesPrice(product),
           marketPrice: orderPrice,
           remark: `食谱${summary.date}${meal?.name || ''}${participant.label || participant.tagName || participantKey}需求`
         };
@@ -508,6 +542,11 @@
     const createdAt = timestamp();
     const productMap = getProductMap();
     const splitOrderByMeal = shouldSplitOrderByMeal();
+    const unitPriceOverrides = editableUnitPriceOverrides(
+      preview,
+      options.unitPriceOverrides || {},
+      productMap
+    );
     const purchaseQuantityOverrides = editablePurchaseQuantityOverrides(
       preview,
       options.purchaseQuantityOverrides || {},
@@ -522,6 +561,7 @@
       participants: clone(preview.participants),
       dates: clone(preview.dates),
       excludedProductKeys: [...excludedProductKeys],
+      unitPriceOverrides: clone(unitPriceOverrides),
       purchaseQuantityOverrides: clone(purchaseQuantityOverrides),
       expectedAt,
       recipeVersion: preview.dateSummaries.find((item) => item.menu)?.menu?.version || recipeService.MENU_VERSION,
@@ -584,7 +624,7 @@
         const mealSources = preview.dateSummaries.flatMap((summary) => orderGroup.meals.map((mealDefinition) => {
           const meal = (summary.calculation.mealRows || []).find((item) => String(item.key || item.name || '') === mealDefinition.key);
           if (!meal) return null;
-          const items = participantItems(summary, participant.key, productMap, meal, { purchaseQuantityAllocations, excludedProductKeys });
+          const items = participantItems(summary, participant.key, productMap, meal, { purchaseQuantityAllocations, unitPriceOverrides, excludedProductKeys });
           return {
             date: summary.date,
             meal,
@@ -679,6 +719,8 @@
     PARTICIPANTS: LEGACY_PARTICIPANTS,
     participantsFor,
     currentCanteen,
+    canModifyClientOrderPrice,
+    currentSalesPrice,
     getAll() {
       return readAll().sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''))).map(clone);
     },

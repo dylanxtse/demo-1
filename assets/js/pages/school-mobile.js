@@ -137,6 +137,42 @@
   const productName = (item) => item?.productName || productFor(item).name || item?.name || '未关联采购商品';
   const productCode = (item) => item?.productCode || item?.productId || item?.goodsCode || productFor(item).code || productFor(item).id || '--';
   const productUnit = (item) => item?.unit || item?.productUnit || productFor(item).unit || '--';
+  const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
+  const canModifyConfirmUnitPrice = () => Boolean(demandService.canModifyClientOrderPrice?.());
+  const currentConfirmUnitPrice = (item) => {
+    const product = productFor(item);
+    const servicePrice = product?.code || product?.id
+      ? demandService.currentSalesPrice?.(product)
+      : null;
+    const value = Number.isFinite(Number(servicePrice)) && Number(servicePrice) > 0
+      ? servicePrice
+      : item?.unitPrice;
+    return Number.isFinite(Number(value)) ? Number(value) : 0;
+  };
+  const confirmUnitPrice = (item) => {
+    const key = purchaseRowKey(item);
+    const override = state.unitPriceOverrides[key];
+    return canModifyConfirmUnitPrice() && override !== '' && override != null && Number.isFinite(Number(override))
+      ? Number(override)
+      : currentConfirmUnitPrice(item);
+  };
+  const fixedPrice = (value) => {
+    const parsed = Number(value);
+    const decimals = orderService.amountDecimalPlaces?.() ?? 2;
+    return Number.isFinite(parsed) ? parsed.toLocaleString('zh-CN', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: false
+    }) : '';
+  };
+  const minimumPrice = () => orderService.minimumAmount?.() ?? 0.01;
+  const isValidConfirmUnitPrice = (value) => orderService.isValidPrice?.(value)
+    ?? (() => {
+      const text = String(value ?? '').trim();
+      const parsed = Number(text);
+      return Boolean(text) && Number.isFinite(parsed) && parsed >= minimumPrice();
+    })();
+  const confirmUnitPriceError = (value) => orderService.priceErrorMessage?.(value) || '请输入有效单价';
   const isStandardProduct = (item) => Boolean(
     item?.isStandardProduct === true
     || item?.isStandardProduct === 'true'
@@ -223,9 +259,9 @@
         ['staple-special', '特级面粉'], ['staple-grain', '杂粮米']
       ],
       products: [
-        { id: 'order-staple-black-rice', code: 'SP0300034', name: '黑大米', unit: '斤', price: 10, stock: 150, subKey: 'staple-root', spec: '25kg/袋' },
+        { id: 'order-staple-black-rice', code: 'SP0300034', name: '黑大米', unit: '袋', price: 500, stock: 150, subKey: 'staple-root', spec: '25kg/袋' },
         { id: 'order-staple-rice', code: 'SP0300025', name: '大米', unit: 'KG', price: 19, stock: 120, subKey: 'staple-rice', spec: '散装' },
-        { id: 'order-staple-flour', code: 'SP0300016', name: '面粉', unit: '斤', price: 30, stock: 80, subKey: 'staple-flour', spec: '25kg/袋' },
+        { id: 'order-staple-flour', code: 'SP0300016', name: '面粉', unit: '袋', price: 1500, stock: 80, subKey: 'staple-flour', spec: '25kg/袋' },
         { id: 'order-staple-cake', code: 'SP0300023', name: '大饼', unit: '斤', price: 1, stock: 90, subKey: 'staple-root', spec: '散装' }
       ]
     },
@@ -309,7 +345,12 @@
     return Object.fromEntries(Object.entries(source).map(([id, value]) => {
       const entry = typeof value === 'number' ? { qty: value, note: '' } : (value || {});
       const qty = Math.max(0, Math.floor(Number(entry.qty) || 0));
-      return [id, { qty, note: String(entry.note || '') }];
+      const rawPrice = entry.price ?? entry.unitPrice;
+      const normalized = { qty, note: String(entry.note || '') };
+      if (rawPrice !== '' && rawPrice != null && Number.isFinite(Number(rawPrice))) {
+        normalized.price = Number(rawPrice);
+      }
+      return [id, normalized];
     }).filter(([, entry]) => entry.qty > 0));
   };
   const readProductOrderOrders = () => {
@@ -329,14 +370,14 @@
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     productCount: 2,
-    orderAmount: 69,
+    orderAmount: 2519,
     items: [
       {
         productId: 'order-staple-black-rice',
         productCode: 'SP0300034',
         productName: '黑大米',
-        unit: '斤',
-        orderPrice: 10,
+        unit: '袋',
+        orderPrice: 500,
         orderQty: 5,
         remark: '请按食堂要求分装'
       },
@@ -374,6 +415,8 @@
     toastTimer: 0,
     confirmDates: new Set(),
     confirmParticipantKey: '',
+    unitPriceOverrides: {},
+    unitPriceEditing: false,
     purchaseQtyOverrides: {},
     purchaseQuantityEditingKey: '',
     expectedAt: '',
@@ -534,8 +577,41 @@
     return productOrderCartRows().length;
   }
 
+  function canModifyProductOrderPrice() {
+    return orderService.canModifyClientOrderPrice?.() === true;
+  }
+
+  function productBasePrice(product) {
+    const value = product?.price;
+    return Number.isFinite(Number(value)) ? Number(value) : 0;
+  }
+
+  function productOrderPrice(product, entry = {}) {
+    const override = entry?.price;
+    if (canModifyProductOrderPrice() && override !== '' && override != null && Number.isFinite(Number(override))) {
+      return Number(override);
+    }
+    return productBasePrice(product);
+  }
+
+  function productOrderPriceText(value) {
+    const decimals = orderService.amountDecimalPlaces?.() ?? 2;
+    return Number(value || 0).toFixed(decimals);
+  }
+
+  function productOrderSetPrice(productId, value) {
+    const product = productOrderFindProduct(productId);
+    if (!product || !canModifyProductOrderPrice()) return;
+    const existing = state.productCart[productId] || {};
+    const text = String(value ?? '').trim();
+    const price = text === '' ? '' : Number(text);
+    if (text && !Number.isFinite(price)) return;
+    state.productCart[productId] = { ...existing, price };
+    if (!state.orderDetailProductAddMode) persistProductOrderCart();
+  }
+
   function productOrderCartTotal() {
-    return productOrderCartRows().reduce((total, row) => total + Number(row.product.price || 0) * Number(row.entry.qty || 0), 0);
+    return productOrderCartRows().reduce((total, row) => total + productOrderPrice(row.product, row.entry) * Number(row.entry.qty || 0), 0);
   }
 
   function productOrderSetQuantity(productId, value) {
@@ -546,9 +622,11 @@
     if (!next) {
       delete state.productCart[productId];
     } else {
+      const existing = state.productCart[productId] || {};
       state.productCart[productId] = {
+        ...existing,
         qty: next,
-        note: String(state.productCart[productId]?.note || '')
+        note: String(existing.note || '')
       };
     }
     if (!state.orderDetailProductAddMode) persistProductOrderCart();
@@ -677,12 +755,14 @@
   function renderProductCard(product) {
     const entry = state.productCart[product.id] || {};
     const qty = Number(entry.qty || 0);
+    const priceEditable = canModifyProductOrderPrice();
+    const price = productOrderPrice(product, entry);
+    const unit = product.unit || '--';
+    const readonlyTitle = priceEditable ? '' : ' title="企业端已关闭客户端下单修改单价权限"';
     return '<article class="school-mobile-product-row" data-product-id="' + escapeHtml(product.id) + '">'
       + '<img class="school-mobile-product-image" src="' + productOrderAssetRoot + 'product-placeholder.jpg" alt="' + escapeHtml(product.name) + '">'
       + '<div class="school-mobile-product-info">'
-      + '<div class="school-mobile-product-title"><strong>' + escapeHtml(product.name) + '</strong><span class="school-mobile-product-unit"><input type="number" disabled value="' + escapeHtml(product.stock) + '" aria-label="' + escapeHtml(product.name + '库存') + '">' + escapeHtml(product.unit) + '</span></div>'
-      + '<small class="school-mobile-product-spec">' + escapeHtml(product.spec || '') + '</small>'
-      + '<div class="school-mobile-product-price">￥' + Number(product.price || 0).toFixed(2) + ' / ' + escapeHtml(product.unit) + '</div>'
+      + '<div class="school-mobile-product-title"><strong>' + escapeHtml(product.name) + '</strong><span class="school-mobile-product-unit ' + (priceEditable ? 'is-editable' : 'is-readonly') + '"><input type="number" min="' + escapeHtml(orderService.minimumAmount?.() ?? 0.01) + '" step="' + escapeHtml(orderService.minimumAmount?.() ?? 0.01) + '" inputmode="decimal" value="' + escapeHtml(productOrderPriceText(price)) + '" data-action="product-price" data-product-id="' + escapeHtml(product.id) + '" aria-label="' + escapeHtml(product.name + '单价') + '"' + (priceEditable ? '' : ' readonly aria-readonly="true"') + readonlyTitle + '><span>元/' + escapeHtml(unit) + '</span></span></div>'
       + '<div class="school-mobile-product-stepper" aria-label="' + escapeHtml(product.name + '采购数量') + '">'
       + '<button type="button" class="school-mobile-product-step school-mobile-product-minus" data-action="product-minus" data-product-id="' + escapeHtml(product.id) + '" aria-label="减少' + escapeHtml(product.name) + '">−</button>'
       + '<input type="number" min="0" max="' + escapeHtml(product.stock) + '" step="1" inputmode="numeric" placeholder="请输入" value="' + (qty ? escapeHtml(qty) : '') + '" data-action="product-quantity" data-product-id="' + escapeHtml(product.id) + '" aria-label="' + escapeHtml(product.name + '数量') + '">'
@@ -712,9 +792,10 @@
 
   function renderProductCartItem(row) {
     const { product, entry } = row;
+    const price = productOrderPrice(product, entry);
     return '<article class="school-mobile-product-cart-item" data-cart-product-id="' + escapeHtml(product.id) + '">'
       + '<img src="' + productOrderAssetRoot + 'product-placeholder.jpg" alt="' + escapeHtml(product.name) + '">'
-      + '<div class="school-mobile-product-cart-main"><div class="school-mobile-product-cart-title"><strong>' + escapeHtml(product.name) + '</strong><span>' + Number(product.price || 0).toFixed(2) + '元/' + escapeHtml(product.unit) + '</span></div>'
+      + '<div class="school-mobile-product-cart-main"><div class="school-mobile-product-cart-title"><strong>' + escapeHtml(product.name) + '</strong><span>' + productOrderPriceText(price) + '元/' + escapeHtml(product.unit) + '</span></div>'
       + '<div class="school-mobile-product-cart-fields"><label><span>数量</span><input type="number" min="1" max="' + escapeHtml(product.stock) + '" step="1" value="' + escapeHtml(entry.qty) + '" data-action="product-cart-quantity" data-product-id="' + escapeHtml(product.id) + '" aria-label="' + escapeHtml(product.name + '数量') + '"></label><label><span>备注</span><input type="text" placeholder="请输入" value="' + escapeHtml(entry.note || '') + '" data-action="product-cart-note" data-product-id="' + escapeHtml(product.id) + '" aria-label="' + escapeHtml(product.name + '备注') + '"></label></div></div>'
       + '<button type="button" class="school-mobile-product-cart-delete" data-action="product-delete-cart" data-product-id="' + escapeHtml(product.id) + '" aria-label="删除' + escapeHtml(product.name) + '">' + productOrderIcon('delete') + '</button>'
       + '</article>';
@@ -896,7 +977,7 @@
       productCode: product.code,
       productName: product.name,
       unit: product.unit,
-      orderPrice: Number(product.price || 0),
+      orderPrice: productOrderPrice(product, entry),
       orderQty: Number(entry.qty || 0),
       remark: entry.note || ''
     }));
@@ -1351,6 +1432,8 @@
     }
     state.confirmDates = new Set(filledDates);
     state.confirmParticipantKey = '';
+    state.unitPriceOverrides = {};
+    state.unitPriceEditing = false;
     state.purchaseQtyOverrides = {};
     state.purchaseQuantityEditingKey = '';
     state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30:00';
@@ -1425,6 +1508,37 @@
     state.purchaseQtyOverrides[key] = input.value;
   }
 
+  function rememberConfirmUnitPrice(input) {
+    const key = input?.dataset?.unitPriceKey;
+    if (!key || input.readOnly || !canModifyConfirmUnitPrice()) return;
+    input.dataset.unitPriceOverridden = 'true';
+    state.unitPriceOverrides[key] = input.value;
+  }
+
+  function validateConfirmUnitPriceInput(input, { format = false } = {}) {
+    if (!input || input.readOnly || !canModifyConfirmUnitPrice()) return true;
+    const valid = isValidConfirmUnitPrice(input.value);
+    input.setCustomValidity(valid ? '' : confirmUnitPriceError(input.value));
+    input.classList.toggle('is-invalid', !valid);
+    input.setAttribute('aria-invalid', String(!valid));
+    if (valid && format) input.value = fixedPrice(input.value);
+    return valid;
+  }
+
+  function syncConfirmUnitPriceInputs() {
+    let firstInvalid = null;
+    app.querySelectorAll('[data-action="confirm-unit-price"]').forEach((input) => {
+      if (!validateConfirmUnitPriceInput(input, { format: true }) && !firstInvalid) firstInvalid = input;
+      if (input.dataset.unitPriceOverridden === 'true') rememberConfirmUnitPrice(input);
+    });
+    if (firstInvalid) {
+      firstInvalid.focus({ preventScroll: true });
+      showToast(confirmUnitPriceError(firstInvalid.value), true);
+      return false;
+    }
+    return true;
+  }
+
   function normalizeConfirmPurchaseQuantityInput(input) {
     if (!input || input.value === '') return;
     const parsed = Number(input.value);
@@ -1473,25 +1587,34 @@
       : '<div class="school-mobile-empty">暂无可提交的填报日期</div>';
     const expectedAt = state.expectedAt || '';
     const canSubmit = Boolean(preview.canSubmit && hasConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(expectedAt));
+    const isUnitPriceEditing = Boolean(activeParticipant && canModifyConfirmUnitPrice() && state.unitPriceEditing);
     const isPurchaseQuantityEditing = Boolean(activeParticipant && state.purchaseQuantityEditingKey === activeParticipant.key);
+    const unitPriceActions = activeParticipant && canModifyConfirmUnitPrice()
+      ? (isUnitPriceEditing
+        ? '<div class="school-mobile-purchase-actions"><button type="button" class="school-mobile-purchase-reset-button" data-action="restore-default-unit-price">恢复默认</button><button type="button" class="school-mobile-order-tag-save" data-action="save-unit-price">保存</button></div>'
+        : (isPurchaseQuantityEditing ? '' : '<button type="button" class="school-mobile-order-tag-save" data-action="edit-unit-price">编辑单价</button>'))
+      : '';
     const purchaseQuantityAction = isPurchaseQuantityEditing ? 'save-purchase-quantity' : 'edit-purchase-quantity';
-    const purchaseQuantityActionLabel = isPurchaseQuantityEditing ? '保存' : '编辑';
+    const purchaseQuantityActionLabel = isPurchaseQuantityEditing ? '保存' : '编辑采购量';
     const purchaseQuantityActions = activeParticipant
       ? (isPurchaseQuantityEditing
         ? '<div class="school-mobile-purchase-actions"><button type="button" class="school-mobile-purchase-reset-button" data-action="restore-default-purchase-quantity" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">恢复默认</button><button type="button" class="school-mobile-order-tag-save" data-action="save-purchase-quantity" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">保存</button></div>'
-        : '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>')
+        : (isUnitPriceEditing ? '' : '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>'))
+      : '';
+    const confirmEditActions = activeParticipant
+      ? '<div class="school-mobile-confirm-edit-actions">' + unitPriceActions + purchaseQuantityActions + '</div>'
       : '';
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
       + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
       + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>需求天数</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
       + '<div class="school-mobile-order-tags-inline">' + renderConfirmOrderTags(preview, activeParticipant) + '</div>'
-      + '<section class="school-mobile-confirm-card school-mobile-purchase-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + purchaseQuantityActions + '</div>' + renderPreviewProductRows(preview, activeParticipant, isPurchaseQuantityEditing) + '</section>'
+      + '<section class="school-mobile-confirm-card school-mobile-purchase-card"><div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + confirmEditActions + '</div>' + renderPreviewProductRows(preview, activeParticipant, isPurchaseQuantityEditing, isUnitPriceEditing) + '</section>'
       + (preview.message && !preview.canSubmit ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
       + '</div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回填报</button><button type="button" class="school-mobile-button is-primary" data-action="submit-demand" ' + (canSubmit && !state.submitting ? '' : 'disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
   }
 
-  function renderPreviewProductRows(preview, participant, isEditing = false) {
+  function renderPreviewProductRows(preview, participant, isEditing = false, isUnitPriceEditing = false) {
     const participantKey = participant?.key || '';
     const rows = participantKey
       ? (preview.rows || []).filter((row) => (
@@ -1502,16 +1625,25 @@
     if (!rows.length) return '<div class="school-mobile-empty">暂无可提交商品</div>';
     return '<div class="school-mobile-demand-list">' + rows.map((row, index) => {
       const unit = productUnit(row);
+      const priceKey = purchaseRowKey(row);
+      const priceEditable = canModifyConfirmUnitPrice();
+      const price = confirmUnitPrice(row);
+      const priceOverridden = priceEditable && hasOwn(state.unitPriceOverrides, priceKey);
+      const priceInputValue = priceOverridden ? String(state.unitPriceOverrides[priceKey] ?? '') : fixedPrice(price);
+      const productMeta = row.productCode || '--';
       const purchaseKey = purchaseQuantityKey(row, participantKey);
       const purchaseValue = purchaseQuantityValue(row, participant);
+      const priceMarkup = isUnitPriceEditing
+        ? '<div class="school-mobile-demand-price is-editable"><input class="school-mobile-demand-price-input" type="number" min="' + escapeHtml(minimumPrice()) + '" step="' + escapeHtml(minimumPrice()) + '" inputmode="decimal" value="' + escapeHtml(priceInputValue) + '" data-action="confirm-unit-price" data-unit-price-key="' + escapeHtml(priceKey) + '" data-unit-price-overridden="' + (priceOverridden ? 'true' : 'false') + '" aria-label="' + escapeHtml(productName(row) + '单价') + '"><em>元/' + escapeHtml(unit) + '</em></div>'
+        : '<div class="school-mobile-demand-price is-readonly"><strong class="school-mobile-demand-price-value">' + escapeHtml(fixedPrice(price)) + '</strong><em>元/' + escapeHtml(unit) + '</em></div>';
       const purchaseMarkup = isEditing
         ? '<div class="school-mobile-demand-purchase-control"><input class="school-mobile-demand-purchase-input" type="number" min="0" step="' + (isStandardProduct(row) ? '1' : 'any') + '" inputmode="' + (isStandardProduct(row) ? 'numeric' : 'decimal') + '" value="' + escapeHtml(fixedQuantity(purchaseValue)) + '" data-action="confirm-purchase-quantity" data-purchase-key="' + escapeHtml(purchaseKey) + '" data-purchase-participant-key="' + escapeHtml(participantKey) + '" data-purchase-overridden="' + (Object.prototype.hasOwnProperty.call(state.purchaseQtyOverrides, purchaseKey) ? 'true' : 'false') + '" aria-label="' + escapeHtml(orderTagName(participant) + productName(row) + '采购量') + '"><span class="school-mobile-demand-purchase-unit">' + escapeHtml(unit) + '</span></div>'
         : '<div class="school-mobile-demand-purchase-display"><strong>' + escapeHtml(fixedQuantity(purchaseValue)) + '</strong><span class="school-mobile-demand-purchase-unit">' + escapeHtml(unit) + '</span></div>';
       return [
         '<div class="school-mobile-demand-row">',
         '<span class="school-mobile-demand-index">', String(index + 1).padStart(2, '0'), '</span>',
-        '<div class="school-mobile-demand-product"><strong>', escapeHtml(productName(row)), '</strong><small>', escapeHtml(row.productCode || '--'), '</small></div>',
-        '<div class="school-mobile-demand-quantity">', purchaseMarkup, '</div>',
+        '<div class="school-mobile-demand-product"><strong>', escapeHtml(productName(row)), '</strong><small class="school-mobile-demand-product-meta">', escapeHtml(productMeta), '</small></div>',
+        '<div class="school-mobile-demand-quantity">', purchaseMarkup, priceMarkup, '</div>',
         '</div>'
       ].join('');
     }).join('') + '</div>';
@@ -1801,7 +1933,8 @@
       if (!product) return;
       nextCart[product.id] = {
         qty: Math.min(product.stock, Math.max(1, Number(line.orderQty) || 1)),
-        note: String(line.remark || '')
+        note: String(line.remark || ''),
+        price: canModifyProductOrderPrice() ? Number(line.orderPrice || productBasePrice(product)) : productBasePrice(product)
       };
     });
     const count = Object.keys(nextCart).length;
@@ -1884,7 +2017,7 @@
         productCode: product.code,
         productName: product.name,
         unit: product.unit,
-        orderPrice: Number(product.price || 0),
+        orderPrice: productOrderPrice(product, entry),
         orderQty: quantity,
         remark: String(entry.note || '')
       });
@@ -2447,6 +2580,8 @@
     state.attendance.meals = {};
     state.confirmDates.clear();
     state.confirmParticipantKey = '';
+    state.unitPriceOverrides = {};
+    state.unitPriceEditing = false;
     state.purchaseQtyOverrides = {};
     state.purchaseQuantityEditingKey = '';
     state.expectedAt = '';
@@ -2519,6 +2654,7 @@
   async function submitDemand() {
     if (state.submitting) return;
     ensureDemoSession();
+    if (!syncConfirmUnitPriceInputs()) return;
     syncConfirmPurchaseInputs();
     const dates = [...state.confirmDates];
     if (!dates.length) {
@@ -2550,6 +2686,7 @@
         ...serviceOptions(),
         expectedAt,
         canteen: currentCanteen(),
+        unitPriceOverrides: { ...state.unitPriceOverrides },
         purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }
       });
       clearAttendanceAfterFlow();
@@ -2565,6 +2702,8 @@
       state.profileSection = 'submissions';
       state.record = result.record || null;
       state.confirmParticipantKey = '';
+      state.unitPriceOverrides = {};
+      state.unitPriceEditing = false;
       state.purchaseQtyOverrides = {};
       state.purchaseQuantityEditingKey = '';
       state.toast = null;
@@ -2991,6 +3130,8 @@
         loadAttendance();
         state.confirmDates.clear();
         state.confirmParticipantKey = '';
+        state.unitPriceOverrides = {};
+        state.unitPriceEditing = false;
         state.purchaseQtyOverrides = {};
         state.purchaseQuantityEditingKey = '';
         state.expectedAt = '';
@@ -3132,17 +3273,46 @@
     if (action === 'confirm-order-tag') {
       const preview = buildConfirmPreview();
       if (confirmParticipants(preview).some((participant) => participant.key === target.dataset.participantKey)) {
+        if (!syncConfirmUnitPriceInputs()) return;
         syncConfirmPurchaseInputs();
         state.confirmParticipantKey = target.dataset.participantKey;
+        state.unitPriceEditing = false;
         state.purchaseQuantityEditingKey = '';
         render();
       }
       return;
     }
+    if (action === 'edit-unit-price') {
+      if (!canModifyConfirmUnitPrice()) return;
+      syncConfirmPurchaseInputs();
+      state.unitPriceEditing = true;
+      state.purchaseQuantityEditingKey = '';
+      render();
+      return;
+    }
+    if (action === 'restore-default-unit-price') {
+      if (!canModifyConfirmUnitPrice()) return;
+      const preview = buildConfirmPreview();
+      syncConfirmUnitPriceInputs();
+      (preview.rows || []).forEach((row) => {
+        if (row.mappingStatus === '已关联') delete state.unitPriceOverrides[purchaseRowKey(row)];
+      });
+      state.unitPriceEditing = true;
+      render();
+      return;
+    }
+    if (action === 'save-unit-price') {
+      if (!syncConfirmUnitPriceInputs()) return;
+      state.unitPriceEditing = false;
+      render();
+      return;
+    }
     if (action === 'edit-purchase-quantity') {
       const preview = buildConfirmPreview();
       if (confirmParticipants(preview).some((participant) => participant.key === target.dataset.purchaseParticipantKey)) {
+        if (!syncConfirmUnitPriceInputs()) return;
         state.confirmParticipantKey = target.dataset.purchaseParticipantKey;
+        state.unitPriceEditing = false;
         state.purchaseQuantityEditingKey = target.dataset.purchaseParticipantKey;
         render();
       }
@@ -3152,17 +3322,21 @@
       const preview = buildConfirmPreview();
       const participantKey = target.dataset.purchaseParticipantKey || '';
       if (!confirmParticipants(preview).some((participant) => participant.key === participantKey)) return;
+      if (!syncConfirmUnitPriceInputs()) return;
       syncConfirmPurchaseInputs();
       (preview.rows || []).forEach((row) => {
         if (row.mappingStatus === '已关联') delete state.purchaseQtyOverrides[purchaseQuantityKey(row, participantKey)];
       });
       state.confirmParticipantKey = participantKey;
+      state.unitPriceEditing = false;
       state.purchaseQuantityEditingKey = participantKey;
       render();
       return;
     }
     if (action === 'save-purchase-quantity') {
+      if (!syncConfirmUnitPriceInputs()) return;
       syncConfirmPurchaseInputs();
+      state.unitPriceEditing = false;
       state.purchaseQuantityEditingKey = '';
       render();
       return;
@@ -3320,6 +3494,10 @@
       }
       return;
     }
+    if (action === 'product-price') {
+      productOrderSetPrice(target.dataset.productId, target.value);
+      return;
+    }
     if (action === 'product-quantity') {
       if (target.value !== '') productOrderSetQuantity(target.dataset.productId, target.value);
       return;
@@ -3347,6 +3525,11 @@
     if (action === 'confirm-purchase-quantity') {
       rememberConfirmPurchaseQuantity(target);
       updateConfirmSubmitState();
+      return;
+    }
+    if (action === 'confirm-unit-price') {
+      validateConfirmUnitPriceInput(target);
+      rememberConfirmUnitPrice(target);
       return;
     }
     if (action === 'record-keyword') {
@@ -3380,6 +3563,26 @@
       if (productAction === 'product-quantity' || productAction === 'product-cart-quantity') {
         productOrderSetQuantity(productTarget.dataset.productId, productTarget.value || 0);
         render();
+        return;
+      }
+      if (productAction === 'product-price') {
+        const product = productOrderFindProduct(productTarget.dataset.productId);
+        if (!product || !canModifyProductOrderPrice()) return;
+        const valid = orderService.isValidPrice?.(productTarget.value)
+          ?? (Number.isFinite(Number(productTarget.value)) && Number(productTarget.value) >= (orderService.minimumAmount?.() ?? 0.01));
+        if (!valid) {
+          productOrderSetPrice(product.id, productBasePrice(product));
+          showToast(orderService.priceErrorMessage?.() || '请输入有效单价', true);
+          return;
+        }
+        productOrderSetPrice(product.id, orderService.normalizePrice?.(productTarget.value) ?? Number(productTarget.value));
+        render();
+        return;
+      }
+      if (productAction === 'confirm-unit-price') {
+        if (!canModifyConfirmUnitPrice()) return;
+        validateConfirmUnitPriceInput(productTarget, { format: true });
+        rememberConfirmUnitPrice(productTarget);
         return;
       }
       if (productAction === 'product-checkout-date') {

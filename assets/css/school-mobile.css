@@ -861,6 +861,14 @@ button {
   font-size: 10px;
 }
 
+.school-mobile-confirm-edit-actions {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .school-mobile-section-heading-content {
   display: flex;
   min-width: 0;
@@ -2072,6 +2080,13 @@ button.school-mobile-demand-row:active {
   white-space: nowrap;
 }
 
+.school-mobile-demand-product-meta {
+  margin-top: 2px !important;
+  color: #8b98a8 !important;
+  font-size: 9px !important;
+  line-height: 14px;
+}
+
 .school-mobile-demand-qty {
   flex: 0 0 auto;
   color: var(--mobile-blue);
@@ -2103,6 +2118,85 @@ button.school-mobile-demand-row:active {
   min-width: 116px;
   flex: 0 0 auto;
   text-align: right;
+}
+
+.school-mobile-demand-price {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.school-mobile-demand-price-input {
+  width: 58px;
+  height: 26px;
+  flex: 0 0 58px;
+  box-sizing: border-box;
+  padding: 0 5px;
+  border: 1px solid #cfe0f1;
+  border-radius: 6px;
+  outline: 0;
+  color: var(--mobile-ink);
+  background: #fff;
+  font-size: 11px;
+  text-align: right;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.school-mobile-demand-price-value {
+  width: 58px;
+  flex: 0 0 58px;
+  color: #8592a2 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 26px;
+  text-align: right;
+}
+
+.school-mobile-demand-price-input::-webkit-inner-spin-button,
+.school-mobile-demand-price-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.school-mobile-demand-price-input:focus {
+  border-color: var(--mobile-blue);
+  box-shadow: 0 0 0 2px rgba(46, 124, 240, .1);
+}
+
+.school-mobile-demand-price.is-readonly .school-mobile-demand-price-input,
+.school-mobile-demand-price-input:read-only {
+  border-color: #e0e7ef;
+  color: #8592a2;
+  background: #f7f9fc;
+  cursor: default;
+}
+
+.school-mobile-demand-price.is-editable .school-mobile-demand-price-input {
+  border-color: #a9c8ee;
+}
+
+.school-mobile-demand-price-input[aria-invalid="true"],
+.school-mobile-demand-price-input[aria-invalid="true"]:focus {
+  border-color: #d96c5c;
+  background: #fff8f6;
+  box-shadow: 0 0 0 2px rgba(217, 108, 92, .12);
+}
+
+.school-mobile-demand-price > em {
+  max-width: 35px;
+  overflow: hidden;
+  color: var(--mobile-ink-3);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 26px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .school-mobile-demand-purchase-control {
@@ -4258,16 +4352,17 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-product-unit {
   display: inline-flex;
-  min-width: 45px;
+  min-width: 76px;
   flex: 0 0 auto;
   align-items: center;
   gap: 3px;
   color: #111a34;
   font-size: 11px;
+  white-space: nowrap;
 }
 
 .school-mobile-product-unit input {
-  width: 40px;
+  width: 46px;
   height: 26px;
   padding: 0 4px;
   border: 1px solid #d9dde4;
@@ -4276,22 +4371,24 @@ button.school-mobile-demand-row:active {
   background: #fff;
   font-size: 11px;
   text-align: center;
+  appearance: textfield;
 }
 
-.school-mobile-product-spec {
-  display: block;
-  min-height: 16px;
-  overflow: hidden;
-  color: #a2a6ae;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.school-mobile-product-unit input::-webkit-inner-spin-button,
+.school-mobile-product-unit input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
 }
 
-.school-mobile-product-price {
-  margin-top: 2px;
-  color: #ec6c4d;
-  font-size: 11px;
+.school-mobile-product-unit input:read-only {
+  color: #7f8794;
+  background: #f7f8fa;
+  cursor: default;
+}
+
+.school-mobile-product-unit.is-editable input {
+  border-color: #4199e7;
+  color: #111a34;
 }
 
 .school-mobile-product-stepper {

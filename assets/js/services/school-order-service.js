@@ -15,7 +15,35 @@
   };
   const flag = (value) => value === true || value === 'true' || value === '是';
   const isFalseFlag = (value) => value === false || value === 'false' || value === '否' || value === 0 || value === '0';
-  const money = (value) => Number(number(value).toFixed(2));
+  const amountDecimalPlaces = () => {
+    const configured = Number(window.DemoStore?.getSettings?.()?.amountDecimal);
+    return [0, 1, 2, 4].includes(configured) ? configured : 2;
+  };
+  const minimumAmount = () => 10 ** -amountDecimalPlaces();
+  const money = (value) => Number(number(value).toFixed(amountDecimalPlaces()));
+  const normalizePrice = (value) => money(value);
+  const isValidPrice = (value) => {
+    const text = String(value ?? '').trim();
+    const parsed = Number(text);
+    return Boolean(text) && Number.isFinite(parsed) && parsed >= minimumAmount();
+  };
+  const priceErrorMessage = (value) => {
+    const text = String(value ?? '').trim();
+    if (!text) return '单价不能为空';
+    if (Number(text) === 0) return '单价不能为0';
+    return `单价必须大于等于${minimumAmount().toFixed(amountDecimalPlaces())}`;
+  };
+  const assertValidPrice = (value) => {
+    if (!isValidPrice(value)) throw new Error(priceErrorMessage(value));
+    return normalizePrice(value);
+  };
+  const isEnabled = (value) => value === true || value === 'true' || value === '是' || value === 1 || value === '1';
+  const canModifyClientOrderPrice = () => isEnabled(window.DemoStore?.getSettings?.()?.allowClientEditPrice);
+  const currentSalesPrice = (product) => {
+    const value = [product?.currentSalesPrice, product?.currentPrice, product?.salesPrice, product?.salePrice, product?.marketPrice]
+      .find((item) => item !== '' && item != null);
+    return normalizePrice(value);
+  };
   const timestamp = () => window.BusinessRules?.now?.()
     || new Date().toISOString().slice(0, 19).replace('T', ' ');
   const currentOperator = () => {
@@ -258,11 +286,14 @@
     return normalized;
   }
 
-  function lineFromPayload(line, index) {
+  function lineFromPayload(line, index, options = {}) {
     const name = String(line.productName || line.goodsName || '').trim();
     const qty = Math.max(0, number(line.orderQty ?? line.quantity));
-    const price = Math.max(0, number(line.orderPrice ?? line.unitPrice));
     const catalogProduct = getProductCatalog().find((product) => String(product.code) === String(line.productCode || line.goodsCode || ''));
+    const rawPrice = line.orderPrice ?? line.unitPrice;
+    const price = options.enforceCurrentSalesPrice && catalogProduct
+      ? currentSalesPrice(catalogProduct)
+      : name && qty > 0 ? assertValidPrice(rawPrice) : normalizePrice(rawPrice);
     return makeLine({
       id: line.id || `SOL-LINE-${Date.now()}-${index + 1}`,
       name,
@@ -289,9 +320,9 @@
     });
   }
 
-  function normalizePayload(payload = {}) {
+  function normalizePayload(payload = {}, options = {}) {
     const items = (payload.items || [])
-      .map(lineFromPayload)
+      .map((line, index) => lineFromPayload(line, index, options))
       .filter((line) => line.productName && line.orderQty > 0);
     const invalidStandardLine = items.find((line) => line.isStandardProduct && !Number.isInteger(line.orderQty));
     if (invalidStandardLine) throw new Error('标品下单数量必须为整数');
@@ -347,7 +378,7 @@
     const fallback = [
       { code: 'SP0300040', name: '黑面', unit: 'L', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5 },
       { code: 'SP0300036', name: '大玉米棒子', unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5 },
-      { code: 'SP0300034', name: '黑大米', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 10 },
+      { code: 'SP0300034', name: '黑大米', unit: '袋', brand: '--', spec: '25kg/袋', category: '主食（米面粉点心类）-粮食类', marketPrice: 500 },
       { code: 'SP0300039', name: '土豆丝', unit: '斤', brand: '--', spec: '--', category: '果蔬-净菜类', isNetVegetable: true, marketPrice: 1 },
       { code: 'SP0300038', name: '牛奶', unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: 5 },
       { code: 'SP0300031', name: '鲫鱼', unit: 'L', brand: '--', spec: '--', category: '水产品-淡水鱼类', marketPrice: 20 },
@@ -371,6 +402,7 @@
       isNetVegetable: product.isNetVegetable === true,
       isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
       allowSchoolModifyPurchaseQuantity: !isFalseFlag(product.allowSchoolModifyPurchaseQuantity),
+      currentSalesPrice: currentSalesPrice(product),
       marketPrice: money(product.marketPrice)
     }));
   }
@@ -426,9 +458,17 @@
     },
     getProductCatalog,
     normalizePayload,
+    amountDecimalPlaces,
+    minimumAmount,
+    normalizePrice,
+    isValidPrice,
+    priceErrorMessage,
+    assertValidPrice,
+    canModifyClientOrderPrice,
+    currentSalesPrice,
     create(payload = {}) {
       const orders = readOrders();
-      const normalized = normalizePayload(payload);
+      const normalized = normalizePayload(payload, { enforceCurrentSalesPrice: !canModifyClientOrderPrice() });
       const now = timestamp();
       const record = canonicalOrder({
         ...normalized,
