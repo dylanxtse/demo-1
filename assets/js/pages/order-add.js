@@ -272,10 +272,11 @@
         <td>${pickerImage(item)}</td>
         <td class="product-picker-product" title="${escapeHtml(window.DomUtils.formatProductDisplay(item, catalog))}">${escapeHtml(window.DomUtils.formatProductDisplay(item, catalog))}</td>
         <td>${escapeHtml(item.unit)}</td>
+        <td>${money(item.marketPrice)}</td>
         <td><input type="number" data-picker-quantity min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${escapeHtml(draft.quantity || '')}" placeholder="${exists ? '已添加' : '请输入数量'}" ${exists ? 'disabled' : ''}></td>
         <td><input type="text" data-picker-remark value="${escapeHtml(draft.remark || '')}" placeholder="请输入备注" ${exists ? 'disabled' : ''}></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" style="height:180px;color:#9aa4b2">暂无符合条件的商品</td></tr>';
+    }).join('') : '<tr><td colspan="7" style="height:180px;color:#9aa4b2">暂无符合条件的商品</td></tr>';
     const pageButtons = Array.from({ length: pages }, (_, index) => index + 1).map((page) => `<button type="button" class="product-picker-page-button ${page === goodsPickerState.page ? 'active' : ''}" data-product-picker-action="page" data-page="${page}" ${page === goodsPickerState.page ? 'aria-current="page"' : ''}>${page}</button>`).join('');
     pagination.innerHTML = `<span class="product-picker-total">共 ${filtered.length} 条数据</span><select class="product-picker-page-size" disabled aria-label="每页条数"><option>${goodsPickerState.pageSize} 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-product-picker-action="page" data-page="${Math.max(1, goodsPickerState.page - 1)}" ${goodsPickerState.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="product-picker-page-button" data-product-picker-action="page" data-page="${Math.min(pages, goodsPickerState.page + 1)}" ${goodsPickerState.page === pages ? 'disabled' : ''}>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="${goodsPickerState.page}" data-picker-jump inputmode="numeric" aria-label="跳转页码"> / ${pages} 页</label>`;
   }
@@ -293,7 +294,7 @@
           <label class="product-picker-filter"><span>商品分类</span><select data-picker-filter="category"><option value="" disabled hidden selected>请选择商品分类</option>${categories.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}</select></label>
           <div class="product-picker-filter-actions"><button class="btn btn-primary btn-sm" type="button" data-product-picker-action="query">查询</button><button class="btn btn-sm" type="button" data-product-picker-action="reset">重置</button></div>
         </div>
-        <div class="product-picker-table-wrap"><table class="product-picker-table"><colgroup><col style="width:48px"><col style="width:110px"><col><col style="width:120px"><col style="width:180px"><col style="width:180px"></colgroup><thead><tr><th><input type="checkbox" data-picker-check-all aria-label="全选当前页"></th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>下单数量</th><th>备注</th></tr></thead><tbody id="orderProductPickerBody"></tbody></table></div>
+        <div class="product-picker-table-wrap"><table class="product-picker-table"><colgroup><col style="width:48px"><col style="width:110px"><col><col style="width:120px"><col style="width:100px"><col style="width:180px"><col style="width:180px"></colgroup><thead><tr><th><input type="checkbox" data-picker-check-all aria-label="全选当前页"></th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>单价</th><th>下单数量</th><th>备注</th></tr></thead><tbody id="orderProductPickerBody"></tbody></table></div>
         <div class="product-picker-pagination" id="orderProductPickerPagination"></div>
       </div>
       <footer class="product-picker-footer"><button class="btn" type="button" data-overlay-close>关闭</button><button class="btn btn-primary" type="button" id="confirmGoods">添加</button></footer>

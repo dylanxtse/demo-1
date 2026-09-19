@@ -238,7 +238,7 @@
 .product-picker-dialog .school-order-picker-row {
   display: grid;
   min-height: 54px;
-  grid-template-columns: 48px 110px minmax(280px, 1fr) 120px 180px 180px;
+  grid-template-columns: 48px 110px minmax(280px, 1fr) 120px 100px 180px 180px;
   align-items: center;
   border-bottom: 1px solid #e7ebf2;
   color: #1d2129;
