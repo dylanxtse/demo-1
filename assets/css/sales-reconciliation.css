@@ -436,7 +436,25 @@
 
 /* 销售账款按正式页面的筛选、导出、汇总表格和分页节奏展示。 */
 .sales-reconciliation-page.order-module-page .sales-accounts-filter {
+  --order-filter-actions-width: 132px;
   margin-bottom: 12px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-grid {
+  column-gap: 96px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-field .filter-label {
+  width: 64px;
+  flex: 0 0 64px;
+  margin-right: 12px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-actions .btn {
+  width: 58px;
+  min-width: 58px;
+  padding-right: 0;
+  padding-left: 0;
 }
 
 .sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-advanced {
@@ -481,7 +499,7 @@
 
 .sales-reconciliation-page.order-module-page .sales-accounts-table th,
 .sales-reconciliation-page.order-module-page .sales-accounts-table td {
-  height: 50px;
+  height: 45px;
   text-align: center;
 }
 
@@ -492,13 +510,13 @@
 
 .sales-reconciliation-page.order-module-page .sales-accounts-table th:first-child,
 .sales-reconciliation-page.order-module-page .sales-accounts-table td:first-child {
-  width: 4.7%;
+  width: 4%;
   min-width: 0;
 }
 
 .sales-reconciliation-page.order-module-page .sales-accounts-table th:nth-child(n + 2),
 .sales-reconciliation-page.order-module-page .sales-accounts-table td:nth-child(n + 2) {
-  width: 15.8833%;
+  width: 16%;
   min-width: 0;
 }
 
@@ -673,4 +691,807 @@
 
 .sales-reconciliation-statement-page .sales-statement-shell {
   padding: 0;
+}
+
+/* 销售对账明细：按企业端对账工作台的宽表节奏收敛布局。 */
+.sales-reconciliation-page.order-module-page .sales-tabs {
+  height: 58px;
+  min-height: 58px;
+  align-items: stretch;
+  gap: 36px;
+  margin: -4px 0 10px;
+  padding: 0 18px;
+  background: #fff;
+}
+
+.sales-reconciliation-page.order-module-page .sales-tab {
+  height: 58px;
+  padding: 0 4px;
+  color: #7b8494;
+  font-size: 15px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-tab.active,
+.sales-reconciliation-page.order-module-page .sales-tab.is-active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.sales-reconciliation-page.order-module-page .sales-view {
+  padding-top: 8px;
+}
+
+.sales-reconciliation-page.order-module-page .operations-filter {
+  margin-bottom: 10px;
+}
+
+.sales-reconciliation-page.order-module-page .operations-filter-main {
+  grid-template-columns: minmax(0, 1fr) var(--order-filter-actions-width);
+  align-items: start;
+}
+
+.sales-reconciliation-page.order-module-page .operations-filter-main .operations-filter-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 28px;
+}
+
+.sales-reconciliation-page.order-module-page .operations-field .filter-label {
+  width: 92px;
+  flex-basis: 92px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-filter-help {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+  cursor: help;
+}
+
+.sales-reconciliation-page.order-module-page .operations-filter-advanced .operations-filter-grid {
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px 28px;
+}
+
+.sales-reconciliation-page.order-module-page .operations-toolbar {
+  min-height: 32px;
+  margin-bottom: 10px;
+}
+
+.sales-reconciliation-page.order-module-page .operations-toolbar-main .btn {
+  min-width: 112px;
+  justify-content: center;
+}
+
+.sales-reconciliation-page.order-module-page .operations-toolbar-main .btn:disabled {
+  border-color: #b8d2f5;
+  background: #b8d2f5;
+  color: #fff;
+  opacity: 1;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) {
+  width: 100%;
+  min-width: 2140px;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th,
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td {
+  height: 64px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-color: #e7eaf0;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th {
+  height: 42px;
+  background: #f3f5fb;
+  color: #7c8498;
+  font-weight: 500;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(1),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(1) { width: 48px; min-width: 48px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(2),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(2) { width: 190px; min-width: 190px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(3),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(3) { width: 170px; min-width: 170px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(4),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(4) { width: 100px; min-width: 100px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(5),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(5) { width: 120px; min-width: 120px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(6),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(6) { width: 170px; min-width: 170px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(7),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(7) { width: 90px; min-width: 90px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(8),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(8) { width: 110px; min-width: 110px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(9),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(9),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(10),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(10) { width: 100px; min-width: 100px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(11),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(11),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(12),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(12),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(13),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(13) { width: 95px; min-width: 95px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(14),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(14) { width: 125px; min-width: 125px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(15),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(15) { width: 90px; min-width: 90px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(16),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(16) { width: 80px; min-width: 80px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(17),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(17) { width: 90px; min-width: 90px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(18),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(18),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(19),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(19) { width: 90px; min-width: 90px; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:nth-child(19),
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:nth-child(19) { width: 180px; min-width: 180px; }
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) .sales-account-cell {
+  text-align: center;
+  white-space: normal;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) tbody tr:nth-child(odd) .sales-account-cell { background: #c6eab4; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) tbody tr:nth-child(even) .sales-account-cell { background: #ffcc95; }
+
+.sales-reconciliation-page.order-module-page .sales-account-link {
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-account-time {
+  display: block;
+  color: var(--primary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sales-reconciliation-page.order-module-page .sales-status.is-danger {
+  background: #ff5258;
+  color: #fff;
+}
+
+.sales-reconciliation-page.order-module-page .sales-status.is-success {
+  background: #52c41a;
+  color: #fff;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:last-child,
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  min-width: 180px;
+  background: #fff;
+  box-shadow: -8px 0 10px -10px rgba(25, 40, 70, .45);
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) th:last-child {
+  z-index: 4;
+  background: #f3f5fb;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) tbody tr:hover td:last-child { background: #f7fbff; }
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) .sales-actions { justify-content: center; gap: 18px; }
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) tfoot td {
+  height: 48px;
+  background: #f1f3fa;
+  font-weight: 600;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) .sales-money {
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.sales-reconciliation-page.order-module-page .sales-table:not(.sales-accounts-table):not(.sales-records-table) td.sales-business-time {
+  overflow: hidden;
+  white-space: normal;
+  line-height: 1.45;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.sales-reconciliation-page.order-module-page .operations-pagination {
+  min-height: 56px;
+  flex-shrink: 0;
+  padding: 8px 2px;
+}
+
+/* 账款视图保持截图中的三列筛选，不受明细宽表的通用查询收敛规则影响。 */
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-main {
+  grid-template-columns: minmax(0, 1fr) var(--order-filter-actions-width);
+}
+
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-main .operations-filter-grid,
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-advanced .operations-filter-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 96px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-field .filter-label {
+  width: 64px;
+  flex-basis: 64px;
+  margin-right: 12px;
+}
+
+/* 对账单生成记录：与企业端对账单列表保持同一套紧凑的筛选、表格和分页节奏。 */
+.sales-reconciliation-page.order-module-page .sales-statements-view {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-filter {
+  flex: 0 0 auto;
+  padding: 18px 22px 0;
+  background: #fff;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-filter-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 112px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-field {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 470px;
+  align-items: center;
+  gap: 12px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-field > label {
+  flex: 0 0 104px;
+  color: #333;
+  font-size: 14px;
+  line-height: 32px;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-date-range,
+.sales-reconciliation-page.order-module-page .sales-statements-field > select {
+  position: relative;
+  width: 350px;
+  height: 32px;
+  min-width: 0;
+  flex: 0 0 350px;
+  box-sizing: border-box;
+  border: 1px solid #dfe3eb;
+  border-radius: 3px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-date-range .date-range-display {
+  width: 100%;
+  height: 30px;
+  box-sizing: border-box;
+  border: 0;
+  padding: 0 34px 0 12px;
+  background: transparent;
+  color: #333;
+  font: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-date-range .date-range-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  color: #a5acb9;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-date-range .date-range-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-field > select {
+  padding: 0 28px 0 12px;
+  outline: none;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-field > select:focus,
+.sales-reconciliation-page.order-module-page .sales-statements-date-range:focus-within {
+  border-color: var(--primary);
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-filter-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-filter-actions .btn {
+  min-width: 58px;
+  justify-content: center;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-print-row {
+  display: flex;
+  height: 38px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-print-row .standard-list-export-print {
+  gap: 4px;
+  padding: 0;
+  color: #333;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-print-row .standard-list-export-print .icon-svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table-container {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  margin: 0 22px;
+  overflow: hidden;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table-container > .operations-table-wrap {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #e8ebf2;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table {
+  width: 100%;
+  min-width: 1180px;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table th,
+.sales-reconciliation-page.order-module-page .sales-statements-table td {
+  box-sizing: border-box;
+  height: 45px;
+  padding: 7px 12px;
+  border-right: 1px solid #e8ebf2;
+  border-bottom: 1px solid #e8ebf2;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table th,
+.sales-reconciliation-page.order-module-page .sales-statements-table td {
+  text-align: center;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table th {
+  background: #f2f4fa;
+  color: #8a93a6;
+  font-weight: 500;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table tbody td {
+  height: 66px;
+  background: #fff;
+  color: #333;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table tbody td:nth-child(3),
+.sales-reconciliation-page.order-module-page .sales-statements-table tbody td:nth-child(4) {
+  overflow: hidden;
+  white-space: normal;
+  line-height: 1.45;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(1),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(1) { width: 3%; }
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(2),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(2) { width: 15%; }
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(3),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(3) { width: 15%; }
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(4),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(4) { width: 13%; }
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(5),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(5),
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(6),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(6),
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(7),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(7) { width: 13%; }
+.sales-reconciliation-page.order-module-page .sales-statements-table th:nth-child(8),
+.sales-reconciliation-page.order-module-page .sales-statements-table td:nth-child(8) { width: 15%; }
+
+.sales-reconciliation-page.order-module-page .sales-statements-table .statement-selection {
+  width: 3%;
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table .statement-shipping-date {
+  line-height: 22px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table .statement-actions {
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table .statement-actions .btn-text {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-table .statement-actions .is-danger {
+  color: #ff4d4f;
+}
+
+.sales-reconciliation-page.order-module-page .sales-statements-pagination {
+  flex: 0 0 auto;
+  min-height: 56px;
+  margin: 0 22px;
+  padding: 8px 0;
+  border-top: 0;
+}
+
+@media (max-width: 1400px) {
+  .sales-reconciliation-page.order-module-page .sales-statements-filter-row {
+    gap: 20px;
+  }
+
+  .sales-reconciliation-page.order-module-page .sales-statements-field {
+    flex: 1 1 0;
+  }
+
+  .sales-reconciliation-page.order-module-page .sales-statements-date-range,
+  .sales-reconciliation-page.order-module-page .sales-statements-field > select {
+    width: auto;
+    flex: 1 1 auto;
+  }
+
+  .sales-reconciliation-page.order-module-page .sales-statements-field > label {
+    flex-basis: 96px;
+  }
+
+  .sales-reconciliation-page.order-module-page .sales-statements-table .statement-actions {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-main .operations-filter-grid,
+  .sales-reconciliation-page.order-module-page .sales-accounts-filter .operations-filter-advanced .operations-filter-grid {
+    grid-template-columns: minmax(280px, 1.25fr) repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+}
+
+/* 客户对账：按设计稿补充状态筛选、客户汇总表格和操作区。 */
+.sales-reconciliation-page.order-module-page .sales-customer-view {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: 0;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter {
+  flex: 0 0 auto;
+  padding-top: 0;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-presets,
+.sales-reconciliation-page.order-module-page .sales-customer-status-tabs {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.sales-reconciliation-page.order-module-page .sales-query-mode {
+  display: inline-flex;
+  width: 145px;
+  height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 145px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-query-mode .icon {
+  color: var(--text-tertiary);
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status-tabs {
+  height: 32px;
+  margin-left: 10px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status-tab {
+  height: 32px;
+  padding: 0 18px;
+  border: 1px solid var(--border-color);
+  border-left: 0;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 30px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status-tab:first-child {
+  border-left: 1px solid var(--border-color);
+  border-radius: 4px 0 0 4px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status-tab:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status-tab.active {
+  position: relative;
+  z-index: 1;
+  border-color: var(--primary);
+  background: #fff;
+  color: var(--primary);
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status-tab + .sales-customer-status-tab.active {
+  margin-left: -1px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-actions .btn {
+  min-width: 56px;
+  justify-content: center;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-fields {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.05fr) minmax(300px, 1.05fr) minmax(360px, 1fr);
+  gap: 8px 28px;
+  margin-top: 8px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-fields .operations-field {
+  min-height: 32px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-fields .operations-field .filter-label {
+  width: 70px;
+  flex: 0 0 70px;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-filter-fields .filter-select {
+  height: 32px;
+}
+
+.sales-reconciliation-page.order-module-page #salesCustomerBusinessDateRange {
+  position: relative;
+  width: 0;
+  min-width: 0;
+  height: 32px;
+  flex: 1 1 0;
+}
+
+.sales-reconciliation-page.order-module-page #salesCustomerBusinessDateRange .date-range-display {
+  width: 100%;
+  height: 32px;
+  padding-right: 30px;
+  cursor: pointer;
+}
+
+.sales-reconciliation-page.order-module-page #salesCustomerBusinessDateRange .date-range-icon {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-toolbar {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 8px 0 2px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table-container {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table-container .operations-table-wrap {
+  height: 100%;
+  overflow: auto;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table {
+  width: 100%;
+  min-width: 1678px;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table th,
+.sales-reconciliation-page.order-module-page .sales-customer-table td {
+  height: 54px;
+  padding: 7px 10px;
+  border-color: #e7eaf0;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table th {
+  height: 44px;
+  background: #f3f5fb;
+  color: #7c8498;
+  font-weight: 500;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(1),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(1) { width: 48px; min-width: 48px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(2),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(2) { width: 145px; min-width: 145px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(3),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(3) { width: 185px; min-width: 185px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(4),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(4) { width: 190px; min-width: 190px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(5),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(5) { width: 205px; min-width: 205px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(6),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(6) { width: 105px; min-width: 105px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(7),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(7),
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(8),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(8),
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(9),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(9),
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(10),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(10),
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(11),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(11),
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(12),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(12) { width: 100px; min-width: 100px; }
+.sales-reconciliation-page.order-module-page .sales-customer-table th:nth-child(13),
+.sales-reconciliation-page.order-module-page .sales-customer-table td:nth-child(13) { width: 190px; min-width: 190px; }
+
+.sales-reconciliation-page.order-module-page .sales-customer-table tbody tr:nth-child(odd) td { background: #f1f3fa; }
+.sales-reconciliation-page.order-module-page .sales-customer-table tbody tr:nth-child(even) td { background: #fff; }
+.sales-reconciliation-page.order-module-page .sales-customer-table tbody tr:hover td { background: #f7fbff; }
+
+.sales-reconciliation-page.order-module-page .sales-customer-table th:last-child,
+.sales-reconciliation-page.order-module-page .sales-customer-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  min-width: 190px;
+  background: #fff;
+  box-shadow: -8px 0 10px -10px rgba(25, 40, 70, .45);
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table th:last-child {
+  z-index: 4;
+  background: #f3f5fb;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-table tbody tr:nth-child(odd) td:last-child { background: #f1f3fa; }
+.sales-reconciliation-page.order-module-page .sales-customer-table tbody tr:hover td:last-child { background: #f7fbff; }
+
+.sales-reconciliation-page.order-module-page .sales-customer-table .sales-customer-money {
+  font-variant-numeric: tabular-nums;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-status.is-danger { background: #ff5258; }
+.sales-reconciliation-page.order-module-page .sales-customer-status.is-success { background: #52c41a; }
+.sales-reconciliation-page.order-module-page .sales-customer-status.is-warning { background: #faad14; }
+
+.sales-reconciliation-page.order-module-page .sales-customer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-actions .btn-text { white-space: nowrap; }
+
+.sales-reconciliation-page.order-module-page .sales-customer-pagination {
+  margin-top: 0;
+  border-top: 0 !important;
+  padding: 8px 0 !important;
+}
+
+@media (max-width: 1180px) {
+  .sales-reconciliation-page.order-module-page .sales-customer-filter-top { align-items: flex-start; }
+  .sales-reconciliation-page.order-module-page .sales-customer-filter-presets { overflow-x: auto; padding-bottom: 2px; }
+  .sales-reconciliation-page.order-module-page .sales-customer-filter-fields { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+  .sales-reconciliation-page.order-module-page .sales-customer-filter-fields .operations-field:last-child { grid-column: 1 / -1; }
 }

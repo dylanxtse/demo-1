@@ -111,7 +111,7 @@
           <button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchAuditBtn" type="button" disabled>批量审核</button>
         </div>
         <div class="action-controls">
-          <button class="btn btn-sm btn-fixed" type="button" data-action="export">${downloadIcon}导出</button>
+          <button class="btn btn-sm btn-fixed standard-list-export-print" type="button" data-action="export">${downloadIcon}导出</button>
         </div>
       </div>
 

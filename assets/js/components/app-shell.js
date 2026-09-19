@@ -2,7 +2,7 @@
   if (document.querySelector('link[data-common-business-components]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/css/common-components.css?v=20260903-back-normalize-1';
+  link.href = './assets/css/common-components.css?v=20260916-standard-list-actions-1';
   link.dataset.commonBusinessComponents = 'true';
   document.head.appendChild(link);
 })();

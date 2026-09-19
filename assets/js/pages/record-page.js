@@ -4,6 +4,11 @@
     'supplier-purchase-print': '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>',
     'supplier-purchase-export': '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>'
   };
+  const standardToolbarIcons = {
+    导出: toolbarIcons['supplier-purchase-export'],
+    打印: toolbarIcons['supplier-purchase-print']
+  };
+  const getToolbarIcon = (action, label) => toolbarIcons[action.icon] || standardToolbarIcons[String(label).trim()] || '';
   const defaultStatusMap = {
     PENDING: ['待审核', 'warning'],
     PENDING_CONFIRM: ['待确认', 'warning'],
@@ -90,15 +95,19 @@
       || String(state.activeStatus).split(',').some((status) => action.visibleStatuses.includes(status));
     const renderToolbarButton = (action, compact = false) => {
       const buttonClass = compact ? 'btn btn-sm' : 'btn';
-      const icon = toolbarIcons[action.icon] || '';
       const options = (action.dropdownOptions || []).filter(isToolbarActionVisible);
       const activeStatus = String(state.activeStatus);
       const effectiveKey = action.defaultActionByStatus?.[activeStatus] || action.key;
       const effectiveLabel = action.labelByStatus?.[activeStatus] || action.label;
+      const exactLabel = String(effectiveLabel).trim();
+      const icon = getToolbarIcon(action, effectiveLabel);
+      const standardActionClass = ['导出', '打印'].includes(exactLabel)
+        ? 'standard-list-export-print'
+        : '';
       const dropdownVisible = !action.dropdownVisibleStatuses || action.dropdownVisibleStatuses.includes(activeStatus);
-      if (!options.length || !dropdownVisible) return `<button class="${buttonClass} ${action.primary ? 'btn-primary' : ''}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>`;
+      if (!options.length || !dropdownVisible) return `<button class="${buttonClass} ${action.primary ? 'btn-primary' : ''} ${standardActionClass}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>`;
       return `<div class="toolbar-dropdown">
-        <button class="${buttonClass} toolbar-dropdown-main ${action.primary ? 'btn-primary' : ''}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>
+        <button class="${buttonClass} toolbar-dropdown-main ${action.primary ? 'btn-primary' : ''} ${standardActionClass}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>
         <button class="${buttonClass} toolbar-dropdown-toggle ${action.primary ? 'btn-primary' : ''}" type="button" data-toolbar-dropdown-toggle aria-label="更多操作">▾</button>
         <div class="toolbar-dropdown-menu">${options.map((option) => `<button type="button" data-toolbar-option="${escapeHtml(option.key)}">${escapeHtml(option.label)}</button>`).join('')}</div>
       </div>`;
@@ -110,7 +119,7 @@
       renderToolbarButton(action, true)
     ).join('');
     const legacyToolbarHtml = toolbarActions.map((action) =>
-      `<button class="btn ${action.primary ? 'btn-primary' : ''}" data-toolbar-action="${action.key}">${action.label}</button>`
+      `<button class="btn ${action.primary ? 'btn-primary' : ''} ${['导出', '打印'].includes(String(action.label).trim()) ? 'standard-list-export-print' : ''}" data-toolbar-action="${action.key}">${getToolbarIcon(action, action.label)}${action.label}</button>`
     ).join('');
     const standardContent = `
       <section class="page-card operations-page ${escapeHtml(config.pageClass || '')}" aria-label="${escapeHtml(config.title)}">

@@ -9,6 +9,36 @@
   --common-pagination-border: var(--border-light);
 }
 
+/* 列表工具栏唯一标准：只作用于精确文案“导出”和“打印”，不覆盖批量/一键等业务动作。 */
+.app-layout .standard-list-export-print {
+  display: inline-flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  box-sizing: border-box;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  color: var(--text-secondary) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  cursor: pointer;
+}
+
+.app-layout .standard-list-export-print:hover {
+  color: var(--primary) !important;
+}
+
+.app-layout .standard-list-export-print > :is(.icon-svg, svg),
+.app-layout .standard-list-export-print .icon-svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
 .app-layout :is(
   .pagination,
   .operations-pagination,

@@ -1,5 +1,6 @@
 (function () {
   const service = window.OperationsService;
+  const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
   const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
   const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
   const statusMap = {
@@ -86,7 +87,7 @@
           <button class="btn btn-sm btn-blue" id="batchConfirmButton">批量确认</button>
         </div>
         <div class="operations-toolbar-side">
-          <button class="btn btn-sm" id="exportButton">导出</button>
+          <button class="btn btn-sm standard-list-export-print" id="exportButton">${downloadIcon}导出</button>
         </div>
       </div>
       <div class="operations-table-container">

@@ -26,7 +26,7 @@
         </div>
         <div class="price-toolbar-right">
           <span class="price-priority-note" id="pricePriorityNote" aria-live="polite"></span>
-          <button class="btn btn-sm price-export-action" type="button" data-action="export">${downloadIcon}导出</button>
+          <button class="btn btn-sm price-export-action standard-list-export-print" type="button" data-action="export">${downloadIcon}导出</button>
         </div>
       </div>
 

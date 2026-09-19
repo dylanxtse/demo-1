@@ -58,7 +58,7 @@
   };
   const purchaseRowKey = (row) => String(row?.key || `${row?.productCode || row?.productName || ''}::${row?.unit || '--'}`);
   const purchaseQuantityKey = (row, participantKey) => `${purchaseRowKey(row)}::${participantKey}`;
-  const purchaseAllocationKey = (summary, meal, row, participantKey) => `${summary?.date || ''}::${meal?.key || ''}::${purchaseQuantityKey(row, participantKey)}`;
+  const purchaseAllocationKey = (summary, meal, row, participantKey) => `${meal?.key || ''}::${purchaseQuantityKey(row, participantKey)}`;
   const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
   const toKeySet = (value) => value instanceof Set
     ? new Set([...value].map((key) => String(key)))
@@ -201,6 +201,53 @@
       if (a.mappingStatus !== b.mappingStatus) return a.mappingStatus === '待关联' ? -1 : 1;
       return String(a.productName || '').localeCompare(String(b.productName || ''), 'zh-CN');
     });
+  }
+
+  function aggregateMealRows(summaries, mealKey, participants = summaries.find((summary) => summary?.participants?.length)?.participants || []) {
+    const rows = new Map();
+    const targetMealKey = String(mealKey || '').trim();
+    summaries.forEach((summary) => {
+      const meal = (summary.calculation?.mealRows || []).find((item) => String(item.key || item.name || '') === targetMealKey);
+      if (!meal) return;
+      (meal.rows || []).forEach((row) => {
+        const key = purchaseRowKey(row);
+        const current = rows.get(key) || {
+          ...clone(row),
+          key,
+          ingredientNames: [],
+          mealNames: [],
+          dishNames: [],
+          sourceDates: [],
+          participantQty: Object.fromEntries(participants.map((participant) => [participant.key, 0])),
+          studentQty: 0,
+          teacherQty: 0,
+          totalQty: 0,
+          perCapitaQty: 0
+        };
+        participants.forEach((participant) => {
+          current.participantQty[participant.key] = demandQuantity(
+            number(current.participantQty[participant.key]) + number(row.participantQty?.[participant.key] ?? row[`${participant.key}Qty`])
+          );
+        });
+        current.studentQty = demandQuantity(current.studentQty + number(row.studentQty));
+        current.teacherQty = demandQuantity(current.teacherQty + number(row.teacherQty));
+        current.totalQty = demandQuantity(participants.reduce((total, participant) => total + number(current.participantQty[participant.key]), 0));
+        current.perCapitaQty = demandQuantity(current.perCapitaQty + number(row.perCapitaQty));
+        [...(row.ingredientNames || [])].forEach((name) => { if (!current.ingredientNames.includes(name)) current.ingredientNames.push(name); });
+        [...(row.mealNames || []), meal.name].forEach((name) => { if (name && !current.mealNames.includes(name)) current.mealNames.push(name); });
+        [...(row.dishNames || [])].forEach((name) => { if (!current.dishNames.includes(name)) current.dishNames.push(name); });
+        if (!current.sourceDates.includes(summary.date)) current.sourceDates.push(summary.date);
+        rows.set(key, current);
+      });
+    });
+    return [...rows.values()].sort((a, b) => {
+      if (a.mappingStatus !== b.mappingStatus) return a.mappingStatus === '待关联' ? -1 : 1;
+      return String(a.productName || '').localeCompare(String(b.productName || ''), 'zh-CN');
+    });
+  }
+
+  function aggregateMealRowsForPreview(preview, mealKey) {
+    return aggregateMealRows(preview?.dateSummaries || [], mealKey, preview?.participants || []);
   }
 
   function buildDemoRecord() {
@@ -359,47 +406,60 @@
   function buildPurchaseQuantityAllocations(preview, overrides, productMap, excludedProductKeys = new Set()) {
     const allocations = {};
     const participants = preview.participants || [];
-    (preview.rows || []).forEach((aggregateRow) => {
-      participants.forEach((participant) => {
-        if (excludedProductKeys.has(purchaseRowKey(aggregateRow))) return;
-        const overrideKey = purchaseQuantityKey(aggregateRow, participant.key);
-        if (!hasOwn(overrides, overrideKey)) return;
-        const product = productMap.get(String(aggregateRow.productCode)) || {};
-        if (!canModifyPurchaseQuantity(product)) return;
-        const sources = [];
-        (preview.dateSummaries || []).forEach((summary) => {
-          (summary.calculation?.mealRows || []).forEach((meal) => {
-            (meal.rows || []).forEach((row) => {
-              if (purchaseRowKey(row) !== purchaseRowKey(aggregateRow)) return;
-              const demand = number(row.participantQty?.[participant.key]);
-              if (demand > 0) sources.push({ summary, meal, row, defaultQty: purchaseQuantity(demand, product) });
-            });
+    const mealDefinitions = [];
+    const mealKeys = new Set();
+    (preview.dateSummaries || []).forEach((summary) => {
+      (summary.calculation?.mealRows || []).forEach((meal) => {
+        const key = String(meal.key || meal.name || '').trim();
+        if (!key || mealKeys.has(key)) return;
+        mealKeys.add(key);
+        mealDefinitions.push({ key, name: meal.name || key });
+      });
+    });
+    mealDefinitions.forEach((meal) => {
+      aggregateMealRowsForPreview(preview, meal.key)
+        .filter((row) => row.mappingStatus === '已关联' && Number(row.totalQty || 0) > 0)
+        .forEach((row) => {
+          if (excludedProductKeys.has(purchaseRowKey(row))) return;
+          const product = productMap.get(String(row.productCode)) || {};
+          if (!canModifyPurchaseQuantity(product)) return;
+          participants.forEach((participant) => {
+            if (number(row.participantQty?.[participant.key]) <= 0) return;
+            const overrideKey = purchaseAllocationKey(null, meal, row, participant.key);
+            if (hasOwn(overrides, overrideKey)) {
+              allocations[overrideKey] = normalizePurchaseQuantity(overrides[overrideKey], product);
+            }
           });
         });
-        let remaining = normalizePurchaseQuantity(overrides[overrideKey], product);
-        sources.forEach((source, index) => {
-          const assigned = index === sources.length - 1
-            ? remaining
-            : Math.min(source.defaultQty, remaining);
-          allocations[purchaseAllocationKey(source.summary, source.meal, source.row, participant.key)] = assigned;
-          remaining = Math.max(0, remaining - assigned);
-        });
-      });
     });
     return allocations;
   }
 
   function editablePurchaseQuantityOverrides(preview, overrides, productMap) {
-    const editable = {};
-    (preview.rows || []).forEach((row) => {
-      const product = productMap.get(String(row.productCode)) || {};
-      if (!canModifyPurchaseQuantity(product)) return;
-      (preview.participants || []).forEach((participant) => {
-        const key = purchaseQuantityKey(row, participant.key);
-        if (hasOwn(overrides, key)) editable[key] = overrides[key];
+    const allowed = new Set();
+    const mealDefinitions = [];
+    const mealKeys = new Set();
+    (preview.dateSummaries || []).forEach((summary) => {
+      (summary.calculation?.mealRows || []).forEach((meal) => {
+        const key = String(meal.key || meal.name || '').trim();
+        if (!key || mealKeys.has(key)) return;
+        mealKeys.add(key);
+        mealDefinitions.push({ key, name: meal.name || key });
       });
     });
-    return editable;
+    mealDefinitions.forEach((meal) => {
+      aggregateMealRowsForPreview(preview, meal.key)
+        .filter((row) => row.mappingStatus === '已关联' && Number(row.totalQty || 0) > 0)
+        .forEach((row) => {
+          const product = productMap.get(String(row.productCode)) || {};
+          if (!canModifyPurchaseQuantity(product)) return;
+          (preview.participants || []).forEach((participant) => {
+            if (number(row.participantQty?.[participant.key]) <= 0) return;
+            allowed.add(purchaseAllocationKey(null, meal, row, participant.key));
+          });
+        });
+    });
+    return Object.fromEntries(Object.entries(overrides || {}).filter(([key]) => allowed.has(key)));
   }
 
   function normalizeUnitPrice(value, product) {
@@ -621,20 +681,30 @@
     // 订单先按订单标签（人员类型）聚合，是否再按餐次拆分由企业端配置决定；用料日期只用于汇总来源和留痕。
     for (const participant of preview.participants) {
       for (const orderGroup of orderGroups) {
-        const mealSources = preview.dateSummaries.flatMap((summary) => orderGroup.meals.map((mealDefinition) => {
-          const meal = (summary.calculation.mealRows || []).find((item) => String(item.key || item.name || '') === mealDefinition.key);
-          if (!meal) return null;
-          const items = participantItems(summary, participant.key, productMap, meal, { purchaseQuantityAllocations, unitPriceOverrides, excludedProductKeys });
+        const mealSources = orderGroup.meals.map((mealDefinition) => {
+          const sourceSummaries = preview.dateSummaries.filter((summary) => (
+            (summary.calculation?.mealRows || []).some((meal) => String(meal.key || meal.name || '') === mealDefinition.key)
+          ));
+          if (!sourceSummaries.length) return null;
+          const meal = {
+            ...mealDefinition,
+            rows: aggregateMealRowsForPreview(preview, mealDefinition.key)
+          };
+          const anchorSummary = sourceSummaries[0];
+          const items = participantItems(anchorSummary, participant.key, productMap, meal, { purchaseQuantityAllocations, unitPriceOverrides, excludedProductKeys });
           return {
-            date: summary.date,
+            dates: sourceSummaries.map((summary) => summary.date),
             meal,
             items,
-            people: number(meal.participantPeople?.[participant.key])
+            people: sourceSummaries.reduce((total, summary) => {
+              const sourceMeal = (summary.calculation?.mealRows || []).find((item) => String(item.key || item.name || '') === mealDefinition.key);
+              return total + number(sourceMeal?.participantPeople?.[participant.key]);
+            }, 0)
           };
-        })).filter(Boolean);
+        }).filter(Boolean);
         const activeSources = mealSources.filter((source) => source.people > 0 || source.items.length > 0);
         if (!activeSources.length) continue;
-        const orderDates = [...new Set(activeSources.map((source) => source.date))];
+        const orderDates = [...new Set(activeSources.flatMap((source) => source.dates || []))];
         const items = mergeOrderItems(activeSources, orderDates, orderGroup.name, participant);
         if (!items.length) continue;
         const mealPeople = activeSources.reduce((total, source) => total + source.people, 0);
@@ -721,6 +791,7 @@
     currentCanteen,
     canModifyClientOrderPrice,
     currentSalesPrice,
+    purchaseAllocationKey,
     getAll() {
       return readAll().sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''))).map(clone);
     },
@@ -728,6 +799,7 @@
       const record = readAll().find((item) => String(item.id) === String(id) || String(item.recordNo) === String(id));
       return clone(record || null);
     },
+    aggregateMealRows: aggregateMealRowsForPreview,
     buildPreview,
     submit
   };

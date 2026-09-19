@@ -164,6 +164,13 @@
   font-size: 13px;
 }
 
+.school-order-form-page .order-goods-table .table-input[aria-invalid="true"],
+.school-order-form-page .order-goods-table .table-input[aria-invalid="true"]:focus {
+  border-color: #f04e4e;
+  background: #fff7f7;
+  box-shadow: 0 0 0 1px rgba(240, 78, 78, .08);
+}
+
 .school-order-form-page .order-goods-table .table-input::placeholder {
   color: var(--text-tertiary);
   font-size: 13px;

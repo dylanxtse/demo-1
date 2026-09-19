@@ -6,6 +6,7 @@
   const mode = ['add', 'edit', 'copy', 'audit'].includes(params.get('mode')) ? params.get('mode') : 'add';
   const orderId = params.get('id') || '';
   const sourceOrder = orderId ? service.get(orderId) : null;
+  const isCreatingOrder = mode === 'add' || mode === 'copy';
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -17,14 +18,32 @@
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
+  const amountDecimalPlaces = () => service.amountDecimalPlaces?.() ?? 2;
+  const minimumAmount = () => service.minimumAmount?.() ?? 10 ** -amountDecimalPlaces();
+  const normalizePrice = (value) => service.normalizePrice?.(value) ?? Number(
+    (Number.isFinite(Number(value)) ? Number(value) : 0).toFixed(amountDecimalPlaces())
+  );
+  const isValidPrice = (value) => service.isValidPrice?.(value) ?? (() => {
+    const text = String(value ?? '').trim();
+    const parsed = Number(text);
+    return Boolean(text) && Number.isFinite(parsed) && parsed >= minimumAmount();
+  })();
+  const priceErrorMessage = (value) => service.priceErrorMessage?.(value) || (() => {
+    const text = String(value ?? '').trim();
+    if (!text) return '单价不能为空';
+    if (Number(text) === 0) return '单价不能为0';
+    return `单价必须大于等于${minimumAmount().toFixed(amountDecimalPlaces())}`;
+  })();
   const isStandardProduct = (item) => item?.isStandardProduct === true || item?.isStandardProduct === 'true' || item?.isStandardProduct === '是'
     || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是';
+  const canEditOrderPrice = () => service.canModifyClientOrderPrice?.() === true;
+  const currentSalesPrice = (product) => service.currentSalesPrice?.(product) ?? number(product?.currentSalesPrice ?? product?.currentPrice ?? product?.salesPrice ?? product?.salePrice ?? product?.marketPrice);
   const restrictStandardQuantity = (input, item) => {
     if (!input || !isStandardProduct(item)) return;
     const value = String(input.value || '');
     if (value.includes('.')) input.value = value.split('.')[0];
   };
-  const money = (value) => number(value).toFixed(2);
+  const money = (value) => number(value).toFixed(amountDecimalPlaces());
   const productLabel = (product) => window.DomUtils.formatProductDisplay(product);
   const titleMap = { add: '添加订单', edit: '编辑订单', copy: '复制订单', audit: '审核订单' };
   const title = titleMap[mode];
@@ -80,7 +99,15 @@
     const recent = line.recentSalePrice === '' || line.recentSalePrice == null ? (product?.marketPrice ?? '') : line.recentSalePrice;
     const market = line.marketPrice === '' || line.marketPrice == null ? (product?.marketPrice ?? '') : line.marketPrice;
     const qty = number(line.orderQty);
-    const price = number(line.orderPrice);
+    const price = line.productCode ? normalizePrice(line.orderPrice) : 0;
+    const priceEditable = !readOnly && canEditOrderPrice();
+    const displayPrice = isCreatingOrder && !priceEditable && product ? currentSalesPrice(product) : price;
+    const priceInputValue = line.productCode && line.orderPrice !== '' && line.orderPrice != null
+      ? money(displayPrice)
+      : '';
+    const priceReadonlyTitle = readOnly
+      ? '审核状态不可编辑'
+      : priceEditable ? '' : '企业端已关闭客户端下单修改单价权限';
     const standardProduct = isStandardProduct(line) || isStandardProduct(product);
     const quantityStep = standardProduct ? '1' : '0.01';
     const quantityInputMode = standardProduct ? 'numeric' : 'decimal';
@@ -92,8 +119,8 @@
       <td class="goods-name-cell">${renderProductSelect(line.productCode, lineId)}</td>
       <td data-cell="unit">${escapeHtml(unit || '--')}</td>
       <td><input class="table-input" data-field="orderQty" type="number" min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${qty ? escapeHtml(qty) : ''}" placeholder="请输入" aria-label="第${index + 1}行下单数量" ${lockedInputs ? 'disabled' : ''}></td>
-      <td><input class="table-input" data-field="orderPrice" type="number" min="0" step="0.01" value="${price ? escapeHtml(money(price)) : ''}" placeholder="请输入" aria-label="第${index + 1}行下单单价" ${lockedInputs ? 'disabled' : ''}></td>
-      <td class="line-subtotal" data-cell="subtotal">${money(qty * price)}</td>
+      <td><input class="table-input" data-field="orderPrice" type="number" min="${minimumAmount()}" step="${minimumAmount()}" value="${escapeHtml(priceInputValue)}" placeholder="请输入" aria-label="第${index + 1}行下单单价" title="${priceReadonlyTitle}" ${priceEditable ? '' : 'disabled'}></td>
+      <td class="line-subtotal" data-cell="subtotal">${money(qty * displayPrice)}</td>
       <td data-cell="agreement">${lineValue(line, 'agreementPrice', '') === '' ? '--' : money(lineValue(line, 'agreementPrice'))}</td>
       <td data-cell="recent">${recent === '' ? '--' : money(recent)}</td>
       <td data-cell="market">${market === '' ? '--' : money(market)}</td>
@@ -111,7 +138,11 @@
       restrictStandardQuantity(quantityInput, {
         isStandardProduct: isStandardProduct(product) || isStandardProduct(old)
       });
-      const price = Math.max(0, number(row.querySelector('[data-field="orderPrice"]')?.value ?? old.orderPrice));
+      const priceEditable = !readOnly && canEditOrderPrice();
+      const enteredPrice = number(row.querySelector('[data-field="orderPrice"]')?.value ?? old.orderPrice);
+      const price = product
+        ? (isCreatingOrder && !priceEditable ? currentSalesPrice(product) : normalizePrice(enteredPrice))
+        : Math.max(0, enteredPrice);
       return {
         id: old.id || row.dataset.lineId || `SOL-NEW-${Date.now()}-${index}`,
         productCode: code,
@@ -146,7 +177,13 @@
       if (!item.id) item.id = `SOL-ROW-${index + 1}`;
     });
     page.querySelector('#goodsTableBody').innerHTML = state.items.map(renderLine).join('');
-    state.total = state.items.reduce((sum, item) => sum + number(item.orderQty) * number(item.orderPrice), 0);
+    state.total = state.items.reduce((sum, item) => {
+      const product = currentProduct(item.productCode);
+      const displayPrice = product
+        ? (isCreatingOrder && !canEditOrderPrice() ? currentSalesPrice(product) : normalizePrice(item.orderPrice))
+        : number(item.orderPrice);
+      return sum + number(item.orderQty) * displayPrice;
+    }, 0);
     page.querySelector('#goodsTotal').textContent = money(state.total);
   }
 
@@ -203,7 +240,7 @@
     item.isNetVegetable = product.isNetVegetable === true;
     item.recentSalePrice = product.marketPrice;
     item.marketPrice = product.marketPrice;
-    if (!number(item.orderPrice)) item.orderPrice = product.marketPrice;
+    item.orderPrice = currentSalesPrice(product);
     closeAllProductSelects(page);
     if (state.items[state.items.length - 1] === item) {
       state.items.push({ id: `SOL-ROW-${Date.now()}`, productCode: '', productName: '', unit: '', brand: '--', spec: '--', isStandardProduct: false, orderQty: 0, orderPrice: 0, agreementPrice: '', recentSalePrice: '', marketPrice: '', remark: '' });
@@ -213,6 +250,38 @@
 
   function setError(page, message = '') {
     page.querySelector('#schoolOrderFormError').textContent = message;
+  }
+
+  function validatePriceInput(input, { format = false } = {}) {
+    if (!input || input.disabled) return true;
+    const valid = isValidPrice(input.value);
+    input.setCustomValidity(valid ? '' : priceErrorMessage(input.value));
+    input.classList.toggle('is-invalid', !valid);
+    input.setAttribute('aria-invalid', String(!valid));
+    if (valid && format) input.value = money(input.value);
+    return valid;
+  }
+
+  function clearPriceValidation(input) {
+    if (!input || input.disabled) return;
+    input.setCustomValidity('');
+    input.classList.remove('is-invalid');
+    input.removeAttribute('aria-invalid');
+  }
+
+  function validateOrderPrices(page) {
+    const invalid = [...page.querySelectorAll('#goodsTableBody tr[data-line-id]')].map((row) => ({
+      row,
+      input: row.querySelector('[data-field="orderPrice"]'),
+      product: currentProduct(row.querySelector('.order-goods-select')?.dataset.value || ''),
+      quantity: number(row.querySelector('[data-field="orderQty"]')?.value)
+    })).find(({ input, product, quantity }) => product && quantity > 0 && !isValidPrice(input?.value));
+    if (!invalid) return true;
+    const message = priceErrorMessage(invalid.input?.value);
+    validatePriceInput(invalid.input);
+    invalid.input?.focus();
+    setError(page, message);
+    return false;
   }
 
   function openModal({ title: modalTitle, body, footer, className = '' }) {
@@ -305,7 +374,7 @@
       chosen.forEach((product) => {
         const pickerValue = pickerValues.get(product.code) || {};
         const existingIndex = next.findIndex((item) => item.productCode === product.code);
-        const item = { id: `SOL-NEW-${Date.now()}-${product.code}`, productCode: product.code, productName: product.name, unit: product.unit, brand: product.brand, spec: product.spec, isNetVegetable: product.isNetVegetable === true, isStandardProduct: isStandardProduct(product), orderQty: 0, orderPrice: product.marketPrice, agreementPrice: '', recentSalePrice: product.marketPrice, marketPrice: product.marketPrice, remark: '' };
+        const item = { id: `SOL-NEW-${Date.now()}-${product.code}`, productCode: product.code, productName: product.name, unit: product.unit, brand: product.brand, spec: product.spec, isNetVegetable: product.isNetVegetable === true, isStandardProduct: isStandardProduct(product), orderQty: 0, orderPrice: currentSalesPrice(product), agreementPrice: '', recentSalePrice: product.marketPrice, marketPrice: product.marketPrice, remark: '' };
         item.orderQty = number(pickerValue.quantity);
         item.remark = pickerValue.remark || '';
         if (existingIndex >= 0) next[existingIndex] = { ...next[existingIndex], orderQty: item.orderQty, remark: item.remark };
@@ -344,14 +413,20 @@
       setError(page, '请至少添加一条商品并填写下单数量');
       return;
     }
+    if (!validateOrderPrices(page)) return;
     const invalidStandardItem = payload.items.find((item) => item.productName && item.orderQty > 0
       && isStandardProduct(item) && !Number.isInteger(Number(item.orderQty)));
     if (invalidStandardItem) {
       setError(page, '标品下单数量必须为整数');
       return;
     }
-    if (mode === 'edit') service.update(orderId, { ...payload, ...(status ? { status } : {}) });
-    else service.create({ ...payload, status: status || '待发货', source: '平台下单' });
+    try {
+      if (mode === 'edit') service.update(orderId, { ...payload, ...(status ? { status } : {}) });
+      else service.create({ ...payload, status: status || '待发货', source: '平台下单' });
+    } catch (error) {
+      setError(page, error.message || '保存失败，请稍后重试');
+      return;
+    }
     navigate('./school-order-management.html');
   }
 
@@ -397,6 +472,11 @@
 
     page.addEventListener('input', (event) => {
       const row = event.target.closest('tr[data-line-id]');
+      if (event.target.matches('[data-field="orderPrice"]')) {
+        const hadInvalidPrice = event.target.getAttribute('aria-invalid') === 'true';
+        clearPriceValidation(event.target);
+        if (hadInvalidPrice) setError(page, '');
+      }
       if (row) updateLine(row, page);
       if (event.target.id === 'schoolOrderRemark') page.querySelector('#schoolOrderRemarkCount').textContent = event.target.value.length;
       if (event.target.id === 'schoolOrderExpectedAt') event.target.classList.toggle('is-placeholder', !event.target.value.trim());
@@ -408,6 +488,11 @@
       }
       const row = event.target.closest('tr[data-line-id]');
       if (!row) return;
+      if (event.target.matches('[data-field="orderPrice"]')) {
+        const hadInvalidPrice = event.target.getAttribute('aria-invalid') === 'true';
+        clearPriceValidation(event.target);
+        if (hadInvalidPrice) setError(page, '');
+      }
       updateLine(row, page);
     });
     page.addEventListener('click', (event) => {

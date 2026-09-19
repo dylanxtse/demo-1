@@ -133,7 +133,7 @@
 
   function renderToolbar() {
     const sales = state.mode === 'sales';
-    return `<div class="px-toolbar"><button class="btn btn-primary btn-sm" type="button" data-px-action="edit">${state.editing ? '完成编辑' : '编辑订价'}</button>${sales ? '<button class="btn btn-primary btn-sm" type="button" data-px-action="purchase-to-sales" disabled>以采定销</button><button class="btn btn-primary btn-sm" type="button" data-px-action="sync" disabled>同步订价</button>' : ''}<button class="btn btn-primary btn-sm" type="button" data-px-action="open-import">导入订价</button><span class="px-toolbar-spacer"></span><span class="px-priority-note" title="${esc(priorityNote())}">${esc(priorityNote())}</span><button class="btn btn-sm px-export" type="button" data-px-action="export">${downloadIcon()}导出</button></div>`;
+    return `<div class="px-toolbar"><button class="btn btn-primary btn-sm" type="button" data-px-action="edit">${state.editing ? '完成编辑' : '编辑订价'}</button>${sales ? '<button class="btn btn-primary btn-sm" type="button" data-px-action="purchase-to-sales" disabled>以采定销</button><button class="btn btn-primary btn-sm" type="button" data-px-action="sync" disabled>同步订价</button>' : ''}<button class="btn btn-primary btn-sm" type="button" data-px-action="open-import">导入订价</button><span class="px-toolbar-spacer"></span><span class="px-priority-note" title="${esc(priorityNote())}">${esc(priorityNote())}</span><button class="btn btn-sm px-export standard-list-export-print" type="button" data-px-action="export">${downloadIcon()}导出</button></div>`;
   }
 
   function renderCurrent(row) {

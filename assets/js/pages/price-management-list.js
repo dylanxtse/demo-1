@@ -1,4 +1,5 @@
 (function () {
+  const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
   const esc = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -284,7 +285,7 @@
     <div class="page-card price-management-page ${config.rowMode ? `${config.rowMode}-page` : ''}">
       ${config.tabs ? `<div class="price-management-tabs" role="tablist">${config.tabs.map((tab, index) => `<button type="button" class="${index === 0 ? 'active' : ''}" data-page-tab="${index}">${esc(tab)}</button>`).join('')}</div>` : ''}
       <section class="operations-filter price-management-filter"><div class="operations-filter-main"><div class="operations-filter-grid" id="priceManagementFilters"></div><div class="operations-filter-actions"><button class="btn btn-primary btn-sm" type="button" data-action="query">查询</button><button class="btn btn-sm" type="button" data-action="reset">重置</button></div></div></section>
-      <div class="operations-toolbar price-management-toolbar"><button class="btn btn-primary btn-sm" type="button" data-action="add">${esc(config.addLabel)}</button>${config.importLabel ? `<button class="btn btn-blue btn-sm" type="button" data-action="import">${esc(config.importLabel)}</button>` : ''}<span class="toolbar-spacer"></span><span class="operations-summary" id="priceManagementSummary"></span>${config.hideExport ? '' : '<button class="btn btn-sm" type="button" data-action="export">导出</button>'}</div>
+      <div class="operations-toolbar price-management-toolbar"><button class="btn btn-primary btn-sm" type="button" data-action="add">${esc(config.addLabel)}</button>${config.importLabel ? `<button class="btn btn-blue btn-sm" type="button" data-action="import">${esc(config.importLabel)}</button>` : ''}<span class="toolbar-spacer"></span><span class="operations-summary" id="priceManagementSummary"></span>${config.hideExport ? '' : `<button class="btn btn-sm standard-list-export-print" type="button" data-action="export">${downloadIcon}导出</button>`}</div>
       <div class="operations-table-wrap price-management-table-wrap"><table class="operations-table price-management-table"><thead id="priceManagementHead"></thead><tbody id="priceManagementBody"></tbody></table></div>
       <div class="pagination price-management-pagination" id="priceManagementPagination"></div>
       <div class="price-management-toast" id="priceManagementToast" role="status"></div>

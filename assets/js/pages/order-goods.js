@@ -1,5 +1,6 @@
 (function () {
   const service = window.OperationsService;
+  const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
   const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
   const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
   const resolveMealName = (value) => window.OrderMealNameByKey?.[value] || value || '';
@@ -28,7 +29,7 @@
         <div class="operations-field"><label class="filter-label" for="goodsMealName">订单餐次</label><select class="filter-select is-placeholder" id="goodsMealName" data-placeholder-only><option value="" disabled selected hidden>请选择</option>${orderMealOptions}</select></div>
       </div></div>
     </div>
-    <div class="operations-toolbar"><span></span><button class="btn btn-sm" id="goodsExport">导出</button></div>
+    <div class="operations-toolbar"><span></span><button class="btn btn-sm standard-list-export-print" id="goodsExport">${downloadIcon}导出</button></div>
     <div class="operations-table-container"><div class="operations-table-wrap"><table class="operations-table order-goods-table"><thead><tr><th>序号</th><th>订单号</th><th>商品名称（计量单位/品牌/规格）</th><th>客户名称</th><th>食堂</th><th>客户类型</th><th>订单标签</th><th>计量单位</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货数量</th><th>发货小计</th><th>期望送达时间</th><th class="status-column">单据状态</th><th>收货状态</th><th>仓库</th><th>备注</th><th>线路</th><th>添加人</th></tr></thead><tbody id="orderGoodsBody"></tbody></table></div>
     <div class="pagination" id="orderGoodsPagination"><span class="page-total"></span></div></div>
   </section>`;

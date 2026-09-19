@@ -160,7 +160,7 @@
         <button type="button" class="btn btn-primary btn-sm" data-action="batch-tag">批量修改标签</button>
         <span class="school-order-toolbar-help">*仅支持对同一食堂相同供货企业的订单进行批量修改标签</span>
         <span class="toolbar-spacer"></span>
-        <button type="button" class="btn btn-sm school-order-export" data-action="export"><span class="school-order-export-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4"></path><polyline points="7 9 12 4 17 9"></polyline><path d="M5 20h14"></path></svg></span><span>导出</span></button>
+        <button type="button" class="btn btn-sm school-order-export standard-list-export-print" data-action="export"><span class="school-order-export-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4"></path><polyline points="7 9 12 4 17 9"></polyline><path d="M5 20h14"></path></svg></span><span>导出</span></button>
       </div>
       <div class="school-order-table-container">
         <div class="school-order-table-wrap"><table class="school-order-table"><colgroup>

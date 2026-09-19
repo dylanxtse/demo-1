@@ -1,4 +1,5 @@
 (function () {
+  const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
   const view = document.body.dataset.schoolFinanceView === 'accounts' ? 'accounts' : 'reconciliation';
   const rawData = window.SchoolReferenceData || {};
   const data = {
@@ -28,7 +29,7 @@
     content: `<section class="page-card school-missing-page school-finance-page ${view === 'accounts' ? 'school-accounts-page' : 'school-reconciliation-page'}" aria-label="${view === 'accounts' ? '采购账款' : '采购对账'}">
       <div class="school-page-filter"><div class="school-filter-grid" id="schoolFinanceFilters"></div><div class="school-filter-actions" id="schoolFinanceFilterActions"></div></div>
       ${view === 'reconciliation' ? '<div class="school-advanced-panel" id="schoolFinanceAdvanced"><div class="school-filter-grid"><div class="school-filter-field"><label for="schoolFinanceFeedback">反馈状态</label><select id="schoolFinanceFeedback" class="school-control"><option value="">全部</option><option>无异议</option><option>有异议</option></select></div></div></div>' : ''}
-      <div class="school-page-toolbar"><div class="school-toolbar-left" id="schoolFinanceToolbarLeft"></div><div class="school-toolbar-right"><button class="school-action-link school-export-link" id="schoolFinanceExport" type="button">导出</button></div></div>
+      <div class="school-page-toolbar"><div class="school-toolbar-left" id="schoolFinanceToolbarLeft"></div><div class="school-toolbar-right"><button class="school-action-link school-export-link standard-list-export-print" id="schoolFinanceExport" type="button">${downloadIcon}导出</button></div></div>
       <div class="school-table-container"><div class="school-table-wrap"><table class="school-data-table" id="schoolFinanceTable"></table></div><div class="school-page-pagination" id="schoolFinancePagination"></div></div>
       <div class="school-finance-overlay" id="schoolFinanceOverlay" hidden></div><div class="school-toast" id="schoolFinanceToast" role="status"></div>
     </section>`

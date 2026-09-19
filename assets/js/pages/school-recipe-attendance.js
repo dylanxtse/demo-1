@@ -78,7 +78,7 @@
   const maxMonthStart = shiftMonth(currentMonthStart, 1);
   const defaultMonth = `${todayMonth}-01`;
   const defaultDate = allMenus.find((menu) => String(menu.date).startsWith(todayMonth))?.date || dateValue(today);
-  const state = { selectedDate: defaultDate, monthStart: defaultMonth, canteen: canteenNames.includes(storedCanteen) ? storedCanteen : defaultCanteen, attendanceByDate: {} };
+  const state = { selectedDate: defaultDate, monthStart: defaultMonth, canteen: canteenNames.includes(storedCanteen) ? storedCanteen : defaultCanteen, attendanceByDate: {}, activeMealKey: '' };
   const draftsByCanteen = {};
   let attendanceInputMode = 'dining';
   let attendanceValidationHighlightDate = '';
@@ -216,6 +216,22 @@
   function renderCanteenTabs() {
     const isLocked = attendanceInputMode === 'non-dining';
     return `<div class="school-recipe-canteen-switch${isLocked ? ' is-locked' : ''}" aria-label="当前食堂"><div class="school-recipe-canteen-tabs" role="tablist" aria-label="切换食堂">${canteenNames.map((name) => `<button type="button" class="school-recipe-canteen-tab${name === state.canteen ? ' is-active' : ''}" role="tab" aria-selected="${name === state.canteen}" aria-disabled="${isLocked}"${isLocked ? ' disabled' : ''} data-recipe-canteen="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join('')}</div></div>`;
+  }
+
+  function activeMealFor(meals = []) {
+    const current = meals.find((meal) => String(meal.key) === String(state.activeMealKey));
+    if (current) return current;
+    const next = meals[0] || null;
+    state.activeMealKey = next?.key || '';
+    return next;
+  }
+
+  function renderMealTabs(meals, calculation) {
+    if (!meals.length) return '';
+    return `<div class="school-recipe-meal-tabs school-recipe-attendance-meal-tabs" role="tablist" aria-label="切换餐次">${meals.map((meal) => {
+      const active = String(meal.key) === String(state.activeMealKey);
+      return `<button type="button" class="school-recipe-meal-tab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-attendance-meal-tab="${escapeHtml(meal.key)}"><span>${escapeHtml(meal.name || meal.key)}</span></button>`;
+    }).join('')}</div>`;
   }
 
   function renderCalendar() {
@@ -367,12 +383,13 @@
     return '';
   }
 
-  function renderDemand(menu, record) {
+  function renderDemand(menu, record, activeMealKey) {
     if (!menu) return '<div class="school-recipe-attendance-empty">请选择有菜谱的日期</div>';
     const participants = participantsForState();
     if (!participants.length) return '<div class="school-recipe-attendance-empty">当前食堂暂无启用的人员类型</div>';
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
-    const rows = calculation.rows
+    const meal = (calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey)) || calculation.mealRows?.[0];
+    const rows = (meal?.rows || [])
       .filter((row) => Number(row.totalQty || 0) > 0)
       .map((row, index) => `<tr>
       <td>${index + 1}</td>
@@ -395,6 +412,7 @@
     if (!menu) return `<main class="school-recipe-attendance-detail-panel">${renderOverview(menu)}<div class="school-recipe-attendance-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>请选择有菜谱的日期</p></div></main>`;
     const isNonDiningMode = attendanceInputMode === 'non-dining';
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
+    const activeMeal = activeMealFor(meals);
     const canSaveNonDiningMode = canSaveNonDining(validation, calculation);
     const canContinueAttempt = canAttemptContinue(menu, validation);
     const footer = isNonDiningMode
@@ -406,7 +424,7 @@
         <div class="school-recipe-attendance-section-heading"><div><span class="section-title-mark">餐次总人数</span>${isNonDiningMode ? '<p class="school-recipe-attendance-mode-hint">当前为不就餐人数填写模式，总人数已锁定</p>' : '<span class="school-recipe-attendance-count-tip">无人员就餐请填写为0</span>'}</div><button type="button" class="btn btn-sm school-recipe-attendance-mode-action${isNonDiningMode ? ' btn-primary' : ''}${isNonDiningMode && !canSaveNonDiningMode ? ' btn-disabled' : ''}" data-attendance-mode-toggle${isNonDiningMode && !canSaveNonDiningMode ? ' disabled' : ''}>${isNonDiningMode ? '保存' : '填写不就餐人数'}</button></div>
         ${renderNotice(menu, record)}
         ${renderMealTable(meals, record)}
-        <section class="school-recipe-attendance-demand-section" aria-label="商品需求测算"><header><div><span class="section-title-mark">商品需求测算</span></div></header><div id="schoolRecipeAttendanceDemand">${renderDemand(menu, record)}</div></section>
+        <section class="school-recipe-attendance-demand-section" aria-label="商品需求测算"><header><div><span class="section-title-mark">商品需求测算</span></div></header>${renderMealTabs(meals, calculation)}<div id="schoolRecipeAttendanceDemand">${renderDemand(menu, record, activeMeal?.key)}</div></section>
       </div>
       <footer class="school-recipe-attendance-actions">${footer}</footer>
     </main>`;
@@ -416,6 +434,7 @@
     const body = root.querySelector('#schoolRecipeAttendanceBody');
     hideDishTooltip();
     if (!body) return;
+    activeMealFor(menuForDate(state.selectedDate)?.meals || []);
     body.innerHTML = `${renderCalendar()}${renderDetail(menuForDate(state.selectedDate))}`;
   }
 
@@ -428,6 +447,7 @@
     state.selectedDate = issue.date;
     state.monthStart = monthStart(issue.date);
     state.attendance = clone(issue.record);
+    state.activeMealKey = issue.meal.key;
     state.attendanceByDate[issue.date] = clone(issue.record);
     renderBody(root);
     const input = [...page.querySelectorAll('[data-attendance-field]')]
@@ -479,7 +499,8 @@
     const validation = attendanceService.validate(menu, record, serviceOptions());
     const isNonDiningMode = attendanceInputMode === 'non-dining';
     const demand = page.querySelector('#schoolRecipeAttendanceDemand');
-    if (demand) demand.innerHTML = renderDemand(menu, record);
+    const activeMeal = activeMealFor(menu.meals || []);
+    if (demand) demand.innerHTML = renderDemand(menu, record, activeMeal?.key);
     const overviewTotal = page.querySelector('#schoolRecipeAttendanceOverviewTotal');
     const overviewNonDining = page.querySelector('[data-attendance-overview-non-dining]');
     const overviewNonDiningTotal = page.querySelector('[data-attendance-overview-non-dining-total]');
@@ -711,7 +732,7 @@
       return;
     }
     if (attendanceInputMode === 'non-dining') {
-      const navigationTarget = event.target.closest('[data-recipe-canteen], [data-attendance-date], [data-attendance-month], [data-attendance-action]');
+      const navigationTarget = event.target.closest('[data-recipe-canteen], [data-attendance-date], [data-attendance-month], [data-attendance-action], [data-attendance-meal-tab]');
       if (navigationTarget) {
         showToast('请先保存不就餐人数，再切换日期或执行其他操作', true);
         return;
@@ -726,6 +747,7 @@
         window.AppStorage?.write?.(canteenStorageKey, nextCanteen);
         state.attendanceByDate = buildAttendanceMap();
         state.attendance = attendanceForSelection(state.selectedDate);
+        state.activeMealKey = '';
         renderBody(root);
       }
       return;
@@ -733,6 +755,13 @@
     const dateButton = event.target.closest('[data-attendance-date]');
     if (dateButton && dateButton.closest('.school-recipe-attendance-date-panel')) {
       selectDate(root, dateButton.dataset.attendanceDate);
+      return;
+    }
+    const mealTab = event.target.closest('[data-attendance-meal-tab]');
+    if (mealTab) {
+      syncCurrentDraftFromInputs(page);
+      state.activeMealKey = mealTab.dataset.attendanceMealTab || '';
+      renderBody(root);
       return;
     }
     const monthButton = event.target.closest('[data-attendance-month]');
@@ -745,6 +774,7 @@
       const dates = monthDates(state.monthStart);
       state.selectedDate = dates.includes(state.selectedDate) ? state.selectedDate : dates.find((date) => menuForDate(date)) || dates[0];
       state.attendance = attendanceForSelection(state.selectedDate);
+      state.activeMealKey = '';
       renderBody(root);
       return;
     }

@@ -37,7 +37,7 @@
         '</div>',
       '</div>',
       '<div class="purchase-toolbar purchase-order-toolbar">',
-        '<div class="purchase-toolbar-side"><button class="btn btn-sm purchase-export-button" type="button" data-action="export">' + exportIcon + '导出</button><button class="btn btn-sm purchase-print-button" type="button" data-action="print" disabled>' + printIcon + '打印</button></div>',
+        '<div class="purchase-toolbar-side"><button class="btn btn-sm purchase-export-button standard-list-export-print" type="button" data-action="export">' + exportIcon + '导出</button><button class="btn btn-sm purchase-print-button standard-list-export-print" type="button" data-action="print" disabled>' + printIcon + '打印</button></div>',
       '</div>',
       '<div class="purchase-table-container">',
         '<div class="purchase-table-wrap">',

@@ -307,8 +307,8 @@
         <div class="supplier-purchase-toolbar">
           <div class="supplier-purchase-toolbar-left"><span class="supplier-purchase-selected-count" aria-live="polite"></span></div>
           <div class="supplier-purchase-toolbar-actions">
-            <button class="supplier-purchase-outline-button" type="button" data-action="print">${icon.print}<span>打印</span></button>
-            <button class="supplier-purchase-outline-button" type="button" data-action="export">${icon.export}<span>导出</span></button>
+            <button class="supplier-purchase-outline-button standard-list-export-print" type="button" data-action="print">${icon.print}<span>打印</span></button>
+            <button class="supplier-purchase-outline-button standard-list-export-print" type="button" data-action="export">${icon.export}<span>导出</span></button>
           </div>
         </div>
         <div class="supplier-purchase-table-wrap">

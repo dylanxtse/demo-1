@@ -81,7 +81,7 @@
               ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchUnshelfBtn" type="button" disabled>批量下架</button>'}
               <button class="btn btn-danger btn-sm btn-action btn-disabled" id="batchDeleteBtn" type="button" disabled>批量删除</button>
             </div>
-            ${isSupplierProductPage ? '' : `<div class="action-controls"><button class="btn btn-sm btn-fixed" type="button">${downloadIcon}导出</button></div>`}
+            ${isSupplierProductPage ? '' : `<div class="action-controls"><button class="btn btn-sm btn-fixed standard-list-export-print" type="button">${downloadIcon}导出</button></div>`}
           </div>
 
           <div class="table-container">

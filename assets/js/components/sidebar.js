@@ -44,11 +44,14 @@
       'notice-management': 'notice-management.html'
     };
     const targetPath = pageAliases[pageKey] || pageKey || currentPath;
-    const cleanPath = (routeAliases[targetPath] || targetPath).replace(/\.html$/, '');
+    const [targetFile, targetQuery = ''] = (routeAliases[targetPath] || targetPath).split('?');
+    const cleanPath = targetFile.replace(/\.html$/, '');
     function hrefMatches(href) {
       if (!href) return false;
-      const cleanHref = href.replace(/^\.?\//, '').replace(/\.html$/, '');
-      return cleanHref === cleanPath;
+      const [hrefFile, hrefQuery = ''] = href.split('?');
+      const cleanHref = hrefFile.replace(/^\.?\//, '').replace(/\.html$/, '');
+      if (cleanHref !== cleanPath) return false;
+      return targetQuery ? hrefQuery === targetQuery : !hrefQuery;
     }
     let foundPath = null;
     function findInChildren(items, path) {
@@ -293,7 +296,7 @@
           : options.variant === 'school'
             ? window.SchoolMenuConfig
           : window.AppMenuConfig;
-      const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+      const currentPath = `${window.location.pathname.split('/').pop() || 'index.html'}${window.location.search || ''}`;
       const pageKey = root.dataset?.page || root.querySelector('#app')?.dataset.page || '';
       autoSelectByHref(menu, currentPath, pageKey);
       if (sidebar) {

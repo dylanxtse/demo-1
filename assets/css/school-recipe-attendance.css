@@ -69,6 +69,12 @@
 .school-recipe-attendance-notice.is-warning .school-recipe-attendance-notice-icon { color: #d58b26; background: #ffedc9; }
 .school-recipe-attendance-notice strong { color: #526073; font-size: 13px; font-weight: 500; }
 .school-recipe-attendance-notice p { margin: 3px 0 0; color: #8994a4; font-size: 13px; line-height: 18px; }
+.school-recipe-meal-tabs { display: flex; min-width: 0; align-items: stretch; gap: 4px; margin: 14px 0 12px; padding: 0 2px; overflow-x: auto; border-bottom: 1px solid var(--border-light); scrollbar-width: thin; }
+.school-recipe-meal-tab { position: relative; display: inline-flex; min-width: 112px; height: 44px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; color: #697587; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.school-recipe-meal-tab span { white-space: nowrap; }
+.school-recipe-meal-tab:hover { color: var(--primary); background: #f7faff; }
+.school-recipe-meal-tab.is-active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 500; }
+.school-recipe-meal-tab.is-active small { color: #477fca; }
 .school-recipe-attendance-meal-grid { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 12px; }
 .school-recipe-attendance-meal-card { min-width: 0; border: 1px solid var(--border-light); border-radius: 6px; background: #fff; }
 .school-recipe-attendance-meal-header { display: flex; min-height: 60px; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid var(--border-light); background: #fbfcfe; }
@@ -143,6 +149,7 @@
 .school-recipe-attendance-meal-total-cell small { display: block; margin-top: 3px; color: #9aa4b2; font-size: 11px; line-height: 16px; white-space: nowrap; }
 .school-recipe-attendance-demand-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); }
 .school-recipe-attendance-demand-section > header { margin-bottom: 12px; }
+.school-recipe-attendance-demand-section .school-recipe-meal-tabs { margin-top: 0; }
 .school-recipe-attendance-table-wrap { overflow: auto; border: 1px solid var(--border-light); border-radius: 4px; }
 .school-recipe-attendance-table { width: 100%; min-width: 1050px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
 .school-recipe-attendance-table th,

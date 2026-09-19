@@ -48,7 +48,7 @@
     { code: 'SP0300025', name: '西红柿', unit: 'KG', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: 20, image: '' },
     { code: 'SP0300029', name: '鲫鱼', unit: '斤', brand: '--', spec: '--', category: '水产品-水产品二级', marketPrice: 15, image: '' },
     { code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '瓶', brand: '金龙鱼', spec: '5L/瓶', category: '食油-食油二级', marketPrice: 55, image: '' },
-    { code: 'SP0300034', name: '黑大米', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 10, image: '' },
+    { code: 'SP0300034', name: '黑大米', unit: '袋', brand: '--', spec: '25kg/袋', category: '主食（米面粉点心类）-粮食类', marketPrice: 500, image: '' },
     { code: 'SP0300040', name: '土豆', unit: '斤', brand: '农家优选', spec: '500g/份', category: '果蔬-果蔬二级', marketPrice: 6.8, image: '' },
     { code: 'SP0300042', name: '面包', unit: '个', brand: '桃李', spec: '100g/个', category: '主食（米面粉点心类）-点心类', marketPrice: 3.5, image: '' }
   ];
