@@ -118,6 +118,7 @@
       'school-product-management.html',
       'school-order-management.html',
       'school-order-export-template.html',
+      'school-order-export-order-template.html',
       'school-order-form.html',
       'school-order-detail.html',
       'school-order-acceptance.html',

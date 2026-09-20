@@ -102,6 +102,27 @@
     navigate(`./school-order-export-template.html?${query}`);
   }
 
+  function openOrderExportTemplate(rows) {
+    const exportKey = `school-order-export-order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260920-school-order-export-order-1',
+      schoolName: service.SCHOOL_NAME,
+      exportedAt: new Date().toISOString(),
+      rows: rows || []
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) {
+      // 某些本地预览环境禁用 Web Storage，改用 URL 传递当前筛选结果。
+    }
+    navigate(`./school-order-export-order-template.html?${query}`);
+  }
+
   function openConfirm({ title, message, confirmText = '确定', danger = false, onConfirm }) {
     const modal = openModal({
       title,
@@ -181,7 +202,13 @@
         <button type="button" class="btn btn-primary btn-sm" data-action="batch-tag">批量修改标签</button>
         <span class="school-order-toolbar-help">*仅支持对同一食堂相同供货企业的订单进行批量修改标签</span>
         <span class="toolbar-spacer"></span>
-        <button type="button" class="btn btn-sm school-order-export standard-list-export-print" data-action="export"><span class="school-order-export-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4"></path><polyline points="7 9 12 4 17 9"></polyline><path d="M5 20h14"></path></svg></span><span>导出</span></button>
+        <div class="school-order-export-wrap">
+          <button type="button" class="btn btn-sm school-order-export standard-list-export-print" data-action="export-toggle"><span class="school-order-export-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4"></path><polyline points="7 9 12 4 17 9"></polyline><path d="M5 20h14"></path></svg></span><span>导出</span></button>
+          <div class="school-order-export-dropdown">
+            <button type="button" class="school-order-export-dropdown-item" data-action="export-detail">商品明细导出</button>
+            <button type="button" class="school-order-export-dropdown-item" data-action="export-order">订单导出</button>
+          </div>
+        </div>
       </div>
       <div class="school-order-table-container">
         <div class="school-order-table-wrap"><table class="school-order-table"><colgroup>
@@ -311,8 +338,27 @@
           refresh(false);
           showToast('订单标签已更新');
         });
-      } else if (action === 'export') {
+      } else if (action === 'export-toggle') {
+        event.stopPropagation();
+        const dropdown = actionButton.parentElement.querySelector('.school-order-export-dropdown');
+        const isOpen = dropdown?.classList.contains('open');
+        document.querySelectorAll('.school-order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
+        if (!isOpen) dropdown?.classList.add('open');
+        return;
+      } else if (action === 'export-detail') {
+        document.querySelectorAll('.school-order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
         openExportTemplate(state.filtered);
+        return;
+      } else if (action === 'export-order') {
+        document.querySelectorAll('.school-order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
+        openOrderExportTemplate(state.filtered);
+        return;
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.school-order-export-wrap')) {
+        document.querySelectorAll('.school-order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
       }
     });
   }

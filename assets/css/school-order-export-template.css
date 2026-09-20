@@ -92,6 +92,13 @@ body {
   line-height: 24px;
 }
 
+.school-order-export-template-table .school-order-export-spacer-row td {
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: #fff;
+}
+
 .school-order-export-template-table .school-order-export-meta-row td {
   height: 34px;
   padding: 0 14px;
@@ -119,6 +126,17 @@ body {
 
 .school-order-export-template-table tbody .school-order-export-item-row:nth-child(odd) td {
   background: #fbfcfe;
+}
+
+.school-order-export-template-table .school-order-export-summary-row td {
+  height: 38px;
+  background: #f7f8fb;
+  color: #586a89;
+  font-weight: 600;
+}
+
+.school-order-export-template-table .school-order-export-summary-label {
+  text-align: center;
 }
 
 .school-order-export-template-table th:last-child,

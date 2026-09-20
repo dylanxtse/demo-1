@@ -186,6 +186,55 @@ body > #schoolOrderDateRangePanel {
   stroke-width: 1.8;
 }
 
+.school-order-export-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.school-order-export-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  min-width: 160px;
+  margin-top: 2px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(25, 40, 70, .1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility .15s;
+}
+
+.school-order-export-wrap:hover .school-order-export-dropdown,
+.school-order-export-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.school-order-export-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  background: transparent;
+  color: #2b74bf;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.school-order-export-dropdown-item:hover {
+  background: #f2f7fd;
+  color: #1d63aa;
+}
+
 .school-order-toolbar .toolbar-spacer {
   flex: 1;
 }
