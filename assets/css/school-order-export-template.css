@@ -1,0 +1,193 @@
+:root {
+  --register-text: #2f3136;
+  --register-muted: #8d97a6;
+  --register-border: #e8ebf0;
+  --register-primary: #2454c6;
+  --register-info-bg: #f3f6fc;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  overflow: auto;
+  background: #fff;
+  color: var(--register-text);
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+}
+
+.school-order-export-template-page {
+  min-width: 320px;
+  min-height: 100vh;
+  padding-bottom: 92px;
+  background: #fff;
+}
+
+.school-order-export-template-header {
+  height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--register-border);
+}
+
+.school-order-export-template-header h1 {
+  margin: 0;
+  color: #111;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.school-order-export-template-section { border-bottom: 0; }
+
+.school-order-export-template-inner {
+  width: calc(100% - 64px);
+  max-width: none;
+  margin-left: 32px;
+  padding: 32px 0 24px;
+}
+
+.school-order-export-template-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--register-border);
+  border-radius: 4px;
+}
+
+.school-order-export-template-table {
+  width: max-content;
+  min-width: 3160px;
+  border-collapse: collapse;
+  color: var(--register-text);
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.school-order-export-template-table th,
+.school-order-export-template-table td {
+  height: 38px;
+  padding: 0 12px;
+  border-right: 1px solid var(--register-border);
+  border-bottom: 1px solid var(--register-border);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.school-order-export-template-table th {
+  background: #f7f8fb;
+  color: #5f6672;
+  font-weight: 600;
+}
+
+.school-order-export-template-table .school-order-export-title-row th {
+  height: 54px;
+  padding: 0 16px;
+  background: var(--register-info-bg);
+  color: #263c68;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.school-order-export-template-table .school-order-export-meta-row td {
+  height: 34px;
+  padding: 0 14px;
+  background: var(--register-info-bg);
+  color: #5f6672;
+  font-weight: 600;
+  text-align: left;
+}
+
+.school-order-export-template-table .school-order-export-meta-row td:last-child {
+  border-right: 0;
+}
+
+.school-order-export-meta-inline { margin-left: 28px; }
+
+.school-order-export-template-table .school-order-export-column-row th {
+  height: 46px;
+  color: #5f6672;
+}
+
+.school-order-export-template-table .school-order-export-item-row td {
+  height: 36px;
+  background: #fff;
+}
+
+.school-order-export-template-table tbody .school-order-export-item-row:nth-child(odd) td {
+  background: #fbfcfe;
+}
+
+.school-order-export-template-table th:last-child,
+.school-order-export-template-table td:last-child { border-right: 0; }
+
+.school-order-export-template-table tbody tr:last-child td { border-bottom: 0; }
+
+.school-order-export-template-empty {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--register-muted);
+}
+
+.school-order-export-template-actions {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  background: rgba(255, 255, 255, .96);
+  border-top: 1px solid var(--register-border);
+  box-shadow: 0 -4px 12px rgba(25, 40, 70, .06);
+}
+
+.school-order-export-template-actions a {
+  min-width: 138px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border: 1px solid #cbd3df;
+  border-radius: 4px;
+  background: #fff;
+  color: #242a32;
+  text-decoration: none;
+}
+
+.school-order-export-template-actions a:hover {
+  border-color: #6f94df;
+  color: var(--register-primary);
+}
+
+@media (max-width: 620px) {
+  .school-order-export-template-inner {
+    width: calc(100% - 28px);
+    margin-left: 14px;
+    padding-top: 22px;
+  }
+
+  .school-order-export-template-actions { min-height: 76px; }
+}
+
+@media print {
+  .school-order-export-template-page { padding-bottom: 0; }
+  .school-order-export-template-header,
+  .school-order-export-template-actions { display: none; }
+  .school-order-export-template-inner {
+    width: 100%;
+    margin-left: 0;
+    padding: 0;
+  }
+  .school-order-export-template-table-wrap { border: 0; overflow: visible; }
+  .school-order-export-template-table { min-width: 100%; }
+}

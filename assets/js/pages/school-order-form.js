@@ -322,11 +322,8 @@
     const capturePickerValues = () => {
       list.querySelectorAll('[data-picker-code]').forEach((row) => {
         const code = row.dataset.pickerCode;
-        const quantityInput = row.querySelector('.picker-qty-input');
-        restrictStandardQuantity(quantityInput, currentProduct(code));
         pickerValues.set(code, {
           checked: Boolean(row.querySelector('.picker-product-check')?.checked),
-          quantity: row.querySelector('.picker-qty-input')?.value || '',
           remark: row.querySelector('.picker-remark-input')?.value || ''
         });
       });
@@ -338,26 +335,18 @@
       const filteredProducts = catalog.filter((product) => (!category || product.category === category) && (!keyword || `${product.code} ${product.name}`.toLowerCase().includes(keyword)));
       const pages = Math.max(1, Math.ceil(filteredProducts.length / 20)); pickerPage = Math.min(pickerPage, pages);
       const visibleProducts = filteredProducts.slice((pickerPage - 1) * 20, pickerPage * 20);
-      list.innerHTML = `<div class="school-order-picker-row header"><span></span><span>图片</span><span>商品名称（计量单位/品牌/规格）</span><span>计量单位</span><span>下单数量</span><span>备注</span></div>${visibleProducts.map((product) => {
+      list.innerHTML = `<div class="school-order-picker-row header"><span></span><span>图片</span><span>商品名称（计量单位/品牌/规格）</span><span>计量单位</span><span>单价</span><span>备注</span></div>${visibleProducts.map((product) => {
         const existing = existingItems.get(product.code);
         const saved = pickerValues.get(product.code);
         const checked = saved ? saved.checked : selectedCodes.has(product.code);
-        const quantity = saved ? saved.quantity : (existing && number(existing.orderQty) > 0 ? existing.orderQty : '');
         const remark = saved ? saved.remark : (existing?.remark && existing.remark !== '--' ? existing.remark : '');
-        const quantityStep = isStandardProduct(product) ? '1' : '0.01';
-        const quantityInputMode = isStandardProduct(product) ? 'numeric' : 'decimal';
-        return `<div class="school-order-picker-row" data-picker-code="${escapeHtml(product.code)}"><span><input class="picker-product-check" type="checkbox" value="${escapeHtml(product.code)}" ${checked ? 'checked' : ''} aria-label="选择${escapeHtml(productLabel(product))}"></span><span><span class="school-order-picker-image product-picker-image">图片</span></span><span class="school-order-picker-product product-picker-product" title="${escapeHtml(productLabel(product))}">${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(productLabel(product))}</span><span>${escapeHtml(product.unit || '--')}</span><span>${money(currentSalesPrice(product))}</span><span><input class="picker-qty-input" type="number" min="0.01" step="${quantityStep}" inputmode="${quantityInputMode}" value="${escapeHtml(quantity)}" placeholder="请输入数量" aria-label="${escapeHtml(product.name)}下单数量"></span><span><input class="picker-remark-input" type="text" value="${escapeHtml(remark)}" placeholder="请输入备注" aria-label="${escapeHtml(product.name)}备注"></span></div>`;
+        return `<div class="school-order-picker-row" data-picker-code="${escapeHtml(product.code)}"><span><input class="picker-product-check" type="checkbox" value="${escapeHtml(product.code)}" ${checked ? 'checked' : ''} aria-label="选择${escapeHtml(productLabel(product))}"></span><span><span class="school-order-picker-image product-picker-image">图片</span></span><span class="school-order-picker-product product-picker-product" title="${escapeHtml(productLabel(product))}">${product.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : ''}${escapeHtml(productLabel(product))}</span><span>${escapeHtml(product.unit || '--')}</span><span class="picker-price-cell">${money(currentSalesPrice(product))}</span><span><input class="picker-remark-input" type="text" value="${escapeHtml(remark)}" placeholder="请输入备注" aria-label="${escapeHtml(product.name)}备注"></span></div>`;
       }).join('')}`;
       const pageButtons = Array.from({ length: pages }, (_, index) => index + 1).map((pageNumber) => `<button type="button" class="product-picker-page-button ${pageNumber === pickerPage ? 'active' : ''}" data-picker-page="${pageNumber}" ${pageNumber === pickerPage ? 'aria-current="page"' : ''}>${pageNumber}</button>`).join('');
       pagination.innerHTML = `<span class="product-picker-total">共 ${filteredProducts.length} 条数据</span><select class="product-picker-page-size" disabled><option>20 条/页</option></select><div class="product-picker-page-buttons"><button type="button" class="product-picker-page-button" data-picker-page="${Math.max(1, pickerPage - 1)}" ${pickerPage === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="product-picker-page-button" data-picker-page="${Math.min(pages, pickerPage + 1)}" ${pickerPage === pages ? 'disabled' : ''}>›</button></div><label class="product-picker-page-jump">跳至 <input class="product-picker-jump-input" value="${pickerPage}" readonly> / ${pages} 页</label>`;
     };
 
     renderPickerRows();
-    modal.backdrop.addEventListener('input', (event) => {
-      if (!event.target.matches('.picker-qty-input')) return;
-      const code = event.target.closest('[data-picker-code]')?.dataset.pickerCode;
-      restrictStandardQuantity(event.target, currentProduct(code));
-    });
     modal.backdrop.querySelector('[data-picker-query]').addEventListener('click', renderPickerRows);
     modal.backdrop.querySelector('[data-picker-reset]').addEventListener('click', () => {
       keywordInput.value = '';
@@ -375,9 +364,8 @@
         const pickerValue = pickerValues.get(product.code) || {};
         const existingIndex = next.findIndex((item) => item.productCode === product.code);
         const item = { id: `SOL-NEW-${Date.now()}-${product.code}`, productCode: product.code, productName: product.name, unit: product.unit, brand: product.brand, spec: product.spec, isNetVegetable: product.isNetVegetable === true, isStandardProduct: isStandardProduct(product), orderQty: 0, orderPrice: currentSalesPrice(product), agreementPrice: '', recentSalePrice: product.marketPrice, marketPrice: product.marketPrice, remark: '' };
-        item.orderQty = number(pickerValue.quantity);
         item.remark = pickerValue.remark || '';
-        if (existingIndex >= 0) next[existingIndex] = { ...next[existingIndex], orderQty: item.orderQty, remark: item.remark };
+        if (existingIndex >= 0) next[existingIndex] = { ...next[existingIndex], remark: item.remark };
         else {
           const blankIndex = next.findIndex((entry) => !entry.productCode);
           if (blankIndex >= 0) next[blankIndex] = item;

@@ -1773,6 +1773,19 @@ button {
   margin-bottom: 0;
 }
 
+.school-mobile-demand-section {
+  margin-top: 1px;
+}
+
+.school-mobile-demand-meal-tabs {
+  margin: 0 0 9px;
+  padding: 0 2px;
+}
+
+.school-mobile-demand-meal-tabs .school-mobile-meal-tag {
+  min-width: 72px;
+}
+
 .school-mobile-attendance-card {
   padding-bottom: 8px;
 }
@@ -2375,6 +2388,15 @@ button.school-mobile-demand-row:active {
 .school-mobile-order-tags-inline {
   margin: 0 0 3px;
   padding: 0 2px;
+}
+
+.school-mobile-confirm-switchers {
+  margin: 0 0 4px;
+  padding: 0 2px;
+}
+
+.school-mobile-confirm-meal-tabs {
+  margin-bottom: 7px;
 }
 
 .school-mobile-order-tag-save {

@@ -81,6 +81,27 @@
     else window.location.href = url;
   }
 
+  function openExportTemplate(rows) {
+    const exportKey = `school-order-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260919-school-order-export-1',
+      schoolName: service.SCHOOL_NAME,
+      exportedAt: new Date().toISOString(),
+      rows: rows || []
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) {
+      // 某些本地预览环境禁用 Web Storage，改用 URL 传递当前筛选结果。
+    }
+    navigate(`./school-order-export-template.html?${query}`);
+  }
+
   function openConfirm({ title, message, confirmText = '确定', danger = false, onConfirm }) {
     const modal = openModal({
       title,
@@ -291,16 +312,7 @@
           showToast('订单标签已更新');
         });
       } else if (action === 'export') {
-        const csv = `\ufeff${service.csv(state.filtered)}`;
-        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = '静安第一中学-订单管理.csv';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 0);
-        showToast('订单列表已导出');
+        openExportTemplate(state.filtered);
       }
     });
   }
