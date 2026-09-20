@@ -99,6 +99,29 @@
     document.querySelector('#orderGoodsPagination .page-total').textContent = `共 ${rows.length} 条数据`;
   }
 
+  function navigate(url) {
+    if (window.AppNavigation?.navigate) window.AppNavigation.navigate(url);
+    else window.location.href = url;
+  }
+
+  function buildOrdersFromRows() {
+    const orderMap = new Map();
+    rows.forEach(({ order, ...line }) => {
+      if (!orderMap.has(order.id)) orderMap.set(order.id, { ...order, items: [] });
+      orderMap.get(order.id).items.push(line);
+    });
+    return Array.from(orderMap.values());
+  }
+
+  function openExportTemplate(orders) {
+    const exportKey = `order-goods-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = { version: '20260920-order-export-1', companyName: '集采企业', exportedAt: new Date().toISOString(), rows: orders || [] };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try { if (window.sessionStorage?.setItem) { window.sessionStorage.setItem(exportKey, serializedPayload); query = `exportKey=${encodeURIComponent(exportKey)}`; } } catch (error) { /* fallback to URL */ }
+    navigate(`./order-export-template.html?${query}`);
+  }
+
   root.addEventListener('click', (event) => {
     if (event.target.closest('#goodsAdvancedToggle')) {
       document.getElementById('goodsAdvancedToggle').classList.toggle('is-active');
@@ -111,7 +134,10 @@
       datePicker?.clear(false);
       load();
     }
-    if (event.target.closest('#goodsExport')) window.alert('订单商品导出已按当前筛选条件准备。');
+    if (event.target.closest('#goodsExport')) {
+      const orders = buildOrdersFromRows();
+      openExportTemplate(orders);
+    }
   });
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && event.target.closest('.operations-filter')) load();

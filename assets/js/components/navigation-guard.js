@@ -58,7 +58,9 @@
     'school-canteen-form.html': 'school',
     'school-product-management.html': 'school',
     'school-purchase-reconciliation.html': 'school',
-    'school-purchase-accounts.html': 'school'
+    'school-purchase-accounts.html': 'school',
+    'order-export-template.html': 'enterprise',
+    'order-export-order-template.html': 'enterprise'
   });
 
   const validVariants = new Set(Object.keys(endpointHomes));

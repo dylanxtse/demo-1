@@ -52,6 +52,13 @@
   };
 
   const content = `
+    <style>
+      .order-export-wrap{position:relative;display:inline-flex}
+      .order-export-dropdown{position:absolute;top:100%;right:0;z-index:20;min-width:160px;margin-top:2px;border:1px solid #dcdfe6;border-radius:4px;background:#fff;box-shadow:0 6px 16px rgba(25,40,70,.1);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s ease,transform .15s ease,visibility .15s}
+      .order-export-wrap:hover .order-export-dropdown,.order-export-dropdown.open{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}
+      .order-export-dropdown-item{display:block;width:100%;padding:8px 16px;border:0;background:transparent;color:#2b74bf;font:inherit;font-size:13px;text-align:left;cursor:pointer;white-space:nowrap}
+      .order-export-dropdown-item:hover{background:#f2f7fd;color:#1d63aa}
+    </style>
     <section class="page-card operations-page order-module-page" aria-label="订单管理">
       <div class="operations-tabs order-view-tabs"><a class="operations-tab active" href="./order-management.html">订单列表</a><a class="operations-tab" href="./order-goods.html">订单商品</a></div>
       <div class="operations-filter filter-section">
@@ -87,7 +94,13 @@
           <button class="btn btn-sm btn-blue" id="batchConfirmButton">批量确认</button>
         </div>
         <div class="operations-toolbar-side">
-          <button class="btn btn-sm standard-list-export-print" id="exportButton">${downloadIcon}导出</button>
+          <div class="order-export-wrap">
+            <button class="btn btn-sm standard-list-export-print" id="exportButton">${downloadIcon}导出</button>
+            <div class="order-export-dropdown">
+              <button type="button" class="order-export-dropdown-item" data-action="export-detail">商品明细导出</button>
+              <button type="button" class="order-export-dropdown-item" data-action="export-order">订单导出</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="operations-table-container">
@@ -136,6 +149,49 @@
     element.textContent = message;
     root.appendChild(element);
     window.setTimeout(() => element.remove(), 2200);
+  }
+
+  function navigate(url) {
+    if (window.AppNavigation?.navigate) window.AppNavigation.navigate(url);
+    else window.location.href = url;
+  }
+
+  function openExportTemplate(rows) {
+    const exportKey = `order-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260920-order-export-1',
+      companyName: '集采企业',
+      exportedAt: new Date().toISOString(),
+      rows: rows || []
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) { /* fallback to URL */ }
+    navigate(`./order-export-template.html?${query}`);
+  }
+
+  function openOrderExportTemplate(rows) {
+    const exportKey = `order-export-order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260920-order-export-order-1',
+      companyName: '集采企业',
+      exportedAt: new Date().toISOString(),
+      rows: rows || []
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) { /* fallback to URL */ }
+    navigate(`./order-export-order-template.html?${query}`);
   }
 
   function collectCondition() {
@@ -343,15 +399,20 @@
       });
     }
     if (event.target.id === 'exportButton') {
-      const csv = await service.export('orders', { condition: state.condition }, columns.map(([key, label]) => ({ key, label })));
-      const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = '订单列表.csv';
-      link.click();
-      URL.revokeObjectURL(url);
-      return toast('导出成功');
+      const dropdown = event.target.parentElement.querySelector('.order-export-dropdown');
+      const isOpen = dropdown?.classList.contains('open');
+      document.querySelectorAll('.order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
+      if (!isOpen) dropdown?.classList.add('open');
+      return;
+    }
+    const exportItem = event.target.closest('[data-action="export-detail"], [data-action="export-order"]');
+    if (exportItem) {
+      document.querySelectorAll('.order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
+      const action = exportItem.dataset.action;
+      const result = await service.list('orders', { page: 1, pageSize: 999999, condition: state.condition });
+      if (action === 'export-detail') openExportTemplate(result.items);
+      else if (action === 'export-order') openOrderExportTemplate(result.items);
+      return;
     }
   });
 
@@ -365,6 +426,12 @@
       const id = event.target.closest('tr').dataset.id;
       event.target.checked ? state.selected.add(id) : state.selected.delete(id);
       updateSelection();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.order-export-wrap')) {
+      document.querySelectorAll('.order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
     }
   });
 

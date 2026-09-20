@@ -1,8 +1,8 @@
 (function () {
-  const root = document.getElementById('schoolOrderExportTemplateApp');
+  const root = document.getElementById('orderExportTemplateApp');
   if (!root) return;
 
-  const EXPORT_VERSION = '20260919-school-order-export-1';
+  const EXPORT_VERSION = '20260920-order-export-1';
   const params = new URLSearchParams(window.location.search);
 
   const escapeHtml = (value) => String(value ?? '')
@@ -54,16 +54,23 @@
   }
 
   const payload = readPayload();
-  const service = window.SchoolOrderService;
-  const orders = Array.isArray(payload?.rows) ? payload.rows : (service?.getAll?.() || []);
-  const schoolName = payload?.schoolName || service?.SCHOOL_NAME || '静安第一中学';
+  const orders = Array.isArray(payload?.rows) ? payload.rows : [];
+  const companyName = payload?.companyName || '集采企业';
   const exportTime = payload?.exportedAt || formatDateTime(new Date());
 
+  const statusMap = {
+    PENDING: '待审核', PENDING_CONFIRM: '待确认', PENDING_AUDIT: '待审核',
+    READY_FOR_SORTING: '待分拣', READY_FOR_SHIPPING: '待发货',
+    APPROVED: '已审核', CONFIRMED: '已确认', SHIPPED: '已发货',
+    COMPLETED: '已完成', CLOSED: '已关闭', DRAFT: '暂存', REJECTED: '已驳回'
+  };
+  const statusLabel = (status) => statusMap[status] || status || '--';
+
   const lineDisplayName = (line) => line.displayName
-    || `${line.productName || line.goodsName || '--'}（${line.unit || '--'}/${line.brand || '--'}/${line.spec || '--'}）`;
-  const lineSubtotal = (line) => line.orderSubtotal == null
-    ? Number((Number(line.orderQty || 0) * Number(line.orderPrice || line.unitPrice || 0)).toFixed(2))
-    : line.orderSubtotal;
+    || `${line.goodsName || line.productName || '--'}（${line.unit || '--'}/${line.brand || '--'}/${line.spec || '--'}）`;
+  const lineSubtotal = (line) => line.subtotal == null
+    ? Number((Number(line.quantity || 0) * Number(line.unitPrice || 0)).toFixed(2))
+    : line.subtotal;
   const orderTotal = (order) => order.orderAmount == null
     ? (order.items || []).reduce((sum, line) => sum + Number(lineSubtotal(line) || 0), 0)
     : order.orderAmount;
@@ -72,31 +79,31 @@
     return `<tr class="school-order-export-item-row">
       <td>${index + 1}</td>
       <td>${display(order.orderNo)}</td>
-      <td>${display(line.productCode || line.goodsCode)}</td>
-      <td title="${escapeHtml(line.productName || line.goodsName || '--')}">${display(line.productName || line.goodsName)}</td>
+      <td>${display(line.goodsCode || line.productCode)}</td>
+      <td title="${escapeHtml(line.goodsName || line.productName || '--')}">${display(line.goodsName || line.productName)}</td>
       <td>${display(line.category1 || line.firstCategory)}</td>
       <td>${display(line.category2 || line.secondCategory)}</td>
       <td>${display(line.category3 || line.thirdCategory)}</td>
       <td>${display(line.unit)}</td>
       <td>${display(line.brand)}</td>
       <td>${display(line.spec)}</td>
-      <td>${display(order.supplierName || order.supplier)}</td>
-      <td>${display(schoolName)}</td>
+      <td>${display(companyName)}</td>
+      <td>${display(order.customerName)}</td>
       <td>${display(order.canteen)}</td>
       <td>${display(order.orderTag)}</td>
       <td>${display(order.shippingAt)}</td>
       <td>${display(order.expectedAt)}</td>
-      <td>${display(order.status)}</td>
-      <td>${amount(line.orderPrice ?? line.unitPrice)}</td>
-      <td>${quantity(line.orderQty ?? line.quantity)}</td>
+      <td>${display(statusLabel(order.status))}</td>
+      <td>${amount(line.unitPrice)}</td>
+      <td>${quantity(line.quantity)}</td>
       <td>${amount(lineSubtotal(line))}</td>
       <td>${amount(line.shippingPrice ?? line.shippingUnitPrice)}</td>
       <td>${quantity(line.shippingQty ?? line.shippedQty)}</td>
-      <td>${subtotal(line.shippingSubtotal ?? line.shippedSubtotal)}</td>
+      <td>${subtotal(line.shippingSubtotal ?? line.shippedSubtotal ?? line.shippedAmount)}</td>
       <td>${quantity(line.acceptedQty)}</td>
-      <td>${amount(line.acceptedSubtotal)}</td>
+      <td>${amount(line.acceptedSubtotal ?? line.acceptedAmount)}</td>
       <td>${quantity(line.returnQty)}</td>
-      <td>${subtotal(line.returnSubtotal)}</td>
+      <td>${subtotal(line.returnSubtotal ?? line.returnAmount)}</td>
       <td>${display(line.remark)}</td>
       <td>${display(line.productionDate)}</td>
     </tr>`;
@@ -132,7 +139,7 @@
         ${orders.length ? renderFlatTable(orders) : '<div class="school-order-export-template-empty">暂无可导出的订单</div>'}
       </div>
     </section>
-    <div class="school-order-export-template-actions"><a href="./school-order-management.html">返回订单管理</a></div>
+    <div class="school-order-export-template-actions"><a href="./order-management.html">返回订单管理</a></div>
   </main>`;
 
   if (params.get('exportKey')) {
