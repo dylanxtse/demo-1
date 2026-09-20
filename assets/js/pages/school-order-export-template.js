@@ -103,10 +103,11 @@
   }
 
   function renderFlatTable(orders) {
+    let serial = 0;
     const allRows = orders.map((order) => {
       const items = Array.isArray(order.items) ? order.items : [];
       return items.length
-        ? items.map((line, index) => renderItemRow(line, index, order)).join('')
+        ? items.map((line) => renderItemRow(line, serial++, order)).join('')
         : '<tr class="school-order-export-item-row"><td colspan="29">暂无商品明细</td></tr>';
     }).join('');
     return `<div class="school-order-export-template-table-wrap">
