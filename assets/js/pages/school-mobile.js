@@ -2511,7 +2511,7 @@
     }).join('');
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-detail-sheet" role="dialog" aria-modal="true" aria-label="商品需求明细">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(productName(row)) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
-      + '<p class="school-mobile-sheet-subtitle">' + (mealName ? escapeHtml(mealName) + ' · ' : '') + escapeHtml(productCode(row)) + ' · ' + escapeHtml(unit) + ' · ' + (standard ? '标品，采购量向上取整' : '非标品') + '</p>'
+      + '<p class="school-mobile-sheet-subtitle">' + (mealName ? escapeHtml(mealName) + ' · ' : '') + escapeHtml(productCode(row)) + ' · ' + escapeHtml(unit) + ' · ' + (standard ? '标品' : '非标品') + '</p>'
       + '<div class="school-mobile-demand-detail-total"><div><span>需求总量</span><strong>' + quantity(row.totalQty) + ' ' + escapeHtml(unit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(purchaseTotalQuantity(row, currentParticipants)) + ' ' + escapeHtml(unit) + '</strong></div></div>'
       + '<div class="school-mobile-demand-detail-heading"><strong>人员类型明细</strong></div>'
       + '<div class="school-mobile-demand-detail-list" role="table" aria-label="不同人员类型需求量和采购量明细">'
