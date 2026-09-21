@@ -18,6 +18,19 @@
     const number = Number(value || 0);
     return `${number < 0 ? '−' : ''}${Math.abs(number).toFixed(digits)}`;
   };
+  const numeric = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+  const businessAmount = (record) => {
+    const shippingAmount = record?.shippingAmount == null
+      ? (record?.mode === 'return' ? 0 : numeric(record?.amount))
+      : numeric(record.shippingAmount);
+    const returnAmount = record?.returnAmount == null
+      ? (record?.mode === 'return' ? Math.abs(numeric(record?.amount)) : 0)
+      : Math.abs(numeric(record.returnAmount));
+    return shippingAmount - returnAmount;
+  };
+  const isReturnRecord = (record) => record?.mode === 'return' || String(record?.type || '').includes('退货');
+  const reconciliationMoney = (record, key) => isReturnRecord(record) ? '--' : money(record?.[key]);
+  const reconciliationExportValue = (record, key) => isReturnRecord(record) ? '--' : record?.[key];
   const dateOnly = (value) => String(value || '').slice(0, 10);
   const statusClass = (status) => ({
     未对账: 'is-danger',
@@ -97,9 +110,10 @@
   }
 
   function rowActions(record) {
-    const reconcileDisabled = record.status !== '未对账';
-    const reverseDisabled = !['已对账', '未结算'].includes(record.status);
-    const settleDisabled = !['未结算', '部分结算'].includes(record.status);
+    const returnRecord = isReturnRecord(record);
+    const reconcileDisabled = returnRecord || record.status !== '未对账';
+    const reverseDisabled = returnRecord || !['已对账', '未结算'].includes(record.status);
+    const settleDisabled = returnRecord || !['未结算', '部分结算'].includes(record.status);
     return `<div class="sales-actions">
       <button type="button" class="btn-text" data-customer-detail-action="edit" data-id="${record.id}" ${reconcileDisabled ? 'disabled' : ''}>对账</button>
       <button type="button" class="btn-text" data-customer-detail-action="reverse" data-id="${record.id}" ${reverseDisabled ? 'disabled' : ''}>反对账</button>
@@ -112,24 +126,28 @@
     const totalPages = Math.max(1, Math.ceil(allRecords.length / state.pageSize));
     state.page = Math.min(Math.max(state.page, 1), totalPages);
     const records = allRecords.slice((state.page - 1) * state.pageSize, state.page * state.pageSize);
-    const pageAmountTotal = records.reduce((sum, record) => sum + Number(record.amount || 0), 0);
-    const pageZeroingTotal = records.reduce((sum, record) => sum + Number(record.zeroing || 0), 0);
-    const pageReceivableTotal = records.reduce((sum, record) => sum + Number(record.receivable || 0), 0);
-    const allAmountTotal = allRecords.reduce((sum, record) => sum + Number(record.amount || 0), 0);
-    const allZeroingTotal = allRecords.reduce((sum, record) => sum + Number(record.zeroing || 0), 0);
-    const allReceivableTotal = allRecords.reduce((sum, record) => sum + Number(record.receivable || 0), 0);
+    const reconciliationPageRecords = records.filter((record) => !isReturnRecord(record));
+    const reconciliationAllRecords = allRecords.filter((record) => !isReturnRecord(record));
+    const pageAmountTotal = reconciliationPageRecords.reduce((sum, record) => sum + numeric(record.amount), 0);
+    const pageZeroingTotal = reconciliationPageRecords.reduce((sum, record) => sum + Number(record.zeroing || 0), 0);
+    const pageReceivableTotal = reconciliationPageRecords.reduce((sum, record) => sum + Number(record.receivable || 0), 0);
+    const pageBusinessAmountTotal = records.reduce((sum, record) => sum + businessAmount(record), 0);
+    const allAmountTotal = reconciliationAllRecords.reduce((sum, record) => sum + numeric(record.amount), 0);
+    const allZeroingTotal = reconciliationAllRecords.reduce((sum, record) => sum + Number(record.zeroing || 0), 0);
+    const allReceivableTotal = reconciliationAllRecords.reduce((sum, record) => sum + Number(record.receivable || 0), 0);
+    const allBusinessAmountTotal = allRecords.reduce((sum, record) => sum + businessAmount(record), 0);
     const pageButtons = Array.from({ length: totalPages }, (_, index) => `<button type="button" class="page-btn ${state.page === index + 1 ? 'active' : ''}" data-customer-detail-page="${index + 1}" aria-current="${state.page === index + 1 ? 'page' : 'false'}">${index + 1}</button>`).join('');
     return `<div class="operations-toolbar"><div class="operations-toolbar-main"><button type="button" class="btn btn-primary btn-sm" data-customer-detail-toolbar="batch-reconcile">批量对账</button><button type="button" class="btn btn-primary btn-sm" data-customer-detail-toolbar="batch-reverse">批量反对账</button><button type="button" class="btn btn-primary btn-sm" data-customer-detail-toolbar="generate">生成对账单</button><button type="button" class="btn btn-primary btn-sm" data-customer-detail-toolbar="batch-settle" disabled>批量结算</button></div><div class="operations-toolbar-side"><button type="button" class="btn btn-sm standard-list-export-print" data-customer-detail-toolbar="export">${downloadIcon}导出</button></div></div>
       <div class="operations-table-container"><div class="operations-table-wrap"><table class="operations-table sales-table sales-reconciliation-detail-table"><thead><tr>
-        <th class="sales-selection"><input type="checkbox" data-customer-detail-select-all aria-label="选择全部"></th><th>对账单号</th><th>关联单号</th><th>对账状态</th><th>客户反馈状态</th><th>食堂</th><th>收货人</th><th>收货手机</th><th>仓库</th><th>单据类型</th><th>对账金额</th><th>抹零金额</th><th>应收金额</th><th>发/退货金额</th><th>操作</th>
+        <th class="sales-selection"><input type="checkbox" data-customer-detail-select-all aria-label="选择全部"></th><th>对账单号</th><th>关联单号</th><th>对账状态</th><th>客户反馈状态</th><th>食堂</th><th>收货人</th><th>收货手机</th><th>仓库</th><th>单据类型</th><th>对账金额</th><th>抹零金额</th><th>应收金额</th><th>发货金额</th><th>操作</th>
       </tr></thead><tbody>${records.length ? records.map((record) => `<tr data-id="${record.id}">
-        <td class="sales-selection"><input type="checkbox" data-customer-detail-select value="${record.id}" ${state.selected.has(record.id) ? 'checked' : ''}></td>
+        <td class="sales-selection"><input type="checkbox" data-customer-detail-select value="${record.id}" ${isReturnRecord(record) ? 'disabled' : ''} ${!isReturnRecord(record) && state.selected.has(record.id) ? 'checked' : ''}></td>
         <td class="sales-account-cell"><button type="button" class="sales-account-link" data-customer-detail-action="detail" data-id="${record.id}">${escapeHtml(record.accountNo)}</button><span class="sales-account-time">${escapeHtml(record.businessTime)}</span></td>
         <td><button type="button" class="btn-text" data-customer-detail-action="detail" data-id="${record.id}">${escapeHtml(record.relatedNo)}</button></td>
         <td><span class="sales-status ${statusClass(record.status)}">${escapeHtml(record.status)}</span></td><td><span class="sales-status ${statusClass(record.feedbackStatus)}">${escapeHtml(record.feedbackStatus)}</span></td>
         <td>${escapeHtml(record.canteen)}</td><td>${escapeHtml(record.receiver)}</td><td>${escapeHtml(record.phone)}</td><td>${escapeHtml(record.warehouse)}</td><td>${escapeHtml(record.type)}</td>
-        <td class="sales-money">${money(record.amount)}</td><td class="sales-money">${money(record.zeroing)}</td><td class="sales-money">${money(record.receivable)}</td><td class="sales-money">${money(record.amount)}</td><td class="sales-reconciliation-detail-actions">${rowActions(record)}</td>
-      </tr>`).join('') : '<tr><td class="sales-empty" colspan="15">暂无数据</td></tr>'}</tbody><tfoot><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">当前页合计</td><td class="sales-money">${money(pageAmountTotal)}</td><td class="sales-money">${money(pageZeroingTotal)}</td><td class="sales-money">${money(pageReceivableTotal)}</td><td class="sales-money">${money(pageAmountTotal)}</td><td></td></tr><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">所有页合计</td><td class="sales-money">${money(allAmountTotal)}</td><td class="sales-money">${money(allZeroingTotal)}</td><td class="sales-money">${money(allReceivableTotal)}</td><td class="sales-money">${money(allAmountTotal)}</td><td></td></tr></tfoot></table></div></div><div class="pagination operations-pagination"><span class="page-total">共 ${allRecords.length} 条数据</span><select class="page-size-select" aria-label="每页条数"><option>20 条/页</option></select><div class="page-btns"><button type="button" class="page-btn" data-customer-detail-page="prev" aria-label="上一页" ${state.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="page-btn" data-customer-detail-page="next" aria-label="下一页" ${state.page === totalPages ? 'disabled' : ''}>›</button></div><div class="page-jump"><span>跳至</span><input class="pagination-jump-input" value="${state.page}" aria-label="跳转页码"><span>/ ${totalPages} 页</span></div></div>`;
+        <td class="sales-money">${reconciliationMoney(record, 'amount')}</td><td class="sales-money">${reconciliationMoney(record, 'zeroing')}</td><td class="sales-money">${reconciliationMoney(record, 'receivable')}</td><td class="sales-money">${money(businessAmount(record))}</td><td class="sales-reconciliation-detail-actions">${rowActions(record)}</td>
+      </tr>`).join('') : '<tr><td class="sales-empty" colspan="15">暂无数据</td></tr>'}</tbody><tfoot><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">当前页合计</td><td class="sales-money">${money(pageAmountTotal)}</td><td class="sales-money">${money(pageZeroingTotal)}</td><td class="sales-money">${money(pageReceivableTotal)}</td><td class="sales-money">${money(pageBusinessAmountTotal)}</td><td></td></tr><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">所有页合计</td><td class="sales-money">${money(allAmountTotal)}</td><td class="sales-money">${money(allZeroingTotal)}</td><td class="sales-money">${money(allReceivableTotal)}</td><td class="sales-money">${money(allBusinessAmountTotal)}</td><td></td></tr></tfoot></table></div></div><div class="pagination operations-pagination"><span class="page-total">共 ${allRecords.length} 条数据</span><select class="page-size-select" aria-label="每页条数"><option>20 条/页</option></select><div class="page-btns"><button type="button" class="page-btn" data-customer-detail-page="prev" aria-label="上一页" ${state.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="page-btn" data-customer-detail-page="next" aria-label="下一页" ${state.page === totalPages ? 'disabled' : ''}>›</button></div><div class="page-jump"><span>跳至</span><input class="pagination-jump-input" value="${state.page}" aria-label="跳转页码"><span>/ ${totalPages} 页</span></div></div>`;
   }
 
   function render() {
@@ -138,11 +156,11 @@
   }
 
   function handleToolbar(action) {
-    const selected = getCustomerRecords().filter((record) => state.selected.has(record.id));
+    const selected = getCustomerRecords().filter((record) => !isReturnRecord(record) && state.selected.has(record.id));
     if (action === 'export') {
       const rows = getFilteredRecords();
-      const columns = ['对账单号', '关联单号', '对账状态', '客户反馈状态', '食堂', '收货人', '单据类型', '对账金额', '抹零金额', '应收金额', '业务时间'];
-      const lines = [columns.join(',')].concat(rows.map((record) => [record.accountNo, record.relatedNo, record.status, record.feedbackStatus, record.canteen, record.receiver, record.type, record.amount, record.zeroing, record.receivable, record.businessTime].map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')));
+      const columns = ['对账单号', '关联单号', '对账状态', '客户反馈状态', '食堂', '收货人', '单据类型', '对账金额', '抹零金额', '应收金额', '发货金额', '业务时间'];
+      const lines = [columns.join(',')].concat(rows.map((record) => [record.accountNo, record.relatedNo, record.status, record.feedbackStatus, record.canteen, record.receiver, record.type, reconciliationExportValue(record, 'amount'), reconciliationExportValue(record, 'zeroing'), reconciliationExportValue(record, 'receivable'), businessAmount(record), record.businessTime].map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')));
       const link = document.createElement('a');
       link.href = URL.createObjectURL(new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' }));
       link.download = `客户对账-${accountName}.csv`;
@@ -207,7 +225,7 @@
       return;
     }
     if (event.target.matches('[data-customer-detail-select-all]')) {
-      getFilteredRecords().forEach((record) => event.target.checked ? state.selected.add(record.id) : state.selected.delete(record.id));
+      getFilteredRecords().filter((record) => !isReturnRecord(record)).forEach((record) => event.target.checked ? state.selected.add(record.id) : state.selected.delete(record.id));
       render();
       return;
     }

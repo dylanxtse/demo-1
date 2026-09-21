@@ -433,7 +433,7 @@
     const expectedDisabled = readOnly || mode === 'edit';
     const basicDisabled = readOnly;
     const content = `<section class="school-order-form-page" id="schoolOrderFormPage" aria-label="${escapeHtml(title)}">
-      <header class="school-order-form-header ${showHeaderBack ? '' : 'is-standalone'}">${showHeaderBack ? '<button type="button" class="back-link school-order-form-back" data-action="back" aria-label="返回订单列表"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button>' : ''}<h1>${escapeHtml(title)}</h1></header>
+      <header class="school-order-form-header order-form-header ${showHeaderBack ? '' : 'is-standalone'}">${showHeaderBack ? '<button type="button" class="back-link" data-action="back" aria-label="返回订单列表"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button>' : ''}<h1>${escapeHtml(title)}</h1></header>
       <div class="school-order-form-body">
         ${mode === 'audit' ? '<p class="school-order-form-readonly-note">当前为审核视图，请核对订单基础信息与商品明细后完成审核。</p>' : ''}
         ${mode === 'copy' ? `<p class="school-order-form-context">复制订单：${escapeHtml(order.orderNo || '')}。保存后将生成新的订单号。</p>` : mode === 'edit' ? `<p class="school-order-form-context">订单号：${escapeHtml(order.orderNo || '')}</p>` : ''}

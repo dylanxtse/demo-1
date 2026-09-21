@@ -27,11 +27,11 @@
 
   const rows = products.map((product, i) => renderRow(product, i)).join('');
 
-  root.innerHTML = `<main class="school-order-export-template-page">
+  root.innerHTML = `<main class="school-order-export-template-page market-price-import-template-page">
     <section class="school-order-export-template-section">
       <div class="school-order-export-template-inner">
         <div class="school-order-export-template-table-wrap">
-          <table class="school-order-export-template-table" style="min-width:860px;">
+          <table class="school-order-export-template-table">
             <colgroup>
               <col style="width:60px"><col style="width:140px"><col style="width:200px"><col style="width:100px"><col style="width:120px"><col style="width:120px"><col style="width:120px">
             </colgroup>

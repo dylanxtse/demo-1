@@ -78,8 +78,8 @@
       { name: '客户档案', href: './customer.html' },
       '客户类型'
     ] },
-    { name: '财务对账', icon: 'wallet', expanded: true, children: [
-      { name: '销售对账', expanded: true, children: [
+    { name: '财务对账', icon: 'wallet', expanded: false, children: [
+      { name: '销售对账', expanded: false, children: [
         { name: '对账', href: './sales-reconciliation.html' },
         { name: '销售账款', href: './sales-reconciliation.html?view=accounts' }
       ] },

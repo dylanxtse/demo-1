@@ -64,6 +64,12 @@ body {
   table-layout: fixed;
 }
 
+/* 市场价模板列数较少，表格铺满页面，避免右侧出现无内容的空白区域。 */
+.market-price-import-template-page .school-order-export-template-table {
+  width: 100%;
+  min-width: 860px;
+}
+
 .school-order-export-template-table th,
 .school-order-export-template-table td {
   height: 38px;

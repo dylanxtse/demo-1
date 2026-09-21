@@ -28,6 +28,16 @@
     rows[rows.length - 1].amount = Number((rows[rows.length - 1].amount + target - roundedTotal).toFixed(4));
     return rows;
   };
+  const returnProductRows = (amount) => scaledProductRows(Math.abs(Number(amount || 0))).map((product) => ({
+    ...product,
+    amount: -Math.abs(Number(product.amount || 0)),
+    zeroing: 0,
+    acceptedQuantity: 0,
+    acceptedPrice: 0,
+    differenceQuantity: 0,
+    differencePrice: 0,
+    differenceAmount: 0
+  }));
   const createRecord = (data) => ({
     customerName: '静安第一中学',
     canteen: '第一食堂',
@@ -64,15 +74,21 @@
   const firstPageFillers = firstPageFillerAmounts.map((amount, index) => {
     const zeroing = index < 5 ? 1 : 0;
     const day = String(15 - index).padStart(2, '0');
+    const isReturn = index === 5;
+    const returnAmount = isReturn ? amount : 0;
     return createRecord({
       id: `sale-recon-${String(index + 11).padStart(3, '0')}`,
       accountNo: `XSDZ202606${day}030000${String(index + 6).padStart(2, '0')}`,
-      relatedNo: `DD202606${day}030000${String(index + 6).padStart(2, '0')}`,
-      type: '销售订单',
-      mode: 'shipping',
-      amount,
-      zeroing,
-      receivable: amount - zeroing,
+      relatedNo: isReturn ? 'THD202606100001' : `DD202606${day}030000${String(index + 6).padStart(2, '0')}`,
+      type: isReturn ? '销售退货' : '销售订单',
+      mode: isReturn ? 'return' : 'shipping',
+      amount: isReturn ? 0 : amount,
+      zeroing: isReturn ? 0 : zeroing,
+      receivable: isReturn ? 0 : amount - zeroing,
+      shippingAmount: isReturn ? 0 : amount,
+      returnAmount,
+      netAmount: isReturn ? -returnAmount : amount,
+      products: isReturn ? returnProductRows(returnAmount) : scaledProductRows(amount),
       businessTime: `2026-06-${day} 09:${String(20 - index).padStart(2, '0')}:00`,
       canteen: ['十一中食堂', '静安2中食堂', '经费食堂'][index % 3],
       receiver: ['李老师', '李梁', '李成志'][index % 3],
@@ -405,13 +421,47 @@
     ]
   };
 
+  function normalizeReturnRecord(record) {
+    if (record?.id !== 'sale-recon-016') return record;
+    const storedReturnAmount = Number(record.returnAmount);
+    const fallbackReturnAmount = Math.abs(Number(record.amount || 0)) || 170;
+    const returnAmount = Number.isFinite(storedReturnAmount) && storedReturnAmount > 0
+      ? storedReturnAmount
+      : fallbackReturnAmount;
+    const existingProducts = Array.isArray(record.products) && record.products.length
+      ? record.products.map((product) => ({
+        ...product,
+        amount: -Math.abs(Number(product.amount || 0)),
+        zeroing: 0,
+        acceptedQuantity: 0,
+        acceptedPrice: 0,
+        differenceQuantity: 0,
+        differencePrice: 0,
+        differenceAmount: 0
+      }))
+      : returnProductRows(returnAmount);
+    return {
+      ...record,
+      relatedNo: 'THD202606100001',
+      type: '销售退货',
+      mode: 'return',
+      amount: 0,
+      zeroing: 0,
+      receivable: 0,
+      shippingAmount: 0,
+      returnAmount,
+      netAmount: -returnAmount,
+      products: existingProducts
+    };
+  }
+
   function readState() {
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (!raw) return clone(defaultState);
       const parsed = JSON.parse(raw);
       return {
-        records: Array.isArray(parsed.records) ? parsed.records : clone(defaultState.records),
+        records: (Array.isArray(parsed.records) ? parsed.records : clone(defaultState.records)).map(normalizeReturnRecord),
         customerAccounts: Array.isArray(parsed.customerAccounts) ? parsed.customerAccounts : clone(defaultState.customerAccounts),
         statements: Array.isArray(parsed.statements) ? parsed.statements : clone(defaultState.statements)
       };

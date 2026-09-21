@@ -14,6 +14,16 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
   const money = (value) => Number(value || 0).toFixed(2);
+  const numeric = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
+  const businessAmount = (item) => {
+    const shippingAmount = item?.shippingAmount == null
+      ? (item?.mode === 'return' ? 0 : numeric(item?.amount))
+      : numeric(item.shippingAmount);
+    const returnAmount = item?.returnAmount == null
+      ? (item?.mode === 'return' ? Math.abs(numeric(item?.amount)) : 0)
+      : Math.abs(numeric(item.returnAmount));
+    return shippingAmount - returnAmount;
+  };
   const backIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M19 12H9"/></svg>';
   const statusBadge = (value, feedback = false) => {
     const statusClass = feedback
@@ -27,6 +37,8 @@
   });
   const page = appRoot.querySelector('[data-sales-detail-root]');
   const products = Array.isArray(record.products) ? record.products : [];
+  const acceptedAmountTotal = products.reduce((sum, item) => sum + numeric(item.acceptedQuantity) * numeric(item.acceptedPrice), 0);
+  const returnAmountTotal = products.reduce((sum, item) => sum + Math.abs(numeric(item.amount)), 0);
 
   function renderInfoItem(label, value, options = {}) {
     const editable = !readOnly && options.editable;
@@ -39,21 +51,25 @@
   function renderProducts() {
     const columns = isReturn
       ? ['序号', '商品名称', '计量单位', '退货数量', '退货单价', '退货金额', '差异数量', '差异单价', '差异金额', '差异备注']
-      : ['序号', '商品名称', '计量单位', '发货数量', '下单单价', '发货金额', '对账抹零', '验收数量', '验收单价', '差异数量', '差异单价', '差异金额', '差异备注'];
+      : ['序号', '商品名称', '计量单位', '发货数量', '下单单价', '发货金额', '对账抹零', '验收数量', '验收单价', '验收金额', '差异数量', '差异单价', '差异金额', '差异备注'];
     const editableFields = isReturn ? ['quantity', 'unitPrice', 'amount', 'remark'] : ['quantity', 'unitPrice', 'amount', 'zeroing', 'remark'];
     const valueCell = (product, key, inputType = 'number') => {
-      if (!readOnly && editableFields.includes(key)) return `<input class="sales-detail-cell-input" type="${inputType}" value="${escapeHtml(product[key])}" data-product-field="${key}">`;
-      return escapeHtml(product[key] ?? '--');
+      const value = isReturn && key === 'amount' ? -Math.abs(numeric(product[key])) : product[key];
+      if (!readOnly && editableFields.includes(key)) return `<input class="sales-detail-cell-input" type="${inputType}" value="${escapeHtml(value)}" data-product-field="${key}">`;
+      return escapeHtml(value ?? '--');
     };
     const rows = products.map((product, index) => `<tr>
       <td>${index + 1}</td><td>${escapeHtml(product.name)}</td><td>${escapeHtml(product.unit)}</td>
       <td>${valueCell(product, 'quantity')}</td><td>${valueCell(product, 'unitPrice')}</td><td>${valueCell(product, 'amount')}</td>
-      ${isReturn ? '' : `<td>${valueCell(product, 'zeroing')}</td><td>${escapeHtml(product.acceptedQuantity)}</td><td>${escapeHtml(product.acceptedPrice)}</td>`}
+      ${isReturn ? '' : `<td>${valueCell(product, 'zeroing')}</td><td>${escapeHtml(product.acceptedQuantity)}</td><td>${escapeHtml(product.acceptedPrice)}</td><td>${money(numeric(product.acceptedQuantity) * numeric(product.acceptedPrice))}</td>`}
       <td>${escapeHtml(product.differenceQuantity)}</td><td>${escapeHtml(product.differencePrice)}</td><td>${escapeHtml(product.differenceAmount)}</td><td>${valueCell(product, 'remark', 'text')}</td>
     </tr>`).join('');
     const totalQuantity = products.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-    const totalAmount = products.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    return `<div class="order-detail-table-wrap"><table class="processing-detail-table sales-detail-table"><thead><tr>${columns.map((column) => `<th>${column}</th>`).join('')}</tr></thead><tbody>${rows}</tbody><tfoot><tr class="sales-total"><td colspan="3">金额合计（元）</td><td>${totalQuantity}</td><td></td><td>${money(totalAmount)}</td><td colspan="${isReturn ? 4 : 7}"></td></tr></tfoot></table></div>`;
+    const totalAmount = products.reduce((sum, item) => sum + (isReturn ? -Math.abs(numeric(item.amount)) : numeric(item.amount)), 0);
+    const totalTail = isReturn
+      ? '<td colspan="4"></td>'
+      : `<td></td><td></td><td></td><td>${money(acceptedAmountTotal)}</td><td colspan="4"></td>`;
+    return `<div class="order-detail-table-wrap"><table class="processing-detail-table sales-detail-table"><thead><tr>${columns.map((column) => `<th>${column}</th>`).join('')}</tr></thead><tbody>${rows}</tbody><tfoot><tr class="sales-total"><td colspan="3">金额合计（元）</td><td>${totalQuantity}</td><td></td><td>${money(totalAmount)}</td>${totalTail}</tr></tfoot></table></div>`;
   }
 
   function toast(message) {
@@ -66,13 +82,16 @@
   }
 
   const title = readOnly ? '对账详情' : '对账';
-  const businessAmountLabel = isReturn ? '退货金额' : '发货金额';
+  const businessAmountLabel = isReturn ? '退货金额' : '验收金额';
+  const businessAmountValue = isReturn
+    ? -(returnAmountTotal || Math.abs(numeric(record.returnAmount)))
+    : acceptedAmountTotal;
   const receivableLabel = isReturn ? '应退金额' : '应收金额';
   page.innerHTML = `<div class="processing-detail-page-header"><button class="back-link" type="button" data-detail-back>${backIcon}<span>返回</span></button><h1>${title}</h1></div>
     <div class="processing-detail-page-body"><div class="processing-detail-section"><h3>基础信息</h3><div class="processing-detail-info">
       ${renderInfoItem('对账单号', record.accountNo)}${renderInfoItem('客户名称', record.customerName)}${renderInfoItem('食堂', record.canteen)}${renderInfoItem('关联单号', record.relatedNo)}
-      ${renderInfoItem('业务时间', record.businessTime)}${renderInfoItem(businessAmountLabel, money(record.amount))}${renderInfoItem('对账状态', record.status, { badge: true })}
-      ${renderInfoItem('客户反馈状态', record.feedbackStatus, { badge: true, feedback: true })}${!isReturn ? renderInfoItem('整单折扣', '100 %') : ''}${renderInfoItem('对账金额', money(record.amount), { key: 'amount', editable: !readOnly, type: 'number' })}${renderInfoItem('差异金额合计', '0.00')}${!isReturn ? renderInfoItem('抹零金额合计', money(record.zeroing), { key: 'zeroing', editable: true, type: 'number' }) : ''}
+      ${renderInfoItem('业务时间', record.businessTime)}${renderInfoItem(businessAmountLabel, money(businessAmountValue))}${renderInfoItem('对账状态', record.status, { badge: true })}
+      ${renderInfoItem('客户反馈状态', record.feedbackStatus, { badge: true, feedback: true })}${!isReturn ? renderInfoItem('整单折扣', '100 %') : ''}${renderInfoItem('对账金额', money(record.amount), { key: 'amount', editable: !readOnly && !isReturn, type: 'number' })}${renderInfoItem('差异金额合计', '0.00')}${!isReturn ? renderInfoItem('抹零金额合计', money(record.zeroing), { key: 'zeroing', editable: true, type: 'number' }) : ''}
       ${renderInfoItem(receivableLabel, money(record.receivable))}
     </div></div>
     <div class="processing-detail-section"><h3>${isReturn ? '退货单商品清单' : '订单商品清单'}</h3>${renderProducts()}</div></div>
@@ -93,13 +112,18 @@
       page.querySelectorAll('[data-detail-field]').forEach((input) => {
         detailPatch[input.dataset.detailField] = Number(input.value || 0);
       });
-      const updatedAmount = detailPatch.amount ?? updatedProducts.reduce((sum, product) => sum + Number(product.amount || 0), 0);
-      const updatedZeroing = detailPatch.zeroing ?? Number(record.zeroing || 0);
+      const productAmountTotal = updatedProducts.reduce((sum, product) => sum + (isReturn ? -Math.abs(numeric(product.amount)) : numeric(product.amount)), 0);
+      const updatedAmount = isReturn ? 0 : (detailPatch.amount ?? productAmountTotal);
+      const updatedZeroing = isReturn ? 0 : (detailPatch.zeroing ?? numeric(record.zeroing));
+      const updatedReturnAmount = isReturn ? Math.abs(productAmountTotal || numeric(record.returnAmount)) : 0;
       store.updateRecord(record.id, {
         products: updatedProducts,
         amount: updatedAmount,
         zeroing: updatedZeroing,
-        receivable: isReturn ? updatedAmount : updatedAmount - updatedZeroing,
+        receivable: isReturn ? 0 : updatedAmount - updatedZeroing,
+        shippingAmount: isReturn ? 0 : updatedAmount,
+        returnAmount: updatedReturnAmount,
+        netAmount: isReturn ? -updatedReturnAmount : updatedAmount,
         status: '已对账'
       });
       toast('保存成功');

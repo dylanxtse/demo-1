@@ -28,20 +28,6 @@
   font-weight: 600;
 }
 
-.school-order-form-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: 0;
-  background: transparent;
-  color: #5b6473;
-  font: inherit;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.school-order-form-back:hover { color: var(--primary); }
-
 .school-order-form-body {
   min-width: 0;
   min-height: 0;
