@@ -26,7 +26,9 @@
       'purchase-task-allocation.html': 'purchase-task.html',
       'purchase-task-allocation-detail.html': 'purchase-task.html',
       'purchase-order-form.html': 'purchase-order.html',
-      'purchase-order-receipt.html': 'purchase-order.html'
+      'purchase-order-receipt.html': 'purchase-order.html',
+      'sales-reconciliation-detail.html': 'sales-reconciliation.html',
+      'sales-reconciliation-customer-detail.html': 'sales-reconciliation.html'
     };
     const pageAliases = {
       'bid-management': 'bid-management.html',
@@ -44,7 +46,9 @@
       'notice-management': 'notice-management.html'
     };
     const targetPath = pageAliases[pageKey] || pageKey || currentPath;
-    const [targetFile, targetQuery = ''] = (routeAliases[targetPath] || targetPath).split('?');
+    const [targetFileName] = targetPath.split('?');
+    const aliasedPath = routeAliases[targetPath] || routeAliases[targetFileName] || targetPath;
+    const [targetFile, targetQuery = ''] = aliasedPath.split('?');
     const cleanPath = targetFile.replace(/\.html$/, '');
     function hrefMatches(href) {
       if (!href) return false;

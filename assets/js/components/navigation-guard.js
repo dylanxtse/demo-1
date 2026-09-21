@@ -29,6 +29,7 @@
     'supplier-relationship-management.html': 'education',
     'wasted-bid-management.html': 'education',
     'sales-reconciliation.html': 'enterprise',
+    'sales-reconciliation-customer-detail.html': 'enterprise',
     'sales-reconciliation-detail.html': 'enterprise',
     'sales-reconciliation-statement.html': 'enterprise',
     'audit-config.html': 'enterprise',
@@ -60,7 +61,8 @@
     'school-purchase-reconciliation.html': 'school',
     'school-purchase-accounts.html': 'school',
     'order-export-template.html': 'enterprise',
-    'order-export-order-template.html': 'enterprise'
+    'order-export-order-template.html': 'enterprise',
+    'market-price-import-template.html': 'enterprise'
   });
 
   const validVariants = new Set(Object.keys(endpointHomes));
