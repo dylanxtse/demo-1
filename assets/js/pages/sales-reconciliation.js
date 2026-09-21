@@ -51,6 +51,8 @@
   };
   let businessDatePicker = null;
   let statementDatePicker = null;
+  let reconciliationHeaderTooltip = null;
+  let reconciliationTooltipEventsBound = false;
 
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const escapeHtml = (value) => String(value ?? '')
@@ -101,6 +103,49 @@
     element.textContent = message;
     page.appendChild(element);
     window.setTimeout(() => element.remove(), 2200);
+  }
+
+  function hideReconciliationHeaderTooltip() {
+    reconciliationHeaderTooltip?.remove();
+    reconciliationHeaderTooltip = null;
+  }
+
+  function showReconciliationHeaderTooltip(target) {
+    const text = target?.dataset.productTooltip;
+    if (!text) return;
+    hideReconciliationHeaderTooltip();
+    const tooltip = document.createElement('div');
+    tooltip.className = 'product-list-header-tooltip';
+    tooltip.textContent = text;
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+    const targetRect = target.getBoundingClientRect();
+    const tooltipHeight = tooltip.offsetHeight;
+    const preferredTop = targetRect.top - tooltipHeight - 8;
+    const top = preferredTop >= 8
+      ? preferredTop
+      : Math.min(window.innerHeight - tooltipHeight - 8, targetRect.bottom + 8);
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const center = targetRect.left + targetRect.width / 2;
+    const left = Math.min(window.innerWidth - tooltipRect.width / 2 - 8, Math.max(tooltipRect.width / 2 + 8, center));
+    tooltip.style.top = `${Math.max(8, top)}px`;
+    tooltip.style.left = `${left}px`;
+    reconciliationHeaderTooltip = tooltip;
+    window.requestAnimationFrame(() => tooltip.classList.add('is-visible'));
+  }
+
+  function bindReconciliationHeaderTooltip() {
+    const headerHelp = page.querySelector('.config-help[data-product-tooltip]');
+    if (!headerHelp) return;
+    headerHelp.addEventListener('mouseenter', () => showReconciliationHeaderTooltip(headerHelp));
+    headerHelp.addEventListener('mouseleave', hideReconciliationHeaderTooltip);
+    headerHelp.addEventListener('focus', () => showReconciliationHeaderTooltip(headerHelp));
+    headerHelp.addEventListener('blur', hideReconciliationHeaderTooltip);
+    if (!reconciliationTooltipEventsBound) {
+      window.addEventListener('scroll', hideReconciliationHeaderTooltip, true);
+      window.addEventListener('resize', hideReconciliationHeaderTooltip);
+      reconciliationTooltipEventsBound = true;
+    }
   }
 
   function getState() {
@@ -261,7 +306,7 @@
     const pageButtons = Array.from({ length: totalPages }, (_, index) => `<button type="button" class="page-btn ${state.page === index + 1 ? 'active' : ''}" data-sales-page="${index + 1}" aria-current="${state.page === index + 1 ? 'page' : 'false'}">${index + 1}</button>`).join('');
     return `<div class="operations-toolbar"><div class="operations-toolbar-main"><button type="button" class="btn btn-primary btn-sm" data-sales-toolbar="batch-reconcile">批量对账</button><button type="button" class="btn btn-primary btn-sm" data-sales-toolbar="generate">生成对账单</button><button type="button" class="btn btn-primary btn-sm" data-sales-toolbar="batch-settle" disabled>批量结算</button></div><div class="operations-toolbar-side"><button type="button" class="btn btn-sm standard-list-export-print" data-sales-toolbar="export">${downloadIcon}导出</button></div></div>
       <div class="operations-table-container"><div class="operations-table-wrap"><table class="operations-table sales-table sales-reconciliation-detail-table"><thead><tr>
-        <th class="sales-selection"><input type="checkbox" data-sales-select-all aria-label="选择全部"></th><th>对账单号</th><th>关联单号</th><th>对账状态</th><th>客户反馈状态</th><th>食堂</th><th>收货人</th><th>收货手机</th><th>仓库</th><th>单据类型</th><th>对账金额</th><th>抹零金额</th><th>应收金额</th><th>发货金额</th><th>业务时间</th><th>司机</th><th>线路</th><th>对账人</th><th>订单备注</th><th>操作</th>
+        <th class="sales-selection"><input type="checkbox" data-sales-select-all aria-label="选择全部"></th><th>对账单号</th><th>关联单号</th><th>对账状态</th><th>客户反馈状态</th><th>食堂</th><th>收货人</th><th>收货手机</th><th>仓库</th><th>单据类型</th><th><span class="product-list-header-title"><span>对账金额</span><span class="config-help" data-product-tooltip="关联订单的验收金额" tabindex="0" role="img" aria-label="关联订单的验收金额">?</span></span></th><th>抹零金额</th><th>应收金额</th><th>发货金额</th><th>业务时间</th><th>司机</th><th>线路</th><th>对账人</th><th>订单备注</th><th>操作</th>
       </tr></thead><tbody>${records.length ? records.map((record) => `<tr data-id="${record.id}">
         <td class="sales-selection"><input type="checkbox" data-sales-select value="${record.id}" ${isReturnRecord(record) ? 'disabled' : ''} ${!isReturnRecord(record) && state.selected.has(record.id) ? 'checked' : ''}></td>
         <td class="sales-account-cell"><button type="button" class="sales-account-link" data-sales-action="detail" data-id="${record.id}">${escapeHtml(record.accountNo)}</button><span class="sales-account-time">${escapeHtml(record.businessTime)}</span></td>
@@ -269,7 +314,7 @@
         <td><span class="sales-status ${statusClass(record.status)}">${escapeHtml(record.status)}</span></td><td><span class="sales-status ${statusClass(record.feedbackStatus)}">${escapeHtml(record.feedbackStatus)}</span></td>
         <td>${escapeHtml(record.canteen)}</td><td>${escapeHtml(record.receiver)}</td><td>${escapeHtml(record.phone)}</td><td>${escapeHtml(record.warehouse)}</td><td>${escapeHtml(record.type)}</td>
         <td class="sales-money">${reconciliationMoney(record, 'amount')}</td><td class="sales-money">${reconciliationMoney(record, 'zeroing')}</td><td class="sales-money">${reconciliationMoney(record, 'receivable')}</td><td class="sales-money">${money(businessAmount(record))}</td><td class="sales-business-time">${escapeHtml(record.businessTime).replace(' ', '<br>')}</td><td>${escapeHtml(record.driver)}</td><td>${escapeHtml(record.route)}</td><td>${escapeHtml(record.reconciler)}</td><td>${escapeHtml(record.remark || '--')}</td><td class="sales-reconciliation-detail-actions">${rowActions(record)}</td>
-      </tr>`).join('') : '<tr><td class="sales-empty" colspan="20">暂无数据</td></tr>'}</tbody><tfoot><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">当前页合计</td><td class="sales-money">${money(pageAmountTotal)}</td><td class="sales-money">${money(pageZeroingTotal)}</td><td class="sales-money">${money(pageReceivableTotal)}</td><td class="sales-money">${money(pageBusinessAmountTotal)}</td><td colspan="6"></td></tr><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">所有页合计</td><td class="sales-money">${money(allAmountTotal)}</td><td class="sales-money">${money(allZeroingTotal)}</td><td class="sales-money">${money(allReceivableTotal)}</td><td class="sales-money">${money(allBusinessAmountTotal)}</td><td colspan="6"></td></tr></tfoot></table></div></div><div class="pagination operations-pagination"><span class="page-total">共 ${allRecords.length} 条数据</span><select class="page-size-select" aria-label="每页条数"><option>20 条/页</option></select><div class="page-btns"><button type="button" class="page-btn" data-sales-page="prev" aria-label="上一页" ${state.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="page-btn" data-sales-page="next" aria-label="下一页" ${state.page === totalPages ? 'disabled' : ''}>›</button></div><div class="page-jump"><span>跳至</span><input class="pagination-jump-input" value="${state.page}" aria-label="跳转页码"><span>/ ${totalPages} 页</span></div></div>`;
+      </tr>`).join('') : '<tr><td class="sales-empty" colspan="20">暂无数据</td></tr>'}</tbody><tfoot><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">当前页合计</td><td class="sales-money">${money(pageAmountTotal)}</td><td class="sales-money">${money(pageZeroingTotal)}</td><td class="sales-money">${money(pageReceivableTotal)}</td><td class="sales-money">${money(pageBusinessAmountTotal)}</td><td colspan="5"></td><td class="sales-reconciliation-summary-action-cell"></td></tr><tr class="sales-summary-row"><td></td><td colspan="9" class="sales-summary-label">所有页合计</td><td class="sales-money">${money(allAmountTotal)}</td><td class="sales-money">${money(allZeroingTotal)}</td><td class="sales-money">${money(allReceivableTotal)}</td><td class="sales-money">${money(allBusinessAmountTotal)}</td><td colspan="5"></td><td class="sales-reconciliation-summary-action-cell"></td></tr></tfoot></table></div></div><div class="pagination operations-pagination"><span class="page-total">共 ${allRecords.length} 条数据</span><select class="page-size-select" aria-label="每页条数"><option>20 条/页</option></select><div class="page-btns"><button type="button" class="page-btn" data-sales-page="prev" aria-label="上一页" ${state.page === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="page-btn" data-sales-page="next" aria-label="下一页" ${state.page === totalPages ? 'disabled' : ''}>›</button></div><div class="page-jump"><span>跳至</span><input class="pagination-jump-input" value="${state.page}" aria-label="跳转页码"><span>/ ${totalPages} 页</span></div></div>`;
   }
 
   function getFilteredStatements() {
@@ -459,6 +504,7 @@
   }
 
   function render() {
+    hideReconciliationHeaderTooltip();
     businessDatePicker?.destroy?.();
     businessDatePicker = null;
     statementDatePicker?.destroy?.();
@@ -469,7 +515,10 @@
       return;
     }
     page.innerHTML = `${renderTabs()}${state.tab === 'detail' ? `<div class="sales-view">${renderFilter()}${renderReconciliationTable()}</div>` : state.tab === 'customer' ? renderCustomerReconciliation() : renderStatements()}`;
-    if (state.tab === 'detail') mountBusinessDatePicker('detail');
+    if (state.tab === 'detail') {
+      mountBusinessDatePicker('detail');
+      bindReconciliationHeaderTooltip();
+    }
     if (state.tab === 'customer') mountBusinessDatePicker('customer');
     if (state.tab === 'statements') mountStatementDatePicker();
   }

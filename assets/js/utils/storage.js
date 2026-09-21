@@ -32,6 +32,7 @@
   const previousStorageKey = 'procurement-demo-v2';
   const backupStorageKey = 'procurement-demo-v3-migration-backup';
   const schemaVersion = '20260908-order-detail-schema-v1';
+  const returnDemoOrderSeedRevision = 'return-demo-orders-v2';
   const warehouseMonitorPointSeed = [
     {
       id: 'WMP-001',
@@ -1675,19 +1676,94 @@
     while (orders.length < 40) {
       const index = orders.length;
       const generatedIndex = Math.max(0, index - 11);
-      const product = products[index % products.length];
       const customerName = customerNames[generatedIndex % customerNames.length] || customerNames[0];
       const status = generatedIndex < 18 ? 'COMPLETED' : generatedStatus[generatedIndex % generatedStatus.length];
+      const lineProducts = Array.from({ length: 3 }, (_, offset) => products[(index + offset) % products.length]);
+      const isShipped = status === 'COMPLETED';
+      const items = lineProducts.map((product, offset) => {
+        const quantity = 10 + ((index + offset) % 6);
+        const unitPrice = number(product.marketPrice);
+        const shippedQty = isShipped ? quantity : 0;
+        return {
+          goodsCode: product.code || product.id,
+          goodsName: product.name,
+          unit: product.unit,
+          quantity,
+          orderQty: quantity,
+          unitPrice,
+          orderPrice: unitPrice,
+          shippedQty,
+          shippedAmount: shippedQty * unitPrice,
+          returnQty: 0,
+          returnAmount: 0,
+          isNetVegetable: product.isNetVegetable === true
+        };
+      });
+      const orderAmount = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
       orders.push({
         id: `ORD-DEMO-${String(index + 1).padStart(3, '0')}`, orderNo: `DD202608${String(5 + (generatedIndex % 20)).padStart(2, '0')}03${String(index + 1).padStart(5, '0')}`,
         customerName, customerType: customerName.includes('幼儿') ? '幼儿园' : customerName.includes('食堂') ? '机关单位' : '学校', canteen: canteenByCustomer[customerName],
         source: generatedIndex % 3 ? '企业下单' : '客户下单', orderTag: index % 2 ? '普通餐' : '营养餐', expectedAt: `2026-08-${String(5 + (generatedIndex % 10)).padStart(2, '0')} ${generatedIndex % 2 ? '08:00' : '07:30'}`,
         warehouse: generatedIndex % 4 === 0 ? '北区仓' : '中心仓', route: `配送线路${(generatedIndex % 5) + 1}`, status,
-        orderAmount: Number((10 + (index % 6)) * number(product.marketPrice)), shippingAmount: status === 'COMPLETED' ? Number((10 + (index % 6)) * number(product.marketPrice)) : 0,
-        items: [{ goodsCode: product.code || product.id, goodsName: product.name, unit: product.unit, quantity: 10 + (index % 6), unitPrice: number(product.marketPrice), isNetVegetable: product.isNetVegetable === true }]
+        orderAmount, shippingAmount: isShipped ? orderAmount : 0, items
       });
     }
     return orders;
+  }
+
+  function normalizeReturnDemoOrders(state) {
+    if (state.returnDemoOrderSeedRevision === returnDemoOrderSeedRevision) return false;
+    const products = Array.isArray(state.products) ? state.products : [];
+    let changed = true;
+    (state.orders || []).forEach((order, orderIndex) => {
+      if (!String(order.id || '').startsWith('ORD-DEMO-') || !Array.isArray(order.items) || !order.items.length) return;
+      const existingCodes = new Set(order.items.map((item) => String(item.goodsCode || item.productCode || item.productId || '').trim()).filter(Boolean));
+      const candidates = products.filter((product) => !existingCodes.has(String(product.code || product.id)));
+      while (order.items.length < 3 && candidates.length) {
+        const product = candidates.shift();
+        const quantity = 10 + ((orderIndex + order.items.length) % 6);
+        const unitPrice = number(product.marketPrice);
+        order.items.push({
+          id: `${order.id}-LINE-${String(order.items.length + 1).padStart(3, '0')}`,
+          orderLineId: `${order.id}-LINE-${String(order.items.length + 1).padStart(3, '0')}`,
+          orderId: order.id,
+          goodsCode: product.code || product.id,
+          productId: product.code || product.id,
+          goodsName: product.name,
+          unit: product.unit,
+          quantity,
+          orderQty: quantity,
+          unitPrice,
+          orderPrice: unitPrice,
+          shippedQty: 0,
+          shippedAmount: 0,
+          returnQty: 0,
+          returnAmount: 0,
+          isNetVegetable: product.isNetVegetable === true
+        });
+      }
+      const isShipped = String(order.status || '').toUpperCase() === 'SHIPPED' || Number(order.shippingAmount) > 0;
+      order.items.forEach((item) => {
+        const quantity = number(item.quantity ?? item.orderQty);
+        const unitPrice = number(item.unitPrice ?? item.orderPrice);
+        item.orderQty = quantity;
+        if (isShipped && Number(item.shippedQty) <= 0) {
+          item.shippedQty = quantity;
+          item.shippedAmount = quantity * unitPrice;
+        }
+        if (item.returnQty == null) item.returnQty = 0;
+        if (item.returnAmount == null) item.returnAmount = 0;
+      });
+      const orderAmount = order.items.reduce((sum, item) => sum + number(item.orderQty) * number(item.unitPrice ?? item.orderPrice), 0);
+      order.orderAmount = Number(orderAmount.toFixed(2));
+      if (isShipped) order.shippingAmount = order.orderAmount;
+      order.productCount = order.items.length;
+      order.orderLineCount = order.items.length;
+      order.orderLines = order.items;
+    });
+    state.orderLines = (state.orders || []).flatMap((order) => (order.items || []).map((item) => clone(item)));
+    state.returnDemoOrderSeedRevision = returnDemoOrderSeedRevision;
+    return changed;
   }
 
   function buildSeed() {
@@ -1847,12 +1923,13 @@
       const processingRelationsNormalized = normalizeProcessingRelations(state);
       const processingOutputsNormalized = normalizeProcessingOutputs(state);
       const contractsNormalized = normalizeStateContracts(state);
+      const returnDemoOrdersNormalized = normalizeReturnDemoOrders(state);
       const orderTagsNormalized = normalizeOrderTags(state);
       const warehouseCodesNormalized = normalizeWarehouseCodes(state);
       const settingsNormalized = normalizeSettings(state);
       const decimalsNormalized = normalizeStateDecimals(state);
       const statisticsResourcesNormalized = ensureStatisticsResources(state);
-      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingModuleReset || processingIdsNormalized || processingRelationsNormalized || processingOutputsNormalized || contractsNormalized || orderTagsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized || statisticsResourcesNormalized) persist();
+      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingModuleReset || processingIdsNormalized || processingRelationsNormalized || processingOutputsNormalized || contractsNormalized || returnDemoOrdersNormalized || orderTagsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized || statisticsResourcesNormalized) persist();
     }
     else {
       state = buildSeed();
@@ -1867,6 +1944,7 @@
       normalizeProcessingRelations(state);
       normalizeProcessingOutputs(state);
       normalizeStateContracts(state);
+      normalizeReturnDemoOrders(state);
       normalizeOrderTags(state);
       normalizeWarehouseCodes(state);
       normalizeSettings(state);

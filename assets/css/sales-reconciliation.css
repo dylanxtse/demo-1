@@ -756,6 +756,44 @@
   cursor: help;
 }
 
+/* 明细对账金额提示：复用商品列表“允许修改采购量”的问号与气泡样式。 */
+.sales-reconciliation-page.order-module-page .product-list-header-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.product-list-header-tooltip {
+  position: fixed;
+  z-index: 1300;
+  width: max-content;
+  max-width: 320px;
+  padding: 7px 9px;
+  box-sizing: border-box;
+  border: 1px solid #d9dde5;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(31, 35, 41, .14);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 19px;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 3px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.product-list-header-tooltip.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
 .sales-reconciliation-page.order-module-page .operations-filter-advanced .operations-filter-grid {
   grid-template-columns: repeat(3, minmax(220px, 1fr));
   gap: 12px 28px;
@@ -1635,4 +1673,19 @@
   padding-right: 4px;
   padding-left: 4px;
   white-space: nowrap;
+}
+
+/* 明细对账合计行固定在表格底部，操作列单独跟随右侧固定列。 */
+.sales-reconciliation-page.order-module-page .sales-reconciliation-detail-table:not(.sales-accounts-table):not(.sales-records-table) tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.sales-reconciliation-page.order-module-page .sales-reconciliation-detail-table:not(.sales-accounts-table):not(.sales-records-table) tfoot td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 6;
+  background: #f1f3fa;
+  box-shadow: -8px 0 10px -10px rgba(25, 40, 70, .45);
 }

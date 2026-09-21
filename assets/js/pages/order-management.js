@@ -214,14 +214,26 @@
   }
 
   function visibleActions(item) {
-    const actions = [];
-    if (item.status === 'PENDING_AUDIT') actions.push({ key: 'approve', label: '审核' });
-    if (item.status === 'PENDING_CONFIRM') actions.push({ key: 'confirm', label: '确认供货' });
-    if (['DRAFT', 'PENDING', 'PENDING_AUDIT', 'PENDING_CONFIRM', 'REJECTED'].includes(item.status)) actions.push({ key: 'edit', label: '编辑' });
-    actions.push({ key: 'copy', label: '复制' });
-    if (!['SHIPPED', 'CLOSED'].includes(item.status)) actions.push({ key: 'close', label: '关闭' });
-    if (['PENDING_AUDIT', 'PENDING_CONFIRM'].includes(item.status)) actions.push({ key: 'delete', label: '删除', danger: true });
-    return actions;
+    return [
+      { key: 'approve', label: '审核' },
+      { key: 'edit', label: '编辑' },
+      { key: 'copy', label: '复制' },
+      { key: 'return', label: '退货' },
+      { key: 'close', label: '关闭', danger: true },
+      { key: 'delete', label: '删除', danger: true }
+    ];
+  }
+
+  function actionDisabled(status, action) {
+    const enabled = {
+      approve: status === 'PENDING_AUDIT',
+      edit: ['DRAFT', 'PENDING', 'PENDING_AUDIT', 'PENDING_CONFIRM', 'REJECTED'].includes(status),
+      copy: true,
+      return: ['SHIPPED', 'COMPLETED'].includes(status),
+      close: !['SHIPPED', 'COMPLETED', 'CLOSED'].includes(status),
+      delete: ['PENDING_AUDIT', 'PENDING_CONFIRM'].includes(status)
+    };
+    return enabled[action] ? '' : 'disabled';
   }
 
   function renderBody() {
@@ -241,7 +253,9 @@
           return `<td title="${escapeHtml(value)}">${escapeHtml(value || '--')}</td>`;
         }).join('')}
         <td><div class="cell-actions operation-actions">${visibleActions(item).map((action) =>
-          `<button class="btn-text ${action.danger ? 'danger' : ''}" data-action="${action.key}">${action.label}</button>`
+          action.key === 'return'
+            ? `<span class="order-return-action"><button class="btn-text" data-action="return" aria-haspopup="menu" aria-expanded="false" ${actionDisabled(item.status, action.key)}>${action.label}</button><span class="order-return-dropdown" role="menu"><button type="button" class="order-return-dropdown-item" data-return-type="full" data-order-id="${escapeHtml(item.id)}">整单退</button><button type="button" class="order-return-dropdown-item" data-return-type="partial" data-order-id="${escapeHtml(item.id)}">部分退</button></span></span>`
+            : `<button class="btn-text ${action.danger ? 'danger' : ''}" data-action="${action.key}" ${actionDisabled(item.status, action.key)}>${action.label}</button>`
         ).join('')}</div></td>
       </tr>
     `).join('');
@@ -358,12 +372,38 @@
   }
 
   root.addEventListener('click', async (event) => {
+    if (!event.target.closest('.order-return-action')) {
+      root.querySelectorAll('.order-return-dropdown.open').forEach((menu) => menu.classList.remove('open'));
+      root.querySelectorAll('[data-action="return"][aria-expanded="true"]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+      root.querySelectorAll('.order-return-cell-open').forEach((cell) => cell.classList.remove('order-return-cell-open'));
+    }
     const close = event.target.closest('[data-modal-close]');
     if (close) return closeModal();
     const filterToggle = event.target.closest('[data-operations-filter-toggle]');
     if (filterToggle) {
       const expanded = filterToggle.classList.toggle('is-active');
       filterToggle.closest('.operations-filter')?.querySelector('.operations-filter-advanced')?.classList.toggle('is-visible', expanded);
+      return;
+    }
+    const returnButton = event.target.closest('[data-action="return"]');
+    if (returnButton) {
+      if (returnButton.disabled) return;
+      const menu = returnButton.closest('.order-return-action')?.querySelector('.order-return-dropdown');
+      const isOpen = menu?.classList.contains('open');
+      root.querySelectorAll('.order-return-dropdown.open').forEach((item) => item.classList.remove('open'));
+      root.querySelectorAll('[data-action="return"][aria-expanded="true"]').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+      root.querySelectorAll('.order-return-cell-open').forEach((cell) => cell.classList.remove('order-return-cell-open'));
+      menu?.classList.toggle('open', !isOpen);
+      returnButton.setAttribute('aria-expanded', String(!isOpen));
+      returnButton.closest('td')?.classList.toggle('order-return-cell-open', !isOpen);
+      return;
+    }
+    const returnChoice = event.target.closest('[data-return-type]');
+    if (returnChoice) {
+      root.querySelectorAll('.order-return-dropdown.open').forEach((menu) => menu.classList.remove('open'));
+      root.querySelectorAll('.order-return-cell-open').forEach((cell) => cell.classList.remove('order-return-cell-open'));
+      const returnType = returnChoice.dataset.returnType === 'partial' ? 'partial' : 'full';
+      navigate(`./order-return-form.html?mode=add&orderId=${encodeURIComponent(returnChoice.dataset.orderId)}&returnType=${returnType}`);
       return;
     }
     const actionButton = event.target.closest('[data-action]');

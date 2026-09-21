@@ -372,13 +372,69 @@
   justify-content: center;
 }
 
-/* 订单退货按状态保留完整操作列，不能操作的按钮以禁用态呈现。 */
-.order-return-page .operations-table .cell-actions .btn-text:disabled,
-.order-return-page .operations-table .cell-actions .btn-text.danger:disabled {
+.order-return-action {
+  position: relative;
+  display: inline-flex;
+}
+
+.order-return-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: -8px;
+  z-index: 20;
+  display: flex;
+  min-width: 88px;
+  flex-direction: column;
+  padding: 4px 0;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(25, 40, 70, .12);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility .15s;
+}
+
+.order-return-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.order-return-dropdown-item {
+  border: 0;
+  padding: 7px 12px;
+  color: var(--primary);
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.order-return-dropdown-item:hover {
+  background: var(--primary-light);
+}
+
+/* 订单列表保留完整操作列，不能操作的按钮以禁用态呈现。 */
+.order-module-page .operations-table .cell-actions .btn-text:disabled,
+.order-module-page .operations-table .cell-actions .btn-text.danger:disabled {
   color: #b8c0cb;
   opacity: 1;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.order-module-page .operations-table th:last-child,
+.order-module-page .operations-table td:last-child {
+  min-width: 232px;
+}
+
+/* 打开退货菜单时提升当前固定操作列，避免被后续表格行覆盖。 */
+.order-module-page .operations-table td.order-return-cell-open {
+  z-index: 4;
 }
 
 /* 订单标签操作项按产品参考页使用竖线分隔。 */
