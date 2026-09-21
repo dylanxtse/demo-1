@@ -451,6 +451,18 @@
   line-height: 24px;
 }
 .purchase-quantity-modal { z-index: 40; }
+.market-price-import-section { margin-bottom: 20px; }
+.market-price-import-section:last-child { margin-bottom: 0; }
+.market-price-import-template-link {
+  color: var(--primary);
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.market-price-import-template-link:hover { text-decoration: underline; }
+.market-price-import-upload { display: flex; align-items: center; gap: 8px; }
+.market-price-import-upload-hint { color: var(--text-tertiary); font-size: 12px; }
+.market-price-import-filename { display: block; margin-top: 6px; color: var(--text-secondary); font-size: 13px; }
 .product-list-toast {
   position: fixed;
   top: 80px;

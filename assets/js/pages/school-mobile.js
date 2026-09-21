@@ -866,13 +866,25 @@
     return '<div class="school-mobile-product-order-field-row"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(displayValue) + '</strong></div>';
   }
 
+  function productOrderMatchesFilter(order, filter) {
+    const status = String(order?.status || '');
+    const receiptStatus = String(order?.receiptStatus || '');
+    if (!filter || filter === '全部') return true;
+    if (filter === '暂存') return status === '暂存';
+    if (filter === '待审核') return ['待审核', '待确认'].includes(status);
+    if (filter === '待确认') return status === '待确认';
+    if (filter === '待发货') return ['待发货', '待出库'].includes(status);
+    if (filter === '待出库') return status === '待出库';
+    if (filter === '已完成') return status === '已完成';
+    if (filter === '退货') return profileOrderHasReturn(order);
+    return false;
+  }
+
   function renderProductOrders() {
-    const tabs = ['全部', '待审核', '待发货', '待收货', '退货'];
+    const tabs = ['全部', '暂存', '待审核', '待确认', '待发货', '待出库', '已完成', '退货'];
     const keyword = String(state.productOrderKeyword || '').trim().toLocaleLowerCase();
     const orders = state.productOrders.filter((order) => {
-      const statusMatch = state.productOrderFilter === '全部'
-        || (state.productOrderFilter === '待审核' && ['待审核', '待确认'].includes(order.status))
-        || order.status === state.productOrderFilter;
+      const statusMatch = productOrderMatchesFilter(order, state.productOrderFilter);
       const searchable = [order.orderNo, order.supplierName, order.orderTag].join(' ').toLocaleLowerCase();
       return statusMatch && (!keyword || searchable.includes(keyword));
     });
@@ -951,7 +963,7 @@
       + '<div class="school-mobile-product-checkout-cell" data-action="open-product-picker" data-picker-field="canteen"><span>请选择食堂</span><strong>' + escapeHtml(checkout.canteen || '请选择') + '</strong><i aria-hidden="true"></i></div>'
       + '<button type="button" class="school-mobile-product-checkout-cell school-mobile-product-checkout-date-trigger" data-action="open-product-checkout-date" aria-label="选择期望送达时间"><span>期望送达时间</span><strong>' + escapeHtml(productOrderDateTime(checkout.expectedDate)) + '</strong><i aria-hidden="true"></i></button>'
       + '<div class="school-mobile-product-checkout-cell" data-action="open-product-picker" data-picker-field="tag"><span>请选择订单标签</span><strong>' + escapeHtml(checkout.tag || '请选择') + '</strong><i aria-hidden="true"></i></div>'
-      + '<div class="school-mobile-product-checkout-actions"><button type="button" data-action="product-checkout-back">返回</button><button type="button" class="is-primary" data-action="save-product-order">' + (editing ? '保存订单' : '保存订单') + '</button></div>'
+      + '<div class="school-mobile-product-checkout-actions"><button type="button" data-action="product-checkout-back">返回</button><button type="button" data-action="save-product-order-draft">暂存</button><button type="button" class="is-primary" data-action="save-product-order">' + (editing ? '保存订单' : '保存订单') + '</button></div>'
       + '</section></div>';
   }
 
@@ -991,6 +1003,19 @@
     render();
   }
 
+  function validateOrderCutoff(expectedDate) {
+    if (!expectedDate) return { ok: true };
+    var now = new Date();
+    var expected = new Date(String(expectedDate).replace(/-/g, '/') + 'T00:00:00');
+    if (Number.isNaN(expected.getTime())) return { ok: true };
+    var diffMs = expected.getTime() - now.getTime();
+    var diffHours = diffMs / (1000 * 60 * 60);
+    if (diffHours < 12) {
+      return { ok: false, message: '期望送达时间距当前不足12小时，已超过截单时间，请修改送达时间' };
+    }
+    return { ok: true };
+  }
+
   function saveProductOrder() {
     const checkout = state.productCheckout;
     if (!checkout.canteen) {
@@ -1003,6 +1028,11 @@
     }
     if (!checkout.tag) {
       showToast('请选择订单标签', true);
+      return;
+    }
+    const cutoffCheck = validateOrderCutoff(checkout.expectedDate);
+    if (!cutoffCheck.ok) {
+      showToast(cutoffCheck.message, true);
       return;
     }
     const rows = productOrderCartRows();
@@ -1043,6 +1073,7 @@
       ? state.productOrders.map((order) => order.id === editing.id ? saved : order)
       : [saved, ...state.productOrders];
     persistProductOrderOrders();
+    syncOrderToWeb(saved);
     if (!editing) {
       state.productCart = {};
       persistProductOrderCart();
@@ -1057,6 +1088,100 @@
     state.tab = 'home';
     render();
     showToast('下单成功');
+  }
+
+  function saveProductOrderDraft() {
+    const checkout = state.productCheckout;
+    const rows = productOrderCartRows();
+    const editing = state.productEditingOrderId
+      ? state.productOrders.find((order) => order.id === state.productEditingOrderId)
+      : null;
+    if (!editing && !rows.length) {
+      showToast('购物车还是空的哦', true);
+      return;
+    }
+    var now = productOrderNow();
+    var itemRows = rows.map(function (_a) {
+      var product = _a.product, entry = _a.entry;
+      return {
+        productId: product.id,
+        productCode: product.code,
+        productName: product.name,
+        unit: product.unit,
+        orderPrice: productOrderPrice(product, entry),
+        orderQty: Number(entry.qty || 0),
+        remark: entry.note || ''
+      };
+    });
+    var saved = Object.assign({}, editing || {}, {
+      id: (editing === null || editing === void 0 ? void 0 : editing.id) || 'MOBILE-ORDER-' + Date.now(),
+      orderNo: (editing === null || editing === void 0 ? void 0 : editing.orderNo) || productOrderNo(),
+      supplierName: state.productSupplier,
+      canteen: checkout.canteen || '',
+      orderTag: checkout.tag || '',
+      expectedAt: checkout.expectedDate,
+      status: '暂存',
+      source: '商品下单',
+      createdAt: (editing === null || editing === void 0 ? void 0 : editing.createdAt) || now,
+      updatedAt: now,
+      productCount: editing ? editing.productCount : itemRows.length,
+      orderAmount: editing ? editing.orderAmount : itemRows.reduce(function (total, item) { return total + item.orderPrice * item.orderQty; }, 0),
+      items: editing ? (editing.items || []) : itemRows
+    });
+    state.productOrders = editing
+      ? state.productOrders.map(function (order) { return order.id === editing.id ? saved : order; })
+      : [saved].concat(state.productOrders);
+    persistProductOrderOrders();
+    syncOrderToWeb(saved);
+    if (!editing) {
+      state.productCart = {};
+      persistProductOrderCart();
+    }
+    state.productEditingOrderId = '';
+    state.productCheckoutDatePickerMonth = '';
+    state.productCheckoutDatePickerDraft = '';
+    state.productPickerField = '';
+    state.productPickerDraft = '';
+    state.sheet = null;
+    state.screen = 'product-orders';
+    state.tab = 'home';
+    render();
+    showToast('订单已暂存');
+  }
+
+  function syncOrderToWeb(order) {
+    try {
+      var ops = window.OperationsService;
+      if (!ops) return;
+      var webOrder = {
+        id: order.id,
+        orderNo: order.orderNo,
+        customerName: window.SchoolOrderService?.SCHOOL_NAME || '静安第一中学',
+        canteen: order.canteen,
+        orderTag: order.orderTag,
+        expectedAt: order.expectedAt,
+        status: order.status === '暂存' ? 'DRAFT' : 'PENDING_CONFIRM',
+        source: order.source || '商品下单',
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        productCount: order.productCount,
+        orderAmount: order.orderAmount,
+        items: (order.items || []).map(function (item) {
+          return {
+            goodsCode: item.productCode,
+            goodsName: item.productName,
+            unit: item.unit,
+            unitPrice: item.orderPrice,
+            quantity: item.orderQty,
+            remark: item.remark
+          };
+        })
+      };
+      if (typeof ops.upsert === 'function') ops.upsert('orders', webOrder);
+      else if (typeof ops.save === 'function') ops.save('orders', webOrder);
+    } catch (e) {
+      /* 同步失败不影响移动端操作 */
+    }
   }
 
   function renderHeader() {
@@ -1787,24 +1912,22 @@
     const status = String(order?.status || '');
     const receiptStatus = String(order?.receiptStatus || '');
     if (!filter || filter === '全部') return true;
+    if (filter === '暂存') return status === '暂存';
     if (filter === '待审核') return ['待审核', '待确认'].includes(status);
+    if (filter === '待确认') return status === '待确认';
     if (filter === '待发货') return ['待发货', '待出库'].includes(status);
-    if (filter === '待收货') {
-      return ['待收货', '已发货', '运输中'].includes(status)
-        || (Boolean(order?.shippingAt)
-          && !['已完成', '已关闭', '已驳回'].includes(status)
-          && receiptStatus !== '已收货');
-    }
+    if (filter === '待出库') return status === '待出库';
+    if (filter === '已完成') return status === '已完成';
     if (filter === '退货') return profileOrderHasReturn(order);
     return false;
   }
 
   function profileOrderStatusItems(orders) {
     return [
-      { label: '待审核', filter: '待审核', icon: 'order-review' },
+      { label: '暂存', filter: '暂存', icon: 'order-review' },
       { label: '待发货', filter: '待发货', icon: 'order-shipping' },
-      { label: '待收货', filter: '待收货', icon: 'order-receipt' },
-      { label: '退货', filter: '退货', icon: 'order-return' }
+      { label: '待出库', filter: '待出库', icon: 'order-shipping' },
+      { label: '已完成', filter: '已完成', icon: 'order-shipping' }
     ].map((item) => ({
       ...item,
       count: orders.filter((order) => profileOrderMatchesFilter(order, item.filter)).length
@@ -1864,7 +1987,7 @@
       const searchable = [order.orderNo, order.id, order.supplierName, order.canteen, orderTag].join(' ').toLocaleLowerCase();
       return !keyword || searchable.includes(keyword);
     });
-    const filters = ['全部', '待审核', '待发货', '待收货', '退货'];
+    const filters = ['全部', '暂存', '待审核', '待确认', '待发货', '待出库', '已完成', '退货'];
     return '<div class="school-mobile-scroll school-mobile-profile-scroll">'
       + '<div class="school-mobile-profile-order-filter" role="tablist" aria-label="订单状态筛选">'
       + filters.map((item) => '<button type="button" class="' + (item === filter ? 'is-active' : '') + '" data-action="profile-order-filter" data-order-filter="' + escapeHtml(item) + '" role="tab" aria-selected="' + (item === filter ? 'true' : 'false') + '">' + escapeHtml(item) + '</button>').join('')
@@ -2106,7 +2229,7 @@
   }
 
   function openOrderDetailEdit(order, returnTo) {
-    if (!order || String(order.status || '') !== '待确认') return;
+    if (!order || !['待确认', '暂存'].includes(String(order.status || ''))) return;
     state.profileOrder = clone(order);
     state.orderDetailDraft = clone(order);
     state.orderDetailEditing = true;
@@ -2145,18 +2268,25 @@
     render();
   }
 
-  function saveOrderDetailEdit() {
+  function saveOrderDetailEdit(isDraft) {
     const draft = state.orderDetailDraft;
     if (!draft) return;
     const canteen = String(draft.canteen || '').trim();
     const orderTag = String(draft.orderTag || '').trim();
-    if (!canteen) {
+    if (!isDraft && !canteen) {
       showToast('请选择食堂', true);
       return;
     }
-    if (!orderTag) {
+    if (!isDraft && !orderTag) {
       showToast('请选择订单标签', true);
       return;
+    }
+    if (!isDraft) {
+      var cutoff = validateOrderCutoff(draft.expectedAt);
+      if (!cutoff.ok) {
+        showToast(cutoff.message, true);
+        return;
+      }
     }
     const rawItems = Array.isArray(draft.items) ? draft.items : [];
     const items = [];
@@ -2178,18 +2308,23 @@
         remark: String(line.remark || '')
       });
     }
-    if (!items.length) {
+    if (!isDraft && !items.length) {
       showToast('请至少保留一个商品', true);
       return;
     }
+    if (isDraft && !items.length) {
+      showToast('请至少保留一个商品', true);
+      return;
+    }
+    const newStatus = isDraft ? '暂存' : '待确认';
     const saved = {
       ...clone(draft),
-      canteen,
-      orderTag,
+      canteen: canteen || draft.canteen || '',
+      orderTag: orderTag || draft.orderTag || '',
       items,
       productCount: items.length,
       orderAmount: items.reduce((total, item) => total + Number(item.orderPrice || 0) * item.orderQty, 0),
-      status: '待确认',
+      status: newStatus,
       source: draft.source || '商品下单',
       updatedAt: productOrderNow()
     };
@@ -2199,11 +2334,12 @@
       ? state.productOrders.map((order) => String(order.id || '') === orderId ? saved : order)
       : [saved, ...state.productOrders];
     persistProductOrderOrders();
+    syncOrderToWeb(saved);
     state.profileOrder = clone(saved);
     clearOrderDetailEditState();
     state.sheet = null;
     render();
-    showToast('订单已保存');
+    showToast(isDraft ? '订单已暂存' : '订单已保存');
   }
 
   function renderOrderDetailProduct(item, index, editing) {
@@ -2258,7 +2394,7 @@
       ? '<button type="button" class="school-mobile-order-detail-add-product" data-action="continue-order-detail-products">继续添加商品</button>'
       : '';
     const editActions = editing
-      ? '<div class="school-mobile-order-detail-edit-actions"><button type="button" data-action="cancel-order-detail-edit">取消</button><button type="button" class="is-primary" data-action="save-order-detail-edit">保存订单</button></div>'
+      ? '<div class="school-mobile-order-detail-edit-actions"><button type="button" data-action="cancel-order-detail-edit">取消</button><button type="button" data-action="save-order-detail-draft">暂存</button><button type="button" class="is-primary" data-action="save-order-detail-edit">保存并提交</button></div>'
       : '';
     return '<div class="school-mobile-order-detail-page">'
       + '<div class="school-mobile-scroll school-mobile-order-detail-scroll">'
@@ -2969,11 +3105,14 @@
         showToast('请选择期望送达日期', true);
         return;
       }
-      state.productCheckout.expectedDate = productOrderDateValue(`${selectedParts.date} ${selectedParts.time}`);
+      const newValue = productOrderDateValue(`${selectedParts.date} ${selectedParts.time}`);
+      state.productCheckout.expectedDate = newValue;
       state.productCheckoutDatePickerMonth = '';
       state.productCheckoutDatePickerDraft = '';
       state.sheet = { type: 'product-checkout' };
       render();
+      var cutoff = validateOrderCutoff(newValue);
+      if (!cutoff.ok) showToast(cutoff.message, true);
       return;
     }
     if (action === 'open-product-picker') {
@@ -3008,6 +3147,10 @@
       saveProductOrder();
       return;
     }
+    if (action === 'save-product-order-draft') {
+      saveProductOrderDraft();
+      return;
+    }
     if (action === 'product-order-filter') {
       state.productOrderFilter = target.dataset.filter || '全部';
       render();
@@ -3022,7 +3165,7 @@
     if (action === 'product-order-edit') {
       const order = state.productOrders.find((item) => item.id === target.dataset.orderId);
       if (!order) return;
-      if (String(order.status || '') === '待确认') openOrderDetailEdit(order, 'product-orders');
+      if (['待确认', '暂存'].includes(String(order.status || ''))) openOrderDetailEdit(order, 'product-orders');
       else openProductCheckout(order);
       return;
     }
@@ -3081,7 +3224,11 @@
       return;
     }
     if (action === 'save-order-detail-edit' && state.orderDetailEditing) {
-      saveOrderDetailEdit();
+      saveOrderDetailEdit(false);
+      return;
+    }
+    if (action === 'save-order-detail-draft' && state.orderDetailEditing) {
+      saveOrderDetailEdit(true);
       return;
     }
     if (action === 'product-order-reorder') {
@@ -3489,7 +3636,7 @@
     if (action === 'profile-order-edit') {
       const order = state.productOrders.find((item) => String(item.id || item.orderNo || '') === String(target.dataset.orderId || ''));
       if (!order) return;
-      if (String(order.status || '') === '待确认') openOrderDetailEdit(order, 'profile-orders');
+      if (['待确认', '暂存'].includes(String(order.status || ''))) openOrderDetailEdit(order, 'profile-orders');
       else openProductCheckout(order);
       return;
     }

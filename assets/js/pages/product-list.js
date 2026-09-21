@@ -76,7 +76,7 @@
               </div>`}
               <button id="supplierImportInfoBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品信息</button>
               <button id="supplierImportImageBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品图片</button>
-              ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue" type="button">导入市场价</button>'}
+              ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue" type="button" id="importMarketPriceBtn">导入市场价</button>'}
               ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchShelfBtn" type="button" disabled>批量上架</button>'}
               ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue btn-disabled" id="batchUnshelfBtn" type="button" disabled>批量下架</button>'}
               <button class="btn btn-danger btn-sm btn-action btn-disabled" id="batchDeleteBtn" type="button" disabled>批量删除</button>
@@ -150,6 +150,33 @@
           <div class="unshelf-modal-actions">
             <button class="btn" type="button" data-action="cancel-purchase-quantity">取消</button>
             <button class="btn btn-primary" type="button" data-action="confirm-purchase-quantity">确定</button>
+          </div>
+        </div>
+      </div>
+      <div class="unshelf-modal" id="marketPriceImportModal" aria-hidden="true">
+        <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="marketPriceImportTitle">
+          <div class="unshelf-modal-header">
+            <h2 id="marketPriceImportTitle">导入市场价</h2>
+            <button class="unshelf-modal-close" type="button" data-action="close-market-price-modal" aria-label="关闭">×</button>
+          </div>
+          <div class="unshelf-modal-body">
+            <div class="market-price-import-section">
+              <label class="unshelf-reason-label">下载模板</label>
+              <a href="./market-price-import-template.html" class="market-price-import-template-link" data-action="download-market-price-template">市场价导入模板.xlsx</a>
+            </div>
+            <div class="market-price-import-section">
+              <label class="unshelf-reason-label">上传文件</label>
+              <div class="market-price-import-upload">
+                <button class="btn btn-sm btn-blue" type="button" data-action="trigger-market-price-upload">上传</button>
+                <input type="file" id="marketPriceFileInput" accept=".xlsx" style="display:none">
+                <span class="market-price-import-upload-hint">只能上传xlsx文件，且不超过10M</span>
+              </div>
+              <span class="market-price-import-filename" id="marketPriceFileName"></span>
+            </div>
+          </div>
+          <div class="unshelf-modal-actions">
+            <button class="btn" type="button" data-action="cancel-market-price">取消</button>
+            <button class="btn btn-primary" type="button" data-action="confirm-market-price">导入</button>
           </div>
         </div>
       </div>
@@ -583,6 +610,13 @@
       }
       if (action === 'close-unshelf-modal' || action === 'cancel-unshelf') closeUnshelfModal();
       if (action === 'confirm-unshelf') confirmUnshelf();
+      if (action === 'close-market-price-modal' || action === 'cancel-market-price') closeMarketPriceModal();
+      if (action === 'confirm-market-price') confirmMarketPriceImport();
+      if (action === 'trigger-market-price-upload') {
+        document.getElementById('marketPriceFileInput').click();
+        return;
+      }
+      if (action === 'download-market-price-template') return;
       if (action === 'toggle-row') {
         const checkbox = event.target.closest('.custom-checkbox');
         checkbox.classList.toggle('checked');
@@ -650,6 +684,42 @@
         if (event.key === 'Enter') filterProducts(true);
       });
     });
+    document.getElementById('importMarketPriceBtn')?.addEventListener('click', openMarketPriceModal);
+    document.getElementById('marketPriceFileInput')?.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const nameSpan = document.getElementById('marketPriceFileName');
+      if (nameSpan) nameSpan.textContent = file.name;
+      if (file.size > 10 * 1024 * 1024) {
+        if (nameSpan) nameSpan.textContent = '';
+        window.alert('文件大小不能超过10M');
+        event.target.value = '';
+      }
+    });
+  }
+
+  function openMarketPriceModal() {
+    const modal = document.getElementById('marketPriceImportModal');
+    modal.classList.add('is-visible');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeMarketPriceModal() {
+    const modal = document.getElementById('marketPriceImportModal');
+    modal.classList.remove('is-visible');
+    modal.setAttribute('aria-hidden', 'true');
+    document.getElementById('marketPriceFileInput').value = '';
+    document.getElementById('marketPriceFileName').textContent = '';
+  }
+
+  function confirmMarketPriceImport() {
+    const fileInput = document.getElementById('marketPriceFileInput');
+    if (!fileInput.files.length) {
+      window.alert('请先上传文件');
+      return;
+    }
+    closeMarketPriceModal();
+    showOperationToast('导入成功');
   }
 
   window.AppShell.mount({ title: '商品管理', content: pageContent, variant: isSupplierProductPage ? 'supplier' : 'enterprise' });

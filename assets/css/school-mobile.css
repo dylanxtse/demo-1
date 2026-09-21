@@ -5303,7 +5303,7 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-product-checkout-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   padding-top: 8px;
 }
@@ -6091,7 +6091,7 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-order-detail-edit-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   padding: 0 14px 20px;
 }
