@@ -88,7 +88,8 @@
       'settlement-price-change.html',
       'receipt-change.html',
       'receipt-change-form.html',
-      'receipt-change-detail.html'
+      'receipt-change-detail.html',
+      'basic-info.html'
     ]),
     education: new Set([
       'education.html',

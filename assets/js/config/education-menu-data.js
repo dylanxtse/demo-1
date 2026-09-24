@@ -16,10 +16,9 @@
       { name: '订单管理' },
       { name: '订单标签' }
     ] },
-    { name: '供应商档案', icon: 'users', href: './supplier-archive.html' },
     { name: '账单管理', icon: 'wallet' },
-    { name: '供货企业管理', icon: 'truck', children: [
-      { name: '供货企业档案' }
+    { name: '供货企业管理', icon: 'truck', expanded: true, children: [
+      { name: '供货企业档案', selected: true, href: './supplier-archive.html' }
     ] },
     { name: '学校管理', icon: 'home' },
     { name: '统计报表', icon: 'chart' },

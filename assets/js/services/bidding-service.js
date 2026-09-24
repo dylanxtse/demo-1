@@ -78,6 +78,49 @@
         qualifications: ['食品经营许可证示例.png'], jointVenture: false, hideCustomerPrice: false
       }
     ];
+    const supplierCompanies = [
+      {
+        id: 'SC-001', name: '统仓配送公司', contact: 'ryc', phone: '15967399523', schoolCount: 5,
+        status: '启用', licenseCode: '91130927MA0A000006', address: '河北省沧州市南皮县城区兴业路18号',
+        qualifications: ['食品经营许可证', '质量管理体系认证证书'],
+        bankAccounts: [{ id: 'BANK-SC-001-001', accountName: '统仓配送公司', accountNumber: '622202000100010001', bankName: '中国银行', branchName: '南皮县支行', bankLineNumber: '104100000001', isDefault: true }]
+      },
+      {
+        id: 'SC-002', name: '阳光智园供应链管理有限公司', contact: '王先生', phone: '17889788866', schoolCount: 73,
+        status: '启用', licenseCode: '91130927MA0A000007', address: '河北省沧州市南皮县迎宾大道88号',
+        qualifications: ['食品经营许可证', '农产品质量安全认证证书'],
+        bankAccounts: [{ id: 'BANK-SC-002-001', accountName: '阳光智园供应链管理有限公司', accountNumber: '622848000200020002', bankName: '农业银行', branchName: '南皮迎宾大道支行', bankLineNumber: '103100000002', isDefault: true }]
+      },
+      {
+        id: 'SC-003', name: '产品部学校食材集采供应链有限公司', contact: '杨', phone: '13573147976', schoolCount: 8,
+        status: '启用', licenseCode: '91130927MA0A000008', address: '河北省沧州市南皮县城东工业园区6号',
+        qualifications: ['食品经营许可证', '质量管理体系认证证书', '食品安全管理体系认证证书'],
+        bankAccounts: [{ id: 'BANK-SC-003-001', accountName: '产品部学校食材集采供应链有限公司', accountNumber: '43254614164', bankName: '工商银行', branchName: '中国工商银行南皮支行', bankLineNumber: '102100099996', isDefault: true }]
+      },
+      {
+        id: 'SC-004', name: '三石冷链供应商', contact: '刘磊', phone: '18500000000', schoolCount: 1,
+        status: '启用', licenseCode: '91130927MA0A000009', address: '河北省沧州市南皮县冷链物流园12号',
+        qualifications: ['食品经营许可证', '冷链食品经营备案证明'],
+        bankAccounts: [{ id: 'BANK-SC-004-001', accountName: '三石冷链供应商', accountNumber: '621700000400040004', bankName: '建设银行', branchName: '南皮县冷链园支行', bankLineNumber: '105100000004', isDefault: true }]
+      },
+      {
+        id: 'SC-005', name: '小姚食品连锁', contact: '姚石宇', phone: '15345234234', schoolCount: 20,
+        status: '启用', licenseCode: '91130927MA0A000010', address: '河北省沧州市南皮县光明街39号',
+        qualifications: ['食品经营许可证', '食品安全培训合格证明'],
+        bankAccounts: [{ id: 'BANK-SC-005-001', accountName: '小姚食品连锁', accountNumber: '622588000500050005', bankName: '招商银行', branchName: '南皮光明街支行', bankLineNumber: '308100000005', isDefault: true }]
+      }
+    ];
+    const supplierSchools = [
+      { id: 'SS-001', supplierId: 'SC-001', code: '31010600020', name: '静安第19中学' },
+      { id: 'SS-002', supplierId: 'SC-001', code: '31010610002', name: '静安第1中学' },
+      { id: 'SS-003', supplierId: 'SC-001', code: '31010600003', name: '静安第2中学' },
+      { id: 'SS-004', supplierId: 'SC-001', code: '31010600051', name: '乔故强' },
+      { id: 'SS-005', supplierId: 'SC-001', code: '31010600005', name: '静安第4中学' },
+      { id: 'SS-006', supplierId: 'SC-002', code: '31010600006', name: '静安第5中学' },
+      { id: 'SS-007', supplierId: 'SC-003', code: '31010600007', name: '静安第6中学' },
+      { id: 'SS-008', supplierId: 'SC-004', code: '31010600008', name: '静安第7中学' },
+      { id: 'SS-009', supplierId: 'SC-005', code: '31010600009', name: '静安第8中学' }
+    ];
     const segments = [
       { id: 'SEG-001', name: '演示标段', categories: ['果蔬', '肉（豆）制品'], status: '启用' },
       { id: 'SEG-002', name: '姜0004', categories: ['主食（米面粉点心类）', '调料'], status: '启用' },
@@ -193,6 +236,8 @@
     return {
       categories,
       suppliers,
+      supplierCompanies,
+      supplierSchools,
       segments,
       rules,
       bids,
@@ -215,12 +260,38 @@
       const raw = window.localStorage.getItem(storageKey);
       if (raw) {
         const state = JSON.parse(raw);
+        const defaults = seedState();
         if (!Array.isArray(state.suppliers)) state.suppliers = [];
         if (!state.suppliers.some((item) => item.id === 'SUP-005')) {
           state.suppliers.push(seedState().suppliers.find((item) => item.id === 'SUP-005'));
         }
         const pendingDemo = state.suppliers.find((item) => item.id === 'SUP-005');
         if (pendingDemo?.auditStatus === '待审核') pendingDemo.username = '';
+        if (!Array.isArray(state.supplierCompanies) || !state.supplierCompanies.length) {
+          state.supplierCompanies = clone(defaults.supplierCompanies);
+        } else {
+          state.supplierCompanies = state.supplierCompanies.map((company) => {
+            const demo = defaults.supplierCompanies.find((item) => item.id === company.id);
+            if (!demo) return company;
+            return {
+              ...demo,
+              ...company,
+              licenseCode: company.licenseCode || demo.licenseCode,
+              address: company.address || demo.address,
+              qualifications: Array.isArray(company.qualifications) && company.qualifications.length
+                ? company.qualifications
+                : clone(demo.qualifications)
+            };
+          });
+          defaults.supplierCompanies.forEach((demo) => {
+            if (!state.supplierCompanies.some((company) => company.id === demo.id)) {
+              state.supplierCompanies.push(clone(demo));
+            }
+          });
+        }
+        if (!Array.isArray(state.supplierSchools) || !state.supplierSchools.length) {
+          state.supplierSchools = defaults.supplierSchools;
+        }
         writeState(state);
         return state;
       }
