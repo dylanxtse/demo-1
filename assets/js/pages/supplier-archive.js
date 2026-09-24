@@ -165,7 +165,7 @@
             <span>${esc(maskBankAccount(account.accountNumber))}</span>
           </div>
           ${account.isDefault ? '<b>默认</b>' : ''}
-          <button class="supplier-company-bank-detail-toggle" type="button" data-action="toggle-bank-details" data-bank-index="${index}" aria-expanded="${expanded}" aria-controls="${detailId}">${expanded ? '收起详情' : '查看详情'}</button>
+          <button class="supplier-company-bank-detail-toggle" type="button" data-action="toggle-bank-details" data-bank-index="${index}" aria-expanded="${expanded}" aria-controls="${detailId}">${expanded ? '收起' : '查看详情'}</button>
         </div>
         <div class="supplier-company-bank-details" id="${detailId}"${expanded ? '' : ' hidden'}>
           <div class="supplier-company-bank-grid">
