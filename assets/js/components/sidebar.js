@@ -1,6 +1,7 @@
 (function () {
   function autoSelectByHref(menu, currentPath, pageKey = '') {
     const routeAliases = {
+      'sorting-customer-detail.html': 'sorting-management.html',
       'outbound-detail.html': 'outbound.html',
       'inbound-detail.html': 'inbound.html',
       'outbound-detail': 'outbound',

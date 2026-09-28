@@ -161,8 +161,8 @@
 .operations-toolbar .toolbar-spacer { flex: 1; }
 
 .toolbar-dropdown { position: relative; display: inline-flex; align-items: stretch; }
-.toolbar-dropdown-main { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.toolbar-dropdown-toggle { min-width: 32px; padding: 0 8px; border-left: 1px solid rgba(255,255,255,.35); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.toolbar-dropdown-main { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: 0; }
+.toolbar-dropdown-toggle { min-width: 32px; padding: 0 8px; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .toolbar-dropdown-menu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: none; min-width: 132px; padding: 4px 0; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; box-shadow: 0 4px 12px rgba(25, 40, 70, .14); }
 .toolbar-dropdown.is-open .toolbar-dropdown-menu { display: block; }
 .toolbar-dropdown-menu button { display: block; width: 100%; padding: 8px 12px; border: 0; background: transparent; color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; white-space: nowrap; }
@@ -664,7 +664,20 @@
 .sorting-module-page .operations-toolbar-main,
 .sorting-module-page .operations-toolbar-side { display: flex; align-items: center; gap: 8px; }
 .sorting-module-page .operations-toolbar-main .btn { min-width: 110px; justify-content: center; }
-.sorting-module-page .operations-toolbar-main .toolbar-dropdown-toggle { min-width: 32px; width: 32px; }
+.sorting-module-page .operations-toolbar-main .toolbar-dropdown { gap: 0; }
+.sorting-module-page .operations-toolbar-main .toolbar-dropdown-main {
+  border-right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.sorting-module-page .operations-toolbar-main .toolbar-dropdown-toggle {
+  min-width: 32px;
+  width: 32px;
+  margin-left: -1px;
+  border-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
 .sorting-status-boxed .operations-toolbar .standard-list-export-print {
   display: inline-flex;
   width: auto;

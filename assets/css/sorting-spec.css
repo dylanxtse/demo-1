@@ -1,0 +1,646 @@
+#sortingSpecPageRoot {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sorting-spec-page {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  gap: 0;
+  padding-bottom: 72px;
+  color: var(--text-primary);
+}
+
+.sorting-spec-filter {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex: 0 0 auto;
+  margin-bottom: 16px;
+  padding: 0 2px 4px;
+  border: 0;
+  background: transparent;
+}
+
+.sorting-spec-filter-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(230px, 1fr));
+  gap: 12px 24px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sorting-spec-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.sorting-spec-field .filter-label {
+  width: 86px;
+  flex: 0 0 86px;
+}
+
+.sorting-spec-field .filter-input,
+.sorting-spec-field .filter-select {
+  width: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.sorting-spec-filter-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+/* 为后续高级筛选控件预留一个操作位，当前不承载交互。 */
+.sorting-spec-advanced-filter-slot {
+  display: inline-flex;
+  width: var(--query-action-width);
+  height: 32px;
+  flex: 0 0 var(--query-action-width);
+}
+
+.sorting-spec-filter-actions .btn {
+  min-width: 64px;
+  justify-content: center;
+}
+
+.sorting-spec-table-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  background: #fff;
+}
+
+.sorting-spec-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.sorting-spec-table th,
+.sorting-spec-table td {
+  height: 46px;
+  padding: 8px 12px;
+  border-right: 1px solid #edf0f5;
+  border-bottom: 1px solid #edf0f5;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sorting-spec-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f7f9fc;
+  color: #4e5969;
+  font-weight: 500;
+}
+
+/* 横向滚动时固定左侧序号、商品名称和右侧操作列。 */
+.sorting-spec-table th:nth-child(1),
+.sorting-spec-table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+.sorting-spec-table th:nth-child(2),
+.sorting-spec-table td:nth-child(2) {
+  position: sticky;
+  left: 70px;
+  z-index: 2;
+  background: #fff;
+}
+
+.sorting-spec-table th:last-child,
+.sorting-spec-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+.sorting-spec-table th:nth-child(1),
+.sorting-spec-table th:nth-child(2),
+.sorting-spec-table th:last-child {
+  z-index: 4;
+  background: #f7f9fc;
+}
+
+.sorting-spec-table tbody tr:hover > td {
+  background: #f7fbff;
+}
+
+.sorting-spec-table tbody td.empty-cell {
+  position: static;
+  left: auto;
+  right: auto;
+  z-index: auto;
+  box-shadow: none;
+}
+
+.sorting-spec-table th:last-child,
+.sorting-spec-table td:last-child {
+  border-right: 0;
+}
+
+.sorting-spec-table tbody tr:hover {
+  background: #f7fbff;
+}
+
+.sorting-spec-table .text-center {
+  text-align: center;
+}
+
+.sorting-spec-product-display {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.sorting-spec-product-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sorting-spec-product-readonly {
+  display: flex;
+  min-width: 0;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #f7f8fa;
+  color: var(--text-secondary);
+}
+
+.sorting-spec-net-vegetable-tag {
+  display: inline-flex;
+  height: 20px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  border: 1px solid var(--success);
+  border-radius: 3px;
+  padding: 0 5px;
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.sorting-spec-table .empty-cell {
+  height: 190px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.sorting-spec-quantity {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.sorting-spec-quantity span {
+  margin-left: 3px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.sorting-spec-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.sorting-spec-status.is-enabled {
+  background: #e8f8f0;
+  color: var(--success);
+}
+
+.sorting-spec-status.is-disabled {
+  background: #f2f3f5;
+  color: var(--text-tertiary);
+}
+
+.sorting-spec-status.is-pending {
+  background: #fff7e6;
+  color: #ff7d00;
+}
+
+.sorting-spec-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.sorting-spec-actions .btn-text {
+  padding: 0;
+  font-size: 13px;
+}
+
+.sorting-spec-actions .btn-text.is-muted {
+  color: var(--text-tertiary);
+}
+
+.sorting-spec-pagination {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 3;
+  flex: 0 0 auto;
+  min-height: 48px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+  background: #fff;
+}
+
+.sorting-spec-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, .42);
+}
+
+.sorting-spec-modal {
+  width: min(700px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .18);
+}
+
+.sorting-spec-modal-header,
+.sorting-spec-modal-footer {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sorting-spec-modal-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.sorting-spec-modal-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 22px;
+  line-height: 28px;
+  cursor: pointer;
+}
+
+.sorting-spec-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.sorting-spec-modal-body {
+  padding: 22px 24px;
+}
+
+.sorting-spec-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px 22px;
+}
+
+.sorting-spec-form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.sorting-spec-form-field.is-full {
+  grid-column: 1 / -1;
+}
+
+.sorting-spec-form-half {
+  max-width: 100%;
+}
+
+.sorting-spec-form-field.sorting-spec-qty-field {
+  align-items: flex-start;
+}
+
+.sorting-spec-qty-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sorting-spec-qty-wrap > input {
+  width: 100%;
+  flex: none !important;
+  height: 34px !important;
+  box-sizing: border-box;
+}
+
+.sorting-spec-qty-hint {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.sorting-spec-form-remark {
+  align-items: flex-start;
+}
+
+.sorting-spec-remark-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.sorting-spec-remark-wrap textarea {
+  width: 100%;
+  min-width: 0;
+  height: 66px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+  resize: none;
+}
+
+.sorting-spec-remark-wrap textarea:focus {
+  border-color: var(--primary);
+}
+
+.sorting-spec-remark-counter {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  pointer-events: none;
+}
+
+.sorting-spec-form-field > span:first-child,
+.sorting-spec-form-field > span.required {
+  flex: 0 0 120px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.sorting-spec-form-readonly-value {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+  word-break: break-all;
+}
+
+.sorting-spec-form-field > span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.sorting-spec-form-field > span.required::before {
+  margin-right: 4px;
+  color: var(--danger);
+  content: '*';
+}
+
+.sorting-spec-form-field input:not([type='hidden']),
+.sorting-spec-form-field select,
+.sorting-spec-form-field textarea {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.sorting-spec-form-field input:not([type='hidden']),
+.sorting-spec-form-field select {
+  height: 34px;
+  padding: 0 10px;
+}
+
+.sorting-spec-form-field input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.sorting-spec-form-field input[type='number']::-webkit-outer-spin-button,
+.sorting-spec-form-field input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.sorting-spec-form-field .sorting-spec-status-switch {
+  width: 36px;
+  min-height: 34px;
+}
+
+.sorting-spec-form-field .sorting-spec-status-switch .switch-input {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+}
+
+.sorting-spec-form-field input:focus,
+.sorting-spec-form-field select:focus {
+  border-color: var(--primary);
+}
+
+.sorting-spec-form-field input[readonly],
+.sorting-spec-form-field input:disabled,
+.sorting-spec-form-field select:disabled {
+  background: #f7f8fa;
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.sorting-spec-form-help {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.sorting-spec-form-field > .price-select-shell {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+.sorting-spec-form-field .price-select-shell > select {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.sorting-spec-form-field .price-select-shell > select:focus {
+  border-color: var(--primary);
+}
+
+.sorting-spec-form-field .price-select-shell > select.is-placeholder {
+  color: transparent;
+}
+
+.sorting-spec-form-field .price-select-placeholder {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 30px;
+  left: 10px;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.sorting-spec-form-field .price-select-shell.has-value > .price-select-placeholder {
+  display: none;
+}
+
+.sorting-spec-modal-footer {
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 0;
+}
+
+.sorting-spec-modal-footer .btn {
+  min-width: 72px;
+  justify-content: center;
+}
+
+.sorting-spec-toast {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  z-index: 120;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
+  color: var(--success);
+  font-size: 13px;
+  line-height: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -8px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.sorting-spec-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.sorting-spec-toast.is-error {
+  color: var(--danger);
+}
+
+@media (max-width: 1180px) {
+  .sorting-spec-filter {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sorting-spec-filter-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .sorting-spec-pagination {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .sorting-spec-filter-fields,
+  .sorting-spec-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sorting-spec-form-field.is-full {
+    grid-column: auto;
+  }
+
+  .sorting-spec-filter-actions {
+    justify-content: flex-start;
+  }
+
+  .sorting-spec-advanced-filter-slot {
+    display: none;
+  }
+
+  .sorting-spec-modal-backdrop {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .sorting-spec-modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+}

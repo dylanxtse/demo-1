@@ -43,6 +43,7 @@
     const statusMap = { ...defaultStatusMap, ...(config.statusMap || {}) };
     const useDemoListLayout = config.useDemoListLayout === true;
     const usePagination = config.usePagination === true || useDemoListLayout;
+    const initialTab = config.tabs?.find((tab) => tab.key === config.initialTab) || config.tabs?.[0];
     const state = {
       page: 1,
       pageSize: config.pageSize || 20,
@@ -51,8 +52,8 @@
       selected: new Set(),
       condition: { ...(config.initialCondition || {}) },
       pagination: null,
-      activeTab: config.tabs?.[0]?.key,
-      activeStatus: config.tabs?.[0]?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
+      activeTab: initialTab?.key,
+      activeStatus: initialTab?.defaultStatus ?? initialTab?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
     };
     const currentFilters = () => config.tabs?.find((tab) => tab.key === state.activeTab)?.filters || config.filters || [];
     const isPlaceholderOption = (value) => /^(请选择|请输入|选择)/.test(String(value ?? '').trim());
@@ -188,6 +189,7 @@
       const filterSection = root.querySelector('.operations-filter');
       const mainGrid = root.querySelector('.operations-filter-main .operations-filter-grid');
       if (!filterSection || !mainGrid) return;
+      filterSection.dataset.queryFilterExpanded = 'false';
       const fields = currentFilters();
       const primaryFields = useDemoListLayout ? fields : fields.slice(0, 3);
       const advancedFields = useDemoListLayout ? [] : fields.slice(3);
@@ -255,6 +257,8 @@
       const active = config.tabs?.find((tab) => tab.key === state.activeTab);
       return active?.resource || config.resource;
     }
+
+    function currentService() { return currentTab()?.service || service; }
 
     function currentTab() {
       return config.tabs?.find((tab) => tab.key === state.activeTab);
@@ -445,6 +449,14 @@
         all.checked = state.items.length > 0 && state.items.every((item) => state.selected.has(item.id));
         all.indeterminate = !all.checked && state.items.some((item) => state.selected.has(item.id));
       }
+      root.querySelectorAll('[data-toolbar-action]').forEach((button) => {
+        const action = findToolbarAction(button.dataset.toolbarAction);
+        if (action?.requiresSelection) {
+          button.disabled = !state.selected.size;
+          const toggle = button.closest('.toolbar-dropdown')?.querySelector('[data-toolbar-dropdown-toggle]');
+          if (toggle) toggle.disabled = button.disabled;
+        }
+      });
     }
 
     function collectCondition() {
@@ -470,7 +482,7 @@
             condition.status = statuses.length > 1 ? statuses : state.activeStatus;
           } else delete condition.status;
         }
-        const result = await service.list(currentResource(), { page: state.page, pageSize: state.pageSize, condition });
+        const result = await currentService().list(currentResource(), { page: state.page, pageSize: state.pageSize, condition });
         state.items = result.items;
         state.total = result.total;
       } catch (error) {
@@ -651,13 +663,16 @@
           toast('操作成功');
           await load();
         } catch (error) {
+          await load();
           toast(error.message || '操作失败', 'error');
         }
       };
     }
 
     async function exportRows() {
-      const csv = await service.export(currentResource(), { condition: state.condition }, currentColumns());
+      const condition = { ...state.condition };
+      if (state.activeStatus) condition.status = String(state.activeStatus).split(',');
+      const csv = await currentService().export(currentResource(), { condition }, currentColumns());
       const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -669,7 +684,7 @@
     }
 
     async function rowAction(actionKey, id) {
-      const item = await service.get(currentResource(), id);
+      const item = await currentService().get(currentResource(), id);
       if (!item) return toast('记录不存在或已删除', 'error');
       if (actionKey === 'view') {
         const detailHref = currentTab()?.detailHref || config.detailHref;
@@ -690,6 +705,7 @@
       if (actionKey === 'delete') return confirm(`删除${currentEntityTitle()}`, config.deleteMessage || '删除之后将不能恢复，确认删除吗？', () => service.remove(currentResource(), id));
       const action = currentActions(item).find((entry) => entry.key === actionKey);
       if (!action) return;
+      if (action.onClick) return action.onClick(item);
       if (action.href) {
         const target = typeof action.href === 'function' ? action.href(item) : action.href;
         window.AppNavigation?.navigate?.(target);
@@ -733,6 +749,7 @@
         const message = action.validateSelection?.(selectedItems);
         if (message) return toast(message, 'error');
       }
+      if (action.onClick) return action.onClick(state.items.filter((item) => !action.requiresSelection || state.selected.has(item.id)));
       if (action.key === 'export') return exportRows();
       if (action.batchUpdate && action.formFields) return showBatchForm(action);
       if (action.batchTransition) {
@@ -744,7 +761,7 @@
             const message = action.validateSelection(selectedItems);
             if (message) throw new Error(message);
           }
-          await service.batch(currentResource(), ids, action.batchTransition, action.payload || {});
+          await currentService().batch(currentResource(), ids, action.batchTransition, action.payload || {});
           state.selected.clear();
         });
       }
@@ -806,7 +823,7 @@
       const tabButton = event.target.closest('[data-view-tab]');
       if (tabButton) {
         state.activeTab = tabButton.dataset.viewTab;
-        state.activeStatus = currentStatusTabs()[0]?.value ?? '';
+        state.activeStatus = currentTab()?.defaultStatus ?? currentStatusTabs()[0]?.value ?? '';
         root.querySelectorAll('.operations-tab').forEach((element) => element.classList.toggle('active', element === tabButton));
         state.page = 1;
         state.selected.clear();
@@ -870,7 +887,10 @@
           return;
         }
         service.update(currentResource(), id, { [field]: value })
-          .then(() => toast('操作成功'))
+          .then(() => {
+            toast('操作成功');
+            load();
+          })
           .catch((error) => toast(error.message || '保存失败', 'error'));
         return;
       }
@@ -922,6 +942,7 @@
     }
 
     bindDatePickers();
+    root.querySelectorAll('.operations-tab').forEach((button) => button.classList.toggle('active', button.dataset.viewTab === state.activeTab));
     load();
     return { load, state };
   }

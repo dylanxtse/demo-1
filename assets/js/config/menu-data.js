@@ -51,6 +51,7 @@
       { name: '分拣管理', href: './sorting-management.html' },
       { name: '分拣进度', href: './sorting-progress.html' },
       { name: '缺货商品', href: './shortage-goods.html' },
+      { name: '分包规格', href: './sorting-spec.html' },
       { name: '分拣员', href: './sorter-management.html' }
     ] },
     { name: '仓库管理', icon: 'warehouse', children: [

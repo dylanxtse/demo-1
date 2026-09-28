@@ -1,27 +1,1456 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN" data-prototype-tools-display="hidden"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>集采企业版企业端</title>
+  <title>分拣管理 - 集采企业版企业端</title>
   <link rel="stylesheet" href="./assets/css/variables.css">
   <link rel="stylesheet" href="./assets/css/layout.css?v=20260909-global-tooltip-2">
   <link rel="stylesheet" href="./assets/css/components.css?v=20260909-placeholder-gray-1">
-  <link rel="stylesheet" href="./assets/css/enterprise-home.css">
-</head>
+  <link rel="stylesheet" href="./assets/css/product-list.css?v=20260831-sorting-sync-1">
+  <link rel="stylesheet" href="./assets/css/operations.css?v=20260928-dropdown-seamless-1">
+  <link rel="stylesheet" href="./assets/css/sorting-customer.css?v=20260928-2">
+<link rel="stylesheet" href="./assets/css/common-components.css?v=20260916-standard-list-actions-1" data-common-business-components="true"><style data-prototype-tools-display-style="">
+        .record-annotation-overlay,
+        .project-iteration-panel-root {
+          display: none !important;
+        }
+      </style><style data-prototype-tools-annotation-hidden="true">
+    .record-annotation-overlay,
+    .record-annotation-marker,
+    .record-annotation-mode-toggle,
+    .project-iteration-annotation-visibility-toggle,
+    .project-iteration-annotation-mode-host,
+    .project-iteration-panel-root {
+      display: none !important;
+    }
+  </style><link rel="stylesheet" href="./assets/js/prototype-tools/src/components.css?v=20260904-display-1" data-prototype-tools-style="true"><link rel="stylesheet" href="./assets/js/prototype-tools/src/project-iteration-panel.css?v=20260909-placeholder-gray-1" data-project-iteration-panel-style="true"><style data-prototype-tools-annotation-hidden="true">
+    .record-annotation-overlay,
+    .record-annotation-marker,
+    .record-annotation-mode-toggle,
+    .project-iteration-annotation-visibility-toggle,
+    .project-iteration-annotation-mode-host,
+    .project-iteration-panel-root {
+      display: none !important;
+    }
+  </style><style data-prototype-tools-annotation-hidden="true">
+    .record-annotation-overlay,
+    .record-annotation-marker,
+    .record-annotation-mode-toggle,
+    .project-iteration-annotation-visibility-toggle,
+    .project-iteration-annotation-mode-host,
+    .project-iteration-panel-root {
+      display: none !important;
+    }
+  </style></head>
 <body>
-  <div id="app"></div>
-
-  <script src="./assets/js/config/menu-data.js?v=20260921-menu-collapse-1"></script>
+  <div id="app">
+        <div class="app-layout " data-user-end="enterprise">
+          
+        <aside class="sidebar"><div class="sidebar-logo">
+            <img src="./sidebar-logo.png" alt="校园集采企业版">
+          </div>
+          <nav class="sidebar-menu">
+      <div class="menu-item active  menu-leaf " data-menu-index="0">
+        <button class="menu-item-header" type="button" data-menu-toggle="0" data-menu-link="./index.html">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></span>
+          <span>首页</span>
+          
+        </button>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="1">
+        <button class="menu-item-header" type="button" data-menu-toggle="1" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></span>
+          <span>商品档案</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="1:0">
+            <span>商品管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="1:1">
+            <span>商品审核</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="1:2">
+            <span>计量单位</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="2">
+        <button class="menu-item-header" type="button" data-menu-toggle="2" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></span>
+          <span>价格管理</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:0" data-menu-toggle-path="2:0" aria-expanded="false">
+            <span>采购价</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:0:0">
+            <span>询价报价</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:0:1">
+            <span>采购协议价</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:1">
+            <span>价格执行清单</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:2" data-menu-toggle-path="2:2" aria-expanded="false">
+            <span>销售价</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:2:0">
+            <span>市场询价</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:2:1">
+            <span>销售协议价</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="2:2:2">
+            <span>结算改价</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="3">
+        <button class="menu-item-header" type="button" data-menu-toggle="3" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></span>
+          <span>订单管理</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="3:0">
+            <span>订单管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="3:1">
+            <span>订单退货</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="3:2">
+            <span>订单标签</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="3:3">
+            <span>实收变更</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="4">
+        <button class="menu-item-header" type="button" data-menu-toggle="4" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg></span>
+          <span>采购管理</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="4:0">
+            <span>采购任务</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="4:1">
+            <span>采购单</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="4:2" aria-disabled="true" data-menu-disabled="true">
+            <span>采购退货</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="4:3" aria-disabled="true" data-menu-disabled="true">
+            <span>供应商档案</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="4:4" aria-disabled="true" data-menu-disabled="true">
+            <span>采购员</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="5">
+        <button class="menu-item-header" type="button" data-menu-toggle="5" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg></span>
+          <span>分拣管理</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="5:0">
+            <span>分拣管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="5:1">
+            <span>分拣进度</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="5:2">
+            <span>缺货商品</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="5:3">
+            <span>分包规格</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="5:4">
+            <span>分拣员</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="6">
+        <button class="menu-item-header" type="button" data-menu-toggle="6" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12"></path><path d="M9 21v-6h6v6"></path></svg></span>
+          <span>仓库管理</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:0">
+            <span>入库管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:1" data-menu-toggle-path="6:1" aria-expanded="false">
+            <span>发货出库</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:1:0">
+            <span>发货管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:1:1">
+            <span>出库管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:1:2">
+            <span>上传质检报告</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:2">
+            <span>库存盘点</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:3" data-menu-toggle-path="6:3" aria-expanded="false">
+            <span>库存报表</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:3:0">
+            <span>库存余额</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:3:1">
+            <span>库存明细</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:4" data-menu-toggle-path="6:4" aria-expanded="false">
+            <span>净菜加工</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:4:0">
+            <span>净菜加工</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:4:1">
+            <span>加工记录</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:5">
+            <span>仓库档案</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:6">
+            <span>仓库监控</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="6:7">
+            <span>期初库存</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="7">
+        <button class="menu-item-header" type="button" data-menu-toggle="7" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg></span>
+          <span>物流配送</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="7:0" aria-disabled="true" data-menu-disabled="true">
+            <span>数据监测</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="7:1" aria-disabled="true" data-menu-disabled="true">
+            <span>线路管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="7:2" aria-disabled="true" data-menu-disabled="true">
+            <span>物流排线</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="7:3" aria-disabled="true" data-menu-disabled="true">
+            <span>司机管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="7:4" aria-disabled="true" data-menu-disabled="true">
+            <span>车辆管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="7:5" aria-disabled="true" data-menu-disabled="true">
+            <span>配送地址</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="8">
+        <button class="menu-item-header" type="button" data-menu-toggle="8" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+          <span>客户信息</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="8:0">
+            <span>客户档案</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="8:1" aria-disabled="true" data-menu-disabled="true">
+            <span>客户类型</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="9">
+        <button class="menu-item-header" type="button" data-menu-toggle="9" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path></svg></span>
+          <span>财务对账</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="9:0" data-menu-toggle-path="9:0" aria-expanded="false">
+            <span>销售对账</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="9:0:0">
+            <span>对账</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="9:0:1">
+            <span>销售账款</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="9:1" data-menu-toggle-path="9:1" aria-expanded="false">
+            <span>采购对账</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="9:1:0" aria-disabled="true" data-menu-disabled="true">
+            <span>对账</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="9:1:1" aria-disabled="true" data-menu-disabled="true">
+            <span>采购账款</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="10">
+        <button class="menu-item-header" type="button" data-menu-toggle="10" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span>
+          <span>数据统计</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="10:0" data-menu-toggle-path="10:0" aria-expanded="false">
+            <span>销售统计</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="10:0:0">
+            <span>订单汇总</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="10:0:1">
+            <span>商品销量</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="10:0:2" aria-disabled="true" data-menu-disabled="true">
+            <span>客户统计</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="10:1" data-menu-toggle-path="10:1" aria-expanded="false">
+            <span>采购统计</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="10:1:0" aria-disabled="true" data-menu-disabled="true">
+            <span>采购明细</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="10:1:1" aria-disabled="true" data-menu-disabled="true">
+            <span>采购商品</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="10:1:2" aria-disabled="true" data-menu-disabled="true">
+            <span>供应商统计</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="10:2" data-menu-toggle-path="10:2" aria-expanded="false">
+            <span>销售毛利统计</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="10:2:0">
+            <span>商品毛利统计</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="10:2:1" aria-disabled="true" data-menu-disabled="true">
+            <span>客户毛利统计</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+          </div>
+        
+      </div>
+    
+      <div class="menu-item    " data-menu-index="11">
+        <button class="menu-item-header" type="button" data-menu-toggle="11" aria-expanded="false">
+          <span class="menu-icon"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33A1.65 1.65 0 0 0 14 20.91V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.12.61.66 1.05 1.29 1.05H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15z"></path></svg></span>
+          <span>系统管理</span>
+          <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+        
+          <div class="menu-sub">
+            
+        <div class="menu-sub-group expanded" style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="11:0" data-menu-toggle-path="11:0" aria-expanded="true">
+            <span>系统配置</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+          <div class="menu-sub">
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="11:0:0">
+            <span>审核配置</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:2">
+          <button class="menu-sub-item  " type="button" data-menu-item="11:0:1">
+            <span>业务配置</span>
+            
+          </button>
+          
+        </div>
+      </div>
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="11:1">
+            <span>下属单位管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="11:2" aria-disabled="true" data-menu-disabled="true">
+            <span>用户管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="11:3" aria-disabled="true" data-menu-disabled="true">
+            <span>角色管理</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  " type="button" data-menu-item="11:4">
+            <span>基础信息</span>
+            
+          </button>
+          
+        </div>
+      
+        <div class="menu-sub-group " style="--menu-level:1">
+          <button class="menu-sub-item  menu-item-disabled" type="button" data-menu-item="11:5" aria-disabled="true" data-menu-disabled="true">
+            <span>个人中心</span>
+            
+          </button>
+          
+        </div>
+      
+          </div>
+        
+      </div>
+    </nav>
+          <button class="sidebar-toggle" type="button" data-sidebar-toggle="" aria-label="切换侧边栏折叠">
+            <svg class="icon-svg toggle-icon" viewBox="0 0 24 24" style="width:14px;height:14px;"><polyline points="15 6 9 12 15 18"></polyline></svg>
+          </button></aside>
+      
+          <section class="main-section">
+            
+        <header class="app-header    " data-header-bound="true">
+          <div class="header-left">
+            
+            <span class="header-company" style="font-size:18px">产品部学校食材集采供应链有限公司</span>
+          </div>
+          <div class="header-right">
+            
+        <div class="header-msg">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span>消息中心</span>
+          <span class="msg-badge">84</span>
+        </div>
+      
+            <div class="header-user" tabindex="0" aria-haspopup="menu" aria-label="用户菜单">
+              <div class="user-avatar">管</div>
+              <span class="header-user-name ">管理员</span>
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width:12px;height:12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              <div class="header-user-menu" role="menu">
+                <button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="education">切换至教育局端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="supplier">切换至供应商端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="operations">切换至运维管理平台</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="school">切换至学校端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="mobile">切换至移动端</button>
+                <button type="button" role="menuitem">个人中心</button>
+                <button type="button" role="menuitem">退出登录</button>
+              </div>
+            </div>
+          </div>
+        </header>
+      
+            
+        <div class="breadcrumb-bar" aria-label="已打开页面">
+          <div class="page-tabs">
+            
+      <div class="page-tab active" data-tab-href="./index.html" draggable="true">
+        <a class="page-tab-link" href="./index.html">分拣管理</a>
+        <button class="page-tab-close" type="button" data-tab-close="" aria-label="关闭分拣管理">×</button>
+      </div>
+    
+          </div>
+        </div>
+      
+            <div class="page-empty-state">当前没有打开的页面</div>
+            <main class="content-area" id="pageContent">
+      <section class="page-card operations-page sorting-module-page sorting-status-boxed has-inline-status-actions" aria-label="分拣管理" data-active-tab="product">
+        <div class="operations-tabs"><button class="operations-tab active" data-view-tab="product">商品分拣</button><button class="operations-tab" data-view-tab="customer">客户分拣</button></div>
+        <div class="operations-status-row"><div class="operations-status-tabs" id="recordStatusTabs">
+        <button class="operations-status-tab " type="button" data-status-tab="PENDING">未分拣</button>
+      
+        <button class="operations-status-tab " type="button" data-status-tab="SORTED">已分拣</button>
+      
+        <button class="operations-status-tab active" type="button" data-status-tab="">全部</button>
+      </div></div>
+        <div class="operations-filter filter-section" data-query-filter-expanded="false">
+          <div class="operations-filter-main">
+            <div class="operations-filter-grid">
+      <div class="operations-field" data-query-filter-field="true">
+        <label class="filter-label" for="filter-expectedAt">期望送达时间</label>
+        <div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-expectedAt" type="text" readonly="" value="2026-09-28" placeholder="请选择日期"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div>
+      </div>
+      <div class="operations-field" data-query-filter-field="true">
+        <label class="filter-label" for="filter-warehouse">仓库</label>
+        <select class="filter-select" id="filter-warehouse"><option value="">全部</option><option value="中心仓">中心仓</option><option value="北区仓">北区仓</option><option value="临时仓">临时仓</option></select>
+      </div>
+      <div class="operations-field" data-query-filter-field="true">
+        <label class="filter-label" for="filter-goodsName">商品名称</label>
+        <input class="filter-input" id="filter-goodsName" type="text" value="" placeholder="请输入">
+      </div><div class="operations-field" data-query-filter-field="true">
+        <label class="filter-label" for="filter-isNetVegetable">是否净菜</label>
+        <select class="filter-select" id="filter-isNetVegetable"><option value="">全部</option><option value="true">是</option><option value="false">否</option></select>
+      </div><div class="operations-field" data-query-filter-field="true">
+        <label class="filter-label" for="filter-category">商品分类</label>
+        <select class="filter-select" id="filter-category"><option value="">全部</option><option value="果蔬">果蔬</option><option value="蛋奶类">蛋奶类</option><option value="水产品">水产品</option><option value="主食">主食</option><option value="肉类">肉类</option></select>
+      </div><div class="operations-field" data-query-filter-field="true">
+        <label class="filter-label" for="filter-sorter">分拣员</label>
+        <select class="filter-select" id="filter-sorter"><option value="">全部</option><option value="陈分拣">陈分拣</option><option value="李分拣">李分拣</option><option value="王分拣">王分拣</option></select>
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-supplier">供应商/采购员</label>
+        <input class="filter-input" id="filter-supplier" type="text" value="" placeholder="请输入">
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-route">线路</label>
+        <select class="filter-select" id="filter-route"><option value="">全部</option><option value="东城一线">东城一线</option><option value="南城二线">南城二线</option><option value="北城一线">北城一线</option><option value="西城一线">西城一线</option></select>
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-shortage">是否缺货</label>
+        <select class="filter-select" id="filter-shortage"><option value="">全部</option><option value="是">是</option><option value="否">否</option></select>
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-customerName">客户名称</label>
+        <input class="filter-input" id="filter-customerName" type="text" value="" placeholder="请输入">
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-stockLevel">库存</label>
+        <select class="filter-select" id="filter-stockLevel"><option value="">全部</option><option value="有库存">有库存</option><option value="库存不足">库存不足</option></select>
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-orderTag">订单标签</label>
+        <select class="filter-select" id="filter-orderTag"><option value="">全部</option><option value="营养餐">营养餐</option><option value="普通餐">普通餐</option></select>
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-orderNo">订单号</label>
+        <input class="filter-input" id="filter-orderNo" type="text" value="" placeholder="请输入">
+      </div><div class="operations-field" data-query-filter-field="true" data-query-filter-overflow="true" hidden="">
+        <label class="filter-label" for="filter-mealName">订单餐次</label>
+        <select class="filter-select is-placeholder" id="filter-mealName" data-placeholder-only=""><option value="" disabled="" hidden="" selected="">请选择</option><option value="早餐">早餐</option><option value="午餐">午餐</option><option value="晚餐">晚餐</option><option value="早点">早点</option><option value="午点">午点</option><option value="晚点">晚点</option></select>
+      </div></div>
+            
+          <div class="operations-filter-actions query-filter-actions">
+              
+              <button type="button" class="query-filter-toggle" data-query-filter-toggle="true" aria-expanded="false"><span>高级查询</span><span class="query-filter-toggle-arrow" aria-hidden="true">▾</span></button><button class="btn btn-primary btn-sm" id="recordQuery">查询</button>
+              <button class="btn btn-sm" id="recordReset">重置</button>
+            </div></div>
+          <div class="operations-filter-advanced" hidden="" aria-hidden="true"><div class="operations-filter-grid">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      </div></div>
+        </div>
+        <div class="operations-toolbar">
+          <div class="operations-toolbar-main"><div class="toolbar-dropdown">
+        <button class="btn toolbar-dropdown-main btn-primary " type="button" data-toolbar-action="batchPrintQr" disabled="">一键打印</button>
+        <button class="btn toolbar-dropdown-toggle btn-primary" type="button" data-toolbar-dropdown-toggle="" aria-label="更多操作" disabled="">▾</button>
+        <div class="toolbar-dropdown-menu"><button type="button" data-toolbar-option="batchSort">一键分拣</button><button type="button" data-toolbar-option="batchResetSort">一键重置分拣</button></div>
+      </div><button class="btn  " type="button" data-toolbar-action="batchShortage">批量标记缺货</button></div>
+          <div class="operations-toolbar-side"><button class="btn  standard-list-export-print" type="button" data-toolbar-action="export"><svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>导出</button><button class="btn  standard-list-export-print" type="button" data-toolbar-action="printDocument"><svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>打印</button></div>
+        </div>
+        <div class="operations-table-container">
+          <div class="operations-table-wrap"><table class="operations-table"><thead id="recordHead"><tr>
+        <th><input type="checkbox" id="recordSelectAll" aria-label="选择全部"></th>
+        <th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>所属订单号</th><th>客户名称</th><th>食堂</th><th>下单数量</th><th>实际数量</th><th>计量单位</th><th>分包规格</th><th>分包数量</th><th>分包尾数</th><th>是否发货</th><th>分拣进度</th><th>备注</th><th>库存</th><th>分拣状态</th><th>分拣员</th><th>分拣时间</th><th>线路</th><th>操作</th>
+      </tr></thead><tbody id="recordBody"><tr data-id="SORT-SIM-20260731-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>1</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>西兰花块（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-SIM-20260731-001&amp;orderNo=DD202607310100099" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202607310100099</button></td><td>模拟测试学校</td><td>模拟食堂</td><td>20</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="20" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>20/20斤</td><td>模拟数据：用于验证净菜加工方案缺失提示</td><td>100</td><td><span class="operation-status success">已分拣</span></td><td>陈分拣</td><td>2026-07-31 08:30:00</td><td>模拟线路</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="resetSort">重置</button><button class="btn-text " data-row-action="print">打印</button></div></td>
+        </tr><tr data-id="SORT-PROCESS-20260731-004">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>2</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>什锦配菜（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-PROCESS-20260731-001&amp;orderNo=DD202607310300001" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202607310300001</button></td><td>加工演示学校</td><td>加工演示食堂</td><td>35</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="35" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>35/35斤</td><td>模拟数据：用于验证订单加工方案匹配与缺失提示</td><td>100</td><td><span class="operation-status success">已分拣</span></td><td>陈分拣</td><td>2026-07-31 08:49:00</td><td>加工演示线路</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="resetSort">重置</button><button class="btn-text " data-row-action="print">打印</button></div></td>
+        </tr><tr data-id="SORT-PROCESS-20260731-003">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>3</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>胡萝卜片（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-PROCESS-20260731-001&amp;orderNo=DD202607310300001" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202607310300001</button></td><td>加工演示学校</td><td>加工演示食堂</td><td>25</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="25" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>25/25斤</td><td>模拟数据：用于验证订单加工方案匹配与缺失提示</td><td>100</td><td><span class="operation-status success">已分拣</span></td><td>陈分拣</td><td>2026-07-31 08:46:00</td><td>加工演示线路</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="resetSort">重置</button><button class="btn-text " data-row-action="print">打印</button></div></td>
+        </tr><tr data-id="SORT-PROCESS-20260731-002">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>4</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>白菜段（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-PROCESS-20260731-001&amp;orderNo=DD202607310300001" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202607310300001</button></td><td>加工演示学校</td><td>加工演示食堂</td><td>30</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="30" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>30/30斤</td><td>模拟数据：用于验证订单加工方案匹配与缺失提示</td><td>100</td><td><span class="operation-status success">已分拣</span></td><td>陈分拣</td><td>2026-07-31 08:43:00</td><td>加工演示线路</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="resetSort">重置</button><button class="btn-text " data-row-action="print">打印</button></div></td>
+        </tr><tr data-id="SORT-PROCESS-20260731-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>5</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>土豆丝（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-PROCESS-20260731-001&amp;orderNo=DD202607310300001" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202607310300001</button></td><td>加工演示学校</td><td>加工演示食堂</td><td>40</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="40" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>40/40斤</td><td>模拟数据：用于验证订单加工方案匹配与缺失提示</td><td>100</td><td><span class="operation-status success">已分拣</span></td><td>陈分拣</td><td>2026-07-31 08:40:00</td><td>加工演示线路</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="resetSort">重置</button><button class="btn-text " data-row-action="print">打印</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-040-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>6</td>
+          <td><span class="product-display-text">净膛鲫鱼（斤/鲜活水产/500g左右/条）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-040&amp;orderNo=DD202608130300040" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608130300040</button></td><td>东城职业学校</td><td>职工食堂</td><td>13</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/13斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路4</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-039-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>7</td>
+          <td><span class="product-display-text">黑大米（袋/五谷优选/25kg/袋）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-039&amp;orderNo=DD202608120300039" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608120300039</button></td><td>机关第一食堂</td><td>一号食堂</td><td>12</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>袋</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/12袋</td><td>--</td><td>240</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路3</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-038-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>8</td>
+          <td><span class="product-display-text">大玉米棒子（KG/--/--）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-038&amp;orderNo=DD202608110300038" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608110300038</button></td><td>第七中学</td><td>初中部食堂</td><td>11</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>KG</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/11KG</td><td>--</td><td>160</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路2</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-037-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>9</td>
+          <td><span class="product-display-text">牛奶（瓶/--/--）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-037&amp;orderNo=DD202608100300037" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608100300037</button></td><td>实验幼儿园</td><td>幼儿部食堂</td><td>10</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>瓶</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/10瓶</td><td>--</td><td>200</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路1</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-036-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>10</td>
+          <td><span class="product-display-text">牛奶（瓶/--/--）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-036&amp;orderNo=DD202608090300036" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608090300036</button></td><td>第三小学</td><td>校园食堂</td><td>15</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>瓶</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/15瓶</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路5</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-035-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>11</td>
+          <td><span class="product-display-text">土豆（斤/田园直供/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-035&amp;orderNo=DD202608080300035" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608080300035</button></td><td>机关第二食堂</td><td>二号食堂</td><td>14</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/14斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路4</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-034-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>12</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>土豆丝（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-034&amp;orderNo=DD202608070300034" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608070300034</button></td><td>育才中学</td><td>高中部食堂</td><td>13</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/13斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路3</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-033-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>13</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>西兰花块（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-033&amp;orderNo=DD202608060300033" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608060300033</button></td><td>阳光幼儿园</td><td>园区食堂</td><td>12</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/12斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路2</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-032-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>14</td>
+          <td><span class="product-display-text">西兰花（斤/田园直供/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-032&amp;orderNo=DD202608050300032" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608050300032</button></td><td>第一实验学校</td><td>第一食堂</td><td>11</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/11斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路1</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-031-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>15</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>什锦配菜（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-031&amp;orderNo=DD202608240300031" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608240300031</button></td><td>南城中心幼儿园</td><td>中心食堂</td><td>10</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/10斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路5</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-030-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>16</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>青椒块（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-030&amp;orderNo=DD202608230300030" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608230300030</button></td><td>东城职业学校</td><td>职工食堂</td><td>15</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>否</td><td>0/15斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路4</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-029-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>17</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>青椒丝（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-029&amp;orderNo=DD202608220300029" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608220300029</button></td><td>机关第一食堂</td><td>一号食堂</td><td>14</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/14斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路3</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-028-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>18</td>
+          <td><span class="product-display-text">青椒（斤/田园直供/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-028&amp;orderNo=DD202608210300028" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608210300028</button></td><td>第七中学</td><td>初中部食堂</td><td>13</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/13斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路2</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-027-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>19</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>胡萝卜片（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-027&amp;orderNo=DD202608200300027" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608200300027</button></td><td>实验幼儿园</td><td>幼儿部食堂</td><td>12</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/12斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路1</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr><tr data-id="SORT-ORD-DEMO-026-001">
+          
+          <td><input type="checkbox" class="record-row-select" aria-label="选择数据"></td>
+          <td>20</td>
+          <td><span class="product-display-text"><span class="net-vegetable-tag">净菜</span>胡萝卜丝（斤/--/散装）</span></td><td><button class="cell-link" type="button" data-cell-href="./order-detail.html?id=ORD-DEMO-026&amp;orderNo=DD202608190300026" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">DD202608190300026</button></td><td>第三小学</td><td>校园食堂</td><td>11</td><td><input class="quantity-input record-inline-input" data-inline-field="actualQty" type="number" min="0" value="" placeholder="请输入" aria-label="实际数量"></td><td>斤</td><td>--</td><td>--</td><td>--</td><td>是</td><td>0/11斤</td><td>--</td><td>100</td><td><span class="operation-status danger">未分拣</span></td><td>--</td><td>--</td><td>配送线路5</td>
+          <td><div class="cell-actions operation-actions"><button class="btn-text " data-row-action="sort">分拣</button><button class="btn-text " data-row-action="markShortage">标记缺货</button></div></td>
+        </tr></tbody></table></div>
+          <div class="pagination" id="recordPagination" data-pagination-component="true">
+        <span class="page-total">共 58 条数据</span>
+        <select class="page-size-select" data-pagination-page-size="" aria-label="每页数量">
+          <option value="10">10 条/页</option><option value="20" selected="">20 条/页</option><option value="50">50 条/页</option>
+        </select>
+        
+        <div class="page-btns">
+          <button class="page-btn active" type="button" data-pagination-page="1" aria-current="page">1</button><button class="page-btn " type="button" data-pagination-page="2" aria-current="false">2</button><button class="page-btn " type="button" data-pagination-page="3" aria-current="false">3</button>
+        </div>
+        
+        <div class="page-jump">
+          <span>跳至</span>
+          <input class="pagination-jump-input" type="text" value="1" data-pagination-jump="" aria-label="跳转页码">
+          <span>页</span>
+        </div>
+      </div>
+        </div>
+      </section>
+      <div id="recordOverlay"></div></main>
+          </section>
+        </div>
+      </div>
+  <script src="./assets/js/config/menu-data.js?v=20260909-order-meal-filter-1"></script>
   <script src="./assets/js/components/navigation-guard.js?v=20260819-navigation-2"></script><script src="./assets/js/components/header.js?v=20260819-navigation-2"></script>
   <script src="./assets/js/components/page-tabs.js?v=20260819-navigation-2"></script>
-  <script src="./assets/js/components/sidebar.js?v=20260819-navigation-2"></script>
-  <script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script>
-  <script src="./assets/js/utils/dom.js"></script>
+  <script src="./assets/js/components/sidebar.js?v=20260928-1"></script>
+  <script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script>
+  <script src="./assets/js/components/date-range-picker.js"></script>
+  <script src="./assets/js/components/pagination.js?v=20260831-sorting-sync-1"></script>
+  <script src="./assets/js/utils/dom.js?v=20260831-sorting-sync-1"></script>
   <script src="./assets/js/utils/business-rules.js"></script>
-  <script src="./assets/js/utils/storage.js"></script>
-  <script src="./assets/js/services/repository.js"></script>
-  <script src="./assets/js/data/mock-dataset.js"></script>
-  <script src="./assets/js/pages/enterprise-home.js?v=20260819-navigation-2"></script>
-</body>
-</html>
+  <script src="./assets/js/utils/storage.js?v=20260909-order-meal-filter-1"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script>
+  <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js?v=20260928-clear-remark-1"></script>
+
+  <script src="./assets/js/config/order-meal-options.js?v=20260909-order-meal-filter-2"></script>
+  <script src="./assets/js/services/operations-service.js?v=20260909-order-meal-filter-1"></script>
+  <script src="./assets/js/services/sorting-customer-service.js?v=20260928-1"></script>
+  <script src="./assets/js/pages/sorting-management.js?v=20260928-sorting-package-calc-1"></script>
+  <script src="./assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1" data-prototype-tools-script="iteration" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1" data-prototype-tools-script="iteration" data-loaded="true"></script><script src="./assets/js/pages/record-page.js?v=20260928-inline-refresh-2"></script>
+<div class="project-iteration-panel-root" data-project-iteration-read-only="false" data-project-iteration-panel="true" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);">
+      <div class="project-iteration-backdrop" data-project-iteration-close=""></div>
+      <aside class="project-iteration-drawer" id="projectIterationPanel" role="dialog" aria-labelledby="projectIterationPanelTitle" aria-hidden="true" tabindex="-1">
+        <header class="project-iteration-header">
+          <div class="project-iteration-heading">
+            <h2 id="projectIterationPanelTitle">迭代记录</h2>
+            <div class="project-iteration-heading-tools">
+              <button type="button" class="project-iteration-annotation-visibility-toggle is-off" data-project-iteration-annotation-visibility="" aria-pressed="false" title="显示页面标注">
+                <span class="project-iteration-annotation-visibility-label">标注</span>
+                <span class="project-iteration-annotation-visibility-state" data-project-iteration-annotation-visibility-state="">隐藏</span>
+              </button>
+              <div class="project-iteration-annotation-mode-host" data-project-iteration-annotation-mode-host=""><div class="record-annotation-editor is-docked" hidden=""><button class="record-annotation-mode-toggle" type="button" aria-pressed="false" aria-label="进入标注模式" data-annotation-tooltip="进入标注模式；双击页面元素创建标注" hidden="" disabled="">标注模式</button><span class="record-annotation-editor-hint" hidden="">双击页面元素创建标注</span></div></div>
+            </div>
+          </div>
+          <div class="project-iteration-header-actions">
+            <button class="project-iteration-close" type="button" data-project-iteration-close="" aria-label="关闭迭代记录">
+              
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18"></path>
+    </svg>
+            </button>
+          </div>
+        </header>
+        <div class="project-iteration-body" style="--iteration-record-sticky-top: 0px;">
+          <section class="project-iteration-section">
+            <div class="project-iteration-record-toolbar" data-project-iteration-record-toolbar="">
+              <button type="button" class="project-iteration-primary-button project-iteration-new-button" data-project-iteration-new="">新建记录</button>
+              <button type="button" class="project-iteration-trash-toggle" data-project-iteration-trash-toggle="" aria-expanded="false" aria-label="打开回收站" title="打开回收站" hidden="">
+                
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </svg>
+                <span class="project-iteration-trash-count" data-project-iteration-trash-count="">0</span>
+              </button>
+            </div>
+            <div class="project-iteration-trash" data-project-iteration-trash="" hidden=""><div class="project-iteration-trash-empty">回收站为空</div></div>
+            <div class="project-iteration-records" data-project-iteration-records="">
+      <article class="project-iteration-record">
+        <div class="project-iteration-record-marker" aria-hidden="true">1</div>
+        <div class="project-iteration-record-content" data-project-iteration-record-content="" style="--iteration-record-heading-height: 28px; --iteration-record-platform-height: 28px; --iteration-record-feature-height: 28px;">
+          <div class="project-iteration-record-heading" data-project-iteration-record-heading="">
+            <strong>赣县0904迭代需求</strong>
+            <button type="button" class="project-iteration-record-toggle project-iteration-record-heading-toggle" data-project-iteration-toggle="" aria-expanded="false" aria-label="展开" title="展开">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 9 6 6 6-6"></path>
+    </svg></button>
+            <div class="project-iteration-record-heading-actions">
+              <time>2026-09-04</time>
+              <button type="button" class="project-iteration-record-delete" data-project-iteration-delete="iteration-20260904-ganxian" aria-label="删除迭代记录" title="删除迭代记录">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </svg></button>
+            </div>
+          </div>
+          
+      <div class="project-iteration-record-field project-iteration-record-platform-function-summary">
+        <div class="project-iteration-record-function-list">
+          
+            <div class="project-iteration-record-function-row">
+              <strong>企业端</strong>
+              <div class="project-iteration-record-function-tags">
+                <span class="project-iteration-record-function-tag">净菜加工</span>
+              </div>
+          </div>
+            <div class="project-iteration-record-function-row">
+              <strong>学校端</strong>
+              <div class="project-iteration-record-function-tags">
+                <span class="project-iteration-record-function-tag">食谱中心</span><span class="project-iteration-record-function-tag">需求填报</span><span class="project-iteration-record-function-tag">需求确认</span><span class="project-iteration-record-function-tag">提交记录</span>
+              </div>
+          </div>
+        </div>
+      </div>
+      <div class="project-iteration-record-detail-scroll" data-project-iteration-record-details="" hidden="">
+        <div class="project-iteration-record-detail-content">
+          <div class="project-iteration-record-change-list">
+          
+            <section class="project-iteration-record-change">
+              <h4 data-project-iteration-platform-heading="">企业端</h4>
+              
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>净菜加工</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">需求文档：<br><a href="https://c7tqt1vi2l.feishu.cn/wiki/F1yrwwX0ZiFOcdkGKKccQyJLn2b?from=from_copylink" target="_blank" rel="noopener noreferrer">https://c7tqt1vi2l.feishu.cn/wiki/F1yrwwX0ZiFOcdkGKKccQyJLn2b?from=from_copylink</a></p></div>
+                </div>
+            </section>
+            <section class="project-iteration-record-change">
+              <h4 data-project-iteration-platform-heading="">学校端</h4>
+              
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>食谱中心</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 接收营养平台按用料日期同步的食谱，学校端只展示已同步且可用于采购的食谱；<br>2. 按用料日期查看早餐、午餐、晚餐等餐次，以及每个餐次对应的菜品；<br>3. 查看菜品关联的食材和采购商品信息，为后续需求计算提供数据依据；<br>4. 从指定用料日期进入需求填报，确保填报人数与对应日期、餐次和食谱保持一致。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>需求填报</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 按用料日期和餐次分别填写学生、教师就餐人数，两个人员类型独立录入、独立校验；<br>2. 在未填写人数前，商品需求列表保持为空，避免展示无法确认数量的采购商品；<br>3. 填写人数后，根据食谱中的食材与商品关联关系，以及营养平台维护的人均用量，自动计算学生需求量、教师需求量和需求总量；<br>4. 按餐次展示本次实际需要采购的商品，并将来源食材、采购商品、商品编号、单位和各人员类型需求量分开显示；<br>5. 支持修改人数后实时重新计算需求，填报完成后进入需求确认。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>需求确认</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 汇总当前选择的单日或多日用料日期需求，集中查看各日期的商品需求总量；<br>2. 支持展开某个用料日期，查看该日期下各餐次的学生人数、教师人数和合计人数；<br>3. 商品需求明细按来源食材在前、采购商品在后分字段展示，并区分学生需求量、教师需求量和需求总量；<br>4. 提交前允许手动选择需要下单的一个或多个用料日期，并在确认弹窗中展示本次需求包含的用料日期和期望送达日期；<br>5. 确认后按人员类型生成对应订单，学生和教师订单通过订单标签进行区分。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>提交记录</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 记录每次需求提交的用料日期、学校、食堂、操作人、提交时间、商品品种数和生成订单数；<br>2. 列表支持按用料日期查询，并展示本次提交包含的用料日期范围和需求汇总；<br>3. 详情页展示关联订单，按学生、教师订单标签区分对应订单；<br>4. 用料日期明细支持展开查看该日期下早餐、午餐、晚餐的学生人数、教师人数和合计人数；<br>5. 商品需求明细展示来源食材、采购商品、商品编号、单位、学生需求量、教师需求量和需求总量，来源食材字段在前、采购商品字段在后；<br>6. 提交记录作为需求计算和下单结果的留痕，支持从列表进入详情查看完整填报人数与商品需求明细。</p></div>
+                </div>
+            </section>
+          </div>
+        </div>
+      </div>
+          <div class="project-iteration-record-footer">
+            <button type="button" class="project-iteration-record-toggle project-iteration-record-footer-toggle" data-project-iteration-toggle="" aria-expanded="false" aria-label="展开" title="展开">展开</button>
+            <button type="button" class="project-iteration-record-edit" data-project-iteration-edit="iteration-20260904-ganxian">修改</button>
+          </div>
+        </div>
+      </article></div>
+            <div data-project-iteration-form-host="" hidden=""></div>
+          </section>
+        </div>
+      </aside>
+      <div class="project-iteration-toast" data-project-iteration-toast="" role="alert" aria-live="assertive" aria-atomic="true"></div></div><script src="./assets/js/data/project-annotation-data.js?v=20260904-save-1" data-prototype-tools-script="annotation-data" data-loaded="true"></script><div class="project-iteration-panel-root" data-project-iteration-read-only="false" data-project-iteration-panel="true" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);">
+      <div class="project-iteration-backdrop" data-project-iteration-close=""></div>
+      <aside class="project-iteration-drawer" id="projectIterationPanel" role="dialog" aria-labelledby="projectIterationPanelTitle" aria-hidden="true" tabindex="-1">
+        <header class="project-iteration-header">
+          <div class="project-iteration-heading">
+            <h2 id="projectIterationPanelTitle">迭代记录</h2>
+            <div class="project-iteration-heading-tools">
+              <button type="button" class="project-iteration-annotation-visibility-toggle is-off" data-project-iteration-annotation-visibility="" aria-pressed="false" title="显示页面标注">
+                <span class="project-iteration-annotation-visibility-label">标注</span>
+                <span class="project-iteration-annotation-visibility-state" data-project-iteration-annotation-visibility-state="">隐藏</span>
+              </button>
+              <div class="project-iteration-annotation-mode-host" data-project-iteration-annotation-mode-host=""><div class="record-annotation-editor is-docked" hidden=""><button class="record-annotation-mode-toggle" type="button" aria-pressed="false" aria-label="进入标注模式" data-annotation-tooltip="进入标注模式；双击页面元素创建标注" hidden="" disabled="">标注模式</button><span class="record-annotation-editor-hint" hidden="">双击页面元素创建标注</span></div></div>
+            </div>
+          </div>
+          <div class="project-iteration-header-actions">
+            <button class="project-iteration-close" type="button" data-project-iteration-close="" aria-label="关闭迭代记录">
+              
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18"></path>
+    </svg>
+            </button>
+          </div>
+        </header>
+        <div class="project-iteration-body" style="--iteration-record-sticky-top: 0px;">
+          <section class="project-iteration-section">
+            <div class="project-iteration-record-toolbar" data-project-iteration-record-toolbar="">
+              <button type="button" class="project-iteration-primary-button project-iteration-new-button" data-project-iteration-new="">新建记录</button>
+              <button type="button" class="project-iteration-trash-toggle" data-project-iteration-trash-toggle="" aria-expanded="false" aria-label="打开回收站" title="打开回收站" hidden="">
+                
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </svg>
+                <span class="project-iteration-trash-count" data-project-iteration-trash-count="">0</span>
+              </button>
+            </div>
+            <div class="project-iteration-trash" data-project-iteration-trash="" hidden=""><div class="project-iteration-trash-empty">回收站为空</div></div>
+            <div class="project-iteration-records" data-project-iteration-records="">
+      <article class="project-iteration-record">
+        <div class="project-iteration-record-marker" aria-hidden="true">1</div>
+        <div class="project-iteration-record-content" data-project-iteration-record-content="" style="--iteration-record-heading-height: 28px; --iteration-record-platform-height: 28px; --iteration-record-feature-height: 28px;">
+          <div class="project-iteration-record-heading" data-project-iteration-record-heading="">
+            <strong>赣县0904迭代需求</strong>
+            <button type="button" class="project-iteration-record-toggle project-iteration-record-heading-toggle" data-project-iteration-toggle="" aria-expanded="false" aria-label="展开" title="展开">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 9 6 6 6-6"></path>
+    </svg></button>
+            <div class="project-iteration-record-heading-actions">
+              <time>2026-09-04</time>
+              <button type="button" class="project-iteration-record-delete" data-project-iteration-delete="iteration-20260904-ganxian" aria-label="删除迭代记录" title="删除迭代记录">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </svg></button>
+            </div>
+          </div>
+          
+      <div class="project-iteration-record-field project-iteration-record-platform-function-summary">
+        <div class="project-iteration-record-function-list">
+          
+            <div class="project-iteration-record-function-row">
+              <strong>企业端</strong>
+              <div class="project-iteration-record-function-tags">
+                <span class="project-iteration-record-function-tag">净菜加工</span>
+              </div>
+          </div>
+            <div class="project-iteration-record-function-row">
+              <strong>学校端</strong>
+              <div class="project-iteration-record-function-tags">
+                <span class="project-iteration-record-function-tag">食谱中心</span><span class="project-iteration-record-function-tag">需求填报</span><span class="project-iteration-record-function-tag">需求确认</span><span class="project-iteration-record-function-tag">提交记录</span>
+              </div>
+          </div>
+        </div>
+      </div>
+      <div class="project-iteration-record-detail-scroll" data-project-iteration-record-details="" hidden="">
+        <div class="project-iteration-record-detail-content">
+          <div class="project-iteration-record-change-list">
+          
+            <section class="project-iteration-record-change">
+              <h4 data-project-iteration-platform-heading="">企业端</h4>
+              
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>净菜加工</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">需求文档：<br><a href="https://c7tqt1vi2l.feishu.cn/wiki/F1yrwwX0ZiFOcdkGKKccQyJLn2b?from=from_copylink" target="_blank" rel="noopener noreferrer">https://c7tqt1vi2l.feishu.cn/wiki/F1yrwwX0ZiFOcdkGKKccQyJLn2b?from=from_copylink</a></p></div>
+                </div>
+            </section>
+            <section class="project-iteration-record-change">
+              <h4 data-project-iteration-platform-heading="">学校端</h4>
+              
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>食谱中心</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 接收营养平台按用料日期同步的食谱，学校端只展示已同步且可用于采购的食谱；<br>2. 按用料日期查看早餐、午餐、晚餐等餐次，以及每个餐次对应的菜品；<br>3. 查看菜品关联的食材和采购商品信息，为后续需求计算提供数据依据；<br>4. 从指定用料日期进入需求填报，确保填报人数与对应日期、餐次和食谱保持一致。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>需求填报</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 按用料日期和餐次分别填写学生、教师就餐人数，两个人员类型独立录入、独立校验；<br>2. 在未填写人数前，商品需求列表保持为空，避免展示无法确认数量的采购商品；<br>3. 填写人数后，根据食谱中的食材与商品关联关系，以及营养平台维护的人均用量，自动计算学生需求量、教师需求量和需求总量；<br>4. 按餐次展示本次实际需要采购的商品，并将来源食材、采购商品、商品编号、单位和各人员类型需求量分开显示；<br>5. 支持修改人数后实时重新计算需求，填报完成后进入需求确认。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>需求确认</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 汇总当前选择的单日或多日用料日期需求，集中查看各日期的商品需求总量；<br>2. 支持展开某个用料日期，查看该日期下各餐次的学生人数、教师人数和合计人数；<br>3. 商品需求明细按来源食材在前、采购商品在后分字段展示，并区分学生需求量、教师需求量和需求总量；<br>4. 提交前允许手动选择需要下单的一个或多个用料日期，并在确认弹窗中展示本次需求包含的用料日期和期望送达日期；<br>5. 确认后按人员类型生成对应订单，学生和教师订单通过订单标签进行区分。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>提交记录</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 记录每次需求提交的用料日期、学校、食堂、操作人、提交时间、商品品种数和生成订单数；<br>2. 列表支持按用料日期查询，并展示本次提交包含的用料日期范围和需求汇总；<br>3. 详情页展示关联订单，按学生、教师订单标签区分对应订单；<br>4. 用料日期明细支持展开查看该日期下早餐、午餐、晚餐的学生人数、教师人数和合计人数；<br>5. 商品需求明细展示来源食材、采购商品、商品编号、单位、学生需求量、教师需求量和需求总量，来源食材字段在前、采购商品字段在后；<br>6. 提交记录作为需求计算和下单结果的留痕，支持从列表进入详情查看完整填报人数与商品需求明细。</p></div>
+                </div>
+            </section>
+          </div>
+        </div>
+      </div>
+          <div class="project-iteration-record-footer">
+            <button type="button" class="project-iteration-record-toggle project-iteration-record-footer-toggle" data-project-iteration-toggle="" aria-expanded="false" aria-label="展开" title="展开">展开</button>
+            <button type="button" class="project-iteration-record-edit" data-project-iteration-edit="iteration-20260904-ganxian">修改</button>
+          </div>
+        </div>
+      </article></div>
+            <div data-project-iteration-form-host="" hidden=""></div>
+          </section>
+        </div>
+      </aside>
+      <div class="project-iteration-toast" data-project-iteration-toast="" role="alert" aria-live="assertive" aria-atomic="true"></div></div><script src="./assets/js/data/project-annotation-data.js?v=20260904-save-1" data-prototype-tools-script="annotation-data" data-loaded="true"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script><script src="./assets/js/data/project-annotation-data.js?v=20260904-save-1" data-prototype-tools-script="annotation-data" data-loaded="true"></script>
+
+<script src="./assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1" data-prototype-tools-script="iteration" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/annotation-overlay.js?v=20260904-display-1" data-prototype-tools-script="annotation-overlay" data-loaded="true"></script><div class="project-iteration-panel-root" data-project-iteration-read-only="false" data-project-iteration-panel="true" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);">
+      <div class="project-iteration-backdrop" data-project-iteration-close=""></div>
+      <aside class="project-iteration-drawer" id="projectIterationPanel" role="dialog" aria-labelledby="projectIterationPanelTitle" aria-hidden="true" tabindex="-1">
+        <header class="project-iteration-header">
+          <div class="project-iteration-heading">
+            <h2 id="projectIterationPanelTitle">迭代记录</h2>
+            <div class="project-iteration-heading-tools">
+              <button type="button" class="project-iteration-annotation-visibility-toggle is-off" data-project-iteration-annotation-visibility="" aria-pressed="false" title="显示页面标注">
+                <span class="project-iteration-annotation-visibility-label">标注</span>
+                <span class="project-iteration-annotation-visibility-state" data-project-iteration-annotation-visibility-state="">隐藏</span>
+              </button>
+              <div class="project-iteration-annotation-mode-host" data-project-iteration-annotation-mode-host=""><div class="record-annotation-editor is-docked" hidden=""><button class="record-annotation-mode-toggle" type="button" aria-pressed="false" aria-label="进入标注模式" data-annotation-tooltip="进入标注模式；双击页面元素创建标注" hidden="" disabled="">标注模式</button><span class="record-annotation-editor-hint" hidden="">双击页面元素创建标注</span></div></div>
+            </div>
+          </div>
+          <div class="project-iteration-header-actions">
+            <button class="project-iteration-close" type="button" data-project-iteration-close="" aria-label="关闭迭代记录">
+              
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18"></path>
+    </svg>
+            </button>
+          </div>
+        </header>
+        <div class="project-iteration-body" style="--iteration-record-sticky-top: 0px;">
+          <section class="project-iteration-section">
+            <div class="project-iteration-record-toolbar" data-project-iteration-record-toolbar="">
+              <button type="button" class="project-iteration-primary-button project-iteration-new-button" data-project-iteration-new="">新建记录</button>
+              <button type="button" class="project-iteration-trash-toggle" data-project-iteration-trash-toggle="" aria-expanded="false" aria-label="打开回收站" title="打开回收站" hidden="">
+                
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </svg>
+                <span class="project-iteration-trash-count" data-project-iteration-trash-count="">0</span>
+              </button>
+            </div>
+            <div class="project-iteration-trash" data-project-iteration-trash="" hidden=""><div class="project-iteration-trash-empty">回收站为空</div></div>
+            <div class="project-iteration-records" data-project-iteration-records="">
+      <article class="project-iteration-record">
+        <div class="project-iteration-record-marker" aria-hidden="true">1</div>
+        <div class="project-iteration-record-content" data-project-iteration-record-content="" style="--iteration-record-heading-height: 28px; --iteration-record-platform-height: 28px; --iteration-record-feature-height: 28px;">
+          <div class="project-iteration-record-heading" data-project-iteration-record-heading="">
+            <strong>赣县0904迭代需求</strong>
+            <button type="button" class="project-iteration-record-toggle project-iteration-record-heading-toggle" data-project-iteration-toggle="" aria-expanded="false" aria-label="展开" title="展开">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 9 6 6 6-6"></path>
+    </svg></button>
+            <div class="project-iteration-record-heading-actions">
+              <time>2026-09-04</time>
+              <button type="button" class="project-iteration-record-delete" data-project-iteration-delete="iteration-20260904-ganxian" aria-label="删除迭代记录" title="删除迭代记录">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </svg></button>
+            </div>
+          </div>
+          
+      <div class="project-iteration-record-field project-iteration-record-platform-function-summary">
+        <div class="project-iteration-record-function-list">
+          
+            <div class="project-iteration-record-function-row">
+              <strong>企业端</strong>
+              <div class="project-iteration-record-function-tags">
+                <span class="project-iteration-record-function-tag">净菜加工</span>
+              </div>
+          </div>
+            <div class="project-iteration-record-function-row">
+              <strong>学校端</strong>
+              <div class="project-iteration-record-function-tags">
+                <span class="project-iteration-record-function-tag">食谱中心</span><span class="project-iteration-record-function-tag">需求填报</span><span class="project-iteration-record-function-tag">需求确认</span><span class="project-iteration-record-function-tag">提交记录</span>
+              </div>
+          </div>
+        </div>
+      </div>
+      <div class="project-iteration-record-detail-scroll" data-project-iteration-record-details="" hidden="">
+        <div class="project-iteration-record-detail-content">
+          <div class="project-iteration-record-change-list">
+          
+            <section class="project-iteration-record-change">
+              <h4 data-project-iteration-platform-heading="">企业端</h4>
+              
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>净菜加工</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">需求文档：<br><a href="https://c7tqt1vi2l.feishu.cn/wiki/F1yrwwX0ZiFOcdkGKKccQyJLn2b?from=from_copylink" target="_blank" rel="noopener noreferrer">https://c7tqt1vi2l.feishu.cn/wiki/F1yrwwX0ZiFOcdkGKKccQyJLn2b?from=from_copylink</a></p></div>
+                </div>
+            </section>
+            <section class="project-iteration-record-change">
+              <h4 data-project-iteration-platform-heading="">学校端</h4>
+              
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>食谱中心</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 接收营养平台按用料日期同步的食谱，学校端只展示已同步且可用于采购的食谱；<br>2. 按用料日期查看早餐、午餐、晚餐等餐次，以及每个餐次对应的菜品；<br>3. 查看菜品关联的食材和采购商品信息，为后续需求计算提供数据依据；<br>4. 从指定用料日期进入需求填报，确保填报人数与对应日期、餐次和食谱保持一致。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>需求填报</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 按用料日期和餐次分别填写学生、教师就餐人数，两个人员类型独立录入、独立校验；<br>2. 在未填写人数前，商品需求列表保持为空，避免展示无法确认数量的采购商品；<br>3. 填写人数后，根据食谱中的食材与商品关联关系，以及营养平台维护的人均用量，自动计算学生需求量、教师需求量和需求总量；<br>4. 按餐次展示本次实际需要采购的商品，并将来源食材、采购商品、商品编号、单位和各人员类型需求量分开显示；<br>5. 支持修改人数后实时重新计算需求，填报完成后进入需求确认。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>需求确认</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 汇总当前选择的单日或多日用料日期需求，集中查看各日期的商品需求总量；<br>2. 支持展开某个用料日期，查看该日期下各餐次的学生人数、教师人数和合计人数；<br>3. 商品需求明细按来源食材在前、采购商品在后分字段展示，并区分学生需求量、教师需求量和需求总量；<br>4. 提交前允许手动选择需要下单的一个或多个用料日期，并在确认弹窗中展示本次需求包含的用料日期和期望送达日期；<br>5. 确认后按人员类型生成对应订单，学生和教师订单通过订单标签进行区分。</p></div>
+                </div>
+                <div class="project-iteration-record-pair">
+                  <div class="project-iteration-record-field project-iteration-record-feature-row" data-project-iteration-feature-row=""><span>涉及功能</span><strong>提交记录</strong></div>
+                  <div class="project-iteration-record-description"><span>描述</span><p data-project-iteration-description-text="">1. 记录每次需求提交的用料日期、学校、食堂、操作人、提交时间、商品品种数和生成订单数；<br>2. 列表支持按用料日期查询，并展示本次提交包含的用料日期范围和需求汇总；<br>3. 详情页展示关联订单，按学生、教师订单标签区分对应订单；<br>4. 用料日期明细支持展开查看该日期下早餐、午餐、晚餐的学生人数、教师人数和合计人数；<br>5. 商品需求明细展示来源食材、采购商品、商品编号、单位、学生需求量、教师需求量和需求总量，来源食材字段在前、采购商品字段在后；<br>6. 提交记录作为需求计算和下单结果的留痕，支持从列表进入详情查看完整填报人数与商品需求明细。</p></div>
+                </div>
+            </section>
+          </div>
+        </div>
+      </div>
+          <div class="project-iteration-record-footer">
+            <button type="button" class="project-iteration-record-toggle project-iteration-record-footer-toggle" data-project-iteration-toggle="" aria-expanded="false" aria-label="展开" title="展开">展开</button>
+            <button type="button" class="project-iteration-record-edit" data-project-iteration-edit="iteration-20260904-ganxian">修改</button>
+          </div>
+        </div>
+      </article></div>
+            <div data-project-iteration-form-host="" hidden=""></div>
+          </section>
+        </div>
+      </aside>
+      <div class="project-iteration-toast" data-project-iteration-toast="" role="alert" aria-live="assertive" aria-atomic="true"></div></div><div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel3" class="calendar-panel single-calendar-panel"></div>
+<div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel3" class="calendar-panel single-calendar-panel"></div>
+<div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel9" class="calendar-panel single-calendar-panel"></div></body></html>

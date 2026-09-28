@@ -506,7 +506,7 @@
   function sourceProducts() {
     const fallbackProducts = [
       ['SP0300039', '土豆丝', '斤', 4.8], ['SP0300040', '土豆', '斤', 3.2], ['SP0300038', '牛奶', '瓶', 5], ['SP0300037', '牛奶', '瓶', 5],
-      ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', '袋', 500, '25kg/袋'], ['SP0300031', '净膛鲫鱼', '斤', 18.5], ['SP0300030', '金龙鱼5L桶装油', '瓶', 55],
+      ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', 'KG', 500, '25kg/袋'], ['SP0300031', '净膛鲫鱼', '斤', 18.5], ['SP0300030', '金龙鱼5L桶装油', '瓶', 55],
       ['SP0300029', '鲫鱼', '斤', 15], ['SP0300026', '面', '瓶', 1], ['SP0300025', '大米', 'KG', 19], ['SP0300024', '三元牛奶', '瓶', 10],
       ['SP0300023', '大饼', '斤', 1], ['SP0300020', '西红柿', 'KG', 5.6], ['SP0300019', '大白菜', '斤', 2.2], ['SP0300018', '鸡蛋', '斤', 22],
       ['SP0300017', '金龙鱼豆油', '斤', 50], ['SP0300016', '面粉', '袋', 1500, '25kg/袋'], ['SP0300015', '香蕉', '斤', 30], ['SP0300014', '苹果', '斤', 23],
@@ -918,6 +918,11 @@
       const productCode = product.code || product.productId;
       const isSeededNetVegetable = seededNetVegetables.has(productCode);
       const sourceProduct = window.MockProducts?.find((item) => (item.code || item.id) === productCode);
+      // 修正旧演示数据：黑大米按重量计量，袋为分包单位（1袋 = 25KG）。
+      if (productCode === 'SP0300034' && product.unit === '袋') {
+        product.unit = 'KG';
+        changed = true;
+      }
       if (product.seq == null || product.seq === '') {
         product.seq = index + 1;
         changed = true;
@@ -2531,21 +2536,10 @@
     const order = getOrder(state, task.orderId);
     if (!order) throw new Error('关联订单不存在');
     if (action === 'sort') {
-      if (!['READY_FOR_SORTING', 'READY_FOR_SHIPPING'].includes(order.status)) {
-        const error = new Error('订单尚未完成供货确认或审核，暂不能分拣');
-        error.code = 'ORDER_NOT_READY_FOR_SORTING';
-        throw error;
-      }
       const actualQty = Math.max(0, number(payload.actualQty ?? task.orderQty));
       const oldQty = task.sortingCompleted ? number(task.actualQty) : 0;
       if (task.sortingCompleted && actualQty === oldQty) return task;
-      const available = window.InventoryLedgerService.getAvailableQty(task.productId, task.warehouse) + oldQty;
-      const settings = window.DemoStore.getSettings();
-      if (settings.sortingInventoryThresholdEnabled && actualQty > available) {
-        const error = new Error(`库存不足，可用库存为${available}${task.unit || ''}`);
-        error.code = 'INVENTORY_SHORTAGE';
-        throw error;
-      }
+      // 演示场景不校验实际分拣数量是否超出库存。
       if (oldQty > 0) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: oldQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重新分拣释放原预占' });
       if (actualQty > 0) window.InventoryLedgerService.reserve({ productId: task.productId, warehouse: task.warehouse, qty: actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '订单分拣预占' });
       task.actualQty = actualQty;

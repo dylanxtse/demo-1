@@ -13,6 +13,10 @@
     return `<span class="product-display-text">${marker}${escapeHtml(display)}</span>`;
   };
 
+  const renderPurchaseOrder = (item) => item.purchaseOrder
+    ? '<span class="operation-status success">已生成</span>'
+    : '<span class="operation-status danger">未生成</span>';
+
   window.RecordPageConfig = {
     title: '缺货商品',
     pageClass: 'sorting-module-page shortage-goods-page',
@@ -40,7 +44,7 @@
       { key: 'warehouse', label: '仓库' },
       { key: 'orderQty', label: '下单数量' },
       { key: 'shortageQty', label: '缺货数量' },
-      { key: 'purchaseOrder', label: '采购单' }
+      { key: 'purchaseOrder', label: '采购单', render: renderPurchaseOrder }
     ],
     selectableWhen: (item) => item.status !== 'PURCHASED' && !item.purchaseOrder,
     toolbar: [

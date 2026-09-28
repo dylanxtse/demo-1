@@ -1,0 +1,201 @@
+/* 客户分拣沿用公共筛选、按钮、表格和分页组件。 */
+.sorting-module-page[data-active-tab="customer"] .operations-table-container {
+  flex: 0 1 auto;
+  max-height: 100%;
+}
+.sorting-module-page[data-active-tab="customer"] .operations-table {
+  width: 100%;
+  min-width: 1140px;
+}
+.sorting-module-page[data-active-tab="customer"] .operations-table th,
+.sorting-module-page[data-active-tab="customer"] .operations-table td {
+  min-width: 0;
+  height: 46px;
+  padding: 10px 12px;
+}
+.sorting-module-page[data-active-tab="customer"] .operations-table .record-expand-cell,
+.sorting-module-page[data-active-tab="customer"] .operations-table th:nth-child(2),
+.sorting-module-page[data-active-tab="customer"] .operations-table td:nth-child(2) {
+  width: 42px;
+  min-width: 42px;
+  padding: 0 8px;
+}
+.sorting-module-page[data-active-tab="customer"] .operations-table th:nth-child(3) { width: 16%; }
+.sorting-module-page[data-active-tab="customer"] .operations-table th:nth-child(4) { width: 14%; }
+.sorting-module-page[data-active-tab="customer"] .operations-table th:nth-child(8) { width: 18%; }
+.sorting-module-page[data-active-tab="customer"] .operations-table > thead > tr > th:last-child,
+.sorting-module-page[data-active-tab="customer"] .operations-table > tbody > tr:not(.record-expanded-row) > td:last-child { min-width: 180px; }
+.sorting-module-page[data-active-tab="customer"] .record-expand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.sorting-module-page[data-active-tab="customer"] .record-expand-button:hover { color: var(--primary); }
+.sorting-module-page[data-active-tab="customer"] .record-expand-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  transition: transform .15s;
+}
+.sorting-module-page[data-active-tab="customer"] .record-expand-button[aria-expanded="true"] svg { transform: rotate(90deg); }
+.sorting-module-page[data-active-tab="customer"] .record-expanded-row[hidden] { display: none; }
+.sorting-module-page[data-active-tab="customer"] .record-expanded-row > td {
+  position: static;
+  padding: 12px 16px;
+  background: #fff;
+  box-shadow: none;
+}
+.sorting-customer-orders-wrap { overflow: auto; border: 1px solid var(--border-light); border-radius: 3px; }
+.sorting-module-page[data-active-tab="customer"] .sorting-customer-orders {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.sorting-module-page[data-active-tab="customer"] .sorting-customer-orders th,
+.sorting-module-page[data-active-tab="customer"] .sorting-customer-orders td {
+  position: static;
+  width: auto;
+  height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  background: #fff;
+  box-shadow: none;
+  text-align: center;
+}
+.sorting-module-page[data-active-tab="customer"] .sorting-customer-orders th { background: #fafafa; font-weight: 400; }
+.sorting-module-page[data-active-tab="customer"] .sorting-customer-orders th:first-child { width: 25%; }
+.sorting-module-page[data-active-tab="customer"] .sorting-customer-orders th:nth-child(2) { width: 18%; }
+
+/* 商品分拣列表横向滚动时固定商品名称、订单号和客户名称。 */
+.sorting-module-page[data-active-tab="product"] .operations-table {
+  --sorting-select-width: 44px;
+  --sorting-sequence-width: 56px;
+  --sorting-product-width: 260px;
+  --sorting-order-width: 160px;
+  --sorting-customer-width: 160px;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table > thead > tr > th:nth-child(1),
+.sorting-module-page[data-active-tab="product"] .operations-table > tbody > tr:not(.record-expanded-row) > td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: var(--sorting-select-width);
+  min-width: var(--sorting-select-width);
+  max-width: var(--sorting-select-width);
+  background: #fff;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table > thead > tr > th:nth-child(2),
+.sorting-module-page[data-active-tab="product"] .operations-table > tbody > tr:not(.record-expanded-row) > td:nth-child(2) {
+  position: sticky;
+  left: var(--sorting-select-width);
+  z-index: 2;
+  width: var(--sorting-sequence-width);
+  min-width: var(--sorting-sequence-width);
+  max-width: var(--sorting-sequence-width);
+  background: #fff;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table > thead > tr > th:nth-child(3),
+.sorting-module-page[data-active-tab="product"] .operations-table > tbody > tr:not(.record-expanded-row) > td:nth-child(3) {
+  position: sticky;
+  left: calc(var(--sorting-select-width) + var(--sorting-sequence-width));
+  z-index: 2;
+  width: var(--sorting-product-width);
+  min-width: var(--sorting-product-width);
+  background: #fff;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table > thead > tr > th:nth-child(4),
+.sorting-module-page[data-active-tab="product"] .operations-table > tbody > tr:not(.record-expanded-row) > td:nth-child(4) {
+  position: sticky;
+  left: calc(var(--sorting-select-width) + var(--sorting-sequence-width) + var(--sorting-product-width));
+  z-index: 2;
+  width: var(--sorting-order-width);
+  min-width: var(--sorting-order-width);
+  background: #fff;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table > thead > tr > th:nth-child(5),
+.sorting-module-page[data-active-tab="product"] .operations-table > tbody > tr:not(.record-expanded-row) > td:nth-child(5) {
+  position: sticky;
+  left: calc(var(--sorting-select-width) + var(--sorting-sequence-width) + var(--sorting-product-width) + var(--sorting-order-width));
+  z-index: 2;
+  width: var(--sorting-customer-width);
+  min-width: var(--sorting-customer-width);
+  background: #fff;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table > thead > tr > th:nth-child(-n+5) {
+  z-index: 4;
+  background: #fafafa;
+}
+.sorting-module-page[data-active-tab="product"] .operations-table tbody tr:hover > td:nth-child(-n+5) {
+  background: #f5f7fa;
+}
+
+.sorting-module-page .operations-toolbar .btn:disabled,
+.sorting-customer-detail-page .btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.sorting-customer-detail-page .btn-text:disabled { color: var(--text-tertiary); cursor: not-allowed; }
+.sorting-customer-detail-page .sorting-customer-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  column-gap: 32px;
+  row-gap: 10px;
+  padding: 20px 0 12px;
+  min-height: 64px;
+  font-size: 14px;
+}
+.sorting-customer-detail-page .sorting-customer-info-item { justify-content: flex-start; gap: 6px; }
+.sorting-customer-detail-page .operations-toolbar { justify-content: space-between; margin-bottom: 8px; }
+.sorting-customer-detail-page .operations-toolbar-main,
+.sorting-customer-detail-page .operations-toolbar-side { display: flex; align-items: center; gap: 12px; }
+.sorting-customer-detail-page .sorting-dropdown-trigger { gap: 8px; }
+.sorting-customer-detail-page .sorting-dropdown-arrow { font-size: 12px; transition: transform .15s; }
+.sorting-customer-detail-page .sorting-dropdown-trigger[aria-expanded="true"] .sorting-dropdown-arrow { transform: rotate(180deg); }
+.sorting-customer-detail-page .toolbar-dropdown-menu button:disabled { color: var(--text-tertiary); cursor: not-allowed; }
+.sorting-customer-detail-page .sorting-customer-table-container { flex: 0 1 auto; border-color: var(--border-light); }
+.sorting-customer-detail-page .operations-table-wrap { flex: 0 1 auto; overflow: auto; }
+.sorting-customer-detail-page .sorting-customer-table { width: 2600px; min-width: 2600px; table-layout: fixed; }
+.sorting-customer-detail-page .sorting-customer-table th,
+.sorting-customer-detail-page .sorting-customer-table td { min-width: 0; height: 48px; padding: 10px 12px; border: 1px solid var(--border-light); text-align: center; }
+.sorting-customer-detail-page .sorting-customer-table th { background: #fafafa; font-weight: 400; color: var(--text-secondary); }
+.sorting-customer-detail-page .sorting-customer-table th:first-child,
+.sorting-customer-detail-page .sorting-customer-table td:first-child { position: sticky; left: 0; z-index: 2; background: #fff; }
+.sorting-customer-detail-page .sorting-customer-table th:first-child { background: #fafafa; z-index: 4; }
+.sorting-customer-detail-page .sorting-customer-table th:last-child { background: #fafafa; }
+.sorting-customer-detail-page .sorting-customer-table .quantity-input { width: 112px; text-align: center; }
+.sorting-customer-detail-page .sorting-customer-table .sorting-remark { overflow: hidden; text-overflow: ellipsis; }
+.sorting-customer-detail-page .sorting-customer-table .operation-status + .operation-status { margin-left: 4px; }
+.sorting-customer-detail-page .pagination { min-height: 50px; padding: 12px 16px; }
+.sorting-customer-detail-page.is-fullscreen { position: fixed; inset: 0; z-index: 100; border-radius: 0; background: #fff; padding: 0 24px 24px; }
+.sorting-print-overlay { z-index: 1200; }
+.sorting-print-dialog { width: min(1160px, calc(100vw - 64px)); max-width: none; }
+.sorting-print-content { overflow: auto; }
+.sorting-print-content h2 { margin-bottom: 20px; text-align: center; font-size: 20px; }
+.sorting-print-content table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sorting-print-content th,
+.sorting-print-content td { padding: 10px; border: 1px solid var(--border-color); text-align: center; }
+.sorting-print-content th { background: #fafafa; }
+@media (max-width: 1100px) {
+  .sorting-customer-detail-page .operations-filter { flex-wrap: wrap; }
+  .sorting-customer-detail-page .sorting-customer-info { gap: 14px 24px; }
+}
+@media print {
+  body.sorting-print-open { overflow: visible; height: auto; background: #fff; }
+  body.sorting-print-open > :not(.sorting-print-overlay) { display: none !important; }
+  body.sorting-print-open .sorting-print-overlay,
+  body.sorting-print-open .sorting-print-dialog,
+  body.sorting-print-open .sorting-print-content { position: static; display: block; width: 100%; max-width: none; max-height: none; height: auto; padding: 0; overflow: visible; border: 0; box-shadow: none; background: #fff; }
+  body.sorting-print-open .operations-modal-header,
+  body.sorting-print-open .operations-modal-footer { display: none; }
+  body.sorting-print-open tr { break-inside: avoid; }
+}
