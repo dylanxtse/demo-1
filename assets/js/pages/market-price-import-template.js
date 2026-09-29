@@ -46,7 +46,7 @@
               </colgroup>
               <thead>
                 <tr class="school-order-export-title-row"><th colspan="9">分包规格导入模板</th></tr>
-                <tr class="school-order-export-column-row"><th>序号</th><th>商品编号</th><th>商品名称（计量单位/品牌/规格）</th><th>是否标品</th><th>计量单位</th><th>分包单位</th><th>分包系数</th><th>状态</th><th>备注</th></tr>
+                <tr class="school-order-export-column-row"><th>序号</th><th>商品编号</th><th>商品名称（计量单位/品牌/规格）</th><th>是否标品</th><th>计量单位</th><th>分包单位<span class="school-order-export-required-mark" aria-hidden="true">*</span></th><th>分包系数<span class="school-order-export-required-mark" aria-hidden="true">*</span></th><th>状态</th><th>备注</th></tr>
               </thead>
               <tbody>${rows || '<tr class="school-order-export-item-row"><td colspan="9">暂无商品数据</td></tr>'}</tbody>
             </table>

@@ -15,6 +15,7 @@
     importModal: false,
     importFileName: '',
     importResult: '',
+    importResultModal: null,
     pagination: null
   };
 
@@ -205,6 +206,30 @@
     downloadText('分包规格导入模板.csv', importTemplateCsv());
   }
 
+  function importFailureCsv(failures) {
+    const headers = [...importTemplateHeaders, '失败原因'];
+    const rows = failures.map((failure) => [
+      failure.productCode,
+      failure.productName,
+      failure.standardProduct,
+      failure.baseUnit,
+      failure.packageUnit,
+      failure.packageQty,
+      failure.status,
+      failure.remark,
+      failure.reason
+    ]);
+    return [headers, ...rows]
+      .map((row) => row.map(csvCell).join(','))
+      .join('\n');
+  }
+
+  function downloadImportFailures() {
+    const failures = state.importResultModal?.failures || [];
+    if (!failures.length) return;
+    downloadText('分包规格导入失败模板.csv', importFailureCsv(failures));
+  }
+
   function parseCsv(text) {
     const rows = [];
     let row = [];
@@ -289,6 +314,7 @@
       const importedCodes = new Set();
       const failures = [];
       let successCount = 0;
+      const addFailure = (row, lineNumber, reason) => failures.push({ ...row, lineNumber, reason });
       rows.forEach((row, index) => {
         const lineNumber = index + 2;
         const productCode = String(row.productCode || '').trim();
@@ -296,24 +322,24 @@
         const packageUnit = String(row.packageUnit || '').trim();
         const packageQty = Number(String(row.packageQty || '').trim());
         if (!productCode || !product) {
-          failures.push(`第${lineNumber}行：商品编号不存在`);
+          addFailure(row, lineNumber, '商品编号不存在');
           return;
         }
         if (importedCodes.has(productCode)) {
-          failures.push(`第${lineNumber}行：商品编号重复`);
+          addFailure(row, lineNumber, '商品编号重复');
           return;
         }
         if (!packageUnit) {
-          failures.push(`第${lineNumber}行：分包单位不能为空`);
+          addFailure(row, lineNumber, '分包单位不能为空');
           return;
         }
         if (!Number.isFinite(packageQty) || packageQty <= 0) {
-          failures.push(`第${lineNumber}行：分包系数必须大于0`);
+          addFailure(row, lineNumber, '分包系数必须大于0');
           return;
         }
         const quantityDecimals = isStandardProduct(product) ? 0 : quantityDecimalPlaces();
         if (!hasQuantityPrecision(packageQty, quantityDecimals)) {
-          failures.push(`第${lineNumber}行：分包系数最多填写${quantityDecimals}位小数`);
+          addFailure(row, lineNumber, `分包系数最多填写${quantityDecimals}位小数`);
           return;
         }
         importedCodes.add(productCode);
@@ -338,18 +364,13 @@
         successCount += 1;
       });
 
-      if (successCount > 0) {
-        saveSpecs();
-        state.importModal = false;
-        state.importFileName = '';
-        state.importResult = '';
-        state.page = 1;
-        render();
-        showToast(`成功导入${successCount}条${failures.length ? `，失败${failures.length}条` : ''}`);
-        return;
-      }
-      state.importResult = failures.length ? failures.slice(0, 4).join('\n') : '文件中没有可导入的数据';
-      if (resultElement) resultElement.textContent = state.importResult;
+      if (successCount > 0) saveSpecs();
+      state.importModal = false;
+      state.importFileName = '';
+      state.importResult = '';
+      state.importResultModal = { successCount, failures };
+      state.page = 1;
+      render();
     } catch (error) {
       state.importResult = error.message || '文件读取失败';
       if (resultElement) resultElement.textContent = state.importResult;
@@ -593,7 +614,7 @@
     const quantityStep = 10 ** -quantityDecimals;
     const quantityPlaceholder = '请输入分包系数';
     const packageUnit = record.packageUnit || '';
-    const qtyHint = '商品计量单位和分包系数之间的换算率，如：1包=50斤';
+    const qtyHint = '表示1个分包单位对应多少商品计量单位，例如：1包=50斤。';
     return `<div class="sorting-spec-modal-backdrop" data-spec-modal-backdrop>
       <section class="sorting-spec-modal" role="dialog" aria-modal="true" aria-label="${editing ? '编辑分拣规格' : '设置分拣规格'}">
         <header class="sorting-spec-modal-header"><h2>${editing ? '编辑分拣规格' : '设置分拣规格'}</h2><button type="button" class="sorting-spec-modal-close" data-spec-close aria-label="关闭">×</button></header>
@@ -620,7 +641,7 @@
         <div class="unshelf-modal-header"><h2 id="sortingSpecImportTitle">批量导入分包规格</h2><button class="unshelf-modal-close" type="button" data-spec-action="close-import" aria-label="关闭">×</button></div>
         <div class="unshelf-modal-body">
           <div class="market-price-import-section sorting-spec-import-section">
-            <label class="unshelf-reason-label">下载模板</label>
+            <label class="unshelf-reason-label">模版</label>
             <div class="sorting-spec-import-template-row"><a href="./market-price-import-template.html?type=sorting-spec" class="market-price-import-template-link">分包规格导入模板.csv</a><button class="btn-text" type="button" data-spec-action="download-template">下载</button></div>
           </div>
           <div class="market-price-import-section sorting-spec-import-section">
@@ -631,6 +652,29 @@
           </div>
         </div>
         <div class="unshelf-modal-actions"><button class="btn" type="button" data-spec-action="close-import">取消</button><button class="btn btn-primary" type="button" data-spec-action="confirm-import">导入</button></div>
+      </div>
+    </div>`;
+  }
+
+  function renderImportResultModal() {
+    const result = state.importResultModal;
+    const visible = result ? ' is-visible' : '';
+    const successCount = result?.successCount || 0;
+    const failures = result?.failures || [];
+    const failureCount = failures.length;
+    const previewCount = Math.min(failureCount, 4);
+    const preview = failures.slice(0, previewCount).map((failure) => `<li>第${failure.lineNumber}行：${escapeHtml(failure.reason)}</li>`).join('');
+    return `<div class="unshelf-modal sorting-spec-import-result-modal${visible}" id="sortingSpecImportResultModal" aria-hidden="${String(!result)}">
+      <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sortingSpecImportResultTitle">
+        <div class="unshelf-modal-header"><h2 id="sortingSpecImportResultTitle">导入结果</h2><button class="unshelf-modal-close" type="button" data-spec-action="close-import-result" aria-label="关闭">×</button></div>
+        <div class="unshelf-modal-body">
+          <div class="sorting-spec-import-result-summary">
+            <div class="sorting-spec-import-result-stat is-success"><span>成功导入</span><strong>${successCount}</strong><em>条</em></div>
+            <div class="sorting-spec-import-result-stat ${failureCount ? 'is-failure' : 'is-success'}"><span>导入失败</span><strong>${failureCount}</strong><em>条</em></div>
+          </div>
+          ${failureCount ? `<div class="sorting-spec-import-result-failures"><div class="sorting-spec-import-result-failures-title">失败原因</div><ul>${preview}</ul>${failureCount > previewCount ? '<p>其余失败记录请下载失败模板查看。</p>' : ''}</div><button class="btn-text sorting-spec-import-result-download" type="button" data-spec-action="download-import-failures">下载失败模板</button>` : '<p class="sorting-spec-import-result-success-tip">本次文件已全部导入成功。</p>'}
+        </div>
+        <div class="unshelf-modal-actions"><button class="btn" type="button" data-spec-action="close-import-result">关闭</button>${failureCount ? '<button class="btn btn-primary" type="button" data-spec-action="continue-import">继续上传</button>' : ''}</div>
       </div>
     </div>`;
   }
@@ -655,6 +699,7 @@
       <div id="sortingSpecPagination" class="sorting-spec-pagination"></div>
       ${renderModal()}
       ${renderImportModal()}
+      ${renderImportResultModal()}
     </section>`;
     const paginationRoot = window.__sortingSpecPageRoot.querySelector('#sortingSpecPagination');
     if (window.Pagination?.create && paginationRoot) {
@@ -795,6 +840,7 @@
         if (action === 'open-import') {
           state.modal = null;
           state.importModal = true;
+          state.importResultModal = null;
           state.importFileName = '';
           state.importResult = '';
           render();
@@ -806,8 +852,20 @@
           state.importResult = '';
           render();
         }
+        if (action === 'close-import-result') {
+          state.importResultModal = null;
+          render();
+        }
+        if (action === 'continue-import') {
+          state.importResultModal = null;
+          state.importModal = true;
+          state.importFileName = '';
+          state.importResult = '';
+          render();
+        }
         if (action === 'trigger-import-upload') document.getElementById('sortingSpecImportFile')?.click();
         if (action === 'download-template') downloadImportTemplate();
+        if (action === 'download-import-failures') downloadImportFailures();
         if (action === 'confirm-import') importSpecsFromFile();
         if (action === 'reset') {
           state.keyword = '';
@@ -876,6 +934,11 @@
         state.importModal = false;
         state.importFileName = '';
         state.importResult = '';
+        render();
+        return;
+      }
+      if (event.key === 'Escape' && state.importResultModal) {
+        state.importResultModal = null;
         render();
       }
     });

@@ -125,6 +125,11 @@ body {
   color: #5f6672;
 }
 
+.school-order-export-required-mark {
+  margin-left: 2px;
+  color: #f04438;
+}
+
 .school-order-export-template-table .school-order-export-item-row td {
   height: 36px;
   background: #fff;

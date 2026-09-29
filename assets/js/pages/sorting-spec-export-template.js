@@ -76,8 +76,11 @@
     return ({ ENABLE: '启用', DISABLE: '停用', PENDING: '待启用' })[status] || status || '--';
   }
 
-  function statusClass(status) {
-    return status === 'ENABLE' ? 'is-enabled' : status === 'DISABLE' ? 'is-disabled' : 'is-pending';
+  function formatExportTime(value) {
+    const match = String(value || '').trim().replace('T', ' ').match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (!match) return escapeHtml(value || '');
+    const pad = (part) => String(part || 0).padStart(2, '0');
+    return `${match[1]}.${pad(match[2])}.${pad(match[3])} ${pad(match[4])}:${pad(match[5])}:${pad(match[6])}`;
   }
 
   function renderRow(row, index) {
@@ -90,7 +93,7 @@
       <td>${display(row.baseUnit)}</td>
       <td>${display(row.packageUnit, '')}</td>
       <td>${row.packageQty === '' || row.packageQty == null ? '' : formatNumber(row.packageQty)}</td>
-      <td><span class="sorting-spec-export-status ${statusClass(status)}">${escapeHtml(statusText(status))}</span></td>
+      <td>${escapeHtml(statusText(status))}</td>
       <td>${display(row.updatedAt, '')}</td>
       <td class="remark-cell" title="${escapeHtml(row.remark || '')}">${escapeHtml(row.remark || '')}</td>
     </tr>`;
@@ -112,8 +115,7 @@
               <col class="sorting-spec-export-col-sequence"><col class="sorting-spec-export-col-product"><col class="sorting-spec-export-col-code"><col class="sorting-spec-export-col-standard"><col class="sorting-spec-export-col-unit"><col class="sorting-spec-export-col-package-unit"><col class="sorting-spec-export-col-quantity"><col class="sorting-spec-export-col-status"><col class="sorting-spec-export-col-updated"><col class="sorting-spec-export-col-remark">
             </colgroup>
             <thead>
-              <tr class="sorting-spec-export-title-row"><th colspan="10">分包规格</th></tr>
-              <tr class="sorting-spec-export-meta-row"><th colspan="6">导出时间：${escapeHtml(exportTime)}</th><th colspan="4">共 ${rows.length} 条数据</th></tr>
+              <tr class="sorting-spec-export-title-row"><th colspan="10">分包规格导出-${formatExportTime(exportTime)}</th></tr>
               <tr class="sorting-spec-export-column-row">${headers.map((header) => `<th>${header}</th>`).join('')}</tr>
             </thead>
             <tbody>${body}</tbody>
