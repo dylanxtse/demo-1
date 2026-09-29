@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品分拣归并</title>
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/sorting-merge-export.css">
+</head>
+<body>
+  <main class="sorting-merge-export-page">
+    <table class="sorting-merge-export-table" aria-label="商品分拣归并模板">
+      <colgroup>
+        <col class="col-sequence"><col class="col-product"><col class="col-unit"><col class="col-customer-count">
+        <col class="col-customer"><col class="col-canteen"><col class="col-remark"><col class="col-quantity">
+        <col class="col-total"><col class="col-stock">
+      </colgroup>
+      <thead>
+        <tr class="merge-title-row"><th colspan="10">商品分拣归并</th></tr>
+        <tr class="merge-meta-row">
+          <th id="mergeExportWarehouse" colspan="5">仓库：赣县中心仓</th>
+          <th id="mergeExportDate" colspan="5">期望送达时间：--</th>
+        </tr>
+        <tr class="merge-header-row">
+          <th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>客户数量</th>
+          <th>客户名称</th><th>食堂</th><th>备注</th><th>下单数量</th><th>下单数量合计</th><th>库存</th>
+        </tr>
+      </thead>
+      <tbody id="mergeExportBody"></tbody>
+    </table>
+  </main>
+  <nav class="sorting-merge-export-actions" aria-label="商品分拣归并操作">
+    <a href="./sorting-management.html?view=product">返回商品分拣</a>
+    <span class="sorting-merge-export-zoom-label">缩放</span>
+    <button type="button" data-action="zoom-out" aria-label="缩小模板">−</button>
+    <button type="button" class="sorting-merge-export-zoom-value" data-action="zoom-reset" aria-label="恢复默认缩放">90%</button>
+    <button type="button" data-action="zoom-in" aria-label="放大模板">＋</button>
+  </nav>
+
+  <script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js"></script>
+  <script src="./assets/js/services/repository.js"></script>
+  <script src="./assets/js/data/mock-dataset.js"></script>
+  <script src="./assets/js/pages/sorting-merge-export.js"></script>
+</body>
+</html>

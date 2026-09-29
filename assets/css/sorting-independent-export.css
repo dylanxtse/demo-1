@@ -1,0 +1,169 @@
+body {
+  min-width: 0;
+  margin: 0;
+  padding-bottom: 76px;
+  overflow: auto;
+  background: #eef0f3;
+  color: #202124;
+  font-family: Arial, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+
+.sorting-independent-export-page {
+  width: calc(100% - 48px);
+  max-width: 1840px;
+  min-width: 1180px;
+  margin: 24px auto 32px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(26, 34, 50, .14);
+  overflow-x: auto;
+  transform-origin: top center;
+}
+
+.sorting-independent-export-table {
+  zoom: var(--sorting-independent-export-zoom, .9);
+  width: 100%;
+  min-width: 1900px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 16px;
+}
+
+.sorting-independent-export-table col.col-product { width: 14%; }
+.sorting-independent-export-table col.col-customer { width: 11%; }
+.sorting-independent-export-table col.col-canteen { width: 9%; }
+.sorting-independent-export-table col.col-date { width: 9%; }
+.sorting-independent-export-table col.col-order-qty { width: 6%; }
+.sorting-independent-export-table col.col-actual-qty { width: 6%; }
+.sorting-independent-export-table col.col-package-unit,
+.sorting-independent-export-table col.col-package-qty,
+.sorting-independent-export-table col.col-package-remainder,
+.sorting-independent-export-table col.col-package-coefficient { width: 5%; }
+.sorting-independent-export-table col.col-unit { width: 6%; }
+.sorting-independent-export-table col.col-progress { width: 10%; }
+.sorting-independent-export-table col.col-remark { width: 8%; }
+.sorting-independent-export-table col.col-stock { width: 6%; }
+.sorting-independent-export-table col.col-status { width: 7%; }
+.sorting-independent-export-table col.col-sorter { width: 7%; }
+.sorting-independent-export-table col.col-sorting-at { width: 8%; }
+.sorting-independent-export-table col.col-route { width: 7%; }
+
+.sorting-independent-export-table th,
+.sorting-independent-export-table td {
+  height: 30px;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  border: 1px solid #cfd2d6;
+  line-height: 1.3;
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.sorting-independent-export-table .independent-title-row th {
+  height: 38px;
+  padding: 3px 10px;
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sorting-independent-export-table .independent-header-row th {
+  height: 38px;
+  padding: 4px 6px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.sorting-independent-export-actions {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, .94);
+  border-top: 1px solid #dfe3e9;
+  box-shadow: 0 -2px 8px rgba(25, 40, 70, .05);
+}
+
+.sorting-independent-export-actions a,
+.sorting-independent-export-actions button {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #cbd3df;
+  border-radius: 4px;
+  background: #fff;
+  color: #657184;
+  font: inherit;
+  font-size: 13px;
+  line-height: 28px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sorting-independent-export-actions a { min-width: 104px; }
+.sorting-independent-export-actions a:hover,
+.sorting-independent-export-actions button:hover { border-color: #b9c3d1; background: #f7f9fb; color: #3f4b5b; }
+
+.sorting-independent-export-zoom-label {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  margin-left: 4px;
+  color: #8a94a3;
+  font-size: 12px;
+}
+
+.sorting-independent-export-actions button {
+  border-color: #d2d9e3;
+  background: #f8fafc;
+  color: #657184;
+}
+
+.sorting-independent-export-actions .sorting-independent-export-zoom-value {
+  min-width: 48px;
+  height: 30px;
+  padding: 0 8px;
+  border-color: #d9dfe7;
+  background: #f5f7fa;
+  color: #697588;
+}
+
+@media print {
+  body {
+    min-width: 0;
+    padding-bottom: 0;
+    background: #fff;
+  }
+
+  .sorting-independent-export-page {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  .sorting-independent-export-table {
+    min-width: 0;
+    font-size: 11px;
+    zoom: 1;
+  }
+
+  .sorting-independent-export-table .independent-title-row th { font-size: 17px; }
+  .sorting-independent-export-table .independent-header-row th { font-size: 11px; }
+  .sorting-independent-export-actions { display: none; }
+}

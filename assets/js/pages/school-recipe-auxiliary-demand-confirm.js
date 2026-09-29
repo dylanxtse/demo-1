@@ -231,7 +231,7 @@
           recipeParticipantType: participant.label,
           expectedAt: record.expectedAt,
           supplement: '否',
-          source: '辅料下单',
+          source: '食谱下单',
           status: '待审核',
           creator: currentOperator.name,
           items
@@ -242,7 +242,7 @@
             orderId: order.id,
             orderNo: order.orderNo,
             sourceType: 'CUSTOMER',
-            source: '辅料下单',
+            source: '食谱下单',
             customerName: order.customerName,
             customerType: '学校',
             canteen: order.canteen,

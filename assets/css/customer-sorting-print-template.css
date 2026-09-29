@@ -1,0 +1,129 @@
+:root { --customer-print-ink: #11182b; --customer-print-border: #111; }
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: #eef0f3;
+  color: var(--customer-print-ink);
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+}
+.customer-sorting-print-page { min-width: 320px; padding: 24px 0 92px; }
+.customer-sorting-print-paper {
+  position: relative;
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 24px;
+  padding: 10mm 17mm 15mm;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(26, 34, 50, .18);
+  page-break-after: always;
+}
+.customer-sorting-print-paper:last-of-type { page-break-after: auto; }
+.customer-sorting-print-title {
+  margin: 0 0 11mm;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+.customer-sorting-print-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  min-height: 8mm;
+  margin: 0 0 2mm;
+  font-size: 14px;
+  font-weight: 600;
+}
+.customer-sorting-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #16191f;
+  font-size: 15px;
+}
+.customer-sorting-print-table .col-customer { width: 18%; }
+.customer-sorting-print-table .col-canteen { width: 11%; }
+.customer-sorting-print-table .col-date { width: 14%; }
+.customer-sorting-print-table .col-goods { width: 19%; }
+.customer-sorting-print-table .col-order-qty { width: 6%; }
+.customer-sorting-print-table .col-actual-qty { width: 6%; }
+.customer-sorting-print-table .col-package-unit,
+.customer-sorting-print-table .col-package-qty,
+.customer-sorting-print-table .col-package-remainder,
+.customer-sorting-print-table .col-package-coefficient { width: 5%; }
+.customer-sorting-print-table .col-unit { width: 6%; }
+.customer-sorting-print-table th,
+.customer-sorting-print-table td {
+  height: 36px;
+  padding: 0 4px;
+  border: 1px solid var(--customer-print-border);
+  line-height: 1.35;
+  text-align: center;
+  vertical-align: middle;
+  word-break: break-all;
+}
+.customer-sorting-print-table th {
+  height: 48px;
+  padding: 4px 3px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.customer-sorting-print-table td { font-size: 13px; }
+.customer-sorting-print-table th:nth-last-child(-n+5),
+.customer-sorting-print-table td:nth-last-child(-n+5) { text-align: center; }
+.customer-sorting-print-empty { height: 96px; color: #6c7482; text-align: center !important; }
+.customer-sorting-print-footer {
+  position: absolute;
+  right: 17mm;
+  bottom: 7mm;
+  left: 17mm;
+  display: flex;
+  justify-content: space-between;
+  color: #263044;
+  font-family: Georgia, "Times New Roman", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+}
+.customer-sorting-print-actions {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 14px;
+  background: rgba(255, 255, 255, .96);
+  border-top: 1px solid #dfe3e9;
+  box-shadow: 0 -4px 12px rgba(25, 40, 70, .06);
+}
+.customer-sorting-print-actions a {
+  min-width: 112px;
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid #cbd3df;
+  border-radius: 4px;
+  background: #fff;
+  color: #242a32;
+  font: inherit;
+  line-height: 34px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  html, body { background: #fff; }
+  .customer-sorting-print-page { padding: 0; }
+  .customer-sorting-print-paper { width: 297mm; min-height: 210mm; margin: 0; padding: 10mm 17mm 15mm; box-shadow: none; }
+  .customer-sorting-print-actions { display: none; }
+  .customer-sorting-print-table tr { break-inside: avoid; }
+}

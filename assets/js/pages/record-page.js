@@ -106,6 +106,12 @@
         ? 'standard-list-export-print'
         : '';
       const dropdownVisible = !action.dropdownVisibleStatuses || action.dropdownVisibleStatuses.includes(activeStatus);
+      if (action.openMenuOnMain && options.length && dropdownVisible) {
+        return `<div class="toolbar-dropdown toolbar-dropdown-single">
+          <button class="${buttonClass} toolbar-dropdown-main ${action.primary ? 'btn-primary' : ''} ${standardActionClass}" type="button" data-toolbar-dropdown-toggle aria-haspopup="menu" aria-expanded="false">${icon}${escapeHtml(effectiveLabel)}</button>
+          <div class="toolbar-dropdown-menu" role="menu">${options.map((option) => `<button type="button" role="menuitem" data-toolbar-option="${escapeHtml(option.key)}">${escapeHtml(option.label)}</button>`).join('')}</div>
+        </div>`;
+      }
       if (!options.length || !dropdownVisible) return `<button class="${buttonClass} ${action.primary ? 'btn-primary' : ''} ${standardActionClass}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>`;
       return `<div class="toolbar-dropdown">
         <button class="${buttonClass} toolbar-dropdown-main ${action.primary ? 'btn-primary' : ''} ${standardActionClass}" type="button" data-toolbar-action="${escapeHtml(effectiveKey)}">${icon}${escapeHtml(effectiveLabel)}</button>
@@ -750,6 +756,15 @@
         if (message) return toast(message, 'error');
       }
       if (action.onClick) return action.onClick(state.items.filter((item) => !action.requiresSelection || state.selected.has(item.id)));
+      if (action.templateHref) {
+        const params = new URLSearchParams();
+        Object.entries(state.condition).forEach(([key, value]) => params.set(key, Array.isArray(value) ? value.join(',') : String(value)));
+        if (state.activeStatus) params.set('status', state.activeStatus);
+        const href = typeof action.templateHref === 'function' ? action.templateHref(state) : action.templateHref;
+        const separator = href.includes('?') ? '&' : '?';
+        window.AppNavigation?.navigate?.(`${href}${params.toString() ? separator + params.toString() : ''}`);
+        return;
+      }
       if (action.key === 'export') return exportRows();
       if (action.batchUpdate && action.formFields) return showBatchForm(action);
       if (action.batchTransition) {
@@ -801,12 +816,15 @@
       if (dropdownToggle) {
         const dropdown = dropdownToggle.closest('.toolbar-dropdown');
         root.querySelectorAll('.toolbar-dropdown.is-open').forEach((element) => { if (element !== dropdown) element.classList.remove('is-open'); });
-        dropdown?.classList.toggle('is-open');
+        const expanded = dropdown?.classList.toggle('is-open');
+        dropdownToggle.setAttribute('aria-expanded', String(Boolean(expanded)));
         return;
       }
       const dropdownOption = event.target.closest('[data-toolbar-option]');
       if (dropdownOption) {
-        dropdownOption.closest('.toolbar-dropdown')?.classList.remove('is-open');
+        const dropdown = dropdownOption.closest('.toolbar-dropdown');
+        dropdown?.classList.remove('is-open');
+        dropdown?.querySelector('[data-toolbar-dropdown-toggle]')?.setAttribute('aria-expanded', 'false');
         return toolbarAction(dropdownOption.dataset.toolbarOption);
       }
       const cellLink = event.target.closest('[data-cell-href]');

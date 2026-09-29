@@ -168,6 +168,25 @@
 .toolbar-dropdown-menu button { display: block; width: 100%; padding: 8px 12px; border: 0; background: transparent; color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; white-space: nowrap; }
 .toolbar-dropdown-menu button:hover { background: var(--primary-light); color: var(--primary); }
 
+/* 商品分拣导出菜单：点击完整按钮展开，样式对齐截图中的右侧白色浮层。 */
+.toolbar-dropdown-single .toolbar-dropdown-main {
+  border-radius: 4px;
+}
+.toolbar-dropdown-single .toolbar-dropdown-menu {
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  min-width: 150px;
+  padding: 4px 0;
+  border-color: #e8ebf0;
+  box-shadow: 0 4px 12px rgba(25, 40, 70, .16);
+}
+.toolbar-dropdown-single .toolbar-dropdown-menu button {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
 .operations-summary {
   color: var(--text-secondary);
   font-size: 13px;

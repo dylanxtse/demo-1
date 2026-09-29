@@ -1,0 +1,195 @@
+:root {
+  --sorting-print-ink: #11182b;
+  --sorting-print-border: #111;
+  --sorting-print-muted: #263044;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: #eef0f3;
+  color: var(--sorting-print-ink);
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+}
+
+.sorting-print-template-page {
+  min-width: 320px;
+  padding: 24px 0 92px;
+}
+
+.sorting-print-paper {
+  position: relative;
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 24px;
+  padding: 10mm 17mm 15mm;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(26, 34, 50, .18);
+  page-break-after: always;
+}
+
+.sorting-print-paper:last-of-type { page-break-after: auto; }
+
+.sorting-print-title {
+  margin: 0 0 11mm;
+  color: var(--sorting-print-ink);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sorting-print-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  min-height: 8mm;
+  margin: 0 0 2mm;
+  color: var(--sorting-print-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+.sorting-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #16191f;
+  font-size: 15px;
+}
+
+.sorting-print-table .col-goods { width: 22%; }
+.sorting-print-table .col-customer { width: 17%; }
+.sorting-print-table .col-canteen { width: 11%; }
+.sorting-print-table .col-order-qty { width: 8%; }
+.sorting-print-table .col-actual-qty { width: 8%; }
+.sorting-print-table .col-package-unit,
+.sorting-print-table .col-package-qty,
+.sorting-print-table .col-package-remainder,
+.sorting-print-table .col-package-coefficient { width: 6%; }
+.sorting-print-table .col-unit { width: 8%; }
+.sorting-print-table .col-route { width: 6%; }
+
+.sorting-print-table th,
+.sorting-print-table td {
+  height: 36px;
+  padding: 0 5px;
+  border: 1px solid var(--sorting-print-border);
+  line-height: 1.35;
+  text-align: center;
+  vertical-align: middle;
+  word-break: break-all;
+}
+
+.sorting-print-table th {
+  height: 39px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sorting-print-table td { font-size: 13px; }
+
+.sorting-print-table th:last-child,
+.sorting-print-table td:last-child {
+  padding-right: 6px;
+  padding-left: 6px;
+  font-size: 11px;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.sorting-print-table .sorting-print-empty {
+  height: 96px;
+  color: #6c7482;
+  text-align: center;
+}
+
+.sorting-print-footer {
+  position: absolute;
+  right: 17mm;
+  bottom: 7mm;
+  left: 17mm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--sorting-print-muted);
+  font-family: Georgia, "Times New Roman", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.sorting-print-template-actions {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 14px;
+  background: rgba(255, 255, 255, .96);
+  border-top: 1px solid #dfe3e9;
+  box-shadow: 0 -4px 12px rgba(25, 40, 70, .06);
+}
+
+.sorting-print-template-actions a {
+  min-width: 112px;
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid #cbd3df;
+  border-radius: 4px;
+  background: #fff;
+  color: #242a32;
+  font: inherit;
+  line-height: 34px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .sorting-print-template-page { padding: 12px 0 84px; }
+  .sorting-print-paper {
+    width: calc(100vw - 24px);
+    min-height: calc((100vw - 24px) * .707);
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+  .sorting-print-footer { right: 24px; left: 24px; }
+}
+
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+
+  html,
+  body { background: #fff; }
+
+  .sorting-print-template-page {
+    padding: 0;
+    background: #fff;
+  }
+
+  .sorting-print-paper {
+    width: 297mm;
+    min-height: 210mm;
+    margin: 0;
+    padding: 10mm 17mm 15mm;
+    box-shadow: none;
+  }
+
+  .sorting-print-template-actions { display: none; }
+  .sorting-print-table tr { break-inside: avoid; }
+}

@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { min-width: 0; margin: 0; padding-bottom: 76px; overflow: auto; background: #eef0f3; color: #111; font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif; }
+.shipping-export-page { width: 100%; max-width: 1920px; margin: 0 auto; padding: 28px 36px 88px; }
+.shipping-export-paper { width: 100%; max-width: 1840px; min-width: 1180px; min-height: 720px; margin: 0 auto 26px; padding: 24px 24px 18px; overflow: hidden; background: #fff; box-shadow: 0 7px 20px rgba(26, 34, 50, .16); page-break-after: always; zoom: var(--shipping-export-zoom, .9); }
+.shipping-export-paper:last-of-type { page-break-after: auto; }
+.shipping-export-title { height: 49px; margin: 0; border: 1px solid #111; font-size: 26px; font-weight: 700; line-height: 48px; text-align: center; }
+.shipping-export-info { display: grid; grid-template-columns: 22% 39% 39%; border-left: 1px solid #111; border-right: 1px solid #111; font-size: 17px; font-weight: 600; }
+.shipping-export-info > div { min-height: 38px; padding: 7px 5px; border-bottom: 1px solid #111; border-right: 1px solid #111; line-height: 1.35; }
+.shipping-export-info > div:nth-child(3n) { border-right: 0; }
+.shipping-export-info .meal-cell { grid-column: 1 / -1; min-height: 45px; }
+.shipping-export-info .export-time { grid-column: 1 / -1; min-height: 35px; padding-right: 5px; text-align: right; }
+.shipping-export-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 16px; }
+.shipping-export-table .col-index { width: 4%; } .shipping-export-table .col-product { width: 17%; } .shipping-export-table .col-remark { width: 5%; } .shipping-export-table .col-unit { width: 5%; } .shipping-export-table .col-order-qty { width: 5%; } .shipping-export-table .col-price { width: 5%; } .shipping-export-table .col-shipping-qty { width: 5%; } .shipping-export-table .col-package-unit { width: 5%; } .shipping-export-table .col-package-qty { width: 5%; } .shipping-export-table .col-package-remainder { width: 5%; } .shipping-export-table .col-package-coefficient { width: 5%; } .shipping-export-table .col-subtotal { width: 7%; } .shipping-export-table .col-sorting-status { width: 7%; } .shipping-export-table .col-shipping-status { width: 7%; } .shipping-export-table .col-date { width: 6%; } .shipping-export-table .col-report { width: 7%; }
+.shipping-export-table th, .shipping-export-table td { height: 32px; padding: 3px 6px; border: 1px solid #111; line-height: 1.2; text-align: center; vertical-align: middle; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.shipping-export-table th { height: 39px; font-size: 16px; font-weight: 700; }
+.shipping-export-table td.product { text-align: left; }
+.shipping-export-table .summary-row td { height: 34px; font-weight: 700; }
+.shipping-export-signature { display: grid; grid-template-columns: 22% 31.5% 23.5% 23%; border: 1px solid #111; border-top: 0; font-size: 17px; font-weight: 600; }
+.shipping-export-signature span { min-height: 54px; padding: 15px 5px; border-right: 1px solid #111; }
+.shipping-export-signature span:last-child { border-right: 0; }
+.shipping-export-actions { position: fixed; right: 0; bottom: 0; left: 0; z-index: 20; display: flex; justify-content: center; gap: 12px; min-height: 56px; padding: 10px 14px; background: rgba(255,255,255,.94); border-top: 1px solid #dfe3e9; box-shadow: 0 -2px 8px rgba(25,40,70,.05); }
+.shipping-export-actions a, .shipping-export-actions button { min-width: 34px; height: 30px; padding: 0 10px; border: 1px solid #d2d9e3; border-radius: 4px; background: #f8fafc; color: #657184; font: inherit; font-size: 13px; line-height: 28px; text-align: center; text-decoration: none; cursor: pointer; }
+.shipping-export-actions [data-action="print"] { display: none !important; }
+.shipping-export-actions a { min-width: 104px; background: #fff; }
+.shipping-export-actions a:hover, .shipping-export-actions button:hover { border-color: #b9c3d1; background: #f7f9fb; color: #3f4b5b; }
+.shipping-export-zoom-label { display: inline-flex; height: 30px; align-items: center; margin-left: 4px; color: #8a94a3; font-size: 12px; }
+.shipping-export-actions .shipping-export-zoom-value { min-width: 48px; height: 30px; padding: 0 8px; border-color: #d9dfe7; background: #f5f7fa; color: #697588; }
+@media print { @page { size: A4 landscape; margin: 10mm 12mm; } body { min-width: 0; padding-bottom: 0; background: #fff; } .shipping-export-page { width: 100%; max-width: none; margin: 0; padding: 0; } .shipping-export-paper { min-width: 0; min-height: 0; margin: 0; padding: 6mm 6mm 14mm; box-shadow: none; zoom: 1; } .shipping-export-actions { display: none; } .shipping-export-table tr { break-inside: avoid; } }

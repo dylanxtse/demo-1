@@ -71,6 +71,15 @@
   justify-content: center;
 }
 
+.sorting-spec-action-bar {
+  margin-bottom: 12px;
+}
+
+.sorting-spec-action-bar .action-main {
+  grid-template-columns: 110px;
+  flex: 0 0 auto;
+}
+
 .sorting-spec-table-wrap {
   flex: 1;
   min-width: 0;
@@ -567,6 +576,33 @@
 .sorting-spec-modal-footer .btn {
   min-width: 72px;
   justify-content: center;
+}
+
+.sorting-spec-import-modal {
+  z-index: 110;
+}
+
+.sorting-spec-import-modal .unshelf-modal-dialog {
+  width: 520px;
+  max-width: calc(100vw - 32px);
+}
+
+.sorting-spec-import-template-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sorting-spec-import-result {
+  margin-top: 8px;
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-line;
+}
+
+.sorting-spec-import-result:empty {
+  display: none;
 }
 
 .sorting-spec-toast {

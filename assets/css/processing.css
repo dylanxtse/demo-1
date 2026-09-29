@@ -1028,6 +1028,20 @@
   white-space: nowrap;
 }
 
+.order-recipe-demand-info-wrap {
+  width: min(100%, 560px);
+  overflow-x: auto;
+}
+.order-recipe-demand-info-table {
+  width: 100%;
+  min-width: 360px;
+  table-layout: fixed;
+}
+.order-recipe-demand-info-table th,
+.order-recipe-demand-info-table td {
+  width: 50%;
+}
+
 /* 订单详情页：商品列表单行显示 + 横向滑动 */
 .order-detail-table-wrap {
   overflow-x: auto;

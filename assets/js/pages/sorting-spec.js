@@ -12,6 +12,9 @@
     page: 1,
     pageSize: 20,
     modal: null,
+    importModal: false,
+    importFileName: '',
+    importResult: '',
     pagination: null
   };
 
@@ -155,6 +158,194 @@
 
   function saveSpecs() {
     window.AppStorage?.write(STORAGE_KEY, state.specs);
+  }
+
+  const importTemplateHeaders = ['商品编号', '商品名称', '是否标品', '计量单位', '分包单位', '分包系数', '状态', '备注'];
+
+  function csvCell(value) {
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
+  }
+
+  function importTemplateCsv() {
+    const rows = state.products.map((product) => [
+      product.code,
+      product.name,
+      isStandardProduct(product) ? '是' : '否',
+      product.unit || '',
+      '',
+      '',
+      '启用',
+      ''
+    ]);
+    return [importTemplateHeaders, ...rows]
+      .map((row) => row.map(csvCell).join(','))
+      .join('\n');
+  }
+
+  function downloadText(filename, text) {
+    const blob = new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadImportTemplate() {
+    downloadText('分包规格导入模板.csv', importTemplateCsv());
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let cell = '';
+    let quoted = false;
+    const source = String(text || '').replace(/^\uFEFF/, '');
+
+    for (let index = 0; index < source.length; index += 1) {
+      const character = source[index];
+      if (character === '"') {
+        if (quoted && source[index + 1] === '"') {
+          cell += '"';
+          index += 1;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (character === ',' && !quoted) {
+        row.push(cell.trim());
+        cell = '';
+      } else if ((character === '\n' || character === '\r') && !quoted) {
+        if (character === '\r' && source[index + 1] === '\n') index += 1;
+        row.push(cell.trim());
+        if (row.some((value) => value !== '')) rows.push(row);
+        row = [];
+        cell = '';
+      } else {
+        cell += character;
+      }
+    }
+    if (cell !== '' || row.length) {
+      row.push(cell.trim());
+      if (row.some((value) => value !== '')) rows.push(row);
+    }
+
+    if (rows.length < 2) throw new Error('文件中没有可导入的数据');
+    const headerMap = {
+      商品编号: 'productCode',
+      商品编码: 'productCode',
+      商品名称: 'productName',
+      是否标品: 'standardProduct',
+      计量单位: 'baseUnit',
+      分包单位: 'packageUnit',
+      分包规格: 'packageUnit',
+      分包系数: 'packageQty',
+      状态: 'status',
+      启用状态: 'status',
+      备注: 'remark'
+    };
+    const headers = rows.shift().map((header) => headerMap[header.replace(/\s/g, '')] || '');
+    if (!headers.includes('productCode') || !headers.includes('packageUnit') || !headers.includes('packageQty')) {
+      throw new Error('请使用分包规格导入模板CSV文件');
+    }
+    return rows.map((values) => headers.reduce((record, key, index) => {
+      if (key) record[key] = values[index] || '';
+      return record;
+    }, {}));
+  }
+
+  async function importSpecsFromFile() {
+    const fileInput = document.getElementById('sortingSpecImportFile');
+    const resultElement = document.getElementById('sortingSpecImportResult');
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      state.importResult = '请选择需要导入的CSV文件';
+      if (resultElement) resultElement.textContent = state.importResult;
+      return;
+    }
+    if (!/\.csv$/i.test(file.name)) {
+      state.importResult = '仅支持CSV格式文件，请下载模板后填写上传';
+      if (resultElement) resultElement.textContent = state.importResult;
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      state.importResult = '文件大小不能超过10M';
+      if (resultElement) resultElement.textContent = state.importResult;
+      return;
+    }
+
+    try {
+      const rows = parseCsv(await file.text());
+      const importedCodes = new Set();
+      const failures = [];
+      let successCount = 0;
+      rows.forEach((row, index) => {
+        const lineNumber = index + 2;
+        const productCode = String(row.productCode || '').trim();
+        const product = productByCode(productCode);
+        const packageUnit = String(row.packageUnit || '').trim();
+        const packageQty = Number(String(row.packageQty || '').trim());
+        if (!productCode || !product) {
+          failures.push(`第${lineNumber}行：商品编号不存在`);
+          return;
+        }
+        if (importedCodes.has(productCode)) {
+          failures.push(`第${lineNumber}行：商品编号重复`);
+          return;
+        }
+        if (!packageUnit) {
+          failures.push(`第${lineNumber}行：分包单位不能为空`);
+          return;
+        }
+        if (!Number.isFinite(packageQty) || packageQty <= 0) {
+          failures.push(`第${lineNumber}行：分包系数必须大于0`);
+          return;
+        }
+        const quantityDecimals = isStandardProduct(product) ? 0 : quantityDecimalPlaces();
+        if (!hasQuantityPrecision(packageQty, quantityDecimals)) {
+          failures.push(`第${lineNumber}行：分包系数最多填写${quantityDecimals}位小数`);
+          return;
+        }
+        importedCodes.add(productCode);
+        const status = ['停用', '禁用', 'DISABLE'].includes(String(row.status || '').trim()) ? 'DISABLE' : 'ENABLE';
+        const existing = state.specs.find((spec) => spec.productCode === productCode);
+        const payload = normalizeSpec({
+          ...existing,
+          id: existing?.id || nextId(),
+          productCode,
+          productName: product.name,
+          packageName: `${formatNumber(packageQty)}${packageUnit}`,
+          packageQty,
+          packageUnit,
+          baseUnit: product.unit || '',
+          status,
+          effectiveFrom: today(),
+          updatedAt: currentDateTime(),
+          remark: String(row.remark || '').trim()
+        });
+        if (existing) Object.assign(existing, payload);
+        else state.specs.unshift(payload);
+        successCount += 1;
+      });
+
+      if (successCount > 0) {
+        saveSpecs();
+        state.importModal = false;
+        state.importFileName = '';
+        state.importResult = '';
+        state.page = 1;
+        render();
+        showToast(`成功导入${successCount}条${failures.length ? `，失败${failures.length}条` : ''}`);
+        return;
+      }
+      state.importResult = failures.length ? failures.slice(0, 4).join('\n') : '文件中没有可导入的数据';
+      if (resultElement) resultElement.textContent = state.importResult;
+    } catch (error) {
+      state.importResult = error.message || '文件读取失败';
+      if (resultElement) resultElement.textContent = state.importResult;
+    }
   }
 
   function nextId() {
@@ -342,9 +533,7 @@
     const quantityStep = 10 ** -quantityDecimals;
     const quantityPlaceholder = '请输入分包系数';
     const packageUnit = record.packageUnit || '';
-    const qtyHint = packageUnit && baseUnit && record.packageQty
-      ? `1${escapeHtml(packageUnit)} = ${escapeHtml(record.packageQty)}${escapeHtml(baseUnit)}`
-      : `如：1包 = 5${escapeHtml(baseUnit || '斤')}`;
+    const qtyHint = '商品计量单位和分包系数之间的换算率，如：1包=50斤';
     return `<div class="sorting-spec-modal-backdrop" data-spec-modal-backdrop>
       <section class="sorting-spec-modal" role="dialog" aria-modal="true" aria-label="${editing ? '编辑分拣规格' : '设置分拣规格'}">
         <header class="sorting-spec-modal-header"><h2>${editing ? '编辑分拣规格' : '设置分拣规格'}</h2><button type="button" class="sorting-spec-modal-close" data-spec-close aria-label="关闭">×</button></header>
@@ -353,7 +542,7 @@
             <div class="sorting-spec-form-field sorting-spec-form-readonly"><span>商品</span><span class="sorting-spec-form-readonly-value">${renderProductDisplay(record)}</span><input name="productCode" type="hidden" value="${escapeHtml(record.productCode)}"></div>
             <div class="sorting-spec-form-field sorting-spec-form-readonly"><span>是否标品</span><span class="sorting-spec-form-readonly-value">${standardProduct ? '是' : '否'}</span></div>
             <div class="sorting-spec-form-field sorting-spec-form-readonly"><span>计量单位</span><span class="sorting-spec-form-readonly-value">${escapeHtml(baseUnit)}</span></div>
-            <label class="sorting-spec-form-field sorting-spec-form-half"><span class="required">分包规格</span><select name="packageUnit" data-price-placeholder="请选择规格单位" data-price-empty="${!record.packageUnit}">${renderPackageUnitOptions(record.packageUnit)}</select></label>
+            <label class="sorting-spec-form-field sorting-spec-form-half"><span class="required">分包单位</span><select name="packageUnit" data-price-placeholder="请选择规格单位" data-price-empty="${!record.packageUnit}">${renderPackageUnitOptions(record.packageUnit)}</select></label>
             <label class="sorting-spec-form-field sorting-spec-form-half sorting-spec-qty-field"><span class="required">分包系数</span><div class="sorting-spec-qty-wrap"><input name="packageQty" type="number" min="${quantityStep}" step="${quantityStep}" value="${record.packageQty || ''}" placeholder="${quantityPlaceholder}"><small class="sorting-spec-qty-hint">${qtyHint}</small></div></label>
             <div class="sorting-spec-form-field"><span>启用状态</span><label class="sorting-spec-status-switch switch-control"><input class="switch-input" name="status" type="checkbox" value="ENABLE" ${record.status === 'ENABLE' ? 'checked' : ''} aria-label="启用状态"><span class="switch-slider" aria-hidden="true"></span></label></div>
             <div class="sorting-spec-form-field sorting-spec-form-remark"><span>备注</span><div class="sorting-spec-remark-wrap"><textarea name="remark" maxlength="100" placeholder="请输入备注" data-remark-counter>${escapeHtml(record.remark)}</textarea><span class="sorting-spec-remark-counter">${String(record.remark || '').length}/100</span></div></div>
@@ -361,6 +550,28 @@
           <footer class="sorting-spec-modal-footer"><button type="button" class="btn" data-spec-close>取消</button><button type="submit" class="btn btn-primary">保存</button></footer>
         </form>
       </section>
+    </div>`;
+  }
+
+  function renderImportModal() {
+    const visible = state.importModal ? ' is-visible' : '';
+    return `<div class="unshelf-modal sorting-spec-import-modal${visible}" id="sortingSpecImportModal" aria-hidden="${String(!state.importModal)}">
+      <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sortingSpecImportTitle">
+        <div class="unshelf-modal-header"><h2 id="sortingSpecImportTitle">批量导入分包规格</h2><button class="unshelf-modal-close" type="button" data-spec-action="close-import" aria-label="关闭">×</button></div>
+        <div class="unshelf-modal-body">
+          <div class="market-price-import-section sorting-spec-import-section">
+            <label class="unshelf-reason-label">下载模板</label>
+            <div class="sorting-spec-import-template-row"><a href="./market-price-import-template.html?type=sorting-spec" class="market-price-import-template-link">分包规格导入模板.csv</a><button class="btn-text" type="button" data-spec-action="download-template">下载</button></div>
+          </div>
+          <div class="market-price-import-section sorting-spec-import-section">
+            <label class="unshelf-reason-label">上传文件</label>
+            <div class="market-price-import-upload"><button class="btn btn-sm btn-blue" type="button" data-spec-action="trigger-import-upload">上传</button><input type="file" id="sortingSpecImportFile" accept=".csv,text/csv" hidden><span class="market-price-import-upload-hint">只能上传CSV文件，且不超过10M</span></div>
+            <span class="market-price-import-filename" id="sortingSpecImportFileName">${escapeHtml(state.importFileName)}</span>
+            <div class="sorting-spec-import-result" id="sortingSpecImportResult" role="status">${escapeHtml(state.importResult)}</div>
+          </div>
+        </div>
+        <div class="unshelf-modal-actions"><button class="btn" type="button" data-spec-action="close-import">取消</button><button class="btn btn-primary" type="button" data-spec-action="confirm-import">导入</button></div>
+      </div>
     </div>`;
   }
 
@@ -374,14 +585,16 @@
     window.__sortingSpecPageRoot.innerHTML = `<section class="sorting-spec-page page-card">
       <form class="sorting-spec-filter" data-spec-filter><div class="sorting-spec-filter-fields">
         <label class="sorting-spec-field"><span class="filter-label">商品名称/编号</span><input class="filter-input" name="keyword" value="${escapeHtml(state.keyword)}" placeholder="请输入商品名称或编号"></label>
-        <label class="sorting-spec-field"><span class="filter-label">分包规格</span><select class="filter-select" name="packageUnit">${renderPackageUnitOptions(state.packageUnit, true)}</select></label>
+        <label class="sorting-spec-field"><span class="filter-label">分包单位</span><select class="filter-select" name="packageUnit">${renderPackageUnitOptions(state.packageUnit, true)}</select></label>
         <label class="sorting-spec-field"><span class="filter-label">是否净菜</span><select class="filter-select" name="netVegetable"><option value="">全部</option><option value="true" ${state.netVegetable === 'true' ? 'selected' : ''}>是</option><option value="false" ${state.netVegetable === 'false' ? 'selected' : ''}>否</option></select></label>
         <label class="sorting-spec-field"><span class="filter-label">是否标品</span><select class="filter-select" name="standardProduct"><option value="">全部</option><option value="true" ${state.standardProduct === 'true' ? 'selected' : ''}>是</option><option value="false" ${state.standardProduct === 'false' ? 'selected' : ''}>否</option></select></label>
         <label class="sorting-spec-field"><span class="filter-label">启用状态</span><select class="filter-select" name="status"><option value="">全部</option><option value="ENABLE" ${state.status === 'ENABLE' ? 'selected' : ''}>启用</option><option value="DISABLE" ${state.status === 'DISABLE' ? 'selected' : ''}>停用</option><option value="PENDING" ${state.status === 'PENDING' ? 'selected' : ''}>待启用</option></select></label>
       </div><div class="sorting-spec-filter-actions"><span class="sorting-spec-advanced-filter-slot" aria-hidden="true"></span><button type="submit" class="btn btn-primary">查询</button><button type="button" class="btn" data-spec-action="reset">重置</button></div></form>
+      <div class="action-bar sorting-spec-action-bar"><div class="action-main"><button class="btn btn-sm btn-action btn-blue" type="button" data-spec-action="open-import">批量导入</button></div></div>
       <div class="sorting-spec-table-wrap">${renderTable(rows)}</div>
       <div id="sortingSpecPagination" class="sorting-spec-pagination"></div>
       ${renderModal()}
+      ${renderImportModal()}
     </section>`;
     const paginationRoot = window.__sortingSpecPageRoot.querySelector('#sortingSpecPagination');
     if (window.Pagination?.create && paginationRoot) {
@@ -519,6 +732,22 @@
         const action = actionButton.dataset.specAction;
         const id = actionButton.dataset.id;
         if (action === 'add') openCreate();
+        if (action === 'open-import') {
+          state.modal = null;
+          state.importModal = true;
+          state.importFileName = '';
+          state.importResult = '';
+          render();
+        }
+        if (action === 'close-import') {
+          state.importModal = false;
+          state.importFileName = '';
+          state.importResult = '';
+          render();
+        }
+        if (action === 'trigger-import-upload') document.getElementById('sortingSpecImportFile')?.click();
+        if (action === 'download-template') downloadImportTemplate();
+        if (action === 'confirm-import') importSpecsFromFile();
         if (action === 'reset') {
           state.keyword = '';
           state.packageUnit = '';
@@ -540,6 +769,27 @@
     });
 
     root.addEventListener('change', (event) => {
+      if (event.target.matches('#sortingSpecImportFile')) {
+        const file = event.target.files?.[0];
+        const nameElement = document.getElementById('sortingSpecImportFileName');
+        if (!file) return;
+        if (!/\.csv$/i.test(file.name)) {
+          state.importFileName = '';
+          state.importResult = '仅支持CSV格式文件，请下载模板后填写上传';
+          event.target.value = '';
+        } else if (file.size > 10 * 1024 * 1024) {
+          state.importFileName = '';
+          state.importResult = '文件大小不能超过10M';
+          event.target.value = '';
+        } else {
+          state.importFileName = file.name;
+          state.importResult = '';
+        }
+        if (nameElement) nameElement.textContent = state.importFileName;
+        const resultElement = document.getElementById('sortingSpecImportResult');
+        if (resultElement) resultElement.textContent = state.importResult;
+        return;
+      }
       const form = event.target.closest('[data-spec-form]');
       if (!form) return;
       if (event.target.matches('[data-spec-product]')) {
@@ -558,6 +808,13 @@
     root.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && state.modal) {
         state.modal = null;
+        render();
+        return;
+      }
+      if (event.key === 'Escape' && state.importModal) {
+        state.importModal = false;
+        state.importFileName = '';
+        state.importResult = '';
         render();
       }
     });

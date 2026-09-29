@@ -1,0 +1,141 @@
+body {
+  min-width: 0;
+  margin: 0;
+  padding-bottom: 76px;
+  overflow: auto;
+  background: #eef0f3;
+  color: #202124;
+  font-family: Arial, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+
+.sorting-merge-export-page {
+  width: calc(100% - 48px);
+  max-width: 1840px;
+  min-width: 1180px;
+  margin: 24px auto 32px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(26, 34, 50, .14);
+  overflow-x: auto;
+  transform-origin: top center;
+}
+
+.sorting-merge-export-table {
+  zoom: var(--sorting-merge-export-zoom, .9);
+  width: 100%;
+  min-width: 1180px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 16px;
+}
+
+.sorting-merge-export-table col.col-sequence { width: 6.5%; }
+.sorting-merge-export-table col.col-product { width: 19%; }
+.sorting-merge-export-table col.col-unit { width: 12.5%; }
+.sorting-merge-export-table col.col-customer-count { width: 7.5%; }
+.sorting-merge-export-table col.col-customer { width: 14%; }
+.sorting-merge-export-table col.col-canteen { width: 12%; }
+.sorting-merge-export-table col.col-remark { width: 10.5%; }
+.sorting-merge-export-table col.col-quantity { width: 7%; }
+.sorting-merge-export-table col.col-total { width: 8%; }
+.sorting-merge-export-table col.col-stock { width: 7%; }
+
+.sorting-merge-export-table th,
+.sorting-merge-export-table td {
+  height: 28px;
+  box-sizing: border-box;
+  padding: 2px 6px;
+  border: 1px solid #cfd2d6;
+  overflow: hidden;
+  line-height: 1.2;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+
+.sorting-merge-export-table .merge-title-row th {
+  height: 38px;
+  padding: 3px 10px;
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sorting-merge-export-table .merge-meta-row th { height: 29px; font-size: 18px; font-weight: 600; }
+.sorting-merge-export-table .merge-header-row th { height: 30px; font-size: 16px; font-weight: 600; }
+.sorting-merge-export-table .merge-group-cell { vertical-align: middle; }
+
+.sorting-merge-export-actions {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, .94);
+  border-top: 1px solid #dfe3e9;
+  box-shadow: 0 -2px 8px rgba(25, 40, 70, .05);
+}
+
+.sorting-merge-export-actions a,
+.sorting-merge-export-actions button {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #cbd3df;
+  border-radius: 4px;
+  background: #fff;
+  color: #657184;
+  font: inherit;
+  font-size: 13px;
+  line-height: 28px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sorting-merge-export-actions a { min-width: 104px; }
+.sorting-merge-export-actions a:hover,
+.sorting-merge-export-actions button:hover { border-color: #b9c3d1; background: #f7f9fb; color: #3f4b5b; }
+
+.sorting-merge-export-zoom-label {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  margin-left: 4px;
+  color: #8a94a3;
+  font-size: 12px;
+}
+
+.sorting-merge-export-actions .sorting-merge-export-zoom-value {
+  min-width: 48px;
+  height: 30px;
+  padding: 0 8px;
+  border-color: #d9dfe7;
+  background: #f5f7fa;
+  color: #697588;
+}
+
+@media print {
+  body { min-width: 0; padding-bottom: 0; background: #fff; }
+  .sorting-merge-export-page {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+  .sorting-merge-export-table { min-width: 0; font-size: 12px; zoom: 1; }
+  .sorting-merge-export-table .merge-title-row th { font-size: 18px; }
+  .sorting-merge-export-table .merge-meta-row th,
+  .sorting-merge-export-table .merge-header-row th { font-size: 12px; }
+  .sorting-merge-export-actions { display: none; }
+}

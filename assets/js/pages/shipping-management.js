@@ -101,6 +101,44 @@
     return /^模拟数据[:：]/.test(remark) ? '--' : (remark || '--');
   }
 
+  function openShippingPrintTemplate(records) {
+    const printKey = `shipping-print-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const orders = window.DemoStore?.get?.('orders') || [];
+    const rows = (Array.isArray(records) ? records : []).flatMap((record) => {
+      const order = orders.find((item) => item.id === record.orderId || item.orderNo === record.orderNo) || {};
+      const lines = Array.isArray(record.items) && record.items.length ? record.items : (order.items || []);
+      return lines.map((line) => ({
+        ...line,
+        ...record,
+        goodsName: line.goodsName || line.productName,
+        goodsCode: line.goodsCode || line.productCode,
+        orderQty: line.orderQty ?? line.quantity,
+        unitPrice: line.unitPrice ?? line.orderPrice,
+        shippingQty: line.shippingQty ?? line.shippedQty ?? line.actualQty,
+        customerCode: record.customerCode || order.customerCode || order.customerNo,
+        deliveryPerson: record.deliveryPerson || record.driver || order.driver,
+        mealCounts: record.mealCounts || order.mealCounts,
+        address: record.address || order.address
+      }));
+    });
+    const payload = {
+      version: '20260929-shipping-print-template-1',
+      companyName: '赣州客家新源供应链有限公司',
+      sourceUrl: 'https://gxyc.canantong.com:4403/shippingManagement',
+      printedAt: new Date().toISOString(),
+      rows
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `printData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(printKey, serializedPayload);
+        query = `printKey=${encodeURIComponent(printKey)}`;
+      }
+    } catch (error) { /* 临时缓存不可用时使用 URL 数据兜底。 */ }
+    window.AppNavigation?.navigate?.(`./shipping-print-template.html?${query}`);
+  }
+
   const defaultPackageSpecs = [
     { productCode: 'SP0300061', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
     { productCode: 'SP0300039', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
@@ -188,8 +226,8 @@
 
   const shippingToolbar = [
     { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
-    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, toast: '已生成发货单打印预览' },
-    { key: 'export', label: '导出', icon: 'supplier-purchase-export' }
+    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openShippingPrintTemplate },
+    { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './shipping-export-template.html' }
   ];
 
   const shippingColumns = [
@@ -221,7 +259,7 @@
 
   const shippingRowActions = [
     { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' },
-    { key: 'print', label: '打印', toast: '已生成发货单打印预览' }
+    { key: 'print', label: '打印', onClick: (item) => openShippingPrintTemplate([item]) }
   ];
 
   window.RecordPageConfig = {

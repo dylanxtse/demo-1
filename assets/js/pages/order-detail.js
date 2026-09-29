@@ -109,6 +109,72 @@
     return `<div class="info-item"><span class="info-label">${label}：</span><span class="info-value">${escapeHtml(value || '--')}</span></div>`;
   }
 
+  const recipeDemandSourceNames = new Set(['食谱下单', '辅料下单', '学校端食谱下单', '学校端辅料下单']);
+  const isRecipeDemandOrder = (order) => {
+    const source = String(order?.source || '').trim();
+    return Boolean(order?.recipeDemandRecordId || order?.recipeDemandRecordNo || order?.recipeParticipantType
+      || order?.recipeDemandDate || recipeDemandSourceNames.has(source));
+  };
+  const recipeOrderSource = (order) => isRecipeDemandOrder(order) ? '食谱下单' : order?.source;
+  const participantTypeName = (value) => ({
+    student: '学生',
+    teacher: '教师',
+    staff: '教职工'
+  }[String(value || '').trim()] || String(value || '').trim());
+  const participantDisplayName = (order, type, nutritious, combined) => {
+    const base = participantTypeName(type);
+    const full = String(combined || '').trim();
+    if (full && (!order?.recipeParticipantType || base === participantTypeName(order.recipeParticipantType)
+      || base === participantTypeName(order.orderTagName))) return full;
+    const nutrition = String(nutritious || order?.nutritious || '').trim();
+    if (!base || !nutrition || base.includes(nutrition)) return base;
+    return `${base}-${nutrition}`;
+  };
+  const peopleValue = (value) => {
+    if (value && typeof value === 'object') return value.count ?? value.people ?? value.personCount ?? value.mealPeople;
+    return value;
+  };
+  const recipeParticipantRows = (order) => {
+    const rows = new Map();
+    const add = (type, count, nutritious, combined) => {
+      const label = participantDisplayName(order, type, nutritious, combined);
+      const value = Number(peopleValue(count));
+      if (!label || !Number.isFinite(value)) return;
+      rows.set(label, (rows.get(label) || 0) + value);
+    };
+    const people = order?.recipeParticipantPeople || order?.participantPersonTimes || order?.participantPeople;
+    if (people && typeof people === 'object' && !Array.isArray(people)) {
+      Object.entries(people).forEach(([type, count]) => {
+        const detail = count && typeof count === 'object' ? count : null;
+        add(detail?.label || detail?.name || type, count, detail?.nutritious, detail?.orderTag);
+      });
+    }
+    [order?.recipeParticipants, order?.participants].forEach((participants) => {
+      if (!Array.isArray(participants)) return;
+      participants.forEach((participant) => add(
+        participant?.label || participant?.name || participant?.tagName || participant?.type,
+        participant?.count ?? participant?.people ?? participant?.personCount ?? participant?.mealPeople,
+        participant?.nutritious,
+        participant?.orderTag
+      ));
+    });
+    if (!rows.size) add(
+      order?.recipeParticipantType || order?.orderTagName || order?.orderTag,
+      order?.mealPeople ?? order?.people,
+      order?.nutritious,
+      order?.orderTag
+    );
+    return [...rows.entries()].map(([type, count]) => ({ type, count }));
+  };
+  const renderRecipeDemandInfo = (order) => {
+    if (!isRecipeDemandOrder(order)) return '';
+    const rows = recipeParticipantRows(order);
+    const body = rows.length
+      ? rows.map(({ type, count }) => `<tr><td>${escapeHtml(type)}</td><td>${escapeHtml(count)}</td></tr>`).join('')
+      : '<tr><td colspan="2" class="detail-empty">暂无填报人次</td></tr>';
+    return `<div class="processing-detail-section order-recipe-demand-info-section"><h3>填报信息</h3><div class="order-recipe-demand-info-wrap"><table class="processing-detail-table order-recipe-demand-info-table"><thead><tr><th>人员类型</th><th>填报人次</th></tr></thead><tbody>${body}</tbody></table></div></div>`;
+  };
+
   function render(order) {
     if (!order) {
       return `<div class="page-card processing-detail-page order-detail-page enterprise-order-detail-page">
@@ -174,7 +240,7 @@
             ${infoItem('餐次', order.mealName)}
             ${infoItem('订单标签', order.orderTag)}
             ${infoItem('期望送达时间', order.expectedAt)}
-            ${infoItem('单据来源', order.source)}
+            ${infoItem('单据来源', recipeOrderSource(order))}
             ${infoItem('添加时间', order.createdAt)}
             ${infoItem('制单人', order.creator)}
             ${infoItem('发货时间', order.shippingAt)}
@@ -184,6 +250,7 @@
             ${infoItem('采购负责人', order.purchaser)}
           </div>
         </div>
+        ${renderRecipeDemandInfo(order)}
         <div class="processing-detail-section">
           <h3>商品信息</h3>
           <div class="order-detail-table-wrap">

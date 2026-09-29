@@ -65,7 +65,14 @@
     'school-purchase-accounts.html': 'school',
     'order-export-template.html': 'enterprise',
     'order-export-order-template.html': 'enterprise',
-    'market-price-import-template.html': 'enterprise'
+    'market-price-import-template.html': 'enterprise',
+    'sorting-print-template.html': 'enterprise',
+    'sorting-customer-export-template.html': 'enterprise',
+    'sorting-merge-export.html': 'enterprise',
+    'sorting-independent-export.html': 'enterprise',
+    'customer-sorting-print-template.html': 'enterprise',
+    'shipping-print-template.html': 'enterprise',
+    'shipping-export-template.html': 'enterprise'
   });
 
   const validVariants = new Set(Object.keys(endpointHomes));

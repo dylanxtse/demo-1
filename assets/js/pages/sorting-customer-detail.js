@@ -44,8 +44,8 @@
       </div>
       <div class="operations-table-container sorting-customer-table-container">
         <div class="operations-table-wrap"><table class="operations-table sorting-customer-table">
-          <colgroup>${[44, 56, 260, 160, 160, 100, 150, 100, 130, 110, 110, 100, 120, 130, 110, 110, 100, 130, 120, 120, 180].map((width) => `<col style="width:${width}px">`).join('')}</colgroup>
-          <thead><tr><th><input id="detailSelectAll" type="checkbox" aria-label="选择全部"></th><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>所属订单号</th><th>客户名称</th><th>食堂</th><th>下单数量</th><th title="填写实际分拣数量后保存；已分拣商品可先重置再调整">实际数量</th><th>计量单位</th><th>分包规格</th><th>分包数量</th><th>分包尾数</th><th>是否发货</th><th>分拣进度</th><th>备注</th><th>库存</th><th>分拣状态</th><th>分拣员</th><th>分拣时间</th><th>线路</th><th>操作</th></tr></thead>
+          <colgroup>${[44, 56, 260, 160, 160, 100, 150, 100, 130, 110, 100, 100, 110, 120, 130, 110, 110, 100, 130, 120, 120, 180].map((width) => `<col style="width:${width}px">`).join('')}</colgroup>
+          <thead><tr><th><input id="detailSelectAll" type="checkbox" aria-label="选择全部"></th><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>所属订单号</th><th>客户名称</th><th>食堂</th><th>下单数量</th><th title="填写实际分拣数量后保存；已分拣商品可先重置再调整">实际数量</th><th>计量单位</th><th>分包数量</th><th>分包尾数</th><th>分包单位</th><th>分包系数</th><th>是否发货</th><th>分拣进度</th><th>备注</th><th>库存</th><th>分拣状态</th><th>分拣员</th><th>分拣时间</th><th>线路</th><th>操作</th></tr></thead>
           <tbody id="detailBody"></tbody>
         </table></div>
         <div class="pagination"><span class="page-total" id="detailTotal">共 0 条数据</span></div>
@@ -101,9 +101,13 @@
     if (!actual || !packageQty) return null;
     return Math.floor(actual / packageQty);
   };
-  const renderPackageSpec = (item) => {
+  const renderPackageUnit = (item) => {
     const spec = packageSpecFor(item);
-    return spec ? escapeHtml(`${spec.packageQty}${item.unit || spec.baseUnit || ''}/${spec.packageUnit}`) : '--';
+    return spec ? escapeHtml(spec.packageUnit || '--') : '--';
+  };
+  const renderPackageCoefficient = (item) => {
+    const spec = packageSpecFor(item);
+    return spec ? escapeHtml(spec.packageQty) : '--';
   };
   const renderPackageCount = (item) => {
     const count = packageCountOf(item, packageSpecFor(item));
@@ -114,7 +118,7 @@
     const count = packageCountOf(item, spec);
     if (!spec || count === null) return '--';
     const remainder = Number((Number(item.actualQty || 0) - count * Number(spec.packageQty)).toFixed(2));
-    return remainder > 0 ? `${remainder}${escapeHtml(item.unit || '')}` : '';
+    return remainder > 0 ? String(remainder) : '';
   };
 
   function toast(message, type = '') {
@@ -157,12 +161,12 @@
       return `<tr data-id="${escapeHtml(item.id)}">
         <td><input class="detail-row-select" type="checkbox" ${selected.has(item.id) ? 'checked' : ''} aria-label="选择数据"></td>
         <td>${index + 1}</td><td>${renderGoodsName(item)}</td><td><button class="cell-link" type="button" data-cell-href="${escapeHtml(orderHref)}">${escapeHtml(item.orderNo || '--')}</button></td><td>${escapeHtml(item.customerName)}</td><td>${escapeHtml(item.canteen)}</td>
-        <td>${escapeHtml(item.orderQty)}</td><td>${quantity}</td><td>${escapeHtml(item.unit)}</td><td>${renderPackageSpec(item)}</td><td>${renderPackageCount(item)}</td><td>${renderPackageRemainder(item)}</td>
+        <td>${escapeHtml(item.orderQty)}</td><td>${quantity}</td><td>${escapeHtml(item.unit)}</td><td>${renderPackageCount(item)}</td><td>${renderPackageRemainder(item)}</td><td>${renderPackageUnit(item)}</td><td>${renderPackageCoefficient(item)}</td>
         <td>${escapeHtml(item.shipped || '否')}</td><td>${escapeHtml(progress)}</td><td class="sorting-remark" title="${escapeHtml(item.remark || '--')}">${escapeHtml(item.remark || '--')}</td><td>${escapeHtml(item.stock)}</td>
         <td><span class="operation-status ${statusClass(item)}">${statusText(item)}</span>${shortage ? '<span class="operation-status danger">缺货</span>' : ''}</td><td>${escapeHtml(item.sorter || '--')}</td><td>${escapeHtml(item.sortingAt || '--')}</td><td>${escapeHtml(item.route || '--')}</td>
         <td><div class="cell-actions operation-actions">${actionHtml}</div></td>
       </tr>`;
-    }).join('') : '<tr><td class="empty-cell" colspan="21">暂无数据</td></tr>';
+    }).join('') : '<tr><td class="empty-cell" colspan="22">暂无数据</td></tr>';
     root.querySelector('#detailTotal').textContent = `共 ${filteredItems.length} 条数据`;
     updateSelection();
   }

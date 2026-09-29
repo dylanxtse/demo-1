@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品分拣</title>
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/sorting-independent-export.css">
+</head>
+<body>
+  <main class="sorting-independent-export-page">
+    <table class="sorting-independent-export-table" aria-label="商品分拣独立导出模板">
+      <colgroup>
+        <col class="col-product"><col class="col-customer"><col class="col-canteen"><col class="col-date">
+        <col class="col-order-qty"><col class="col-actual-qty"><col class="col-package-unit"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-coefficient"><col class="col-unit"><col class="col-progress">
+        <col class="col-remark"><col class="col-stock"><col class="col-status"><col class="col-sorter">
+        <col class="col-sorting-at"><col class="col-route">
+      </colgroup>
+      <thead>
+        <tr class="independent-title-row"><th colspan="18">商品分拣</th></tr>
+        <tr class="independent-header-row">
+          <th>商品名称（计量单位/品牌/规格）</th><th>客户名称</th><th>食堂</th><th>期望送达时间</th>
+          <th>下单数量</th><th>实际数量</th><th>分包单位</th><th>分包数量</th><th>分包尾数</th><th>分包系数</th><th>计量单位</th><th>分拣进度</th><th>备注</th>
+          <th>库存</th><th>分拣状态</th><th>分拣员</th><th>分拣时间</th><th>线路</th>
+        </tr>
+      </thead>
+      <tbody id="independentExportBody"></tbody>
+    </table>
+  </main>
+  <nav class="sorting-independent-export-actions" aria-label="商品分拣独立导出操作">
+    <a href="./sorting-management.html?view=product">返回商品分拣</a>
+    <span class="sorting-independent-export-zoom-label">缩放</span>
+    <button type="button" data-action="zoom-out" aria-label="缩小模板">−</button>
+    <button type="button" class="sorting-independent-export-zoom-value" data-action="zoom-reset" aria-label="恢复默认缩放">90%</button>
+    <button type="button" data-action="zoom-in" aria-label="放大模板">＋</button>
+  </nav>
+
+  <script src="./assets/js/utils/business-rules.js"></script>
+  <script src="./assets/js/utils/storage.js"></script>
+  <script src="./assets/js/utils/dom.js"></script>
+  <script src="./assets/js/services/repository.js"></script>
+  <script src="./assets/js/data/mock-dataset.js"></script>
+  <script src="./assets/js/pages/sorting-independent-export.js"></script>
+</body>
+</html>

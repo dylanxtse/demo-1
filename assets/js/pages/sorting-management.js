@@ -17,7 +17,72 @@
   const orderMealOptions = window.OrderMealOptions || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
   const customerService = window.SortingCustomerService;
   const customerOptions = (resource, key) => [...new Set((window.DemoStore.get(resource) || []).map((item) => item[key]).filter(Boolean))];
-  const printCustomers = (groups) => customerService.showPrint(groups.flatMap((group) => group.items));
+  function openCustomerPrintTemplate(groups) {
+    const printKey = `customer-sorting-print-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260929-customer-sorting-print-template-1',
+      companyName: '阳光智园',
+      sourceUrl: 'https://gxyc.canantong.com:4403/sortingManagementList',
+      printedAt: new Date().toISOString(),
+      rows: (Array.isArray(groups) ? groups : []).flatMap((group) => group.items || [])
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `printData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(printKey, serializedPayload);
+        query = `printKey=${encodeURIComponent(printKey)}`;
+      }
+    } catch (error) { /* 临时缓存不可用时使用 URL 数据兜底。 */ }
+    navigate(`./customer-sorting-print-template.html?${query}`);
+  }
+
+  const printCustomers = (groups) => openCustomerPrintTemplate(groups);
+  function navigate(url) {
+    if (window.AppNavigation?.navigate) window.AppNavigation.navigate(url);
+    else window.location.href = url;
+  }
+
+  function openSortingPrintTemplate(rows) {
+    const printKey = `sorting-print-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260929-sorting-print-template-1',
+      companyName: '阳光智园',
+      sourceUrl: 'https://gxyc.canantong.com:4403/sortingManagementList',
+      printedAt: new Date().toISOString(),
+      rows: Array.isArray(rows) ? rows : []
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `printData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(printKey, serializedPayload);
+        query = `printKey=${encodeURIComponent(printKey)}`;
+      }
+    } catch (error) { /* 读取不到临时缓存时使用 URL 数据兜底。 */ }
+    navigate(`./sorting-print-template.html?${query}`);
+  }
+
+  const printSortingDocument = (items) => openSortingPrintTemplate(items);
+
+  function openSortingCustomerExportTemplate(groups) {
+    const exportKey = `sorting-customer-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20260929-sorting-customer-export-template-1',
+      exportedAt: new Date().toISOString(),
+      groups: Array.isArray(groups) ? groups : []
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) { /* 读取不到临时缓存时使用 URL 数据兜底。 */ }
+    navigate(`./sorting-customer-export-template.html?${query}`);
+  }
+
   function renderCustomerOrders(group) {
     return `<div class="sorting-customer-orders-wrap"><table class="sorting-customer-orders"><thead><tr>
       <th>订单号</th><th>订单标签</th><th>商品种类</th><th>下单金额</th><th>分拣状态</th><th>是否发货</th><th>订单状态</th>
@@ -204,8 +269,17 @@
             ]
           },
           { key: 'batchShortage', label: '批量标记缺货', batchTransition: 'markShortage', message: '确定标记选中商品为缺货？', visibleStatuses: ['PENDING', ''] },
-          { key: 'export', label: '导出', icon: 'supplier-purchase-export' },
-          { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, toast: '已生成分拣单据打印预览' }
+          {
+            key: 'export',
+            label: '导出',
+            icon: 'supplier-purchase-export',
+            openMenuOnMain: true,
+            dropdownOptions: [
+              { key: 'exportIndependent', label: '独立导出', templateHref: './sorting-independent-export.html' },
+              { key: 'exportMerged', label: '商品归并导出', templateHref: './sorting-merge-export.html' }
+            ]
+          },
+          { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: printSortingDocument }
         ],
         rowActions: [
           { key: 'sort', label: '分拣', transition: 'sort', visible: ['PENDING', 'PARTIAL'], disabled: isShortage, message: '确定分拣该商品吗？' },
@@ -251,7 +325,7 @@
           { key: 'batchShortage', label: '批量标记缺货', primary: true, requiresSelection: true, batchTransition: 'markShortage', message: '确定将选中客户下尚未分拣、未发货的商品标记缺货吗？' },
           { key: 'batchPrint', label: '一键打印', primary: true, requiresSelection: true, onClick: printCustomers },
           { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: printCustomers },
-          { key: 'export', label: '导出', icon: 'supplier-purchase-export' }
+          { key: 'export', label: '导出', icon: 'supplier-purchase-export', onClick: openSortingCustomerExportTemplate }
         ],
         rowActions: [
           {

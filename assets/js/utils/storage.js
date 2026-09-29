@@ -121,6 +121,15 @@
     } else {
       delete result.purchaser;
     }
+    const orderSource = firstText(input.source);
+    const isRecipeDemandOrder = Boolean(
+      input.recipeDemandRecordId
+      || input.recipeDemandRecordNo
+      || input.recipeParticipantType
+      || input.recipeDemandDate
+      || ['食谱下单', '辅料下单', '学校端食谱下单', '学校端辅料下单'].includes(orderSource)
+    );
+    if (isRecipeDemandOrder) result.source = '食谱下单';
     delete result.recipeTag;
     legacyOrderKeys.forEach((key) => delete result[key]);
     if (!partial) {
