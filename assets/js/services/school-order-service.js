@@ -5,7 +5,7 @@
   const SUPPLIER_NAME = '产品部学校食材集采供应链有限公司';
   const CANTEEN_NAME = '第一食堂';
   const DEFAULT_TAG = '其他-不区分';
-  const SEED_VERSION = 'school-order-seed-v4';
+  const SEED_VERSION = 'school-order-seed-v5';
   let memoryOrders = null;
 
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -117,21 +117,114 @@
     const makeOrder = ({
       id, orderNo, createdAt, expectedAt, status = '待发货', supplierName = supplier,
       canteen = CANTEEN_NAME, orderTag = DEFAULT_TAG, source = '平台下单', driver = '',
-      creator = '杨', items = [], shipped = false, shippingAt = ''
+      creator = '杨', items = [], shipped = false, shippingAt = '', mealKey = '', mealName = '', mealPeople = '',
+      recipeDemandRecordId = '', recipeDemandRecordNo = '', recipeDemandDate = '', recipeParticipantType = '',
+      operationAction = '添加', operationDescription = ''
     }) => {
       const lines = items.map((line, index) => makeLine({ id: `${id}-ITEM-${index + 1}`, ...line }));
       const orderAmount = money(lines.reduce((sum, line) => sum + line.orderSubtotal, 0));
       return {
-        id, orderNo, ...common, supplierName, canteen, mealName: '', orderTag, source, driver, creator,
+        id, orderNo, ...common, supplierName, canteen, mealKey, mealName, mealPeople, orderTag, source, driver, creator,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate, recipeParticipantType,
         orderAmount, shippingAmount: shipped ? orderAmount : 0, acceptedAmount: 0,
         returnAmount: 0, reconciliationAmount: 0, expectedAt, status,
         productCount: lines.length, acceptedAt: '', shippingAt, createdAt, items: lines,
-        operationLogs: [{ action: '添加', operator: creator, result: '添加', time: createdAt, description: '' }]
+        operationLogs: [{ action: operationAction, operator: creator, result: '添加', time: createdAt, description: operationDescription }]
       };
     };
     const firstItems = [
       { name: '大玉米棒子', unit: 'KG', productCode: 'SP0300036', orderPrice: 5, orderQty: 10 },
       { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 5 }
+    ];
+    const recipeDemandRecordId = 'RECIPE-DEMAND-DEMO-20260829';
+    const recipeDemandRecordNo = 'XQ2026082948261';
+    const recipeOrders = [
+      makeOrder({
+        id: 'SCHOOL-ORDER-DEMO-20260829-breakfast-student', orderNo: 'DD202608290300001',
+        createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
+        orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 520,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
+        operationAction: '食谱需求下单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
+        items: [
+          { name: '牛奶', unit: '瓶', productCode: 'SP0300037', orderPrice: 5, orderQty: 130 },
+          { name: '面粉', unit: '斤', productCode: 'SP0300016', orderPrice: 30, orderQty: 41.6 },
+          { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 22, orderQty: 26 },
+          { name: '苹果', unit: '斤', productCode: 'SP0300014', orderPrice: 23, orderQty: 52 },
+          { name: '大玉米棒子', unit: 'KG', productCode: 'SP0300036', orderPrice: 5, orderQty: 104 }
+        ]
+      }),
+      makeOrder({
+        id: 'SCHOOL-ORDER-DEMO-20260829-breakfast-teacher', orderNo: 'DD202608290300002',
+        createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
+        orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 42,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
+        operationAction: '食谱需求下单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
+        items: [
+          { name: '牛奶', unit: '瓶', productCode: 'SP0300037', orderPrice: 5, orderQty: 10.5 },
+          { name: '面粉', unit: '斤', productCode: 'SP0300016', orderPrice: 30, orderQty: 3.36 },
+          { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 22, orderQty: 2.1 },
+          { name: '苹果', unit: '斤', productCode: 'SP0300014', orderPrice: 23, orderQty: 4.2 },
+          { name: '大玉米棒子', unit: 'KG', productCode: 'SP0300036', orderPrice: 5, orderQty: 8.4 }
+        ]
+      }),
+      makeOrder({
+        id: 'SCHOOL-ORDER-DEMO-20260829-lunch-student', orderNo: 'DD202608290300003',
+        createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
+        orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 680,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
+        operationAction: '食谱需求下单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
+        items: [
+          { name: '西红柿', unit: 'KG', productCode: 'SP0300020', orderPrice: 5.6, orderQty: 54.4 },
+          { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 22, orderQty: 34 },
+          { name: '金龙鱼豆油', unit: '斤', productCode: 'SP0300017', orderPrice: 50, orderQty: 6.8 },
+          { name: '大米', unit: 'KG', productCode: 'SP0300025', orderPrice: 19, orderQty: 81.6 },
+          { name: '土豆', unit: '斤', productCode: 'SP0300040', orderPrice: 3.2, orderQty: 68 },
+          { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 23, orderQty: 54.4 }
+        ]
+      }),
+      makeOrder({
+        id: 'SCHOOL-ORDER-DEMO-20260829-lunch-teacher', orderNo: 'DD202608290300004',
+        createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
+        orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 48,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
+        operationAction: '食谱需求下单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
+        items: [
+          { name: '西红柿', unit: 'KG', productCode: 'SP0300020', orderPrice: 5.6, orderQty: 3.84 },
+          { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 22, orderQty: 2.4 },
+          { name: '金龙鱼豆油', unit: '斤', productCode: 'SP0300017', orderPrice: 50, orderQty: 0.48 },
+          { name: '大米', unit: 'KG', productCode: 'SP0300025', orderPrice: 19, orderQty: 5.76 },
+          { name: '土豆', unit: '斤', productCode: 'SP0300040', orderPrice: 3.2, orderQty: 4.8 },
+          { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 23, orderQty: 3.84 }
+        ]
+      }),
+      makeOrder({
+        id: 'SCHOOL-ORDER-DEMO-20260829-dinner-student', orderNo: 'DD202608290300005',
+        createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
+        orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 460,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
+        operationAction: '食谱需求下单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
+        items: [
+          { name: '土豆', unit: '斤', productCode: 'SP0300040', orderPrice: 3.2, orderQty: 55.2 },
+          { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 23, orderQty: 46 },
+          { name: '大白菜', unit: '斤', productCode: 'SP0300019', orderPrice: 2.2, orderQty: 36.8 },
+          { name: '金龙鱼豆油', unit: '斤', productCode: 'SP0300017', orderPrice: 50, orderQty: 4.6 },
+          { name: '大米', unit: 'KG', productCode: 'SP0300025', orderPrice: 19, orderQty: 55.2 }
+        ]
+      }),
+      makeOrder({
+        id: 'SCHOOL-ORDER-DEMO-20260829-dinner-teacher', orderNo: 'DD202608290300006',
+        createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
+        orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 36,
+        recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
+        operationAction: '食谱需求下单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
+        items: [
+          { name: '土豆', unit: '斤', productCode: 'SP0300040', orderPrice: 3.2, orderQty: 4.32 },
+          { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 23, orderQty: 3.6 },
+          { name: '大白菜', unit: '斤', productCode: 'SP0300019', orderPrice: 2.2, orderQty: 2.88 },
+          { name: '金龙鱼豆油', unit: '斤', productCode: 'SP0300017', orderPrice: 50, orderQty: 0.36 },
+          { name: '大米', unit: 'KG', productCode: 'SP0300025', orderPrice: 19, orderQty: 4.32 }
+        ]
+      })
     ];
     const sourceOrders = [
       makeOrder({
@@ -251,7 +344,7 @@
         ]
       })
     ];
-    return [...sourceOrders, ...sourceLikeOrders, ...generatedOrders, ...legacyOrders];
+    return [...recipeOrders, ...sourceOrders, ...sourceLikeOrders, ...generatedOrders, ...legacyOrders];
   }
 
   function readOrders() {
