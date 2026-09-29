@@ -101,7 +101,7 @@
     return /^模拟数据[:：]/.test(remark) ? '--' : (remark || '--');
   }
 
-  function openShippingPrintTemplate(records) {
+  function openShippingPrintTemplate(records, templateHref = './shipping-print-template.html') {
     const printKey = `shipping-print-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const orders = window.DemoStore?.get?.('orders') || [];
     const rows = (Array.isArray(records) ? records : []).flatMap((record) => {
@@ -136,7 +136,11 @@
         query = `printKey=${encodeURIComponent(printKey)}`;
       }
     } catch (error) { /* 临时缓存不可用时使用 URL 数据兜底。 */ }
-    window.AppNavigation?.navigate?.(`./shipping-print-template.html?${query}`);
+    window.AppNavigation?.navigate?.(`${templateHref}?${query}`);
+  }
+
+  function openOrderShippingPrintTemplate(records) {
+    openShippingPrintTemplate(records, './order-shipping-print-template.html');
   }
 
   const defaultPackageSpecs = [
@@ -229,6 +233,11 @@
     { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openShippingPrintTemplate },
     { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './shipping-export-template.html' }
   ];
+  const orderShippingToolbar = [
+    { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
+    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openOrderShippingPrintTemplate },
+    { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './order-shipping-export-template.html' }
+  ];
 
   const shippingColumns = [
     { key: 'customerName', label: '客户名称' },
@@ -261,6 +270,10 @@
     { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' },
     { key: 'print', label: '打印', onClick: (item) => openShippingPrintTemplate([item]) }
   ];
+  const orderShippingRowActions = [
+    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' },
+    { key: 'print', label: '打印', onClick: (item) => openOrderShippingPrintTemplate([item]) }
+  ];
 
   window.RecordPageConfig = {
     title: '发货管理',
@@ -292,8 +305,8 @@
         columns: orderColumns,
         expandable: true,
         renderExpandedRow: renderShippingExpandedRow,
-        toolbar: shippingToolbar,
-        rowActions: shippingRowActions
+        toolbar: orderShippingToolbar,
+        rowActions: orderShippingRowActions
       },
       {
         key: 'difference',

@@ -70,9 +70,12 @@
     'sorting-customer-export-template.html': 'enterprise',
     'sorting-merge-export.html': 'enterprise',
     'sorting-independent-export.html': 'enterprise',
+    'sorting-spec-export-template.html': 'enterprise',
     'customer-sorting-print-template.html': 'enterprise',
     'shipping-print-template.html': 'enterprise',
-    'shipping-export-template.html': 'enterprise'
+    'shipping-export-template.html': 'enterprise',
+    'order-shipping-print-template.html': 'enterprise',
+    'order-shipping-export-template.html': 'enterprise'
   });
 
   const validVariants = new Set(Object.keys(endpointHomes));
