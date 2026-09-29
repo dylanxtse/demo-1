@@ -165,7 +165,7 @@
   }
 
   function canAttemptContinue(menu, validation) {
-    return Boolean(menu) && participantsForState().length > 0 && !validation.errors.length && !validation.missingMappings.length && Number(validation.people || 0) > 0;
+    return Boolean(menu) && participantsForState().length > 0 && !validation.errors.length && Number(validation.people || 0) > 0;
   }
 
   function canSaveNonDining(validation, calculation) {
@@ -200,7 +200,7 @@
       const record = menu.date === state.selectedDate
         ? state.attendance
         : state.attendanceByDate[menu.date];
-      if (!record) return;
+      if (!record || findEmptyAttendanceField(menu, record)) return;
       const calculation = attendanceService.calculate(menu, record, { canteen, participants });
       if (Number(calculation.totalDiningPeople || 0) <= 0) return;
       const saved = attendanceService.save(menu.date, record.meals, menu.version || recipeService.MENU_VERSION, canteen, record.temporaryNonDining);
@@ -291,30 +291,6 @@
         const value = mealField(record, meal.key, participant);
         if (value === '' || value == null) return { meal, participant };
       }
-    }
-    return null;
-  }
-
-  function recordHasAttendanceValues(record) {
-    return [record?.meals, record?.temporaryNonDining].some((group) => Object.values(group || {}).some((values) => (
-      Object.values(values || {}).some((value) => value !== '' && value != null)
-    )));
-  }
-
-  function attendanceDatesForValidation() {
-    const otherDates = allMenus
-      .map((menu) => menu.date)
-      .filter((date) => date !== state.selectedDate)
-      .filter((date) => recordHasAttendanceValues(attendanceForDate(date)));
-    return [state.selectedDate, ...otherDates];
-  }
-
-  function findFirstEmptyAttendanceField() {
-    for (const date of attendanceDatesForValidation()) {
-      const menu = menuForDate(date);
-      const record = attendanceForDate(date);
-      const field = findEmptyAttendanceField(menu, record);
-      if (field) return { date, record, ...field };
     }
     return null;
   }
@@ -824,13 +800,13 @@
     if (action === 'continue') {
       syncCurrentDraftFromInputs(page);
       const menu = menuForDate(state.selectedDate);
-      const emptyField = findFirstEmptyAttendanceField();
+      const emptyField = findEmptyAttendanceField(menu, state.attendance);
       if (emptyField) {
-        focusEmptyAttendanceField(root, emptyField);
+        focusEmptyAttendanceField(root, { date: state.selectedDate, record: state.attendance, ...emptyField });
         return;
       }
       const validation = attendanceService.validate(menu, state.attendance, serviceOptions());
-      if (!validation.canContinue) {
+      if (validation.errors.length || Number(validation.people || 0) <= 0) {
         showToast(validation.message || '请先完成当前日期填报', true);
         return;
       }
@@ -842,8 +818,9 @@
         return;
       }
       attendanceService.markResetOnReturn?.(currentCanteen());
-      if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
-      else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
+      const target = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}&canteen=${encodeURIComponent(currentScopeKey())}`;
+      if (window.AppNavigation?.navigate?.(target)) return;
+      window.location.assign(target);
     }
   });
 

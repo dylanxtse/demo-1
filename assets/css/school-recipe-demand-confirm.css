@@ -72,7 +72,59 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-table td.is-total { color: #354052; font-weight: 600 !important; }
 .school-recipe-demand-date-table .col-date { width: 148px; }
 .school-recipe-demand-date-table .col-expand { width: 50px; }
-.school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button { width: 50px; min-width: 50px; max-width: 50px; }
+.school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button {
+  display: inline-flex;
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #d8e2f0;
+  border-radius: 4px;
+  color: #477fca;
+  background: #fff;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button:hover,
+.school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button[aria-expanded="true"] {
+  border-color: #8eb5eb;
+  color: #1459c7;
+  background: #f1f6ff;
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button:focus-visible {
+  outline: 2px solid #8eb5eb;
+  outline-offset: 2px;
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-date-expand-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition: transform 160ms ease;
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-date-row.is-expanded .school-recipe-demand-date-expand-button svg {
+  transform: rotate(90deg);
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-date-detail-row[hidden] { display: none; }
+.school-recipe-demand-confirm-page .school-recipe-demand-date-detail-row > td {
+  padding: 0 !important;
+  background: #fbfcfe;
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-attendance-detail {
+  width: 100%;
+  box-sizing: border-box;
+}
+.school-recipe-demand-confirm-page .school-recipe-demand-attendance-detail-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
 .school-recipe-demand-date-table .col-meal { width: 112px; }
 .school-recipe-demand-date-table .col-version { width: 220px; }
 .school-recipe-demand-date-table .col-person { width: 150px; }

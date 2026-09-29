@@ -385,7 +385,7 @@
         ${renderAttendanceMealTable(menu.meals || [], record)}
         <section class="school-recipe-attendance-demand-section" aria-label="商品需求测算"><header><div><span class="section-title-mark">商品需求测算</span></div></header><div id="schoolRecipeAttendanceDemand">${renderAttendanceDemand(menu, record)}</div></section>
       </div>
-      <footer class="school-recipe-attendance-actions"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-attendance-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-attendance-action="reset-current">重置当前人数</button><button type="button" role="menuitem" data-attendance-action="reset-all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-attendance-action="fill-defaults">填写默认人数</button></div><div class="school-recipe-attendance-confirm-action"><button type="button" class="btn btn-primary btn-sm ${validation.canContinue ? '' : 'btn-disabled'}" data-attendance-action="continue" ${validation.canContinue ? '' : 'disabled'}>确认需求</button></div></footer>
+      <footer class="school-recipe-attendance-actions"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-attendance-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-attendance-action="reset-current">重置当前人数</button><button type="button" role="menuitem" data-attendance-action="reset-all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-attendance-action="fill-defaults">填写默认人数</button></div><div class="school-recipe-attendance-confirm-action"><button type="button" class="btn btn-primary btn-sm ${!validation.errors.length && Number(validation.people || 0) > 0 ? '' : 'btn-disabled'}" data-attendance-action="continue" ${!validation.errors.length && Number(validation.people || 0) > 0 ? '' : 'disabled'}>确认需求</button></div></footer>
     </main>`;
   }
 
@@ -548,8 +548,9 @@
     if (overviewTotal) overviewTotal.textContent = number(calculation.totalPeople);
     const continueButton = page.querySelector('[data-attendance-action="continue"]');
     if (continueButton) {
-      continueButton.disabled = !validation.canContinue;
-      continueButton.classList.toggle('btn-disabled', !validation.canContinue);
+      const canAttemptContinue = !validation.errors.length && Number(validation.people || 0) > 0;
+      continueButton.disabled = !canAttemptContinue;
+      continueButton.classList.toggle('btn-disabled', !canAttemptContinue);
     }
     page.querySelectorAll('[data-attendance-meal-total]').forEach((element) => {
       const values = record.meals?.[element.dataset.attendanceMealTotal] || {};
@@ -840,7 +841,7 @@
       syncCurrentDraftFromInputs(page);
       const menu = menuForDate(state.selectedDate);
       const validation = attendanceService.validate(menu, state.attendance, serviceOptions());
-      if (!validation.canContinue) {
+      if (validation.errors.length || Number(validation.people || 0) <= 0) {
         showToast(validation.message || '请先完成当前日期填报', true);
         return;
       }
@@ -851,8 +852,9 @@
         showToast('人数保存失败，请重新填写后再确认', true);
         return;
       }
-      if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(`./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`);
-      else window.location.href = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
+      const target = `./school-recipe-demand-confirm.html?date=${encodeURIComponent(state.selectedDate)}`;
+      if (window.AppNavigation?.navigate?.(target)) return;
+      window.location.assign(target);
     }
   });
 

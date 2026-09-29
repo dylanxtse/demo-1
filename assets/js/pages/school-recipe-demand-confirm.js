@@ -6,7 +6,9 @@
 
   const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
   const allMenus = recipeService.getAll().sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  const dateSummaryFor = (date) => demandService.buildPreview([date]).dateSummaries[0] || null;
+  const params = new URLSearchParams(window.location.search);
+  const requestedCanteen = params.get('canteen') || window.AppStorage?.read?.('school-recipe-current-canteen', '') || '第一食堂';
+  const dateSummaryFor = (date) => demandService.buildPreview([date], { canteen: requestedCanteen }).dateSummaries[0] || null;
   const allDateSummaries = allMenus.map((menu) => dateSummaryFor(menu.date)).filter(Boolean);
   const filledDateSummaries = allDateSummaries.filter((summary) => Number(summary.calculation?.totalPeople || 0) > 0);
   const fallbackDate = allMenus[0]?.date || '2026-09-07';
@@ -141,7 +143,7 @@
     (meal.rows || []).filter((row) => row.mappingStatus === '已关联' && Number(row.totalQty || 0) > 0)
       .some((row) => (preview.participants || []).some((participant) => Number(purchaseQuantityValue(summary, meal, row, participant)) > 0))
   )));
-  const currentCanteen = window.AppStorage?.read?.('school-recipe-current-canteen', window.SchoolOrderService?.CANTEEN_NAME || '第一食堂') || window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
+  const currentCanteen = requestedCanteen;
   const currentCanteenScope = demandService.currentCanteen?.(currentCanteen) || { id: '', name: currentCanteen };
   const currentCanteenName = currentCanteenScope.name || currentCanteen;
   const splitOrderByMeal = () => {
