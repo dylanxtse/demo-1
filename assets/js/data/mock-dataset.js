@@ -91,6 +91,59 @@
     ] }
   ];
 
+  // 食谱下单演示数据：由代码种子生成，清除浏览器缓存后仍会出现在企业端订单管理中。
+  const makeRecipeOrder = ({ id, orderNo, createdAt, expectedAt, orderTag, mealKey, mealName, mealPeople, participantType, recordId, recordNo, recordDate, items }) => {
+    const normalizedItems = items.map(([goodsName, goodsCode, unit, unitPrice, quantity]) => ({
+      goodsName, productName: goodsName, goodsCode, productId: goodsCode, unit, unitPrice, quantity,
+      subtotal: Number((unitPrice * quantity).toFixed(2)), shippedQty: 0, shippedAmount: 0,
+      returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0,
+      acceptedQty: 0, acceptedAmount: 0, isNetVegetable: false, remark: '', productionDate: '',
+      inspectionImages: [], inspectionVideos: []
+    }));
+    const orderAmount = Number(normalizedItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2));
+    return {
+      id, orderId: id, orderNo, sourceType: 'CUSTOMER', source: '食谱下单',
+      customerName: '静安第一中学', customerType: '学校', canteen: '第一食堂',
+      orderTag, mealKey, mealName, mealPeople, recipeParticipantType: participantType,
+      recipeDemandRecordId: recordId, recipeDemandRecordNo: recordNo, recipeDemandDate: recordDate,
+      orderAmount, shippingAmount: 0, returnAmount: 0, reconciliationAmount: 0,
+      expectedAt, status: 'PENDING_AUDIT', receiptStatus: '待收货', productCount: normalizedItems.length,
+      warehouse: '中心仓', supplement: '否', remark: '--', route: '东城一线', driver: '',
+      creator: '管理员', createdAt, acceptedAt: '', shippingAt: '', items: normalizedItems,
+      operationLogs: [{ action: '食谱需求下单', desc: `管理员 根据需求提交记录 ${recordNo} 创建${mealName}、${participantType}订单` }]
+    };
+  };
+  orders.unshift(
+    makeRecipeOrder({
+      id: 'SCHOOL-ORDER-DEMO-20260829-breakfast-student', orderNo: 'DD202608290300001',
+      createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00', orderTag: '学生-不区分',
+      mealKey: 'breakfast', mealName: '早餐', mealPeople: 520, participantType: '学生',
+      recordId: 'RECIPE-DEMAND-DEMO-20260829', recordNo: 'XQ2026082948261', recordDate: '2026-09-07',
+      items: [['牛奶', 'SP0300037', '瓶', 5, 130], ['面粉', 'SP0300016', '斤', 30, 41.6], ['鸡蛋', 'SP0300018', '斤', 22, 26], ['苹果', 'SP0300014', '斤', 23, 52], ['大玉米棒子', 'SP0300036', 'KG', 5, 104]]
+    }),
+    makeRecipeOrder({
+      id: 'SCHOOL-ORDER-DEMO-20260829-lunch-student', orderNo: 'DD202608290300003',
+      createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00', orderTag: '学生-不区分',
+      mealKey: 'lunch', mealName: '午餐', mealPeople: 680, participantType: '学生',
+      recordId: 'RECIPE-DEMAND-DEMO-20260829', recordNo: 'XQ2026082948261', recordDate: '2026-09-07',
+      items: [['西红柿', 'SP0300020', 'KG', 5.6, 54.4], ['鸡蛋', 'SP0300018', '斤', 22, 34], ['金龙鱼豆油', 'SP0300017', '斤', 50, 6.8], ['大米', 'SP0300025', 'KG', 19, 81.6], ['土豆', 'SP0300040', '斤', 3.2, 68], ['鸡腿肉', 'SP0300013', '斤', 23, 54.4]]
+    }),
+    makeRecipeOrder({
+      id: 'SCHOOL-ORDER-DEMO-20260829-dinner-student', orderNo: 'DD202608290300005',
+      createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00', orderTag: '学生-不区分',
+      mealKey: 'dinner', mealName: '晚餐', mealPeople: 460, participantType: '学生',
+      recordId: 'RECIPE-DEMAND-DEMO-20260829', recordNo: 'XQ2026082948261', recordDate: '2026-09-07',
+      items: [['土豆', 'SP0300040', '斤', 3.2, 55.2], ['鸡腿肉', 'SP0300013', '斤', 23, 46], ['大白菜', 'SP0300019', '斤', 2.2, 36.8], ['金龙鱼豆油', 'SP0300017', '斤', 50, 4.6], ['大米', 'SP0300025', 'KG', 19, 55.2]]
+    }),
+    makeRecipeOrder({
+      id: 'SCHOOL-ORDER-20260929-XQ2026092991306-participant_其他-dinner-AUX', orderNo: 'DD202609290300001',
+      createdAt: '2026-09-29 16:20:00', expectedAt: '2026-09-28 07:30:00', orderTag: '其他-不区分',
+      mealKey: 'dinner', mealName: '晚餐', mealPeople: 120, participantType: '其他',
+      recordId: 'AUXILIARY-DEMAND-20260929162000-DEMO', recordNo: 'XQ2026092991306', recordDate: '2026-09-29',
+      items: [['金龙鱼5L桶装油', 'SP0300030', 'L', 55, 1.44], ['食盐', 'SP0300031', 'kg', 18.5, 0.48]]
+    })
+  );
+
   const returns = [
     { id: 'RET-001', returnNo: 'THD202607300001', customerName: '阳光幼儿园', canteen: '园区食堂', goodsName: '鲫鱼(斤/--/--)', reason: '商品破损', orderNo: 'DD202607290200012', inboundNo: 'RKD202607300009', warehouse: '中心仓', status: 'PENDING', creator: '刘财务', createdAt: '2026-07-30 10:12:00', refundAmount: 120.00, remark: '鲫鱼到货后部分死亡，需退货处理', items: [{ id: 'RL-1', goodsName: '鲫鱼(斤/--/--)', unit: '斤', orderPrice: 12.00, shippedQty: 20, returnedQty: 0, applyQty: 10, applyPrice: 12.00, applyAmount: 120.00, damageQty: 5, purchaseOrder: 'CG202607280001', remark: '部分死亡' }] },
     { id: 'RET-002', returnNo: 'THD202607280003', customerName: '育才中学', canteen: '高中部食堂', goodsName: '大米(KG/--/--)', reason: '数量多发', orderNo: 'DD202607280300006', inboundNo: 'RKD202607290016', warehouse: '北区仓', status: 'APPROVED', creator: '赵老师', createdAt: '2026-07-28 15:42:36', auditor: '管理员', auditAt: '2026-07-29 09:30:00', refundAmount: 240.00, remark: '发货数量超出下单数量', items: [{ id: 'RL-2', goodsName: '大米(KG/--/--)', unit: 'KG', orderPrice: 6.00, shippedQty: 100, returnedQty: 0, applyQty: 40, applyPrice: 6.00, applyAmount: 240.00, damageQty: 0, purchaseOrder: 'CG202607260003', remark: '多发40KG' }] },

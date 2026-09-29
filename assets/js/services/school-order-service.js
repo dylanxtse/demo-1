@@ -224,6 +224,18 @@
           { name: '金龙鱼豆油', unit: '斤', productCode: 'SP0300017', orderPrice: 50, orderQty: 0.36 },
           { name: '大米', unit: 'KG', productCode: 'SP0300025', orderPrice: 19, orderQty: 4.32 }
         ]
+      }),
+      makeOrder({
+        id: 'SCHOOL-ORDER-20260929-XQ2026092991306-participant_其他-dinner-AUX', orderNo: 'DD202609290300001',
+        createdAt: '2026-09-29 16:20:00', expectedAt: '2026-09-28 07:30:00',
+        orderTag: '其他-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 120,
+        recipeDemandRecordId: 'AUXILIARY-DEMAND-20260929162000-DEMO', recipeDemandRecordNo: 'XQ2026092991306',
+        recipeDemandDate: '2026-09-29', recipeParticipantType: '其他',
+        operationAction: '食谱需求下单', operationDescription: '晚餐、需求提交记录 XQ2026092991306',
+        items: [
+          { name: '金龙鱼5L桶装油', unit: 'L', productCode: 'SP0300030', orderPrice: 55, orderQty: 1.44 },
+          { name: '食盐', unit: 'kg', productCode: 'SP0300031', orderPrice: 18.5, orderQty: 0.48 }
+        ]
       })
     ];
     const sourceOrders = [
