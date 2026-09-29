@@ -72,12 +72,27 @@
 }
 
 .sorting-spec-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
 .sorting-spec-action-bar .action-main {
   grid-template-columns: 110px;
   flex: 0 0 auto;
+}
+
+.sorting-spec-action-side {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.sorting-spec-action-side .sorting-spec-export-action {
+  width: auto;
+  min-width: 0;
+  padding: 0 12px;
 }
 
 .sorting-spec-table-wrap {

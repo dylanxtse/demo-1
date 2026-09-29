@@ -18,6 +18,8 @@
     pagination: null
   };
 
+  const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
+
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -160,7 +162,12 @@
     window.AppStorage?.write(STORAGE_KEY, state.specs);
   }
 
-  const importTemplateHeaders = ['商品编号', '商品名称', '是否标品', '计量单位', '分包单位', '分包系数', '状态', '备注'];
+  const importTemplateHeaders = ['商品编号', '商品名称（计量单位/品牌/规格）', '是否标品', '计量单位', '分包单位', '分包系数', '状态', '备注'];
+
+  function importProductDisplayName(product) {
+    return window.DomUtils?.formatProductDisplay?.(product, state.products)
+      || `${product?.name || '--'}（${product?.unit || '--'}/${product?.brand || '--'}/${product?.spec || '--'}）`;
+  }
 
   function csvCell(value) {
     return `"${String(value ?? '').replace(/"/g, '""')}"`;
@@ -169,7 +176,7 @@
   function importTemplateCsv() {
     const rows = state.products.map((product) => [
       product.code,
-      product.name,
+      importProductDisplayName(product),
       isStandardProduct(product) ? '是' : '否',
       product.unit || '',
       '',
@@ -236,6 +243,7 @@
     const headerMap = {
       商品编号: 'productCode',
       商品编码: 'productCode',
+      '商品名称（计量单位/品牌/规格）': 'productName',
       商品名称: 'productName',
       是否标品: 'standardProduct',
       计量单位: 'baseUnit',
@@ -430,6 +438,58 @@
     });
   }
 
+  function navigate(url) {
+    if (window.AppNavigation?.navigate) window.AppNavigation.navigate(url);
+    else window.location.href = url;
+  }
+
+  function openExportTemplate() {
+    const exportKey = `sorting-spec-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const rows = filteredSpecs().map((row) => {
+      const product = productByCode(row.productCode) || {};
+      const hasSpec = Boolean(row.sortingSpec);
+      return {
+        id: row.id || '',
+        productCode: row.productCode || '',
+        productName: row.productName || product.name || '',
+        productDisplay: productDisplay(row),
+        brand: product.brand || '--',
+        spec: product.spec || '--',
+        isNetVegetable: isNetVegetable(row),
+        isStandardProduct: isStandardProduct(row),
+        baseUnit: product.unit || row.baseUnit || '',
+        packageName: hasSpec ? row.packageName || `${formatNumber(row.packageQty)}${row.packageUnit || ''}` : '',
+        packageQty: hasSpec ? row.packageQty : '',
+        packageUnit: hasSpec ? row.packageUnit : '',
+        status: hasSpec ? row.status : 'PENDING',
+        effectiveFrom: hasSpec ? row.effectiveFrom : '',
+        updatedAt: hasSpec ? row.updatedAt : '',
+        remark: hasSpec ? row.remark : ''
+      };
+    });
+    const payload = {
+      version: '20260929-sorting-spec-export-template-1',
+      exportedAt: currentDateTime(),
+      rows,
+      filters: {
+        keyword: state.keyword,
+        packageUnit: state.packageUnit,
+        netVegetable: state.netVegetable,
+        standardProduct: state.standardProduct,
+        status: state.status
+      }
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) { /* 临时缓存不可用时使用 URL 数据兜底。 */ }
+    navigate(`./sorting-spec-export-template.html?${query}`);
+  }
+
   function renderProductOptions(selectedCode) {
     return [`<option value="">请选择商品</option>`]
       .concat(state.products.map((product) => `<option value="${escapeHtml(product.code)}" ${product.code === selectedCode ? 'selected' : ''}>${escapeHtml(product.name)}（${escapeHtml(product.code)}）</option>`))
@@ -590,7 +650,7 @@
         <label class="sorting-spec-field"><span class="filter-label">是否标品</span><select class="filter-select" name="standardProduct"><option value="">全部</option><option value="true" ${state.standardProduct === 'true' ? 'selected' : ''}>是</option><option value="false" ${state.standardProduct === 'false' ? 'selected' : ''}>否</option></select></label>
         <label class="sorting-spec-field"><span class="filter-label">启用状态</span><select class="filter-select" name="status"><option value="">全部</option><option value="ENABLE" ${state.status === 'ENABLE' ? 'selected' : ''}>启用</option><option value="DISABLE" ${state.status === 'DISABLE' ? 'selected' : ''}>停用</option><option value="PENDING" ${state.status === 'PENDING' ? 'selected' : ''}>待启用</option></select></label>
       </div><div class="sorting-spec-filter-actions"><span class="sorting-spec-advanced-filter-slot" aria-hidden="true"></span><button type="submit" class="btn btn-primary">查询</button><button type="button" class="btn" data-spec-action="reset">重置</button></div></form>
-      <div class="action-bar sorting-spec-action-bar"><div class="action-main"><button class="btn btn-sm btn-action btn-blue" type="button" data-spec-action="open-import">批量导入</button></div></div>
+      <div class="action-bar sorting-spec-action-bar"><div class="action-main"><button class="btn btn-sm btn-action btn-blue" type="button" data-spec-action="open-import">批量导入</button></div><div class="sorting-spec-action-side"><button class="btn btn-sm standard-list-export-print sorting-spec-export-action" type="button" data-spec-action="export">${downloadIcon}导出</button></div></div>
       <div class="sorting-spec-table-wrap">${renderTable(rows)}</div>
       <div id="sortingSpecPagination" class="sorting-spec-pagination"></div>
       ${renderModal()}
@@ -739,6 +799,7 @@
           state.importResult = '';
           render();
         }
+        if (action === 'export') openExportTemplate();
         if (action === 'close-import') {
           state.importModal = false;
           state.importFileName = '';
