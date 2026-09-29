@@ -839,7 +839,7 @@
 
 .shipping-expanded-table {
   width: 100%;
-  min-width: 1220px;
+  min-width: 1620px;
   table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
@@ -878,6 +878,10 @@
 .shipping-expanded-table .shipping-nested-quantity { width: 108px; }
 .shipping-expanded-table .shipping-nested-price { width: 108px; }
 .shipping-expanded-table .shipping-nested-shipping-quantity { width: 180px; }
+.shipping-expanded-table .shipping-nested-package-quantity { width: 100px; }
+.shipping-expanded-table .shipping-nested-package-remainder { width: 100px; }
+.shipping-expanded-table .shipping-nested-package-unit { width: 100px; }
+.shipping-expanded-table .shipping-nested-package-coefficient { width: 100px; }
 .shipping-expanded-table .shipping-nested-amount { width: 120px; }
 .shipping-expanded-table .shipping-nested-status { width: 112px; }
 .shipping-expanded-table .shipping-nested-date { width: 176px; }
@@ -887,7 +891,7 @@
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .shipping-expanded-table .shipping-expanded-quantity,

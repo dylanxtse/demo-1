@@ -533,7 +533,7 @@
   border-color: var(--primary);
 }
 
-.sorting-spec-form-field .price-select-shell > select.is-placeholder {
+.sorting-spec-form-field .price-select-shell > select.is-placeholder:not(:focus) {
   color: transparent;
 }
 

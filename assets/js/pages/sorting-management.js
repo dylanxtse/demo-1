@@ -45,10 +45,17 @@
   }
 
   const defaultPackageSpecs = [
+    { productCode: 'SP0300061', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300039', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
     { productCode: 'SP0300025', packageQty: 5, packageUnit: '包', status: 'ENABLE' },
     { productCode: 'SP0300019', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
     { productCode: 'SP0300034', packageQty: 25, packageUnit: '袋', status: 'ENABLE' },
     { productCode: 'SP0300020', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
+    { productCode: 'SP0300051', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300055', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300059', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300031', packageQty: 5, packageUnit: '箱', status: 'ENABLE' },
+    { productCode: 'SP0300030', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
     { productCode: 'SP0300015', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
     { productCode: 'SP0300037', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
     { productCode: 'SP0300014', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
@@ -58,7 +65,9 @@
 
   function packageSpecFor(item) {
     const saved = window.AppStorage?.read('procurement-sorting-package-specs-v2', null);
-    const specs = Array.isArray(saved) && saved.length ? saved : defaultPackageSpecs;
+    const specsByCode = new Map(defaultPackageSpecs.map((spec) => [String(spec.productCode), spec]));
+    (Array.isArray(saved) ? saved : []).forEach((spec) => specsByCode.set(String(spec.productCode), spec));
+    const specs = [...specsByCode.values()];
     return specs.find((spec) => String(spec.productCode) === String(item.goodsCode) && spec.status !== 'DISABLE') || null;
   }
 
@@ -71,7 +80,12 @@
 
   function renderSortingSpec(item) {
     const spec = packageSpecFor(item);
-    return spec ? escapeHtml(`${spec.packageQty}${spec.baseUnit || item.unit}/${spec.packageUnit}`) : '--';
+    return spec ? escapeHtml(spec.packageUnit || '--') : '--';
+  }
+
+  function renderSortingCoefficient(item) {
+    const spec = packageSpecFor(item);
+    return spec ? escapeHtml(spec.packageQty) : '--';
   }
 
   function renderSortingQty(item) {
@@ -86,7 +100,7 @@
     const qty = sortingQtyOf(item, spec);
     if (qty === null) return '--';
     const remainder = Number((Number(item.actualQty || 0) - qty * Number(spec.packageQty)).toFixed(2));
-    return remainder > 0 ? `${remainder}${escapeHtml(item.unit || '')}` : '';
+    return remainder > 0 ? String(remainder) : '';
   }
 
   function isShortage(item) {
@@ -111,9 +125,10 @@
     { key: 'orderQty', label: '下单数量' },
     { key: 'actualQty', label: '实际数量', editableNumber: true, blankZero: true, placeholder: '请输入' },
     { key: 'unit', label: '计量单位' },
-    { key: 'sortingSpec', label: '分包规格', render: renderSortingSpec },
     { key: 'sortingQty', label: '分包数量', render: renderSortingQty },
     { key: 'sortingRemainder', label: '分包尾数', render: renderSortingRemainder },
+    { key: 'sortingSpec', label: '分包单位', render: renderSortingSpec },
+    { key: 'sortingCoefficient', label: '分包系数', render: renderSortingCoefficient },
     { key: 'shipped', label: '是否发货' },
     { key: 'progress', label: '分拣进度', render: renderProgress },
     { key: 'remark', label: '备注' },

@@ -96,6 +96,56 @@
     return Number(value).toFixed(2);
   }
 
+  function renderShippingRemark(value) {
+    const remark = String(value || '').trim();
+    return /^模拟数据[:：]/.test(remark) ? '--' : (remark || '--');
+  }
+
+  const defaultPackageSpecs = [
+    { productCode: 'SP0300061', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300039', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300025', packageQty: 5, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300019', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
+    { productCode: 'SP0300034', packageQty: 25, packageUnit: '袋', status: 'ENABLE' },
+    { productCode: 'SP0300020', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
+    { productCode: 'SP0300051', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300055', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300059', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
+    { productCode: 'SP0300031', packageQty: 5, packageUnit: '箱', status: 'ENABLE' },
+    { productCode: 'SP0300030', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
+    { productCode: 'SP0300015', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
+    { productCode: 'SP0300037', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
+    { productCode: 'SP0300014', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
+    { productCode: 'SP0300040', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
+    { productCode: 'SP0300029', packageQty: 5, packageUnit: '箱', status: 'ENABLE' }
+  ];
+
+  function packageSpecFor(item, product) {
+    const saved = window.AppStorage?.read('procurement-sorting-package-specs-v2', null);
+    const specsByCode = new Map(defaultPackageSpecs.map((spec) => [String(spec.productCode), spec]));
+    (Array.isArray(saved) ? saved : []).forEach((spec) => specsByCode.set(String(spec.productCode), spec));
+    const specs = [...specsByCode.values()];
+    const productCode = item.goodsCode || item.productCode || item.productId || product.code || product.id;
+    return specs.find((spec) => String(spec.productCode) === String(productCode) && spec.status !== 'DISABLE') || null;
+  }
+
+  function packageBreakdown(item, product, shippingQty) {
+    const spec = packageSpecFor(item, product);
+    const coefficient = Number(spec?.packageQty);
+    const quantity = Number(shippingQty);
+    if (!spec || !Number.isFinite(coefficient) || coefficient <= 0 || !Number.isFinite(quantity)) {
+      return { quantity: '--', remainder: '--', unit: '--', coefficient: '--' };
+    }
+    const quantityCount = Math.floor(quantity / coefficient);
+    const remainder = Number((quantity - quantityCount * coefficient).toFixed(2));
+    return {
+      quantity: String(quantityCount),
+      remainder: remainder > 0 ? String(remainder) : '',
+      unit: spec.packageUnit || '--',
+      coefficient: String(spec.packageQty)
+    };
+  }
+
   function renderShippingExpandedRow(item) {
     const lines = Array.isArray(item.items) ? item.items : [];
     const rows = lines.length
@@ -109,13 +159,18 @@
         const actualShippingQty = [data.shippingQty, data.actualQty, data.shippedQty].find((value) => Number(value) > 0);
         const shippingQty = actualShippingQty ?? orderQty ?? 0;
         const lineId = data.id || data.orderLineId || `${item.id}-${index}`;
+        const packageInfo = packageBreakdown(data, product, shippingQty);
         return `<tr data-expanded-item="${escapeHtml(lineId)}">
           <td class="shipping-expanded-product" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</td>
-          <td>${escapeHtml(data.remark || '--')}</td>
+          <td>${escapeHtml(renderShippingRemark(data.remark))}</td>
           <td>${escapeHtml(data.unit || '--')}</td>
           <td>${plainNumber(orderQty)}</td>
           <td>${plainNumber(unitPrice)}</td>
-          <td><input class="shipping-expanded-quantity" data-record-expanded-shipping-qty data-unit-price="${escapeHtml(unitPrice)}" type="number" min="0" step="0.01" value="${escapeHtml(decimalNumber(shippingQty))}" aria-label="${escapeHtml(displayName)}发货数量"></td>
+          <td><input class="shipping-expanded-quantity" data-record-expanded-shipping-qty data-unit-price="${escapeHtml(unitPrice)}" data-package-coefficient="${escapeHtml(packageInfo.coefficient)}" type="number" min="0" step="0.01" value="${escapeHtml(decimalNumber(shippingQty))}" aria-label="${escapeHtml(displayName)}发货数量"></td>
+          <td data-record-expanded-package-quantity>${escapeHtml(packageInfo.quantity)}</td>
+          <td data-record-expanded-package-remainder>${escapeHtml(packageInfo.remainder)}</td>
+          <td>${escapeHtml(packageInfo.unit)}</td>
+          <td>${escapeHtml(packageInfo.coefficient)}</td>
           <td><span data-record-expanded-subtotal>${decimalNumber(Number(shippingQty) * Number(unitPrice))}</span></td>
           <td>${statusMarkup(sortingLabel(data.status || data.sortingStatus), data.status || data.sortingStatus)}</td>
           <td>${shippingStatus(item)}</td>
@@ -123,11 +178,11 @@
           <td><button class="shipping-expanded-report-button" type="button" data-record-expanded-report aria-label="上传质检报告"><span aria-hidden="true">+</span></button></td>
         </tr>`;
       }).join('')
-      : '<tr><td class="shipping-expanded-empty" colspan="11">暂无商品明细</td></tr>';
+      : '<tr><td class="shipping-expanded-empty" colspan="15">暂无商品明细</td></tr>';
     return `<div class="shipping-expanded-wrap"><table class="shipping-expanded-table"><colgroup>
-      <col class="shipping-nested-product"><col class="shipping-nested-remark"><col class="shipping-nested-unit"><col class="shipping-nested-quantity"><col class="shipping-nested-price"><col class="shipping-nested-shipping-quantity"><col class="shipping-nested-amount"><col class="shipping-nested-status"><col class="shipping-nested-status"><col class="shipping-nested-date"><col class="shipping-nested-report">
+      <col class="shipping-nested-product"><col class="shipping-nested-remark"><col class="shipping-nested-unit"><col class="shipping-nested-quantity"><col class="shipping-nested-price"><col class="shipping-nested-shipping-quantity"><col class="shipping-nested-package-quantity"><col class="shipping-nested-package-remainder"><col class="shipping-nested-package-unit"><col class="shipping-nested-package-coefficient"><col class="shipping-nested-amount"><col class="shipping-nested-status"><col class="shipping-nested-status"><col class="shipping-nested-date"><col class="shipping-nested-report">
     </colgroup><thead><tr>
-      <th>商品名称（计量单位/品牌/规格）</th><th>备注</th><th>计量单位</th><th>下单数量</th><th>下单单价</th><th>发货数量</th><th>发货小计</th><th>分拣状态</th><th>发货状态</th><th>生产日期</th><th>质检报告</th>
+      <th>商品名称（计量单位/品牌/规格）</th><th>备注</th><th>计量单位</th><th>下单数量</th><th>下单单价</th><th>发货数量</th><th>分包数量</th><th>分包尾数</th><th>分包单位</th><th>分包系数</th><th>发货小计</th><th>分拣状态</th><th>发货状态</th><th>生产日期</th><th>质检报告</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 

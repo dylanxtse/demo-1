@@ -116,11 +116,18 @@
 
   function seedSpecs() {
     return [
+      buildSeed('SP0300061', '10斤分装包', 10, '包', 'ENABLE', '2026-09-29', '净菜按包分装'),
+      buildSeed('SP0300039', '10斤分装包', 10, '包', 'ENABLE', '2026-09-29', '净菜按包分装'),
       buildSeed('SP0300025', '5kg透明分装袋', 5, '包', 'ENABLE', '2026-09-01', '粮油常用分包规格'),
       buildSeed('SP0300019', '10斤周转袋', 10, '袋', 'ENABLE', '2026-08-25', '叶菜按订单量分装'),
       buildSeed('SP0300018', '2.5斤托盘', 2.5, '托', 'DISABLE', '2026-08-10', '已停用，保留历史记录'),
       buildSeed('SP0300034', '25kg编织袋', 25, '袋', 'ENABLE', '2026-08-20', '大米整袋出库'),
       buildSeed('SP0300020', '10kg泡沫箱', 10, '箱', 'ENABLE', '2026-09-05', '净菜标准分装箱'),
+      buildSeed('SP0300051', '10斤分装包', 10, '包', 'ENABLE', '2026-09-29', '净菜按包分装'),
+      buildSeed('SP0300055', '10斤分装包', 10, '包', 'ENABLE', '2026-09-29', '净菜按包分装'),
+      buildSeed('SP0300059', '10斤分装包', 10, '包', 'ENABLE', '2026-09-29', '净菜按包分装'),
+      buildSeed('SP0300031', '5斤保温箱', 5, '箱', 'ENABLE', '2026-09-29', '水产加冰分装'),
+      buildSeed('SP0300030', '10瓶整箱', 10, '箱', 'ENABLE', '2026-09-29', '食用油按箱发货'),
       buildSeed('SP0300015', '10斤周转筐', 10, '筐', 'ENABLE', '2026-08-15', '水果标准筐'),
       buildSeed('SP0300037', '10瓶整箱', 10, '箱', 'ENABLE', '2026-08-01', '牛奶按箱分拣'),
       buildSeed('SP0300014', '10斤周转筐', 10, '筐', 'ENABLE', '2026-08-15', '水果标准筐'),
@@ -133,10 +140,13 @@
     const saved = window.AppStorage?.read(STORAGE_KEY, null);
     if (Array.isArray(saved)) {
       const normalized = saved.map(normalizeSpec);
-      if (normalized.some((spec, index) => spec.baseUnit !== saved[index].baseUnit)) {
-        window.AppStorage?.write(STORAGE_KEY, normalized);
+      const existingCodes = new Set(normalized.map((spec) => String(spec.productCode || '')));
+      const additions = seedSpecs().filter((spec) => spec && !existingCodes.has(String(spec.productCode)));
+      const merged = normalized.concat(additions);
+      if (additions.length || merged.some((spec, index) => spec.baseUnit !== saved[index]?.baseUnit)) {
+        window.AppStorage?.write(STORAGE_KEY, merged);
       }
-      return normalized;
+      return merged;
     }
     const seeded = seedSpecs();
     window.AppStorage?.write(STORAGE_KEY, seeded);
@@ -284,8 +294,8 @@
       <th style="width:130px">商品编号</th>
       <th style="width:90px">是否标品</th>
       <th style="width:100px">计量单位</th>
-      <th style="width:130px">分包规格</th>
-      <th style="width:160px">分包规格换算量</th>
+      <th style="width:130px">分包单位</th>
+      <th style="width:160px">分包系数</th>
       <th style="width:100px">状态</th>
       <th style="width:180px">更新时间</th>
       <th style="width:180px">备注</th>
@@ -330,10 +340,10 @@
     const standardProduct = isStandardProduct(record);
     const quantityDecimals = quantityDecimalPlacesFor(record);
     const quantityStep = 10 ** -quantityDecimals;
-    const quantityPlaceholder = quantityDecimals ? `请输入分包规格和计量单位的换算量（最多${quantityDecimals}位小数）` : '请输入分包规格和计量单位的换算量';
+    const quantityPlaceholder = '请输入分包系数';
     const packageUnit = record.packageUnit || '';
-    const qtyHint = packageUnit && baseUnit
-      ? `1${escapeHtml(packageUnit)} = ?${escapeHtml(baseUnit)}`
+    const qtyHint = packageUnit && baseUnit && record.packageQty
+      ? `1${escapeHtml(packageUnit)} = ${escapeHtml(record.packageQty)}${escapeHtml(baseUnit)}`
       : `如：1包 = 5${escapeHtml(baseUnit || '斤')}`;
     return `<div class="sorting-spec-modal-backdrop" data-spec-modal-backdrop>
       <section class="sorting-spec-modal" role="dialog" aria-modal="true" aria-label="${editing ? '编辑分拣规格' : '设置分拣规格'}">
@@ -344,7 +354,7 @@
             <div class="sorting-spec-form-field sorting-spec-form-readonly"><span>是否标品</span><span class="sorting-spec-form-readonly-value">${standardProduct ? '是' : '否'}</span></div>
             <div class="sorting-spec-form-field sorting-spec-form-readonly"><span>计量单位</span><span class="sorting-spec-form-readonly-value">${escapeHtml(baseUnit)}</span></div>
             <label class="sorting-spec-form-field sorting-spec-form-half"><span class="required">分包规格</span><select name="packageUnit" data-price-placeholder="请选择规格单位" data-price-empty="${!record.packageUnit}">${renderPackageUnitOptions(record.packageUnit)}</select></label>
-            <label class="sorting-spec-form-field sorting-spec-form-half sorting-spec-qty-field"><span class="required">分包规格换算量</span><div class="sorting-spec-qty-wrap"><input name="packageQty" type="number" min="${quantityStep}" step="${quantityStep}" value="${record.packageQty || ''}" placeholder="${quantityPlaceholder}"><small class="sorting-spec-qty-hint">${qtyHint}</small></div></label>
+            <label class="sorting-spec-form-field sorting-spec-form-half sorting-spec-qty-field"><span class="required">分包系数</span><div class="sorting-spec-qty-wrap"><input name="packageQty" type="number" min="${quantityStep}" step="${quantityStep}" value="${record.packageQty || ''}" placeholder="${quantityPlaceholder}"><small class="sorting-spec-qty-hint">${qtyHint}</small></div></label>
             <div class="sorting-spec-form-field"><span>启用状态</span><label class="sorting-spec-status-switch switch-control"><input class="switch-input" name="status" type="checkbox" value="ENABLE" ${record.status === 'ENABLE' ? 'checked' : ''} aria-label="启用状态"><span class="switch-slider" aria-hidden="true"></span></label></div>
             <div class="sorting-spec-form-field sorting-spec-form-remark"><span>备注</span><div class="sorting-spec-remark-wrap"><textarea name="remark" maxlength="100" placeholder="请输入备注" data-remark-counter>${escapeHtml(record.remark)}</textarea><span class="sorting-spec-remark-counter">${String(record.remark || '').length}/100</span></div></div>
           </div></div>
@@ -451,9 +461,9 @@
       : (statusControl?.value === 'DISABLE' ? 'DISABLE' : 'ENABLE');
     const remark = String(form.elements.remark?.value || '').trim();
     if (!productCode || !product) return showToast('请选择商品', 'error');
-    if (!Number.isFinite(packageQty) || packageQty <= 0) return showToast('分包规格换算量必须大于0', 'error');
+    if (!Number.isFinite(packageQty) || packageQty <= 0) return showToast('分包系数必须大于0', 'error');
     if (!hasQuantityPrecision(packageQty, quantityDecimals)) {
-      return showToast(standardProduct ? '标品分包规格换算量只能填写整数' : `分包规格换算量最多填写${quantityDecimals}位小数`, 'error');
+      return showToast(standardProduct ? '标品分包系数只能填写整数' : `分包系数最多填写${quantityDecimals}位小数`, 'error');
     }
     if (!packageUnit) return showToast('请选择分包规格', 'error');
     const duplicate = state.specs.some((spec) => spec.id !== id

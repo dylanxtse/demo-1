@@ -869,8 +869,23 @@
       if (!event.target.matches('[data-record-expanded-shipping-qty]')) return;
       const quantity = Math.max(0, Number(event.target.value || 0));
       const price = Number(event.target.dataset.unitPrice || 0);
-      const subtotal = event.target.closest('tr')?.querySelector('[data-record-expanded-subtotal]');
+      const row = event.target.closest('tr');
+      const subtotal = row?.querySelector('[data-record-expanded-subtotal]');
       if (subtotal) subtotal.textContent = Number.isFinite(quantity * price) ? (quantity * price).toFixed(2) : '--';
+      const coefficient = Number(event.target.dataset.packageCoefficient);
+      const packageQuantity = row?.querySelector('[data-record-expanded-package-quantity]');
+      const packageRemainder = row?.querySelector('[data-record-expanded-package-remainder]');
+      if (packageQuantity && packageRemainder) {
+        if (Number.isFinite(coefficient) && coefficient > 0 && Number.isFinite(quantity)) {
+          const count = Math.floor(quantity / coefficient);
+          const remainder = Number((quantity - count * coefficient).toFixed(2));
+          packageQuantity.textContent = String(count);
+          packageRemainder.textContent = remainder > 0 ? String(remainder) : '';
+        } else {
+          packageQuantity.textContent = '--';
+          packageRemainder.textContent = '--';
+        }
+      }
     });
 
     root.addEventListener('change', (event) => {
