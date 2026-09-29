@@ -56,6 +56,14 @@
     return dateValue(new Date(date.getFullYear(), date.getMonth(), 1));
   };
   const menuForDate = (date) => allMenus.find((menu) => menu.date === date) || null;
+  const splitOrderByMeal = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
+    return value !== false && value !== 'false' && value !== 0 && value !== '0';
+  };
+  const splitOrderByPersonType = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
+    return value === true || value === 'true' || value === 1 || value === '1';
+  };
 
   const canteenStorageKey = 'school-recipe-current-canteen';
   const defaultCanteen = window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
@@ -227,7 +235,7 @@
   }
 
   function renderMealTabs(meals, calculation) {
-    if (!meals.length) return '';
+    if (!meals.length || !splitOrderByMeal()) return '';
     return `<div class="school-recipe-meal-tabs school-recipe-attendance-meal-tabs" role="tablist" aria-label="切换餐次">${meals.map((meal) => {
       const active = String(meal.key) === String(state.activeMealKey);
       return `<button type="button" class="school-recipe-meal-tab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-attendance-meal-tab="${escapeHtml(meal.key)}"><span>${escapeHtml(meal.name || meal.key)}</span></button>`;
@@ -388,8 +396,11 @@
     const participants = participantsForState();
     if (!participants.length) return '<div class="school-recipe-attendance-empty">当前食堂暂无启用的人员类型</div>';
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
-    const meal = (calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey)) || calculation.mealRows?.[0];
-    const rows = (meal?.rows || [])
+    const byMeal = splitOrderByMeal();
+    const byPersonType = splitOrderByPersonType();
+    const meal = byMeal ? ((calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey)) || calculation.mealRows?.[0]) : null;
+    const sourceRows = byMeal ? (meal?.rows || []) : (calculation.rows || []);
+    const rows = sourceRows
       .filter((row) => Number(row.totalQty || 0) > 0)
       .map((row, index) => `<tr>
       <td>${index + 1}</td>
@@ -397,11 +408,11 @@
       <td>${isStandardProduct(row) ? '是' : '否'}</td>
       <td>${escapeHtml(row.productCode || '--')}</td>
       <td>${escapeHtml(row.unit)}</td>
-      ${participants.map((participant) => `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('')}
+      ${byPersonType ? participants.map((participant) => `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('') : `<td class="is-number">${quantity(row.totalQty)}</td><td class="is-number">${quantity(purchaseQuantity(row.totalQty, row))}</td>`}
     </tr>`).join('');
-    const dynamicColumns = participants.map((participant) => demandParticipantHeader(participants, participant)).join('');
-    const dynamicSubColumns = participants.map(() => '<th>需求量</th><th>采购量</th>').join('');
-    const dynamicColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
+    const dynamicColumns = byPersonType ? participants.map((participant) => demandParticipantHeader(participants, participant)).join('') : '<th colspan="2">合计</th>';
+    const dynamicSubColumns = byPersonType ? participants.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>采购量</th>';
+    const dynamicColgroup = byPersonType ? participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-purchase">';
     return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
   }
 

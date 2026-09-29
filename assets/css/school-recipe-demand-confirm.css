@@ -176,6 +176,24 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #
 .school-recipe-demand-product-table tbody td:last-child { position: sticky; right: 0; z-index: 4; background: #fff; box-shadow: -1px 0 0 var(--border-light); }
 .school-recipe-demand-product-table thead tr:first-child th:last-child { z-index: 6; background: #fafbfc; }
 .school-recipe-demand-product-table tbody tr:hover td:last-child { background: #f8fbff; }
+
+/* 辅料汇总表没有“操作”列，最后一列是采购量，不应套用公共表格的右侧固定规则。 */
+.school-recipe-demand-auxiliary-product-table thead tr:first-child th:last-child,
+.school-recipe-demand-auxiliary-product-table tbody td:last-child {
+  position: static;
+  right: auto;
+  z-index: auto;
+  box-shadow: none;
+}
+
+.school-recipe-demand-auxiliary-product-table thead tr:first-child th:last-child {
+  background: #fafbfc;
+}
+
+.school-recipe-demand-auxiliary-product-table tbody td:last-child {
+  background: #fff;
+}
+
 .school-recipe-demand-product-action { text-align: center !important; }
 .school-recipe-demand-product-clear-row { padding: 0; border: 0; color: var(--danger); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
 .school-recipe-demand-product-clear-row:hover,

@@ -15,6 +15,8 @@
       'school-order-acceptance.html': 'school-order-management.html',
       'school-order-accept.html': 'school-order-management.html',
       'school-recipe-demand-confirm.html': 'school-recipe-attendance.html',
+      'school-recipe-auxiliary-attendance.html': 'school-recipe-auxiliary-attendance.html',
+      'school-recipe-auxiliary-demand-confirm.html': 'school-recipe-auxiliary-attendance.html',
       'school-recipe-demand-records.html': 'school-recipe-demand-records.html',
       'school-recipe-demand-record-detail.html': 'school-recipe-demand-records.html',
       'school-canteen-form.html': 'school-canteen-management.html',
@@ -108,7 +110,7 @@
       return `
         <div class="menu-sub-group ${child.expanded ? 'expanded' : ''}" style="--menu-level:${level}">
           <button class="menu-sub-item ${child.selected ? 'selected' : ''} ${isDisabled ? 'menu-item-disabled' : ''}" type="button"
-            data-menu-item="${path}" ${isDisabled ? 'aria-disabled="true" data-menu-disabled="true"' : ''} ${hasChildren ? `data-menu-toggle-path="${path}" aria-expanded="${child.expanded}"` : ''}>
+            data-menu-item="${path}" ${child.href ? `data-menu-link="${child.href}"` : ''} ${isDisabled ? 'aria-disabled="true" data-menu-disabled="true"' : ''} ${hasChildren ? `data-menu-toggle-path="${path}" aria-expanded="${child.expanded}"` : ''}>
             <span>${child.name}</span>
             ${hasChildren ? '<svg class="menu-arrow" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>' : ''}
           </button>

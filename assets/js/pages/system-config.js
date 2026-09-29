@@ -10,6 +10,7 @@
     orderPricePriority4: '手动定价',
     allowClientEditPrice: true,
     splitOrderByMeal: true,
+    splitOrderByPersonType: false,
     purchasePriceMode: '订价模式',
     purchasePricePriority1: '协议价',
     purchasePricePriority2: '市场价',
@@ -145,7 +146,10 @@
         </div>
         <div class="config-row permission-row">
           <div class="config-label">拆单配置</div>
-          ${configCheckbox('splitOrderByMeal', '按餐次拆单', '开启后，学校根据食谱下单时将按餐次拆分订单')}
+          <div class="config-checkbox-group">
+            ${configCheckbox('splitOrderByMeal', '按餐次拆单', '开启后，学校根据食谱下单时将按餐次拆分订单')}
+            ${configCheckbox('splitOrderByPersonType', '按人员类型拆单', '开启后，学校下单时将按学生、教师等人员类型拆分订单')}
+          </div>
         </div>
 
         <h2 class="system-config-title">采购配置</h2>

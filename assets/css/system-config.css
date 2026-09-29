@@ -183,6 +183,7 @@
 .config-apply:hover { color: #17429e; }
 
 .permission-row { margin-bottom: 14px; }
+.config-checkbox-group { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
 .purchase-mode-row .config-select { width: 196px; }
 .purchase-priority-row { margin-bottom: 14px; }
 

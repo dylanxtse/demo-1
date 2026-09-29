@@ -11,10 +11,21 @@
     .replace(/'/g, '&#39;');
   const number = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const productDisplay = (item) => window.DomUtils?.formatProductDisplay
-    ? window.DomUtils.formatProductDisplay(item)
-    : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
+  const isAuxiliaryRecord = record?.auxiliary === true || String(record?.source || '').includes('辅料');
+  const productDisplay = (item) => {
+    if (isAuxiliaryRecord) {
+      const name = item?.productName || item?.goodsName || item?.name || item?.auxiliaryName || '--';
+      const unit = item?.unit || '--';
+      const brand = item?.brand || '--';
+      const spec = item?.spec || '--';
+      return `${name}（${unit}/${brand}/${spec}）`;
+    }
+    return window.DomUtils?.formatProductDisplay
+      ? window.DomUtils.formatProductDisplay(item)
+      : `${item?.productName || '--'}（${item?.unit || '--'}/--/--）`;
+  };
   const productForItem = (item) => {
+    if (isAuxiliaryRecord) return {};
     const code = item?.productCode || item?.productId || item?.goodsCode || '';
     const catalog = window.SchoolOrderService?.getProductCatalog?.() || window.DemoStore?.get?.('products') || window.MockProducts || [];
     return catalog.find((product) => String(product.code || product.id) === String(code)) || {};

@@ -380,6 +380,7 @@
     purchasePricePriority6: '',
     allowClientEditPrice: true,
     splitOrderByMeal: true,
+    splitOrderByPersonType: false,
     amountDecimal: '2',
     quantityDecimal: '0',
     decimalSettingsVersion: '20260815-default-decimals'

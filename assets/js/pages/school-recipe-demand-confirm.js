@@ -144,6 +144,14 @@
   const currentCanteen = window.AppStorage?.read?.('school-recipe-current-canteen', window.SchoolOrderService?.CANTEEN_NAME || '第一食堂') || window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
   const currentCanteenScope = demandService.currentCanteen?.(currentCanteen) || { id: '', name: currentCanteen };
   const currentCanteenName = currentCanteenScope.name || currentCanteen;
+  const splitOrderByMeal = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
+    return value !== false && value !== 'false' && value !== 0 && value !== '0';
+  };
+  const splitOrderByPersonType = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
+    return value === true || value === 'true' || value === 1 || value === '1';
+  };
   const calendarIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg>';
   const weekday = (date) => weekdayNames[dateObject(date).getDay()];
   const dateLabel = (date) => `${date.slice(5, 7)}月${date.slice(8, 10)}日 星期${weekday(date)}`;
@@ -179,6 +187,7 @@
   }
 
   function renderMealTabs(preview) {
+    if (!splitOrderByMeal()) return '';
     const meals = mealDefinitions(preview);
     if (!meals.length) return '';
     return `<div class="school-recipe-meal-tabs school-recipe-demand-meal-tabs" role="tablist" aria-label="切换餐次">${meals.map((meal) => {
@@ -254,21 +263,31 @@
 
   function renderProductTable(preview, activeMealKey) {
     const participants = preview.participants || [];
+    const byPersonType = splitOrderByPersonType();
+    const byMeal = splitOrderByMeal();
     const priceEditable = canModifyUnitPrice();
-    const meal = mealDefinitions(preview).find((item) => String(item.key) === String(activeMealKey));
-    const sources = (meal ? demandService.aggregateMealRows?.(preview, meal.key) || [] : [])
+    const meal = byMeal ? mealDefinitions(preview).find((item) => String(item.key) === String(activeMealKey)) : null;
+    const sources = (byMeal
+      ? (meal ? demandService.aggregateMealRows?.(preview, meal.key) || [] : [])
+      : preview.rows || [])
       .filter((row) => row.mappingStatus === '已关联' && Number(row.totalQty || 0) > 0)
       .map((row) => ({ meal, row }));
-    const participantColumns = participants.map((participant) => {
-      const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
-      return `<th colspan="2">${escapeHtml(name)}</th>`;
-    }).join('');
-    const participantSubColumns = participants.map((participant) => {
-      const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
-      const hasParticipantEditableRows = sources.some(({ row }) => canModifyPurchaseQuantity(row) && Number(row.participantQty?.[participant.key] || 0) > 0);
-      return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量"${hasParticipantEditableRows ? '' : ' disabled'}>×</button></div></th>`;
-    }).join('');
-    const participantColgroup = participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('');
+    const participantColumns = byPersonType
+      ? participants.map((participant) => {
+        const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
+        return `<th colspan="2">${escapeHtml(name)}</th>`;
+      }).join('')
+      : '<th colspan="2">合计</th>';
+    const participantSubColumns = byPersonType
+      ? participants.map((participant) => {
+        const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
+        const hasParticipantEditableRows = sources.some(({ row }) => canModifyPurchaseQuantity(row) && Number(row.participantQty?.[participant.key] || 0) > 0);
+        return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量"${hasParticipantEditableRows ? '' : ' disabled'}>×</button></div></th>`;
+      }).join('')
+      : '<th>需求量</th><th>采购量</th>';
+    const participantColgroup = byPersonType
+      ? participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('')
+      : '<col class="col-quantity"><col class="col-purchase">';
     const rows = sources
       .map(({ meal, row }, index) => {
         const productKey = purchaseRowKey(row);
@@ -280,7 +299,7 @@
         const priceReadonlyTitle = priceEditable ? '' : ' title="企业端已关闭客户端下单修改单价权限"';
         const priceInputValue = priceOverridden ? String(unitPrice ?? '') : fixedPrice(unitPrice);
         const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell${priceEditable ? '' : ' is-readonly'}"${priceReadonlyTitle}><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${escapeHtml(priceInputValue)}" data-unit-price data-unit-price-key="${escapeHtml(priceKey)}" data-unit-price-overridden="${priceOverridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${row.productName || '商品'}单价${priceEditable ? '' : '（企业端关闭修改）'}`)}"${priceEditable ? '' : ' disabled'}></td>`;
-        const participantCells = participants.map((participant) => {
+        const participantCells = byPersonType ? participants.map((participant) => {
           const demandCell = `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td>`;
           const key = purchaseQuantityKey(null, meal, row, participant.key);
           const participantName = attendanceService.participantDisplayName?.(participant, participants)
@@ -291,7 +310,11 @@
           const readonlyTitle = participantEditable ? '' : ` title="${editable ? '该人员类型暂无需求' : '企业端已关闭学校修改采购量'}"`;
           const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${participantEditable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购量${participantEditable ? '' : '（无需求不可编辑）'}`)}"${participantEditable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购量`)}" title="清空采购量"${participantEditable ? '' : ' disabled'}>×</button></div></td>`;
           return `${demandCell}${purchaseCell}`;
-        }).join('');
+        }).join('') : (() => {
+          const totalQty = participants.reduce((total, participant) => total + Number(row.participantQty?.[participant.key] || 0), 0);
+          const totalPurchaseQty = purchaseQuantity(totalQty, row);
+          return `<td class="is-number">${quantity(totalQty)}</td><td class="is-number">${quantity(totalPurchaseQty)}</td>`;
+        })();
         return `<tr class="school-recipe-demand-product-row${editable ? '' : ' is-readonly'}">
           <td>${index + 1}</td>
           <td class="school-recipe-demand-product-name">${renderProductName(row, productDisplay(row))}</td>
