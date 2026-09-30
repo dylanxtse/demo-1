@@ -230,13 +230,13 @@
 
   const shippingToolbar = [
     { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
-    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openShippingPrintTemplate },
-    { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './shipping-export-template.html' }
+    { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './shipping-export-template.html' },
+    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openShippingPrintTemplate }
   ];
   const orderShippingToolbar = [
     { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
-    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openOrderShippingPrintTemplate },
-    { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './order-shipping-export-template.html' }
+    { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './order-shipping-export-template.html' },
+    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openOrderShippingPrintTemplate }
   ];
 
   const shippingColumns = [
