@@ -267,12 +267,10 @@
   ];
 
   const shippingRowActions = [
-    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' },
-    { key: 'print', label: '打印', onClick: (item) => openShippingPrintTemplate([item]) }
+    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' }
   ];
   const orderShippingRowActions = [
-    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' },
-    { key: 'print', label: '打印', onClick: (item) => openOrderShippingPrintTemplate([item]) }
+    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' }
   ];
 
   window.RecordPageConfig = {
