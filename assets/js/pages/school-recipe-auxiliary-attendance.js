@@ -5,40 +5,74 @@
   let currentCanteen = canteenConfig?.getCanteen?.(currentCanteenKey) || { name: currentCanteenKey };
   let configuredParticipants = attendanceService?.participantsFor?.(currentCanteen) || [];
 
-  const participantMatches = (participant, label) => label === '学生'
-    ? participant.label === '学生' || participant.tagName === '学生'
-    : participant.label === '教师' || participant.tagName === '教师' || participant.tagName === '教职工';
-  const defaultPeople = (mealKey, label) => configuredParticipants
-    .filter((participant) => participantMatches(participant, label))
-    .reduce((total, participant) => total + (participant.defaultPeople?.[mealKey] === '' ? 0 : Number(participant.defaultPeople?.[mealKey] || 0)), 0);
-  const defaultValue = (mealKey, label) => configuredParticipants.some((participant) => participantMatches(participant, label) && participant.defaultPeople?.[mealKey] !== '')
-    ? defaultPeople(mealKey, label)
-    : '';
   const participantKey = (label) => label === '学生'
     ? 'student'
     : label === '教师' || label === '教职工'
       ? 'teacher'
       : `participant_${String(label || '人员').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '')}`;
-  const participantLabels = () => [...new Set(configuredParticipants.map((participant) => participant.label || participant.tagName).filter(Boolean))];
-  const defaultPeopleForLabel = (mealKey, label) => configuredParticipants
-    .filter((participant) => (participant.label || participant.tagName) === label)
-    .reduce((total, participant) => total + (participant.defaultPeople?.[mealKey] === '' ? 0 : Number(participant.defaultPeople?.[mealKey] || 0)), 0);
-
-  const meals = {
-    breakfast: { name: '早餐', student: defaultValue('breakfast', '学生'), teacher: defaultValue('breakfast', '教师') },
-    lunch: { name: '午餐', student: defaultValue('lunch', '学生'), teacher: defaultValue('lunch', '教师') },
-    dinner: { name: '晚餐', student: defaultValue('dinner', '学生'), teacher: defaultValue('dinner', '教师') }
+  const configuredGroups = configuredParticipants.map((participant, index) => {
+    const label = participant.label || participant.tagName || `人员${index + 1}`;
+    const legacyKey = participant.legacyKey || (label === '学生' ? 'student' : label === '教师' || label === '教职工' ? 'teacher' : '');
+    const key = String(participant.key || participant.tagId || participant.id || participant.orderTag || legacyKey || `participant_${index + 1}`);
+    return {
+      ...participant,
+      key,
+      tagId: participant.tagId || participant.id || key,
+      label,
+      tagName: participant.tagName || label,
+      nutritious: participant.nutritious || '不区分',
+      legacyKey
+    };
+  });
+  const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
+  const participantFields = (participant) => [...new Set([
+    participant.key,
+    participant.tagId,
+    participant.orderTag,
+    participant.legacyKey,
+    participantKey(participant.label)
+  ].filter(Boolean).map(String))];
+  const valueForParticipant = (meal, participant, prefix = '') => {
+    const source = meal || {};
+    const field = participantFields(participant)
+      .map((key) => `${prefix}${key}`)
+      .find((key) => hasOwn(source, key));
+    return field ? source[field] : undefined;
   };
-  participantLabels().filter((label) => label !== '学生' && label !== '教师' && label !== '教职工').forEach((label) => {
-    Object.entries(meals).forEach(([key, meal]) => {
-      meal[participantKey(label)] = defaultPeopleForLabel(key, label);
-      meal[`nonDining_${participantKey(label)}`] = '';
+  const setParticipantValue = (meal, participant, value, prefix = '') => {
+    meal[`${prefix}${participant.key}`] = value;
+  };
+  const participantDisplayName = (participant) => `${participant.label} - ${participant.nutritious || '不区分'}`;
+  const participantHeader = (participant) => `<span class="school-recipe-attendance-participant-name">${escapeHtml(`${participant.label} - ${participant.nutritious || '不区分'}`)}</span>`;
+  const mealNameFallbacks = {
+    breakfast: '早餐',
+    morningSnack: '早点',
+    lunch: '午餐',
+    afternoonSnack: '午点',
+    dinner: '晚餐',
+    eveningSnack: '晚点',
+    snack: '加餐'
+  };
+  const mealDefinitionsForDate = (date) => (menuForDate(date)?.meals || []).map((meal) => ({
+    key: String(meal.key || ''),
+    name: meal.name || mealNameFallbacks[meal.key] || meal.key
+  })).filter((meal) => meal.key);
+  const defaultValueForParticipant = (mealKey, participant) => {
+    const value = participant.defaultPeople?.[mealKey];
+    return value === '' || value == null ? '' : Number(value);
+  };
+  const createMeal = (mealKey, name) => {
+    const meal = { name };
+    configuredGroups.forEach((participant) => {
+      setParticipantValue(meal, participant, defaultValueForParticipant(mealKey, participant));
+      setParticipantValue(meal, participant, '', 'nonDining_');
     });
-  });
-  Object.values(meals).forEach((meal) => {
-    meal.nonDiningStudent = '';
-    meal.nonDiningTeacher = '';
-  });
+    return meal;
+  };
+  const createMealsForDate = (date) => Object.fromEntries(
+    mealDefinitionsForDate(date).map((meal) => [meal.key, createMeal(meal.key, meal.name)])
+  );
+  let meals = {};
 
   const products = [
     { id: 'aux-oil', auxiliaryName: '油', name: '金龙鱼5L桶装油', brand: '金龙鱼', code: 'SP0300030', spec: '5L/桶', doseUnit: 'L', doseDisplay: '12 ml', purchaseUnit: '桶', category: ['食用油', '植物油', '大豆油'], packSize: 5, dose: 0.012 },
@@ -56,6 +90,14 @@
   const recipeMenus = window.SchoolRecipeService?.getAll?.() || [];
   const recipeDates = new Set(recipeMenus.map((menu) => normalizeRecipeDate(menu.date)).filter(Boolean));
   const menuForDate = (date) => recipeMenus.find((menu) => normalizeRecipeDate(menu.date) === String(date)) || null;
+  const compatibleDraftForDate = (date, draft) => {
+    const source = draft || {};
+    const dateMeals = mealDefinitionsForDate(date);
+    const hasSnackMeal = dateMeals.some((meal) => meal.key === 'snack');
+    const hasDinnerMeal = dateMeals.some((meal) => meal.key === 'dinner');
+    if (!hasSnackMeal || hasDinnerMeal || Object.prototype.hasOwnProperty.call(source, 'snack') || !source.dinner) return source;
+    return { ...source, snack: source.dinner };
+  };
   const recipeDateList = [...recipeDates].sort();
   const firstDate = recipeDateList[0] || '2026-09-29';
   const draftStorageKey = 'school-recipe-auxiliary-attendance-drafts-v1';
@@ -77,6 +119,7 @@
     selectedDate,
     monthStart: requestedDate ? `${requestedDate.slice(0, 7)}-01` : (savedMonthStart || `${selectedDate.slice(0, 7)}-01`)
   };
+  meals = createMealsForDate(dateState.selectedDate);
   const persistView = () => {
     const views = window.AppStorage?.read?.(viewStorageKey, {}) || {};
     views[canteenScope] = { selectedDate: dateState.selectedDate, monthStart: dateState.monthStart };
@@ -89,48 +132,63 @@
     if (!drafts[canteenScope]) drafts[canteenScope] = {};
     drafts[canteenScope][dateState.selectedDate] = {
       __manual: true,
-      ...Object.fromEntries(Object.entries(meals).map(([key, meal]) => [key, Object.fromEntries(participantLabels().flatMap((label) => {
-        const participantField = participantKey(label);
-        return [[participantField, meal[participantField]], [`nonDining_${participantField}`, meal[`nonDining_${participantField}`]]];
-      }))]))
+      ...Object.fromEntries(Object.entries(meals).map(([key, meal]) => [key, Object.fromEntries(configuredGroups.flatMap((participant) => [
+        [participant.key, valueForParticipant(meal, participant) ?? ''],
+        [`nonDining_${participant.key}`, valueForParticipant(meal, participant, 'nonDining_') ?? '']
+      ]))]))
     };
     window.AppStorage?.write?.(draftStorageKey, drafts);
   };
 
-  const loadDraft = (date) => {
+  const fillMissingDefaults = () => {
+    let changed = false;
     Object.entries(meals).forEach(([key, meal]) => {
-      meal.student = defaultValue(key, '学生');
-      meal.teacher = defaultValue(key, '教师');
-      meal.nonDiningStudent = '';
-      meal.nonDiningTeacher = '';
-      participantLabels().filter((label) => label !== '学生' && label !== '教师' && label !== '教职工').forEach((label) => {
-        const participantField = participantKey(label);
-        meal[participantField] = defaultPeopleForLabel(key, label);
-        meal[`nonDining_${participantField}`] = '';
+      configuredGroups.forEach((participant) => {
+        const current = valueForParticipant(meal, participant);
+        const defaultValue = defaultValueForParticipant(key, participant);
+        if ((current === '' || current == null) && defaultValue !== '') {
+          setParticipantValue(meal, participant, defaultValue);
+          changed = true;
+        }
       });
     });
-    const draft = readDrafts()?.[canteenScope]?.[date];
+    return changed;
+  };
+
+  const loadDraft = (date) => {
+    Object.entries(meals).forEach(([key, meal]) => {
+      configuredGroups.forEach((participant) => {
+        setParticipantValue(meal, participant, defaultValueForParticipant(key, participant));
+        setParticipantValue(meal, participant, '', 'nonDining_');
+      });
+    });
+    const draft = compatibleDraftForDate(date, readDrafts()?.[canteenScope]?.[date]);
     if (!draft) return false;
-    const draftHasPeople = Object.entries(meals).some(([key]) => participantLabels().some((label) => {
-      const value = draft?.[key]?.[participantKey(label)];
-      return value !== '' && value != null;
+    const draftHasPeople = Object.entries(meals).some(([key]) => configuredGroups.some((participant) => {
+      const value = valueForParticipant(draft?.[key], participant);
+      return value !== undefined && value !== '' && value != null;
     }));
     if (!draft.__manual && !draftHasPeople) return false;
     Object.entries(meals).forEach(([key, meal]) => {
       if (!draft[key]) return;
-      [...participantLabels().flatMap((label) => [participantKey(label), `nonDining_${participantKey(label)}`]), 'student', 'teacher', 'nonDiningStudent', 'nonDiningTeacher'].forEach((field) => {
-        if (draft[key][field] !== undefined) meal[field] = draft[key][field];
+      configuredGroups.forEach((participant) => {
+        const diningValue = valueForParticipant(draft[key], participant);
+        const nonDiningValue = valueForParticipant(draft[key], participant, 'nonDining_');
+        if (diningValue !== undefined) setParticipantValue(meal, participant, diningValue);
+        if (nonDiningValue !== undefined) setParticipantValue(meal, participant, nonDiningValue, 'nonDining_');
       });
     });
+    fillMissingDefaults();
     return true;
   };
-  const initialDraftLoaded = loadDraft(dateState.selectedDate);
-  if (menuForDate(dateState.selectedDate) && !initialDraftLoaded) persistDraft();
+  loadDraft(dateState.selectedDate);
+  if (menuForDate(dateState.selectedDate)) persistDraft();
 
   const storedSelectedStorage = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
   const storedSelectedIds = Array.isArray(storedSelectedStorage[canteenScope]) ? storedSelectedStorage[canteenScope] : [];
   const initialSelectedIds = storedSelectedIds.length ? new Set(storedSelectedIds) : new Set(products.map((product) => product.id));
-  const state = { meal: 'lunch', attendanceMode: 'dining', selected: products.filter((product) => initialSelectedIds.has(product.id)) };
+  const mealKeys = Object.keys(meals);
+  const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', attendanceMode: 'dining', highlightEmpty: false, selected: products.filter((product) => initialSelectedIds.has(product.id)) };
   if (!state.selected.length) state.selected = products.slice();
   const persistSelectedProducts = () => {
     const next = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
@@ -138,6 +196,26 @@
     window.AppStorage?.write?.(selectedProductsStorageKey, next);
   };
   persistSelectedProducts();
+
+  const showToast = (message, isError = false) => {
+    document.querySelector('.operations-toast')?.remove();
+    const toast = document.createElement('div');
+    toast.className = `operations-toast${isError ? ' error' : ''}`;
+    toast.textContent = message;
+    toast.setAttribute('role', 'status');
+    document.body.appendChild(toast);
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(() => toast.remove(), 2400);
+  };
+  const firstEmptyAttendanceField = () => {
+    for (const meal of mealDefinitionsForDate(dateState.selectedDate)) {
+      for (const participant of configuredGroups) {
+        const value = valueForParticipant(meals[meal.key], participant);
+        if (value === '' || value == null) return { meal, participant };
+      }
+    }
+    return null;
+  };
 
   const shouldSplitOrderByMeal = () => {
     const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
@@ -152,16 +230,27 @@
   const shiftMonth = (start, offset) => { const date = parseDate(start); date.setMonth(date.getMonth() + offset); return dateValue(new Date(date.getFullYear(), date.getMonth(), 1)); };
   const weekday = (date) => weekdayNames[parseDate(date).getDay()];
   const longDate = (date) => `${date.slice(0, 4)}年${date.slice(5, 7)}月${date.slice(8, 10)}日 星期${weekday(date)}`;
-  const totalDiningPeople = () => Object.values(meals).reduce((total, meal) => total + participantLabels().reduce((mealTotal, label) => mealTotal + Number(meal[participantKey(label)] || 0), 0), 0);
+  const totalDiningPeople = () => Object.values(meals).reduce((total, meal) => total + configuredGroups.reduce((mealTotal, participant) => mealTotal + Number(valueForParticipant(meal, participant) || 0), 0), 0);
+  const auxiliaryParticipants = () => configuredGroups.map((participant) => ({ ...participant }));
+  const auxiliaryRecordFor = (date) => {
+    const draft = date === dateState.selectedDate ? meals : compatibleDraftForDate(date, readDrafts()?.[canteenScope]?.[date]);
+    const record = { date, meals: {}, temporaryNonDining: {} };
+    mealDefinitionsForDate(date).forEach(({ key: mealKey }) => {
+      const source = draft[mealKey] || {};
+      record.meals[mealKey] = {};
+      record.temporaryNonDining[mealKey] = {};
+      configuredGroups.forEach((participant) => {
+        record.meals[mealKey][participant.key] = valueForParticipant(source, participant) ?? '';
+        record.temporaryNonDining[mealKey][participant.key] = valueForParticipant(source, participant, 'nonDining_') ?? '';
+      });
+    });
+    return record;
+  };
+  const auxiliaryServiceOptions = () => ({ canteen: currentCanteen, participants: auxiliaryParticipants() });
 
   function dateStatus(date) {
     if (!recipeDates.has(date)) return 'no-menu';
-    const draft = readDrafts()?.[canteenScope]?.[date];
-    if (!draft || !participantLabels().length) return 'empty';
-    const fields = Object.values(draft).flatMap((meal) => participantLabels().map((label) => meal?.[participantKey(label)]));
-    const filled = fields.filter((value) => value !== '' && value != null).length;
-    if (!filled) return 'empty';
-    return filled === fields.length ? 'complete' : 'partial';
+    return attendanceService.status(menuForDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
   }
 
   function renderCanteenBar() {
@@ -196,9 +285,8 @@
   function rowData(product) {
     const currentPeople = people();
     const purchaseInProductUnit = (quantity) => product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity;
-    const participantRows = participantLabels().map((label) => {
-      const key = participantKey(label);
-      const demandQty = Number(currentPeople[key] || 0) * Number(product.dose || 0);
+    const participantRows = configuredGroups.map((participant) => {
+      const demandQty = Number(valueForParticipant(currentPeople, participant) || 0) * Number(product.dose || 0);
       return { demandQty, purchaseQty: purchaseInProductUnit(demandQty) };
     });
     const totalQty = participantRows.reduce((sum, row) => sum + row.demandQty, 0);
@@ -212,14 +300,14 @@
       const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
       return value === true || value === 'true' || value === 1 || value === '1';
     })();
-    const groups = participantLabels().map((label) => ({ label, key: participantKey(label) }));
-    const demandColumns = splitByPersonType ? groups.map((group) => `<th colspan="2">${escapeHtml(group.label)}</th>`).join('') : '<th colspan="2">合计</th>';
+    const groups = configuredGroups.map((participant) => ({ participant, label: participantDisplayName(participant), key: participant.key }));
+    const demandColumns = splitByPersonType ? groups.map((group) => `<th colspan="2">${participantHeader(group.participant)}</th>`).join('') : '<th colspan="2">合计</th>';
     const demandSubColumns = splitByPersonType ? groups.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>采购量</th>';
     const demandColgroup = (splitByPersonType ? groups : [{}]).map(() => '<col style="width:126px"><col style="width:112px">').join('');
     const bodyRows = state.selected.map((product, index) => {
       const data = rowData(product);
       const quantities = splitByPersonType
-        ? groups.flatMap((group) => { const quantity = Number(people()[group.key] || 0) * Number(product.dose || 0); const purchase = product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity; return [`<td class="number">${amount(quantity)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(purchase)} ${escapeHtml(product.doseUnit)}</td>`]; })
+        ? groups.flatMap((group) => { const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0); const purchase = product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity; return [`<td class="number">${amount(quantity)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(purchase)} ${escapeHtml(product.doseUnit)}</td>`]; })
         : [`<td class="number">${amount(data.totalQty)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(data.totalPurchaseQty)} ${escapeHtml(product.doseUnit)}</td>`];
       return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(product.auxiliaryName || product.name)}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td>${escapeHtml(product.code)}</td><td>是</td>${quantities.join('')}<td><button class="school-auxiliary-remove${state.selected.length <= 1 ? ' is-disabled' : ''}" type="button" data-remove-id="${escapeHtml(product.id)}" ${state.selected.length <= 1 ? 'disabled' : ''}>移除</button></td></tr>`;
     }).join('');
@@ -228,17 +316,19 @@
 
   function renderPeopleTable() {
     const isNonDining = state.attendanceMode === 'non-dining';
-    const groups = participantLabels().map((label) => ({ label, key: participantKey(label) }));
-    const personHeaders = groups.length ? groups.map((group) => `<th>${escapeHtml(group.label)}</th>`).join('') : '<th>暂无启用人员类型</th>';
+    const groups = configuredGroups;
+    const personHeaders = groups.length ? groups.map((participant) => `<th>${participantHeader(participant)}</th>`).join('') : '<th>暂无启用人员类型</th>';
     const rows = Object.entries(meals).map(([key, meal]) => {
-      const total = groups.reduce((sum, group) => sum + Number(meal[group.key] || 0), 0);
-      const personCells = groups.map((group) => {
-        const diningValue = meal[group.key] ?? '';
-        const nonDiningValue = meal[`nonDining_${group.key}`] ?? '';
-        const diningInput = `<div class="school-recipe-attendance-table-input"><input class="school-recipe-attendance-count-input" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${escapeHtml(diningValue)}" placeholder="请输入" data-person-type="${group.key}" data-meal-key="${key}" aria-label="${escapeHtml(`${meal.name}${group.label}人数`)}"><i>人</i></div>`;
+      const total = groups.reduce((sum, participant) => sum + Number(valueForParticipant(meal, participant) || 0), 0);
+      const personCells = groups.map((participant) => {
+        const diningValue = valueForParticipant(meal, participant) ?? '';
+        const nonDiningValue = valueForParticipant(meal, participant, 'nonDining_') ?? '';
+        const displayName = participantDisplayName(participant);
+        const isEmptyHighlight = !isNonDining && state.highlightEmpty && (diningValue === '' || diningValue == null);
+        const diningInput = `<div class="school-recipe-attendance-table-input"><input class="school-recipe-attendance-count-input${isEmptyHighlight ? ' is-empty' : ''}" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${escapeHtml(diningValue)}" placeholder="请输入" data-person-type="${participant.key}" data-meal-key="${key}" aria-label="${escapeHtml(`${meal.name}${displayName}人数`)}"${isEmptyHighlight ? ' aria-invalid="true"' : ''}><i>人</i></div>`;
         if (!isNonDining) return `<td>${diningInput}${Number(nonDiningValue) > 0 ? `<small class="school-recipe-attendance-person-non-dining-summary">含不就餐${Number(nonDiningValue)}人</small>` : ''}</td>`;
         const diningDisplayValue = diningValue === '' || diningValue == null ? '--' : `${Number(diningValue)} 人`;
-        return `<td><div class="school-recipe-attendance-person-cell is-non-dining-mode"><div class="school-recipe-attendance-person-count-display"><span>总人数</span><strong>${escapeHtml(diningDisplayValue)}</strong></div><div class="school-recipe-attendance-person-count-item"><span>不就餐</span><div class="school-recipe-attendance-table-input school-recipe-attendance-non-dining-input"><input type="number" min="0" max="${Number(diningValue) || 100000}" step="1" inputmode="numeric" value="${escapeHtml(nonDiningValue)}" placeholder="0" data-person-type="nonDining_${group.key}" data-meal-key="${key}" aria-label="${escapeHtml(`${meal.name}${group.label}不就餐人数`)}"><i>人</i></div></div></div></td>`;
+        return `<td><div class="school-recipe-attendance-person-cell is-non-dining-mode"><div class="school-recipe-attendance-person-count-display"><span>总人数</span><strong>${escapeHtml(diningDisplayValue)}</strong></div><div class="school-recipe-attendance-person-count-item"><span>不就餐</span><div class="school-recipe-attendance-table-input school-recipe-attendance-non-dining-input"><input type="number" min="0" max="${Number(diningValue) || 100000}" step="1" inputmode="numeric" value="${escapeHtml(nonDiningValue)}" placeholder="0" data-person-type="nonDining_${participant.key}" data-meal-key="${key}" aria-label="${escapeHtml(`${meal.name}${displayName}不就餐人数`)}"><i>人</i></div></div></div></td>`;
       }).join('');
       return `<tr><td class="school-recipe-attendance-meal-name"><strong>${meal.name}</strong></td>${personCells}<td class="school-recipe-attendance-meal-total-cell"><strong data-people-total>${total}</strong><i>人</i></td></tr>`;
     }).join('');
@@ -281,9 +371,12 @@
     if (dateButton) {
       persistDraft();
       dateState.selectedDate = dateButton.dataset.auxDate;
+      meals = createMealsForDate(dateState.selectedDate);
+      state.meal = Object.keys(meals).includes('lunch') ? 'lunch' : Object.keys(meals)[0] || '';
       state.attendanceMode = 'dining';
-      const hasDraft = loadDraft(dateState.selectedDate);
-      if (menuForDate(dateState.selectedDate) && !hasDraft) persistDraft();
+      state.highlightEmpty = false;
+      loadDraft(dateState.selectedDate);
+      if (menuForDate(dateState.selectedDate)) persistDraft();
       persistView();
       rerenderPage();
       return;
@@ -295,9 +388,12 @@
       dateState.monthStart = nextMonth;
       const dates = monthDates(nextMonth);
       if (!dates.includes(dateState.selectedDate)) dateState.selectedDate = dates.find((date) => recipeDates.has(date)) || dates[0];
+      meals = createMealsForDate(dateState.selectedDate);
+      state.meal = Object.keys(meals).includes('lunch') ? 'lunch' : Object.keys(meals)[0] || '';
       state.attendanceMode = 'dining';
-      const hasDraft = loadDraft(dateState.selectedDate);
-      if (menuForDate(dateState.selectedDate) && !hasDraft) persistDraft();
+      state.highlightEmpty = false;
+      loadDraft(dateState.selectedDate);
+      if (menuForDate(dateState.selectedDate)) persistDraft();
       persistView();
       rerenderPage();
       return;
@@ -314,15 +410,9 @@
         window.AppStorage?.write?.(draftStorageKey, drafts);
       }
       Object.entries(meals).forEach(([key, meal]) => {
-        meal.student = '';
-        meal.teacher = '';
-        meal.nonDiningStudent = '';
-        meal.nonDiningTeacher = '';
-        Object.keys(meal).filter((field) => field.startsWith('nonDining_')).forEach((field) => { meal[field] = ''; });
-        participantLabels().filter((label) => label !== '学生' && label !== '教师' && label !== '教职工').forEach((label) => {
-          const field = participantKey(label);
-          meal[field] = '';
-          meal[`nonDining_${field}`] = '';
+        configuredGroups.forEach((participant) => {
+          setParticipantValue(meal, participant, '');
+          setParticipantValue(meal, participant, '', 'nonDining_');
         });
       });
       state.attendanceMode = 'dining';
@@ -332,15 +422,9 @@
     }
     if (event.target.closest('[data-fill-defaults]')) {
       Object.entries(meals).forEach(([key, meal]) => {
-        meal.student = defaultValue(key, '学生');
-        meal.teacher = defaultValue(key, '教师');
-        meal.nonDiningStudent = '';
-        meal.nonDiningTeacher = '';
-        Object.keys(meal).filter((field) => field.startsWith('nonDining_')).forEach((field) => { meal[field] = ''; });
-        participantLabels().filter((label) => label !== '学生' && label !== '教师' && label !== '教职工').forEach((label) => {
-          const field = participantKey(label);
-          meal[field] = defaultPeopleForLabel(key, label);
-          meal[`nonDining_${field}`] = '';
+        configuredGroups.forEach((participant) => {
+          setParticipantValue(meal, participant, defaultValueForParticipant(key, participant));
+          setParticipantValue(meal, participant, '', 'nonDining_');
         });
       });
       persistDraft();
@@ -384,6 +468,19 @@
     }
     if (event.target.closest('[data-confirm-demand]')) {
       persistDraft();
+      const emptyField = firstEmptyAttendanceField();
+      if (emptyField) {
+        state.highlightEmpty = true;
+        refreshPeopleTable();
+        const input = [...root.querySelectorAll('[data-person-type]')].find((item) => (
+          item.dataset.mealKey === emptyField.meal.key && item.dataset.personType === emptyField.participant.key
+        ));
+        input?.focus({ preventScroll: true });
+        input?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+        showToast('请填写所有餐次人数', true);
+        return;
+      }
+      state.highlightEmpty = false;
       window.location.href = `./school-recipe-auxiliary-demand-confirm.html?date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
     }
   });
@@ -395,10 +492,15 @@
     const value = input.value === '' ? '' : Math.min(100000, Math.max(0, Math.floor(Number(input.value || 0))));
     meal[input.dataset.personType] = value;
     input.value = value;
+    if (!input.dataset.personType.startsWith('nonDining_')) {
+      const empty = value === '' || value == null;
+      input.classList.toggle('is-empty', state.highlightEmpty && empty);
+      input.toggleAttribute('aria-invalid', state.highlightEmpty && empty);
+    }
     persistDraft();
     refreshDatePanel();
     const total = input.closest('tr')?.querySelector('[data-people-total]');
-    if (total) total.innerHTML = `${participantLabels().reduce((sum, label) => sum + Number(meal[participantKey(label)] || 0), 0)}`;
+    if (total) total.innerHTML = `${configuredGroups.reduce((sum, participant) => sum + Number(valueForParticipant(meal, participant) || 0), 0)}`;
     if (!input.dataset.personType.startsWith('nonDining_')) {
       rerenderRows();
       refreshOverview();
