@@ -90,11 +90,11 @@
       <td>${escapeHtml(expectedAt)}</td>
       <td>${formatNumber(item.orderQty)}</td>
       <td>${item.actualQty ? formatNumber(item.actualQty) : ''}</td>
-      <td>${escapeHtml(packageInfo.unit)}</td>
+      <td>${escapeHtml(item.unit || '--')}</td>
       <td>${escapeHtml(packageInfo.quantity)}</td>
       <td>${escapeHtml(packageInfo.remainder)}</td>
+      <td>${escapeHtml(packageInfo.unit)}</td>
       <td>${escapeHtml(packageInfo.coefficient)}</td>
-      <td>${escapeHtml(item.unit || '--')}</td>
       <td>${escapeHtml(progressText(item))}</td>
       <td>${escapeHtml(item.remark || '')}</td>
       <td>${escapeHtml(item.stock ?? '--')}</td>

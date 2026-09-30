@@ -5,7 +5,7 @@
   const PRINT_VERSION = '20260929-sorting-print-template-1';
   const PAGE_SIZE = 17;
   const params = new URLSearchParams(window.location.search);
-  const headers = ['商品名称（计量单位/品牌/规格）', '客户名称', '食堂', '下单数量', '实际数量', '分包单位', '分包数量', '分包尾数', '分包系数', '计量单位', '线路'];
+  const headers = ['商品名称（计量单位/品牌/规格）', '客户名称', '食堂', '下单数量', '实际数量', '计量单位', '分包数量', '分包尾数', '分包单位', '分包系数', '线路'];
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -111,7 +111,7 @@
 
   function renderTable(rows) {
     return `<table class="sorting-print-table">
-      <colgroup><col class="col-goods"><col class="col-customer"><col class="col-canteen"><col class="col-order-qty"><col class="col-actual-qty"><col class="col-package-unit"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-coefficient"><col class="col-unit"><col class="col-route"></colgroup>
+      <colgroup><col class="col-goods"><col class="col-customer"><col class="col-canteen"><col class="col-order-qty"><col class="col-actual-qty"><col class="col-unit"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-unit"><col class="col-package-coefficient"><col class="col-route"></colgroup>
       <thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead>
       <tbody>${rows.length
         ? rows.map((row) => `<tr>
@@ -120,11 +120,11 @@
             <td>${row.canteen}</td>
             <td>${row.orderQty}</td>
             <td>${row.actualQty}</td>
-            <td>${display(row.packageInfo.unit)}</td>
+            <td>${row.unit}</td>
             <td>${display(row.packageInfo.quantity)}</td>
             <td>${display(row.packageInfo.remainder, '')}</td>
+            <td>${display(row.packageInfo.unit)}</td>
             <td>${display(row.packageInfo.coefficient)}</td>
-            <td>${row.unit}</td>
             <td>${row.route}</td>
           </tr>`).join('')
         : `<tr><td class="sorting-print-empty" colspan="11">暂无可打印的分拣数据</td></tr>`}

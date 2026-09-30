@@ -5,7 +5,7 @@
   const PRINT_VERSION = '20260929-customer-sorting-print-template-1';
   const PAGE_SIZE = 17;
   const params = new URLSearchParams(window.location.search);
-  const headers = ['客户名称', '食堂', '期望送达时间', '商品名称（计量单位/品牌/规格）', '下单数量', '实际数量', '分包单位', '分包数量', '分包尾数', '分包系数', '计量单位'];
+  const headers = ['客户名称', '食堂', '期望送达时间', '商品名称（计量单位/品牌/规格）', '下单数量', '实际数量', '计量单位', '分包数量', '分包尾数', '分包系数', '分包单位'];
   const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const text = (value, fallback = '--') => value === '' || value == null ? fallback : escapeHtml(value);
 
@@ -81,7 +81,7 @@
   }
 
   function renderTable(rows) {
-    return `<table class="customer-sorting-print-table"><colgroup><col class="col-customer"><col class="col-canteen"><col class="col-date"><col class="col-goods"><col class="col-order-qty"><col class="col-actual-qty"><col class="col-package-unit"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-coefficient"><col class="col-unit"></colgroup><thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map((item) => { const packageInfo = packageBreakdown(item); return `<tr><td>${text(item.customerName)}</td><td>${text(item.canteen)}</td><td>${text(item.expectedAt)}</td><td>${text(productName(item))}</td><td>${quantity(item.orderQty)}</td><td>${quantity(item.actualQty, true)}</td><td>${text(packageInfo.unit)}</td><td>${text(packageInfo.quantity)}</td><td>${text(packageInfo.remainder, '')}</td><td>${text(packageInfo.coefficient)}</td><td>${text(item.unit)}</td></tr>`; }).join('') : '<tr><td class="customer-sorting-print-empty" colspan="11">暂无可打印的分拣数据</td></tr>'}</tbody></table>`;
+    return `<table class="customer-sorting-print-table"><colgroup><col class="col-customer"><col class="col-canteen"><col class="col-date"><col class="col-goods"><col class="col-order-qty"><col class="col-actual-qty"><col class="col-unit"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-coefficient"><col class="col-package-unit"></colgroup><thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map((item) => { const packageInfo = packageBreakdown(item); return `<tr><td>${text(item.customerName)}</td><td>${text(item.canteen)}</td><td>${text(item.expectedAt)}</td><td>${text(productName(item))}</td><td>${quantity(item.orderQty)}</td><td>${quantity(item.actualQty, true)}</td><td>${text(item.unit)}</td><td>${text(packageInfo.quantity)}</td><td>${text(packageInfo.remainder, '')}</td><td>${text(packageInfo.coefficient)}</td><td>${text(packageInfo.unit)}</td></tr>`; }).join('') : '<tr><td class="customer-sorting-print-empty" colspan="11">暂无可打印的分拣数据</td></tr>'}</tbody></table>`;
   }
 
   const payload = readPayload() || { version: PRINT_VERSION, companyName: '阳光智园', sourceUrl: 'https://gxyc.canantong.com:4403/sortingManagementList', printedAt: new Date().toISOString(), rows: window.DemoStore?.get?.('sortingItems') || [] };

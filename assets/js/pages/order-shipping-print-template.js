@@ -4,7 +4,7 @@
   const PRINT_VERSION = '20260929-shipping-print-template-1';
   const PAGE_SIZE = 20;
   const params = new URLSearchParams(window.location.search);
-  const headers = ['商品编号', '商品名称（计量单位/品牌/规格）', '单位', '下单数量', '下单单价', '发货数量', '发货小计', '验收数量', '生产日期'];
+  const headers = ['商品编号', '商品名称（计量单位/品牌/规格）', '单位', '下单数量', '下单单价', '发货数量', '发货小计', '分包数量', '分包尾数', '分包单位', '分包系数', '验收数量', '生产日期'];
   const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const text = (value, fallback = '--') => value === '' || value == null ? fallback : escapeHtml(value);
   const number = (value, fixed = false) => { const parsed = Number(value); return Number.isFinite(parsed) ? (fixed ? parsed.toFixed(2) : String(parsed)) : '--'; };
@@ -93,8 +93,8 @@
   }
   function renderTable(rows) {
     const total = rows.reduce((sum, row) => sum + Number(row.shippingQty ?? row.orderQty ?? 0) * Number(row.unitPrice || 0), 0);
-    const body = rows.length ? rows.map((row) => `<tr><td>${text(row.goodsCode)}</td><td>${text(productName(row))}</td><td>${text(row.unit)}</td><td>${number(row.orderQty, true)}</td><td>${number(row.unitPrice, true)}</td><td>${row.shippingQty == null ? '' : number(row.shippingQty, true)}</td><td>${row.shippingQty == null ? '' : number(Number(row.shippingQty) * Number(row.unitPrice || 0), true)}</td><td></td><td>${text(row.productionDate, '')}</td></tr>`).join('') : '<tr><td colspan="9">暂无商品明细</td></tr>';
-    return `<table class="shipping-print-table"><colgroup><col class="col-code"><col class="col-name"><col class="col-unit"><col class="col-order-qty"><col class="col-price"><col class="col-shipping-qty"><col class="col-subtotal"><col class="col-accepted"><col class="col-date"></colgroup><thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead><tbody>${body}<tr class="shipping-print-summary"><td colspan="6">发货总金额：</td><td>${number(total, true)}</td><td colspan="2">大写总金额：零元整</td></tr></tbody></table>`;
+    const body = rows.length ? rows.map((row) => { const packageInfo = packageBreakdown(row); return `<tr><td>${text(row.goodsCode)}</td><td>${text(productName(row))}</td><td>${text(row.unit)}</td><td>${number(row.orderQty, true)}</td><td>${number(row.unitPrice, true)}</td><td>${row.shippingQty == null ? '' : number(row.shippingQty, true)}</td><td>${row.shippingQty == null ? '' : number(Number(row.shippingQty) * Number(row.unitPrice || 0), true)}</td><td>${text(packageInfo.quantity)}</td><td>${text(packageInfo.remainder, '')}</td><td>${text(packageInfo.unit)}</td><td>${text(packageInfo.coefficient)}</td><td></td><td>${text(row.productionDate, '')}</td></tr>`; }).join('') : '<tr><td colspan="13">暂无商品明细</td></tr>';
+    return `<table class="shipping-print-table"><colgroup><col class="col-code"><col class="col-name"><col class="col-unit"><col class="col-order-qty"><col class="col-price"><col class="col-shipping-qty"><col class="col-subtotal"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-unit"><col class="col-package-coefficient"><col class="col-accepted"><col class="col-date"></colgroup><thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead><tbody>${body}<tr class="shipping-print-summary"><td colspan="6">发货总金额：</td><td>${number(total, true)}</td><td colspan="6">大写总金额：零元整</td></tr></tbody></table>`;
   }
 
   const fallback = { version: PRINT_VERSION, companyName: '赣州客家新源供应链有限公司', sourceUrl: 'https://gxyc.canantong.com:4403/shippingManagement', printedAt: new Date().toISOString(), rows: window.DemoStore?.get?.('shippingOrders') || [] };
