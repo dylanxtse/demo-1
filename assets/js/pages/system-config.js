@@ -145,10 +145,10 @@
           ${configCheckbox('allowClientEditPrice', '修改单价')}
         </div>
         <div class="config-row permission-row">
-          <div class="config-label">拆单配置</div>
+          <div class="config-label">食谱下单拆单配置</div>
           <div class="config-checkbox-group">
             ${configCheckbox('splitOrderByMeal', '按餐次拆单', '开启后，学校根据食谱下单时将按餐次拆分订单')}
-            ${configCheckbox('splitOrderByPersonType', '按人员类型拆单', '开启后，学校下单时将按学生、教师等人员类型拆分订单')}
+            ${configCheckbox('splitOrderByPersonType', '按人员类型拆单', '开启后，学校通过需求填报下单时将按人员类型和是否营养餐拆分订单；')}
           </div>
         </div>
 

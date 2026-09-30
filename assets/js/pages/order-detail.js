@@ -98,7 +98,7 @@
       <div class="detail-timeline-item">
         <div class="detail-timeline-node"></div>
         <div class="detail-timeline-content">
-          <span class="detail-timeline-action">${escapeHtml(log.action)}</span>
+          <span class="detail-timeline-action">${escapeHtml(log.action === '食谱需求下单' ? '创建订单' : log.action)}</span>
           <span class="detail-timeline-desc">${escapeHtml(log.desc)}</span>
         </div>
       </div>

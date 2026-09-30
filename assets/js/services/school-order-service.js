@@ -144,7 +144,7 @@
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
         orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 520,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
-        operationAction: '食谱需求下单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
+        operationAction: '创建订单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
           { name: '牛奶', unit: '瓶', productCode: 'SP0300037', orderPrice: 5, orderQty: 130 },
           { name: '面粉', unit: '斤', productCode: 'SP0300016', orderPrice: 30, orderQty: 41.6 },
@@ -158,7 +158,7 @@
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
         orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 42,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
-        operationAction: '食谱需求下单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
+        operationAction: '创建订单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
           { name: '牛奶', unit: '瓶', productCode: 'SP0300037', orderPrice: 5, orderQty: 10.5 },
           { name: '面粉', unit: '斤', productCode: 'SP0300016', orderPrice: 30, orderQty: 3.36 },
@@ -172,7 +172,7 @@
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
         orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 680,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
-        operationAction: '食谱需求下单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
+        operationAction: '创建订单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
           { name: '西红柿', unit: 'KG', productCode: 'SP0300020', orderPrice: 5.6, orderQty: 54.4 },
           { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 22, orderQty: 34 },
@@ -187,7 +187,7 @@
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
         orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 48,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
-        operationAction: '食谱需求下单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
+        operationAction: '创建订单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
           { name: '西红柿', unit: 'KG', productCode: 'SP0300020', orderPrice: 5.6, orderQty: 3.84 },
           { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 22, orderQty: 2.4 },
@@ -202,7 +202,7 @@
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
         orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 460,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
-        operationAction: '食谱需求下单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
+        operationAction: '创建订单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
           { name: '土豆', unit: '斤', productCode: 'SP0300040', orderPrice: 3.2, orderQty: 55.2 },
           { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 23, orderQty: 46 },
@@ -216,7 +216,7 @@
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
         orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 36,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
-        operationAction: '食谱需求下单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
+        operationAction: '创建订单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
           { name: '土豆', unit: '斤', productCode: 'SP0300040', orderPrice: 3.2, orderQty: 4.32 },
           { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 23, orderQty: 3.6 },
@@ -231,7 +231,7 @@
         orderTag: '其他-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 120,
         recipeDemandRecordId: 'AUXILIARY-DEMAND-20260929162000-DEMO', recipeDemandRecordNo: 'XQ2026092991306',
         recipeDemandDate: '2026-09-29', recipeParticipantType: '其他',
-        operationAction: '食谱需求下单', operationDescription: '晚餐、需求提交记录 XQ2026092991306',
+        operationAction: '创建订单', operationDescription: '晚餐、需求提交记录 XQ2026092991306',
         items: [
           { name: '金龙鱼5L桶装油', unit: 'L', productCode: 'SP0300030', orderPrice: 55, orderQty: 1.44 },
           { name: '食盐', unit: 'kg', productCode: 'SP0300031', orderPrice: 18.5, orderQty: 0.48 }
@@ -589,7 +589,7 @@
         driver: payload.driver || '',
         creator: payload.creator || currentOperator(),
         createdAt: now,
-        operationLogs: [logEntry(payload.recipeDemandRecordId ? '食谱需求下单' : '添加', '添加', payload.recipeDemandRecordNo ? `需求提交记录 ${payload.recipeDemandRecordNo}` : '')]
+        operationLogs: [logEntry(payload.recipeDemandRecordId ? '创建订单' : '添加', '添加', payload.recipeDemandRecordNo ? `需求提交记录 ${payload.recipeDemandRecordNo}` : '')]
       }, 'school');
       orders.unshift(record);
       writeOrders(orders);

@@ -98,7 +98,7 @@
       remark: '--',
       orderAmount: Number(items.reduce((sum, item) => sum + item.orderSubtotal, 0).toFixed(2)),
       items,
-      operationLogs: [{ action: '食谱需求下单', operator: '管理员', result: '添加', time: '2026-08-29 16:20:00', description: `${mealKey ? `${mealNames[mealKey]}、` : ''}需求提交记录 XQ2026082948261` }]
+      operationLogs: [{ action: '创建订单', operator: '管理员', result: '添加', time: '2026-08-29 16:20:00', description: `${mealKey ? `${mealNames[mealKey]}、` : ''}需求提交记录 XQ2026082948261` }]
     };
   })();
   const loadedOrder = service.get(id) || demoOrder;

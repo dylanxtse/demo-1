@@ -110,7 +110,7 @@
       expectedAt, status: 'PENDING_AUDIT', receiptStatus: '待收货', productCount: normalizedItems.length,
       warehouse: '中心仓', supplement: '否', remark: '--', route: '东城一线', driver: '',
       creator: '管理员', createdAt, acceptedAt: '', shippingAt: '', items: normalizedItems,
-      operationLogs: [{ action: '食谱需求下单', desc: `管理员 根据需求提交记录 ${recordNo} 创建${mealName}、${participantType}订单` }]
+      operationLogs: [{ action: '创建订单', desc: `管理员 根据需求提交记录 ${recordNo} 创建${mealName}、${participantType}订单` }]
     };
   };
   orders.unshift(

@@ -580,7 +580,7 @@
       creator: order.creator,
       createdAt: order.createdAt,
       operationLogs: [{
-        action: '食谱需求下单',
+        action: '创建订单',
         operator: order.creator,
         createdAt: order.createdAt,
         desc: `${order.creator} 根据需求提交记录 ${record.recordNo} 创建${order.mealName ? `${order.mealName}、` : ''}${participant.label}订单`
