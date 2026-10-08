@@ -45,6 +45,11 @@
     const parsed = typeof rawValue === 'string' ? Number.parseFloat(rawValue) : Number(rawValue);
     return Number.isFinite(parsed) ? parsed : 0;
   };
+  const auxiliaryProducts = [
+    { id: 'aux-oil', name: '金龙鱼5L桶装油', code: 'SP0300030', doseUnit: 'L', doseDisplay: '12 ml', packSize: 5, dose: 0.012, marketPrice: 55 },
+    { id: 'aux-salt', name: '食盐', code: 'SP0300031', doseUnit: 'kg', doseDisplay: '4 g', packSize: 0.5, dose: 0.004, marketPrice: 18.5 },
+    { id: 'aux-msg', name: '味精', code: 'SP0300032', doseUnit: 'kg', doseDisplay: '1 g', packSize: 0.25, dose: 0.001, marketPrice: 8 }
+  ];
   const dateText = (date) => {
     if (!date) return '--';
     const dateObject = new Date(String(date) + 'T00:00:00');
@@ -425,6 +430,7 @@
     toast: null,
     toastTimer: 0,
     confirmDates: new Set(),
+    confirmMode: 'ingredient',
     confirmMealKey: '',
     confirmParticipantKey: '',
     unitPriceOverrides: {},
@@ -1221,17 +1227,19 @@
       && Boolean(currentMobileSession())
       && (state.profileView || 'home') !== 'home';
     if (profileHome) return '';
-    const attendanceBackToRecipe = state.screen === 'main' && state.tab === 'attendance';
+    const demandFillBackToRecipe = state.screen === 'main' && ['attendance', 'auxiliary'].includes(state.tab);
     const title = loginPage
       ? '登录'
         : state.screen === 'confirm'
-        ? '食材需求确认'
+        ? (state.confirmMode === 'auxiliary' ? '辅料需求确认' : '食材需求确认')
         : state.screen === 'order-detail'
           ? '订单详情'
         : state.screen === 'detail'
           ? '提交记录详情'
         : state.tab === 'attendance'
           ? '食材需求填报'
+        : state.tab === 'auxiliary'
+          ? '辅料需求填报'
           : state.tab === 'profile'
               ? (profileSubpage && state.profileView === 'orders' ? '订单列表' : profileSubpage ? '提交记录' : '个人中心')
               : state.tab === 'home'
@@ -1242,12 +1250,12 @@
     const shouldShowBack = state.screen === 'confirm'
       || state.screen === 'detail'
       || state.screen === 'order-detail'
-      || attendanceBackToRecipe
+      || demandFillBackToRecipe
       || profileSubpage;
     const back = shouldShowBack
       ? '<button type="button" class="school-mobile-back-button" data-action="back" aria-label="返回">←</button>'
       : '';
-    const canteenDisplay = state.tab === 'attendance' || state.screen === 'detail' || state.screen === 'order-detail' || profileSubpage
+    const canteenDisplay = state.tab === 'attendance' || state.tab === 'auxiliary' || state.screen === 'detail' || state.screen === 'order-detail' || profileSubpage
       ? ''
       : '<button type="button" class="school-mobile-canteen-button" data-action="open-canteen" title="切换食堂"><span class="school-mobile-canteen-name">' + escapeHtml(state.canteen) + '</span><span class="school-mobile-canteen-arrow" aria-hidden="true"></span></button>';
     return '<header class="school-mobile-topbar">'
@@ -1378,7 +1386,7 @@
   function renderRecipeDemandButton() {
     const disabled = !menuFor(state.date);
     return '<div class="school-mobile-recipe-demand-actions" aria-label="需求填报入口">'
-      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary">辅料需求填报</button>'
+      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary' + (disabled ? ' is-disabled' : '') + '" data-action="open-auxiliary-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>辅料需求填报</button>'
       + '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>食材需求填报</button>'
       + '</div>';
   }
@@ -1405,13 +1413,14 @@
 
   function renderAttendance() {
     const menu = menuFor(state.date);
+    const isAuxiliary = state.tab === 'auxiliary';
     const currentParticipants = participants();
     if (!menu) return '<div class="school-mobile-attendance-page"><div class="school-mobile-scroll school-mobile-attendance-scroll">' + renderDateStrip('attendance') + renderAttendanceSummary(state.date, 0) + '<div class="school-mobile-empty">请选择有菜谱的日期</div></div>' + renderAttendanceActions() + '</div>';
     const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
     const validation = attendanceService.validate(menu, state.attendance, serviceOptions());
     const notice = !currentParticipants.length
       ? '<div class="school-mobile-notice"><i>!</i><span>当前食堂尚未启用人员类型，请先完成食堂运营设置。</span></div>'
-      : validation.missingMappings.length
+      : !isAuxiliary && validation.missingMappings.length
         ? '<div class="school-mobile-notice"><i>!</i><span>存在未关联采购商品：' + escapeHtml(validation.missingMappings.join('、')) + '</span></div>'
         : '';
     const meals = (menu.meals || []).map((meal) => renderAttendanceMeal(meal)).join('');
@@ -1433,7 +1442,9 @@
       + '<div class="school-mobile-attendance-meal-grid">' + (meals || '<div class="school-mobile-empty">当前食谱暂无餐次</div>') + '</div>'
       + '<section class="school-mobile-demand-section" aria-label="' + (shouldSplitConfirmByMeal() ? '按餐次查看采购商品' : '查看采购商品') + '">'
       + renderAttendanceDemandTabs(menu)
-      + '<div id="schoolMobileAttendanceDemand">' + renderDemandRows(menu, state.attendance, state.attendanceMealKey) + '</div>'
+      + '<div id="schoolMobileAttendanceDemand">' + (isAuxiliary
+        ? renderAuxiliaryDemandRows(menu, state.attendance, state.attendanceMealKey)
+        : renderDemandRows(menu, state.attendance, state.attendanceMealKey)) + '</div>'
       + '</section>'
       + '</div>'
       + renderAttendanceActions(validation)
@@ -1451,9 +1462,12 @@
   function renderAttendanceActions(validation = {}) {
     if (state.attendanceInputMode === 'non-dining') return '';
     const filledDays = currentFilledDateSummaries().length;
+    const canContinue = state.tab === 'auxiliary'
+      ? !validation.errors?.length && Number(validation.people || 0) > 0
+      : validation.canContinue;
     return '<div class="school-mobile-attendance-actions" aria-label="需求填报操作">'
       + '<div class="school-mobile-filled-days"><span>已填写</span><strong id="schoolMobileFilledDays">' + number(filledDays) + ' 天</strong></div>'
-      + '<button type="button" class="school-mobile-button is-primary" data-action="continue" ' + (validation.canContinue ? '' : 'disabled') + '>确认需求</button>'
+      + '<button type="button" class="school-mobile-button is-primary" data-action="continue" ' + (canContinue ? '' : 'disabled') + '>确认需求</button>'
       + '</div>';
   }
 
@@ -1531,6 +1545,59 @@
     }).join('') + '</div>';
   }
 
+  function auxiliaryPurchaseQuantity(product, demandQty) {
+    const packSize = Number(product?.packSize || 0);
+    return packSize > 0 ? Math.ceil(Number(demandQty || 0) / packSize) * packSize : Number(demandQty || 0);
+  }
+
+  function renderAuxiliaryDemandRows(menu, record, activeMealKey = '') {
+    const calculation = attendanceService.calculate(menu, record, serviceOptions());
+    const meal = shouldSplitConfirmByMeal()
+      ? ((calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey))
+        || calculation.mealRows?.[0])
+      : { key: 'all-meals', name: '合计', totalPeople: calculation.totalPeople };
+    const totalPeople = Number(meal?.totalPeople || 0);
+    const rows = totalPeople > 0
+      ? auxiliaryProducts.map((product) => ({
+        ...product,
+        totalQty: totalPeople * Number(product.dose || 0),
+        purchaseQty: auxiliaryPurchaseQuantity(product, totalPeople * Number(product.dose || 0))
+      })).filter((row) => row.totalQty > 0)
+      : [];
+    if (!rows.length) return '<div class="school-mobile-demand-list"><div class="school-mobile-empty">填写人数后显示辅料需求</div></div>';
+    return '<div class="school-mobile-demand-list" role="list">' + rows.map((row) => (
+      '<button type="button" class="school-mobile-demand-row" data-action="open-auxiliary-demand-detail" data-menu-date="' + escapeHtml(menu.date) + '" data-auxiliary-id="' + escapeHtml(row.id) + '" data-auxiliary-meal-key="' + escapeHtml(meal?.key || '') + '" aria-label="查看' + escapeHtml(row.name) + '采购量明细">'
+        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.name) + '</strong><small>' + escapeHtml(row.code) + '</small></div>'
+        + '<span class="school-mobile-demand-qty">' + quantity(row.purchaseQty) + ' ' + escapeHtml(row.doseUnit) + '</span>'
+        + '<span class="school-mobile-demand-detail-arrow" aria-hidden="true">›</span>'
+      + '</button>'
+    )).join('') + '</div>';
+  }
+
+  function auxiliaryDemandDetail(product, menu, record, activeMealKey = '') {
+    if (!product || !menu) return null;
+    const calculation = attendanceService.calculate(menu, record, serviceOptions());
+    const activeMeal = shouldSplitConfirmByMeal()
+      ? ((calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey))
+        || calculation.mealRows?.[0])
+      : null;
+    const totalPeople = Number(activeMeal?.totalPeople ?? calculation.totalPeople ?? 0);
+    const participantPeople = activeMeal?.participantPeople || calculation.participantPeople || {};
+    const totalQty = totalPeople * Number(product.dose || 0);
+    const participantRows = participants().map((participant) => {
+      const demand = Number(participantPeople[participant.key] || 0) * Number(product.dose || 0);
+      return { participant, demand, purchase: auxiliaryPurchaseQuantity(product, demand) };
+    });
+    return {
+      product,
+      mealName: activeMeal?.name || '合计',
+      unit: product.doseUnit || '--',
+      totalQty,
+      purchaseQty: auxiliaryPurchaseQuantity(product, totalQty),
+      participantRows
+    };
+  }
+
   function currentFilledDateSummaries() {
     return menus.map((menu) => {
       const record = attendanceFor(menu.date);
@@ -1539,6 +1606,163 @@
       const status = attendanceService.status(menu, record, serviceOptions());
       return { date: menu.date, menu, record, calculation, validation, status };
     }).filter((summary) => Number(summary.calculation.totalPeople || 0) > 0);
+  }
+
+  function auxiliaryConfirmMealRows(preview, mealKey = 'all-meals') {
+    const currentParticipants = preview?.participants || participants();
+    return auxiliaryProducts.map((product) => {
+      const participantQty = Object.fromEntries(currentParticipants.map((participant) => [participant.key, 0]));
+      (preview?.dateSummaries || []).forEach((summary) => {
+        const meal = mealKey && mealKey !== 'all-meals'
+          ? (summary.calculation?.mealRows || []).find((item) => String(item.key || item.name || '') === String(mealKey))
+          : null;
+        const peopleByParticipant = meal?.participantPeople || summary.calculation?.participantPeople || {};
+        currentParticipants.forEach((participant) => {
+          participantQty[participant.key] += Number(peopleByParticipant[participant.key] || 0) * Number(product.dose || 0);
+        });
+      });
+      const totalQty = currentParticipants.reduce((total, participant) => total + Number(participantQty[participant.key] || 0), 0);
+      return {
+        ...product,
+        key: product.id + '::' + product.doseUnit,
+        mappingStatus: '已关联',
+        productCode: product.code,
+        productName: product.name,
+        unit: product.doseUnit,
+        participantQty,
+        totalQty,
+        purchaseQty: auxiliaryPurchaseQuantity(product, totalQty)
+      };
+    }).filter((row) => row.totalQty > 0);
+  }
+
+  function buildAuxiliaryConfirmPreview() {
+    const dateSummaries = currentFilledDateSummaries().filter((summary) => state.confirmDates.has(summary.date));
+    const currentParticipants = participants();
+    const participantPersonTimes = Object.fromEntries(currentParticipants.map((participant) => [participant.key, 0]));
+    dateSummaries.forEach((summary) => currentParticipants.forEach((participant) => {
+      participantPersonTimes[participant.key] += Number(summary.calculation.participantPeople?.[participant.key] || 0);
+    }));
+    const rows = auxiliaryConfirmMealRows({ dateSummaries, participants: currentParticipants });
+    const totalPersonTimes = Object.values(participantPersonTimes).reduce((total, value) => total + Number(value || 0), 0);
+    return {
+      dates: dateSummaries.map((summary) => summary.date),
+      dateSummaries,
+      canteen: currentCanteen(),
+      participants: currentParticipants,
+      participantPersonTimes,
+      totalPersonTimes,
+      totalStudentPersonTimes: 0,
+      totalTeacherPersonTimes: 0,
+      rows,
+      productCount: rows.length,
+      canSubmit: Boolean(dateSummaries.length && totalPersonTimes > 0 && rows.length),
+      message: !dateSummaries.length ? '请选择要提交的填报日期' : totalPersonTimes <= 0 ? '请先填写就餐人数' : rows.length ? '' : '当前没有可下单的辅料需求'
+    };
+  }
+
+  function auxiliarySubmissionProducts() {
+    return auxiliaryProducts.map((product) => {
+      const catalogProduct = auxiliaryCatalogProduct(product);
+      const currentPrice = catalogProduct && String(catalogProduct.name || '') === String(product.name || '')
+        ? demandService.currentSalesPrice?.(catalogProduct)
+        : product.marketPrice;
+      return {
+        ...product,
+        code: product.code,
+        productCode: product.code,
+        productName: product.name,
+        unit: product.doseUnit,
+        currentSalesPrice: Number.isFinite(Number(currentPrice)) ? Number(currentPrice) : Number(product.marketPrice || 0),
+        marketPrice: Number.isFinite(Number(currentPrice)) ? Number(currentPrice) : Number(product.marketPrice || 0),
+        brand: catalogProduct?.brand || '--',
+        spec: catalogProduct?.spec || '--',
+        isStandardProduct: Boolean(catalogProduct?.isStandardProduct || catalogProduct?.isStandard),
+        allowSchoolModifyPurchaseQuantity: catalogProduct?.allowSchoolModifyPurchaseQuantity !== false
+          && catalogProduct?.allowSchoolModifyPurchaseQuantity !== 'false'
+          && catalogProduct?.allowSchoolModifyPurchaseQuantity !== '否'
+          && catalogProduct?.allowSchoolModifyPurchaseQuantity !== 0
+          && catalogProduct?.allowSchoolModifyPurchaseQuantity !== '0'
+      };
+    });
+  }
+
+  function aggregateAuxiliarySubmissionRows(rowLists, currentParticipants) {
+    const rows = new Map();
+    rowLists.flat().forEach((row) => {
+      const key = String(row.key || `${row.productCode || row.productName || ''}::${row.unit || '--'}`);
+      const current = rows.get(key) || {
+        ...clone(row),
+        key,
+        participantQty: Object.fromEntries(currentParticipants.map((participant) => [participant.key, 0])),
+        totalQty: 0,
+        sourceDates: [],
+        mealNames: []
+      };
+      currentParticipants.forEach((participant) => {
+        current.participantQty[participant.key] = Number(current.participantQty[participant.key] || 0)
+          + Number(row.participantQty?.[participant.key] || 0);
+      });
+      current.totalQty = currentParticipants.reduce((total, participant) => (
+        total + Number(current.participantQty[participant.key] || 0)
+      ), 0);
+      (row.sourceDates || []).forEach((date) => {
+        if (!current.sourceDates.includes(date)) current.sourceDates.push(date);
+      });
+      (row.mealNames || []).forEach((name) => {
+        if (name && !current.mealNames.includes(name)) current.mealNames.push(name);
+      });
+      rows.set(key, current);
+    });
+    return [...rows.values()].filter((row) => Number(row.totalQty || 0) > 0);
+  }
+
+  function buildAuxiliarySubmissionPreview(preview) {
+    const currentParticipants = preview.participants || participants();
+    const products = auxiliarySubmissionProducts();
+    const dateSummaries = (preview.dateSummaries || []).map((summary) => {
+      const mealRows = (summary.calculation?.mealRows || []).map((meal) => {
+        const participantPeople = meal.participantPeople || {};
+        const rows = products.map((product) => {
+          const participantQty = Object.fromEntries(currentParticipants.map((participant) => [
+            participant.key,
+            Number(participantPeople[participant.key] || 0) * Number(product.dose || 0)
+          ]));
+          const totalQty = currentParticipants.reduce((total, participant) => (
+            total + Number(participantQty[participant.key] || 0)
+          ), 0);
+          return {
+            ...product,
+            key: product.id + '::' + product.doseUnit,
+            mappingStatus: '已关联',
+            participantQty,
+            totalQty,
+            perCapitaQty: Number(product.dose || 0),
+            sourceDates: [summary.date],
+            mealNames: [meal.name || meal.key]
+          };
+        }).filter((row) => row.totalQty > 0);
+        return { ...meal, rows };
+      });
+      const rows = aggregateAuxiliarySubmissionRows(mealRows.map((meal) => meal.rows || []), currentParticipants);
+      return {
+        ...summary,
+        calculation: { ...summary.calculation, rows, mealRows },
+        items: clone(rows)
+      };
+    });
+    const rows = aggregateAuxiliarySubmissionRows(
+      dateSummaries.map((summary) => summary.calculation?.rows || []),
+      currentParticipants
+    );
+    return {
+      ...preview,
+      dateSummaries,
+      rows,
+      productCount: rows.length,
+      canSubmit: Boolean(preview.dates?.length && Number(preview.totalPersonTimes || 0) > 0 && rows.length),
+      message: preview.message
+    };
   }
 
   function mealAttendanceValue(record, mealKey, participant) {
@@ -1598,6 +1822,55 @@
     input?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
   }
 
+  function enterAuxiliaryDemand() {
+    if (state.attendanceInputMode === 'non-dining') return;
+    ensureDemoSession();
+    saveAttendanceDraft();
+    const menu = menuFor(state.date);
+    const emptyField = findEmptyAttendanceField(menu, state.attendance);
+    if (emptyField) {
+      state.attendanceValidationHighlightDate = state.date;
+      render();
+      showToast('人数不能为空', true);
+      const input = [...app.querySelectorAll('[data-action="attendance-input"]')]
+        .find((item) => item.dataset.meal === emptyField.meal.key && item.dataset.participant === emptyField.participant.key);
+      input?.focus({ preventScroll: true });
+      input?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+      return;
+    }
+    const validation = attendanceService.validate(menu, state.attendance, serviceOptions());
+    const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
+    if (validation.errors?.length || Number(calculation.totalPeople || 0) <= 0) {
+      showToast(validation.errors?.[0] || '当前没有实际就餐人数，无法确认需求', true);
+      return;
+    }
+    attendanceService.save(
+      state.date,
+      state.attendance.meals,
+      menu.version || recipeService.MENU_VERSION,
+      currentCanteen(),
+      state.attendance.temporaryNonDining || {}
+    );
+    const summaries = currentFilledDateSummaries();
+    const filledDates = summaries.map((summary) => summary.date);
+    if (!filledDates.length) {
+      showToast('人数保存失败，请重新填写后再确认', true);
+      return;
+    }
+    state.confirmDates = new Set(filledDates);
+    state.confirmMode = 'auxiliary';
+    state.confirmMealKey = '';
+    state.confirmParticipantKey = '';
+    state.unitPriceOverrides = {};
+    state.unitPriceEditing = false;
+    state.purchaseQtyOverrides = {};
+    state.purchaseQuantityEditingKey = '';
+    state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30:00';
+    state.screen = 'confirm';
+    state.toast = null;
+    render();
+  }
+
   function enterConfirm() {
     if (state.attendanceInputMode === 'non-dining') return;
     ensureDemoSession();
@@ -1642,6 +1915,7 @@
       return;
     }
     state.confirmDates = new Set(filledDates);
+    state.confirmMode = 'ingredient';
     state.confirmMealKey = '';
     state.confirmParticipantKey = '';
     state.unitPriceOverrides = {};
@@ -1780,8 +2054,13 @@
   }
 
   function updateConfirmSubmitState() {
-    const submitButton = app.querySelector('[data-action="submit-demand"]');
+    const submitButton = app.querySelector('[data-action="submit-demand"], [data-action="submit-auxiliary-demand"]');
     if (!submitButton || state.submitting) return;
+    if (state.confirmMode === 'auxiliary') {
+      const preview = buildAuxiliaryConfirmPreview();
+      submitButton.disabled = !(preview.canSubmit && hasAuxiliaryConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(state.expectedAt));
+      return;
+    }
     const preview = buildConfirmPreview();
     submitButton.disabled = !(preview.canSubmit && hasConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(state.expectedAt));
   }
@@ -1804,6 +2083,174 @@
     return '<div class="school-mobile-meal-tabs school-mobile-confirm-meal-tabs" role="tablist" aria-label="采购量餐次切换">'
       + meals.map((meal) => '<button type="button" class="school-mobile-meal-tag ' + (meal.key === activeMeal?.key ? 'is-active' : '') + '" data-action="select-confirm-meal" data-meal-key="' + escapeHtml(meal.key) + '" role="tab" aria-selected="' + (meal.key === activeMeal?.key ? 'true' : 'false') + '">' + escapeHtml(meal.name) + '</button>').join('')
       + '</div>';
+  }
+
+  function auxiliaryConfirmParticipants(preview) {
+    if (!shouldSplitConfirmByPersonType()) {
+      return auxiliaryConfirmMealRows(preview, 'all-meals').length ? [DEFAULT_ORDER_PARTICIPANT] : [];
+    }
+    return (preview.participants || []).filter((participant) => Number(preview.participantPersonTimes?.[participant.key] || 0) > 0);
+  }
+
+  function activeAuxiliaryConfirmParticipant(preview) {
+    const available = auxiliaryConfirmParticipants(preview);
+    const active = available.find((participant) => participant.key === state.confirmParticipantKey) || available[0] || null;
+    state.confirmParticipantKey = active?.key || '';
+    return active;
+  }
+
+  function renderAuxiliaryConfirmOrderTags(preview, activeParticipant) {
+    if (!shouldSplitConfirmByPersonType()) return '';
+    const available = auxiliaryConfirmParticipants(preview);
+    if (!available.length) return '<div class="school-mobile-empty">暂无可提交的订单标签</div>';
+    return '<div class="school-mobile-order-tag-list" role="tablist" aria-label="提交需求包含的订单标签">'
+      + available.map((participant) => '<button type="button" class="school-mobile-order-tag '
+        + (participant.key === activeParticipant?.key ? 'is-active' : '')
+        + '" data-action="auxiliary-confirm-order-tag" data-participant-key="' + escapeHtml(participant.key) + '" role="tab" aria-selected="' + (participant.key === activeParticipant?.key ? 'true' : 'false') + '">' + escapeHtml(orderTagName(participant)) + '</button>').join('')
+      + '</div>';
+  }
+
+  function renderAuxiliaryConfirmMealTabs(preview, activeMeal) {
+    if (!shouldSplitConfirmByMeal()) return '';
+    const meals = confirmMealDefinitions(preview);
+    if (!meals.length) return '';
+    return '<div class="school-mobile-meal-tabs school-mobile-confirm-meal-tabs" role="tablist" aria-label="采购量餐次切换">'
+      + meals.map((meal) => '<button type="button" class="school-mobile-meal-tag ' + (meal.key === activeMeal?.key ? 'is-active' : '') + '" data-action="select-auxiliary-confirm-meal" data-meal-key="' + escapeHtml(meal.key) + '" role="tab" aria-selected="' + (meal.key === activeMeal?.key ? 'true' : 'false') + '">' + escapeHtml(meal.name) + '</button>').join('')
+      + '</div>';
+  }
+
+  function auxiliaryCatalogProduct(row) {
+    return (orderService.getProductCatalog?.() || []).find((product) => String(product.code || product.id) === String(row?.productCode || '')) || null;
+  }
+
+  function canModifyAuxiliaryPurchaseQuantity(row) {
+    const catalogProduct = auxiliaryCatalogProduct(row);
+    const value = catalogProduct && Object.prototype.hasOwnProperty.call(catalogProduct, 'allowSchoolModifyPurchaseQuantity')
+      ? catalogProduct.allowSchoolModifyPurchaseQuantity
+      : row?.allowSchoolModifyPurchaseQuantity;
+    return value !== false && value !== 'false' && value !== '否' && value !== 0 && value !== '0';
+  }
+
+  function auxiliaryConfirmUnitPrice(row) {
+    const key = purchaseRowKey(row);
+    const override = state.unitPriceOverrides[key];
+    if (canModifyConfirmUnitPrice() && override !== '' && override != null && Number.isFinite(Number(override))) return Number(override);
+    const catalogProduct = auxiliaryCatalogProduct(row);
+    if (catalogProduct && String(catalogProduct.name || '') === String(row?.productName || '')) {
+      const servicePrice = demandService.currentSalesPrice?.(catalogProduct);
+      if (Number.isFinite(Number(servicePrice)) && Number(servicePrice) > 0) return Number(servicePrice);
+    }
+    return Number(row?.marketPrice || 0);
+  }
+
+  function auxiliaryConfirmPurchaseQuantity(row, participant, mealKey) {
+    const participantKey = participant?.key || DEFAULT_ORDER_PARTICIPANT.key;
+    const key = purchaseQuantityKey(row, participantKey, mealKey || 'all-meals');
+    const demand = participantKey === DEFAULT_ORDER_PARTICIPANT.key
+      ? Number(row.totalQty || 0)
+      : Number(row.participantQty?.[participantKey] || 0);
+    return hasOwn(state.purchaseQtyOverrides, key)
+      ? state.purchaseQtyOverrides[key]
+      : auxiliaryPurchaseQuantity(row, demand);
+  }
+
+  function auxiliaryConfirmCanEditPurchaseQuantity(preview, participant, mealKey) {
+    return auxiliaryConfirmMealRows(preview, mealKey).some((row) => {
+      const demand = participant?.key === DEFAULT_ORDER_PARTICIPANT.key
+        ? Number(row.totalQty || 0)
+        : Number(row.participantQty?.[participant?.key] || 0);
+      return demand > 0 && canModifyAuxiliaryPurchaseQuantity(row);
+    });
+  }
+
+  function hasAuxiliaryConfirmPurchaseQuantity(preview) {
+    const meals = confirmMealDefinitions(preview);
+    const orderParticipants = shouldSplitConfirmByPersonType()
+      ? (preview.participants || [])
+      : [DEFAULT_ORDER_PARTICIPANT];
+    return meals.some((meal) => auxiliaryConfirmMealRows(preview, meal.key).some((row) => (
+      orderParticipants.some((participant) => Number(auxiliaryConfirmPurchaseQuantity(row, participant, meal.key)) > 0)
+    )));
+  }
+
+  function renderAuxiliaryConfirmRows(preview, participant, mealKey = '', isEditing = false, isUnitPriceEditing = false) {
+    const rows = auxiliaryConfirmMealRows(preview, mealKey).filter((row) => {
+      if (participant?.key === DEFAULT_ORDER_PARTICIPANT.key) return Number(row.totalQty || 0) > 0;
+      return Number(row.participantQty?.[participant?.key] || 0) > 0;
+    });
+    if (!rows.length) return '<div class="school-mobile-empty">暂无可提交辅料</div>';
+    return '<div class="school-mobile-demand-list school-mobile-auxiliary-confirm-list">' + rows.map((row, index) => {
+      const demand = participant?.key === DEFAULT_ORDER_PARTICIPANT.key
+        ? Number(row.totalQty || 0)
+        : Number(row.participantQty?.[participant.key] || 0);
+      const purchaseKey = purchaseQuantityKey(row, participant?.key || DEFAULT_ORDER_PARTICIPANT.key, mealKey || 'all-meals');
+      const purchaseValue = auxiliaryConfirmPurchaseQuantity(row, participant, mealKey);
+      const purchaseEditable = isEditing && canModifyAuxiliaryPurchaseQuantity(row);
+      const purchaseMarkup = purchaseEditable
+        ? '<div class="school-mobile-demand-purchase-control"><input class="school-mobile-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="' + escapeHtml(fixedQuantity(purchaseValue)) + '" data-action="confirm-purchase-quantity" data-purchase-key="' + escapeHtml(purchaseKey) + '" data-purchase-participant-key="' + escapeHtml(participant?.key || DEFAULT_ORDER_PARTICIPANT.key) + '" data-purchase-overridden="' + (hasOwn(state.purchaseQtyOverrides, purchaseKey) ? 'true' : 'false') + '" aria-label="' + escapeHtml(orderTagName(participant) + row.productName + '采购量') + '"><span class="school-mobile-demand-purchase-unit">' + escapeHtml(row.unit) + '</span></div>'
+        : '<div class="school-mobile-demand-purchase-display"><strong>' + quantity(purchaseValue) + '</strong><span class="school-mobile-demand-purchase-unit">' + escapeHtml(row.unit) + '</span></div>';
+      const priceKey = purchaseRowKey(row);
+      const price = auxiliaryConfirmUnitPrice(row);
+      const priceMarkup = isUnitPriceEditing && canModifyConfirmUnitPrice()
+        ? '<div class="school-mobile-demand-price is-editable"><input class="school-mobile-demand-price-input" type="number" min="' + escapeHtml(minimumPrice()) + '" step="' + escapeHtml(minimumPrice()) + '" inputmode="decimal" value="' + escapeHtml(fixedPrice(price)) + '" data-action="confirm-unit-price" data-unit-price-key="' + escapeHtml(priceKey) + '" data-unit-price-overridden="' + (hasOwn(state.unitPriceOverrides, priceKey) ? 'true' : 'false') + '" aria-label="' + escapeHtml(row.productName + '单价') + '"><em>元/' + escapeHtml(row.unit) + '</em></div>'
+        : '<div class="school-mobile-demand-price is-readonly"><strong class="school-mobile-demand-price-value">' + escapeHtml(fixedPrice(price)) + '</strong><em>元/' + escapeHtml(row.unit) + '</em></div>';
+      return '<div class="school-mobile-demand-row school-mobile-auxiliary-confirm-row">'
+        + '<span class="school-mobile-demand-index">' + String(index + 1).padStart(2, '0') + '</span>'
+        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.productName) + '</strong><small class="school-mobile-demand-product-meta">' + escapeHtml(row.productCode || '--') + '</small></div>'
+        + '<div class="school-mobile-demand-quantity">'
+        + purchaseMarkup
+        + priceMarkup
+        + '</div>'
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function renderAuxiliaryConfirm() {
+    const preview = buildAuxiliaryConfirmPreview();
+    const activeMeal = activeConfirmMeal(preview);
+    const activeParticipant = activeAuxiliaryConfirmParticipant(preview);
+    const activeMealKey = activeMeal?.key || 'all-meals';
+    const isUnitPriceEditing = Boolean(activeParticipant && canModifyConfirmUnitPrice() && state.unitPriceEditing);
+    const isPurchaseQuantityEditing = Boolean(activeParticipant && state.purchaseQuantityEditingKey === activeParticipant.key);
+    const unitPriceActions = activeParticipant && canModifyConfirmUnitPrice()
+      ? (isUnitPriceEditing
+        ? '<div class="school-mobile-purchase-actions"><button type="button" class="school-mobile-purchase-reset-button" data-action="restore-default-unit-price">恢复默认</button><button type="button" class="school-mobile-order-tag-save" data-action="save-unit-price">保存</button></div>'
+        : (isPurchaseQuantityEditing ? '' : '<button type="button" class="school-mobile-order-tag-save" data-action="edit-unit-price">编辑单价</button>'))
+      : '';
+    const canEditPurchaseQuantity = Boolean(activeParticipant && auxiliaryConfirmCanEditPurchaseQuantity(preview, activeParticipant, activeMealKey));
+    const purchaseQuantityAction = isPurchaseQuantityEditing ? 'save-purchase-quantity' : 'edit-purchase-quantity';
+    const purchaseQuantityActionLabel = isPurchaseQuantityEditing ? '保存' : '编辑采购量';
+    const purchaseQuantityActions = canEditPurchaseQuantity
+      ? (isPurchaseQuantityEditing
+        ? '<div class="school-mobile-purchase-actions"><button type="button" class="school-mobile-purchase-reset-button" data-action="restore-default-purchase-quantity" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">恢复默认</button><button type="button" class="school-mobile-order-tag-save" data-action="save-purchase-quantity" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">保存</button></div>'
+        : (isUnitPriceEditing ? '' : '<button type="button" class="school-mobile-order-tag-save" data-action="' + purchaseQuantityAction + '" data-purchase-participant-key="' + escapeHtml(activeParticipant.key) + '">' + purchaseQuantityActionLabel + '</button>'))
+      : '';
+    const confirmEditActions = activeParticipant && (unitPriceActions || purchaseQuantityActions)
+      ? '<div class="school-mobile-confirm-edit-actions">' + unitPriceActions + purchaseQuantityActions + '</div>'
+      : '';
+    const canSubmit = Boolean(preview.canSubmit && hasAuxiliaryConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(state.expectedAt));
+    const dateOptions = preview.dateSummaries.length
+      ? preview.dateSummaries.map((summary) => '<button type="button" class="school-mobile-confirm-date '
+        + (summary.status?.key === 'partial' ? 'is-partial ' : summary.status?.key === 'complete' ? 'is-complete ' : 'is-disabled ')
+        + (state.confirmDates.has(summary.date) ? 'is-selected ' : '')
+        + '" data-action="confirm-date" data-date="' + escapeHtml(summary.date) + '">'
+        + '<strong>' + escapeHtml(shortDate(summary.date)) + '</strong><small class="school-mobile-confirm-date-weekday">星期' + escapeHtml(weekdayText(summary.date)) + '</small><small>' + number(summary.calculation.totalPeople) + ' 人次</small></button>').join('')
+      : '<div class="school-mobile-empty">暂无可提交的填报日期</div>';
+    const orderTagSwitcher = shouldSplitConfirmByPersonType()
+      ? '<div class="school-mobile-confirm-switchers"><div class="school-mobile-order-tags-inline">' + renderAuxiliaryConfirmOrderTags(preview, activeParticipant) + '</div></div>'
+      : '';
+    return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
+      + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
+      + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>需求天数</span><strong>' + number(preview.dates.length) + '</strong></div></div></section>'
+      + orderTagSwitcher
+      + '<section class="school-mobile-confirm-card school-mobile-purchase-card">'
+      + renderAuxiliaryConfirmMealTabs(preview, activeMeal)
+      + '<div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + confirmEditActions + '</div>'
+      + renderAuxiliaryConfirmRows(preview, activeParticipant, activeMealKey, isPurchaseQuantityEditing, isUnitPriceEditing)
+      + '</section>'
+      + (preview.message && !preview.canSubmit ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
+      + '</div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回填报</button><button type="button" class="school-mobile-button is-primary" data-action="submit-auxiliary-demand" ' + (canSubmit && !state.submitting ? '' : 'disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
   }
 
   function renderConfirm() {
@@ -2003,7 +2450,7 @@
       + '</section>'
       + '<button type="button" class="school-mobile-profile-entry" data-action="open-profile-submissions">'
       + '<span class="school-mobile-profile-entry-icon">' + productOrderIcon('record') + '</span>'
-      + '<span class="school-mobile-profile-entry-main"><strong>提交记录' + (records.length ? '<em class="school-mobile-profile-entry-badge">' + number(records.length) + '</em>' : '') + '</strong></span>'
+      + '<span class="school-mobile-profile-entry-main"><strong>提交记录</strong></span>'
       + '<span class="school-mobile-profile-entry-arrow" aria-hidden="true">›</span>'
       + '</button>'
       + '<button type="button" class="school-mobile-profile-entry school-mobile-profile-logout-entry" data-action="logout">'
@@ -2535,11 +2982,41 @@
       + '</section></div>';
   }
 
+  function renderAuxiliaryDemandDetailSheet(detail) {
+    const product = detail?.product;
+    if (!product) return '';
+    const mealName = shouldSplitConfirmByMeal() ? (detail.mealName || '') : '';
+    const participantRows = (detail.participantRows || []).map((item) => {
+      const participantName = attendanceService.participantDisplayName?.(item.participant, participants())
+        || item.participant?.label || item.participant?.tagName || '人员';
+      return '<div class="school-mobile-demand-detail-row" role="row">'
+        + '<strong role="cell">' + escapeHtml(participantName) + '</strong>'
+        + '<span role="cell">' + quantity(item.demand) + ' ' + escapeHtml(detail.unit) + '</span>'
+        + '<span role="cell">' + quantity(item.purchase) + ' ' + escapeHtml(detail.unit) + '</span>'
+        + '</div>';
+    }).join('');
+    const participantDetailMarkup = shouldSplitConfirmByPersonType()
+      ? '<div class="school-mobile-demand-detail-heading"><strong>人员类型明细</strong></div>'
+        + '<div class="school-mobile-demand-detail-list" role="table" aria-label="不同人员类型需求量和采购量明细">'
+        + '<div class="school-mobile-demand-detail-head" role="row"><span role="columnheader">人员类型</span><span role="columnheader">需求量</span><span role="columnheader">采购量</span></div>'
+        + (participantRows || '<div class="school-mobile-empty">暂无人员类型明细</div>')
+        + '</div>'
+      : '';
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-detail-sheet" role="dialog" aria-modal="true" aria-label="商品需求明细">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(product.name) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
+      + '<p class="school-mobile-sheet-subtitle">' + (mealName ? escapeHtml(mealName) + ' · ' : '') + escapeHtml(product.code) + ' · ' + escapeHtml(detail.unit) + '</p>'
+      + '<div class="school-mobile-demand-detail-total school-mobile-demand-detail-total-auxiliary"><div><span>人均用量</span><strong>' + escapeHtml(product.doseDisplay || (quantity(product.dose) + ' ' + detail.unit)) + '</strong></div><div><span>需求总量</span><strong>' + quantity(detail.totalQty) + ' ' + escapeHtml(detail.unit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(detail.purchaseQty) + ' ' + escapeHtml(detail.unit) + '</strong></div></div>'
+      + participantDetailMarkup
+      + '</section></div>';
+  }
+
   function renderDemandDetailSheet() {
     const detail = state.sheet?.detail;
-    if (!detail?.row) return '';
+    if (!detail) return '';
+    if (detail.auxiliary) return renderAuxiliaryDemandDetailSheet(detail);
+    if (!detail.row) return '';
     const row = detail.row;
-    const mealName = detail.meal?.name || '';
+    const mealName = shouldSplitConfirmByMeal() ? (detail.meal?.name || '') : '';
     const unit = productUnit(row);
     const currentParticipants = participants();
     const standard = isStandardProduct(row);
@@ -2554,15 +3031,18 @@
         + '<span role="cell">' + quantity(purchase) + ' ' + escapeHtml(unit) + '</span>'
         + '</div>';
     }).join('');
+    const participantDetailMarkup = shouldSplitConfirmByPersonType()
+      ? '<div class="school-mobile-demand-detail-heading"><strong>人员类型明细</strong></div>'
+        + '<div class="school-mobile-demand-detail-list" role="table" aria-label="不同人员类型需求量和采购量明细">'
+        + '<div class="school-mobile-demand-detail-head" role="row"><span role="columnheader">人员类型</span><span role="columnheader">需求量</span><span role="columnheader">采购量</span></div>'
+        + (participantRows || '<div class="school-mobile-empty">暂无人员类型明细</div>')
+        + '</div>'
+      : '';
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-detail-sheet" role="dialog" aria-modal="true" aria-label="商品需求明细">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(productName(row)) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<p class="school-mobile-sheet-subtitle">' + (mealName ? escapeHtml(mealName) + ' · ' : '') + escapeHtml(productCode(row)) + ' · ' + escapeHtml(unit) + ' · ' + (standard ? '标品' : '非标品') + '</p>'
       + '<div class="school-mobile-demand-detail-total"><div><span>需求总量</span><strong>' + quantity(row.totalQty) + ' ' + escapeHtml(unit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(purchaseTotalQuantity(row, currentParticipants)) + ' ' + escapeHtml(unit) + '</strong></div></div>'
-      + '<div class="school-mobile-demand-detail-heading"><strong>人员类型明细</strong></div>'
-      + '<div class="school-mobile-demand-detail-list" role="table" aria-label="不同人员类型需求量和采购量明细">'
-      + '<div class="school-mobile-demand-detail-head" role="row"><span role="columnheader">人员类型</span><span role="columnheader">需求量</span><span role="columnheader">采购量</span></div>'
-      + (participantRows || '<div class="school-mobile-empty">暂无人员类型明细</div>')
-      + '</div>'
+      + participantDetailMarkup
       + '</section></div>';
   }
 
@@ -2649,6 +3129,15 @@
     render();
   }
 
+  function openAuxiliaryDemandDetailSheet(target) {
+    const menu = menuFor(target.dataset.menuDate || state.date);
+    const product = auxiliaryProducts.find((item) => item.id === target.dataset.auxiliaryId);
+    const detail = auxiliaryDemandDetail(product, menu, state.attendance, target.dataset.auxiliaryMealKey || state.attendanceMealKey);
+    if (!detail) return;
+    state.sheet = { type: 'demand-detail', detail: { auxiliary: true, ...detail } };
+    render();
+  }
+
   function syncExpectedAtTimeColumns() {
     app.querySelectorAll('.school-mobile-expected-at-time-column').forEach((column) => {
       const options = [...column.querySelectorAll('.school-mobile-expected-at-time-option')];
@@ -2678,16 +3167,18 @@
 
   function render() {
     const content = state.screen === 'confirm'
-      ? renderConfirm()
+      ? (state.confirmMode === 'auxiliary' ? renderAuxiliaryConfirm() : renderConfirm())
       : state.screen === 'product-orders'
       ? renderProductOrders()
       : state.screen === 'order-detail'
         ? renderOrderDetail()
       : state.screen === 'detail'
         ? renderRecordDetail()
-        : state.tab === 'home'
+      : state.tab === 'home'
           ? renderHome()
           : state.tab === 'attendance'
+            ? renderAttendance()
+          : state.tab === 'auxiliary'
             ? renderAttendance()
           : state.tab === 'cart'
             ? renderProductCart()
@@ -2720,7 +3211,7 @@
     app.innerHTML = '<div class="school-mobile-app">'
       + renderHeader()
       + '<main class="school-mobile-main">' + content + '</main>'
-      + (state.screen === 'main' && !state.orderDetailProductAddMode && state.tab !== 'attendance' && !(state.tab === 'profile' && !currentMobileSession()) ? renderBottomNav() : '')
+      + (state.screen === 'main' && !state.orderDetailProductAddMode && !['attendance', 'auxiliary'].includes(state.tab) && !(state.tab === 'profile' && !currentMobileSession()) ? renderBottomNav() : '')
       + sheet
       + (state.toast ? '<div class="school-mobile-toast ' + (state.toast.isError ? 'is-error' : '') + '" role="status">' + escapeHtml(state.toast.message) + '</div>' : '')
       + '</div>';
@@ -2753,9 +3244,13 @@
       element.textContent = number(mealTotal);
     });
     const demand = app.querySelector('#schoolMobileAttendanceDemand');
-    if (demand) demand.innerHTML = renderDemandRows(menu, state.attendance, state.attendanceMealKey);
+    if (demand) demand.innerHTML = state.tab === 'auxiliary'
+      ? renderAuxiliaryDemandRows(menu, state.attendance, state.attendanceMealKey)
+      : renderDemandRows(menu, state.attendance, state.attendanceMealKey);
     const continueButton = app.querySelector('[data-action="continue"]');
-    if (continueButton) continueButton.disabled = !validation.canContinue;
+    if (continueButton) continueButton.disabled = state.tab === 'auxiliary'
+      ? Boolean(validation.errors?.length) || Number(calculation.totalPeople || 0) <= 0
+      : !validation.canContinue;
     const filledDays = app.querySelector('#schoolMobileFilledDays');
     if (filledDays) filledDays.textContent = number(currentFilledDateSummaries().length) + ' 天';
   }
@@ -2913,6 +3408,7 @@
 
   async function submitDemand() {
     if (state.submitting) return;
+    const isAuxiliary = state.confirmMode === 'auxiliary';
     ensureDemoSession();
     if (!syncConfirmUnitPriceInputs()) return;
     syncConfirmPurchaseInputs();
@@ -2921,12 +3417,15 @@
       showToast('请至少选择一个用料日期', true);
       return;
     }
-    const preview = buildConfirmPreview();
+    const preview = isAuxiliary ? buildAuxiliaryConfirmPreview() : buildConfirmPreview();
     if (!preview.canSubmit) {
       showToast(preview.message || '当前需求不能提交', true);
       return;
     }
-    if (!hasConfirmPurchaseQuantity(preview)) {
+    const hasPurchaseQuantity = isAuxiliary
+      ? hasAuxiliaryConfirmPurchaseQuantity(preview)
+      : hasConfirmPurchaseQuantity(preview);
+    if (!hasPurchaseQuantity) {
       showToast('当前没有采购量，无法提交', true);
       return;
     }
@@ -2942,10 +3441,13 @@
     state.submitting = true;
     render();
     try {
+      const submissionPreview = isAuxiliary ? buildAuxiliarySubmissionPreview(preview) : preview;
       const result = await demandService.submit(dates, {
         ...serviceOptions(),
         expectedAt,
         canteen: currentCanteen(),
+        preview: submissionPreview,
+        auxiliaryProducts: isAuxiliary ? auxiliarySubmissionProducts() : undefined,
         unitPriceOverrides: { ...state.unitPriceOverrides },
         purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }
       });
@@ -3316,6 +3818,20 @@
       return;
     }
 
+    if (action === 'open-auxiliary-attendance') {
+      if (!menuFor(state.date)) return;
+      state.screen = 'main';
+      state.tab = 'auxiliary';
+      state.attendanceReturnTab = 'recipe';
+      state.attendanceInputMode = 'dining';
+      state.attendanceValidationHighlightDate = '';
+      state.sheet = null;
+      loadAttendance();
+      fillDefaultsIfEmpty();
+      render();
+      return;
+    }
+
     if (action === 'toggle-attendance-mode') {
       if (state.attendanceInputMode === 'non-dining') {
         saveNonDiningMode();
@@ -3362,7 +3878,7 @@
         closeOrderDetailProductAdd();
         return;
       }
-      if (state.screen === 'main' && state.tab === 'attendance') {
+      if (state.screen === 'main' && ['attendance', 'auxiliary'].includes(state.tab)) {
         state.tab = state.attendanceReturnTab || 'recipe';
         state.attendanceInputMode = 'dining';
         state.attendanceReturnTab = '';
@@ -3397,10 +3913,15 @@
         render();
         return;
       }
+      let confirmReturnTab = '';
       if (state.screen === 'confirm') {
+        confirmReturnTab = state.confirmMode === 'auxiliary'
+          ? 'auxiliary'
+          : state.tab === 'profile' ? 'profile' : 'attendance';
         preserveAttendanceOnReturn();
         loadAttendance();
         state.confirmDates.clear();
+        state.confirmMode = 'ingredient';
         state.confirmMealKey = '';
         state.confirmParticipantKey = '';
         state.unitPriceOverrides = {};
@@ -3410,7 +3931,9 @@
         state.expectedAt = '';
       }
       state.screen = 'main';
-      state.tab = state.tab === 'profile' ? 'profile' : 'attendance';
+      state.tab = confirmReturnTab
+        ? confirmReturnTab
+        : state.tab === 'profile' ? 'profile' : 'attendance';
       state.attendanceInputMode = 'dining';
       state.attendanceReturnTab = '';
       state.record = null;
@@ -3435,12 +3958,12 @@
       return;
     }
     if (action === 'change-month') {
-      if (state.tab === 'attendance' && state.attendanceInputMode === 'non-dining') return;
+      if (['attendance', 'auxiliary'].includes(state.tab) && state.attendanceInputMode === 'non-dining') return;
       changeMonth(target.dataset.monthDelta);
       return;
     }
     if (action === 'select-date') {
-      if (state.tab === 'attendance' && state.attendanceInputMode === 'non-dining') return;
+      if (['attendance', 'auxiliary'].includes(state.tab) && state.attendanceInputMode === 'non-dining') return;
       const strip = target.closest('[data-date-strip]');
       if (strip) {
         const scrollKey = (strip.dataset.stripMode || '') + '|' + (strip.dataset.monthKey || '');
@@ -3523,20 +4046,25 @@
       openDemandDetailSheet(target);
       return;
     }
+    if (action === 'open-auxiliary-demand-detail') {
+      openAuxiliaryDemandDetailSheet(target);
+      return;
+    }
     if (action === 'fill-defaults') {
-      if (state.tab === 'attendance' && state.attendanceInputMode === 'non-dining') return;
+      if (['attendance', 'auxiliary'].includes(state.tab) && state.attendanceInputMode === 'non-dining') return;
       fillDefaultAttendance();
       render();
       return;
     }
     if (action === 'reset-attendance') {
-      if (state.tab === 'attendance' && state.attendanceInputMode === 'non-dining') return;
+      if (['attendance', 'auxiliary'].includes(state.tab) && state.attendanceInputMode === 'non-dining') return;
       resetAttendance();
       render();
       return;
     }
     if (action === 'continue') {
-      enterConfirm();
+      if (state.tab === 'auxiliary') enterAuxiliaryDemand();
+      else enterConfirm();
       return;
     }
     if (action === 'confirm-date') {
@@ -3561,9 +4089,32 @@
       }
       return;
     }
+    if (action === 'select-auxiliary-confirm-meal') {
+      const preview = buildAuxiliaryConfirmPreview();
+      if (confirmMealDefinitions(preview).some((meal) => meal.key === target.dataset.mealKey)) {
+        if (!syncConfirmUnitPriceInputs()) return;
+        syncConfirmPurchaseInputs();
+        state.confirmMealKey = target.dataset.mealKey;
+        render();
+      }
+      return;
+    }
     if (action === 'confirm-order-tag') {
       const preview = buildConfirmPreview();
       if (confirmParticipants(preview).some((participant) => participant.key === target.dataset.participantKey)) {
+        if (!syncConfirmUnitPriceInputs()) return;
+        syncConfirmPurchaseInputs();
+        state.confirmParticipantKey = target.dataset.participantKey;
+        state.unitPriceEditing = false;
+        state.purchaseQuantityEditingKey = '';
+        render();
+      }
+      return;
+    }
+    if (action === 'auxiliary-confirm-order-tag') {
+      const preview = buildAuxiliaryConfirmPreview();
+      const available = auxiliaryConfirmParticipants(preview);
+      if (available.some((participant) => participant.key === target.dataset.participantKey)) {
         if (!syncConfirmUnitPriceInputs()) return;
         syncConfirmPurchaseInputs();
         state.confirmParticipantKey = target.dataset.participantKey;
@@ -3583,9 +4134,12 @@
     }
     if (action === 'restore-default-unit-price') {
       if (!canModifyConfirmUnitPrice()) return;
-      const preview = buildConfirmPreview();
+      const preview = state.confirmMode === 'auxiliary' ? buildAuxiliaryConfirmPreview() : buildConfirmPreview();
       syncConfirmUnitPriceInputs();
-      (preview.rows || []).forEach((row) => {
+      const rows = state.confirmMode === 'auxiliary'
+        ? auxiliaryConfirmMealRows(preview, 'all-meals')
+        : (preview.rows || []);
+      rows.forEach((row) => {
         if (row.mappingStatus === '已关联') delete state.unitPriceOverrides[purchaseRowKey(row)];
       });
       state.unitPriceEditing = true;
@@ -3599,9 +4153,13 @@
       return;
     }
     if (action === 'edit-purchase-quantity') {
-      const preview = buildConfirmPreview();
-      if (confirmParticipants(preview).some((participant) => participant.key === target.dataset.purchaseParticipantKey)) {
+      const preview = state.confirmMode === 'auxiliary' ? buildAuxiliaryConfirmPreview() : buildConfirmPreview();
+      const available = state.confirmMode === 'auxiliary'
+        ? auxiliaryConfirmParticipants(preview)
+        : confirmParticipants(preview);
+      if (available.some((participant) => participant.key === target.dataset.purchaseParticipantKey)) {
         if (!syncConfirmUnitPriceInputs()) return;
+        syncConfirmPurchaseInputs();
         state.confirmParticipantKey = target.dataset.purchaseParticipantKey;
         state.unitPriceEditing = false;
         state.purchaseQuantityEditingKey = target.dataset.purchaseParticipantKey;
@@ -3610,14 +4168,23 @@
       return;
     }
     if (action === 'restore-default-purchase-quantity') {
-      const preview = buildConfirmPreview();
+      const preview = state.confirmMode === 'auxiliary' ? buildAuxiliaryConfirmPreview() : buildConfirmPreview();
       const participantKey = target.dataset.purchaseParticipantKey || '';
-      if (!confirmParticipants(preview).some((participant) => participant.key === participantKey)) return;
+      const available = state.confirmMode === 'auxiliary'
+        ? auxiliaryConfirmParticipants(preview)
+        : confirmParticipants(preview);
+      if (!available.some((participant) => participant.key === participantKey)) return;
       if (!syncConfirmUnitPriceInputs()) return;
       syncConfirmPurchaseInputs();
       confirmMealDefinitions(preview).forEach((meal) => {
-        confirmMealRows(preview, meal.key).forEach((row) => {
-          if (row.mappingStatus === '已关联') delete state.purchaseQtyOverrides[purchaseQuantityKey(row, participantKey, meal.key)];
+        const rows = state.confirmMode === 'auxiliary'
+          ? auxiliaryConfirmMealRows(preview, meal.key)
+          : confirmMealRows(preview, meal.key);
+        rows.forEach((row) => {
+          const editable = state.confirmMode === 'auxiliary'
+            ? canModifyAuxiliaryPurchaseQuantity(row)
+            : true;
+          if (row.mappingStatus === '已关联' && editable) delete state.purchaseQtyOverrides[purchaseQuantityKey(row, participantKey, meal.key)];
         });
       });
       state.confirmParticipantKey = participantKey;
@@ -3635,6 +4202,10 @@
       return;
     }
     if (action === 'submit-demand') {
+      submitDemand();
+      return;
+    }
+    if (action === 'submit-auxiliary-demand') {
       submitDemand();
       return;
     }

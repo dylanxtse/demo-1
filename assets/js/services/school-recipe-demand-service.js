@@ -334,6 +334,7 @@
   }
 
   function buildPreview(dates, options = {}) {
+    if (options.preview) return clone(options.preview);
     const normalizedDates = normalizeDates(dates);
     const canteen = currentCanteen(options.canteen);
     const participants = options.participants || participantsFor(canteen);
@@ -411,8 +412,14 @@
     return changed ? writeAll(next) : next;
   }
 
-  function getProductMap() {
-    return new Map((schoolOrderService.getProductCatalog?.() || []).map((product) => [String(product.code), product]));
+  function getProductMap(extraProducts = []) {
+    const products = [
+      ...(schoolOrderService.getProductCatalog?.() || []),
+      ...(Array.isArray(extraProducts) ? extraProducts : [])
+    ];
+    return new Map(products
+      .filter((product) => product && (product.code || product.id))
+      .map((product) => [String(product.code || product.id), product]));
   }
 
   function buildPurchaseQuantityAllocations(preview, overrides, productMap, excludedProductKeys = new Set()) {
@@ -635,7 +642,7 @@
     const records = readAll();
     const operator = currentOperator();
     const createdAt = timestamp();
-    const productMap = getProductMap();
+    const productMap = getProductMap(options.auxiliaryProducts);
     const splitOrderByMeal = shouldSplitOrderByMeal();
     const splitOrderByPersonType = shouldSplitOrderByPersonType();
     const orderParticipants = splitOrderByPersonType ? preview.participants : [DEFAULT_ORDER_PARTICIPANT];
