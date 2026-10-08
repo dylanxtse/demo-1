@@ -2229,8 +2229,9 @@
       ? '<div class="school-mobile-confirm-edit-actions">' + unitPriceActions + purchaseQuantityActions + '</div>'
       : '';
     const canSubmit = Boolean(preview.canSubmit && hasAuxiliaryConfirmPurchaseQuantity(preview) && expectedAtIsAllowed(state.expectedAt));
-    const dateOptions = preview.dateSummaries.length
-      ? preview.dateSummaries.map((summary) => '<button type="button" class="school-mobile-confirm-date '
+    const selectableDateSummaries = currentFilledDateSummaries();
+    const dateOptions = selectableDateSummaries.length
+      ? selectableDateSummaries.map((summary) => '<button type="button" class="school-mobile-confirm-date '
         + (summary.status?.key === 'partial' ? 'is-partial ' : summary.status?.key === 'complete' ? 'is-complete ' : 'is-disabled ')
         + (state.confirmDates.has(summary.date) ? 'is-selected ' : '')
         + '" data-action="confirm-date" data-date="' + escapeHtml(summary.date) + '">'
