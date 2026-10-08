@@ -44,6 +44,7 @@ body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled { color: #c2c8d0
 body > #schoolRecipeExpectedAtPickerPanel .cal-day.cal-disabled:hover { color: #c2c8d0; background: #f7f8fa; }
 .school-recipe-demand-section { margin-top: 20px; }
 .school-recipe-demand-section > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.school-recipe-demand-product-header { align-items: center !important; }
 .school-recipe-demand-section > header p { margin: 5px 0 0; color: #9aa4b2; font-size: 11px; line-height: 17px; }
 .school-recipe-demand-section-count { flex: 0 0 auto; padding-top: 2px; color: #8994a4; font-size: 12px; }
 .school-recipe-demand-restore-default { flex: 0 0 auto; color: #477fca; border-color: #a9c8fa; background: #fff; }

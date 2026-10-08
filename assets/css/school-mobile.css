@@ -834,7 +834,7 @@ button {
   padding: 0 13px;
   border-radius: 18px;
   color: #fff;
-  background: linear-gradient(135deg, #4a97f5, #2262e0);
+  background: #2f7fe8;
   box-shadow: 0 4px 10px rgba(34, 98, 224, .2);
   font-size: 11px;
   font-weight: 700;
@@ -1662,6 +1662,7 @@ button {
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;
+  padding-bottom: 72px;
   overscroll-behavior: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -3340,32 +3341,33 @@ button.school-mobile-demand-row:active {
   background: #fff;
 }
 
-.school-mobile-recipe-demand-float {
+.school-mobile-recipe-demand-actions {
   position: absolute;
   z-index: 4;
-  left: 50%;
+  right: 12px;
+  left: 12px;
   bottom: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.school-mobile-recipe-demand-float {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
-  min-width: 156px;
   height: 42px;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 15px;
+  padding: 0 8px;
   border-radius: 22px;
   color: #fff;
   background: linear-gradient(135deg, #4a97f5, #2262e0);
   box-shadow: 0 5px 14px rgba(34, 98, 224, .28);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  transform: translateX(-50%);
   white-space: nowrap;
-}
-
-.school-mobile-recipe-demand-float span {
-  font-size: 20px;
-  font-weight: 400;
-  line-height: 1;
 }
 
 .school-mobile-recipe-demand-float.is-disabled,

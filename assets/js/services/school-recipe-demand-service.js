@@ -25,6 +25,14 @@
     { key: 'student', label: '学生', tagName: '学生', nutritious: '不区分', legacyKey: 'student', orderTag: '学生-不区分' },
     { key: 'teacher', label: '教师', tagName: '教师', nutritious: '不区分', legacyKey: 'teacher', orderTag: '教师-不区分' }
   ];
+  const DEFAULT_ORDER_PARTICIPANT = {
+    key: 'all-participants',
+    label: '其他',
+    tagName: '其他',
+    nutritious: '不区分',
+    orderTag: '其他-不区分',
+    tagId: 'other-non-nutritious'
+  };
   let memoryRecords = [];
 
   if (!recipeService || !attendanceService || !schoolOrderService) return;
@@ -92,6 +100,10 @@
   const shouldSplitOrderByMeal = () => {
     const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
     return value !== false && value !== 'false' && value !== 0 && value !== '0';
+  };
+  const shouldSplitOrderByPersonType = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
+    return value === true || value === 'true' || value === 1 || value === '1';
   };
 
   function currentCanteen(value) {
@@ -406,6 +418,9 @@
   function buildPurchaseQuantityAllocations(preview, overrides, productMap, excludedProductKeys = new Set()) {
     const allocations = {};
     const participants = preview.participants || [];
+    const splitOrderByMeal = shouldSplitOrderByMeal();
+    const splitOrderByPersonType = shouldSplitOrderByPersonType();
+    const assignedAggregateOverrides = new Set();
     const mealDefinitions = [];
     const mealKeys = new Set();
     (preview.dateSummaries || []).forEach((summary) => {
@@ -423,10 +438,20 @@
           if (excludedProductKeys.has(purchaseRowKey(row))) return;
           const product = productMap.get(String(row.productCode)) || {};
           if (!canModifyPurchaseQuantity(product)) return;
+          const aggregateMeal = splitOrderByMeal ? meal : { key: 'all-meals' };
+          const aggregateOverrideKey = !splitOrderByPersonType
+            ? purchaseAllocationKey(null, aggregateMeal, row, DEFAULT_ORDER_PARTICIPANT.key)
+            : '';
+          const hasAggregateOverride = aggregateOverrideKey && hasOwn(overrides, aggregateOverrideKey);
           participants.forEach((participant) => {
             if (number(row.participantQty?.[participant.key]) <= 0) return;
             const overrideKey = purchaseAllocationKey(null, meal, row, participant.key);
-            if (hasOwn(overrides, overrideKey)) {
+            if (hasAggregateOverride) {
+              allocations[overrideKey] = assignedAggregateOverrides.has(aggregateOverrideKey)
+                ? 0
+                : normalizePurchaseQuantity(overrides[aggregateOverrideKey], product);
+              assignedAggregateOverrides.add(aggregateOverrideKey);
+            } else if (hasOwn(overrides, overrideKey)) {
               allocations[overrideKey] = normalizePurchaseQuantity(overrides[overrideKey], product);
             }
           });
@@ -437,6 +462,8 @@
 
   function editablePurchaseQuantityOverrides(preview, overrides, productMap) {
     const allowed = new Set();
+    const splitOrderByMeal = shouldSplitOrderByMeal();
+    const splitOrderByPersonType = shouldSplitOrderByPersonType();
     const mealDefinitions = [];
     const mealKeys = new Set();
     (preview.dateSummaries || []).forEach((summary) => {
@@ -457,6 +484,14 @@
             if (number(row.participantQty?.[participant.key]) <= 0) return;
             allowed.add(purchaseAllocationKey(null, meal, row, participant.key));
           });
+          if (!splitOrderByPersonType) {
+            allowed.add(purchaseAllocationKey(
+              null,
+              splitOrderByMeal ? meal : { key: 'all-meals' },
+              row,
+              DEFAULT_ORDER_PARTICIPANT.key
+            ));
+          }
         });
     });
     return Object.fromEntries(Object.entries(overrides || {}).filter(([key]) => allowed.has(key)));
@@ -602,6 +637,8 @@
     const createdAt = timestamp();
     const productMap = getProductMap();
     const splitOrderByMeal = shouldSplitOrderByMeal();
+    const splitOrderByPersonType = shouldSplitOrderByPersonType();
+    const orderParticipants = splitOrderByPersonType ? preview.participants : [DEFAULT_ORDER_PARTICIPANT];
     const unitPriceOverrides = editableUnitPriceOverrides(
       preview,
       options.unitPriceOverrides || {},
@@ -678,8 +715,8 @@
         name: mealDefinitions.map((meal) => meal.name || meal.key).join('、'),
         meals: mealDefinitions
       }];
-    // 订单先按订单标签（人员类型）聚合，是否再按餐次拆分由企业端配置决定；用料日期只用于汇总来源和留痕。
-    for (const participant of preview.participants) {
+    // 订单按企业端配置决定是否按人员类型、餐次拆分；用料日期只用于汇总来源和留痕。
+    for (const participant of orderParticipants) {
       for (const orderGroup of orderGroups) {
         const mealSources = orderGroup.meals.map((mealDefinition) => {
           const sourceSummaries = preview.dateSummaries.filter((summary) => (
@@ -691,14 +728,23 @@
             rows: aggregateMealRowsForPreview(preview, mealDefinition.key)
           };
           const anchorSummary = sourceSummaries[0];
-          const items = participantItems(anchorSummary, participant.key, productMap, meal, { purchaseQuantityAllocations, unitPriceOverrides, excludedProductKeys });
+          const sourceParticipants = splitOrderByPersonType ? [participant] : preview.participants;
+          const items = sourceParticipants.flatMap((sourceParticipant) => participantItems(
+            anchorSummary,
+            sourceParticipant.key,
+            productMap,
+            meal,
+            { purchaseQuantityAllocations, unitPriceOverrides, excludedProductKeys }
+          ));
           return {
             dates: sourceSummaries.map((summary) => summary.date),
             meal,
             items,
             people: sourceSummaries.reduce((total, summary) => {
               const sourceMeal = (summary.calculation?.mealRows || []).find((item) => String(item.key || item.name || '') === mealDefinition.key);
-              return total + number(sourceMeal?.participantPeople?.[participant.key]);
+              return total + sourceParticipants.reduce((subtotal, sourceParticipant) => (
+                subtotal + number(sourceMeal?.participantPeople?.[sourceParticipant.key])
+              ), 0);
             }, 0)
           };
         }).filter(Boolean);
@@ -767,8 +813,12 @@
       time: completedAt,
       description: record.orders.length
         ? splitOrderByMeal
-          ? `已按订单标签及餐次生成订单（用料日期不参与拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
-          : `已按订单标签生成订单（未按餐次及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
+          ? splitOrderByPersonType
+            ? `已按订单标签及餐次生成订单（用料日期不参与拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
+            : `已按餐次生成订单（未按人员类型及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
+          : splitOrderByPersonType
+            ? `已按订单标签生成订单（未按餐次及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
+            : `已生成合并订单（未按人员类型、餐次及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
         : '没有生成可下单商品'
     });
     if (record.enterpriseSyncWarnings.length) {

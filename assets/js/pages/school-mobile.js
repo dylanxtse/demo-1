@@ -202,6 +202,14 @@
   const purchaseQuantityKey = (item, participantKey, mealKey = '') => mealKey
     ? `${mealKey}::${purchaseRowKey(item)}::${participantKey}`
     : `${purchaseRowKey(item)}::${participantKey}`;
+  const DEFAULT_ORDER_PARTICIPANT = {
+    key: 'all-participants',
+    label: '其他',
+    tagName: '其他',
+    nutritious: '不区分',
+    orderTag: '其他-不区分',
+    tagId: 'other-non-nutritious'
+  };
   const orderTagName = (participant) => String(
     participant?.orderTag
       || `${participant?.label || participant?.tagName || '订单标签'}-${participant?.nutritious || '不区分'}`
@@ -477,6 +485,16 @@
     return { canteen: currentCanteen(), participants: participants() };
   }
 
+  function shouldSplitConfirmByMeal() {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
+    return value !== false && value !== 'false' && value !== 0 && value !== '0';
+  }
+
+  function shouldSplitConfirmByPersonType() {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
+    return value === true || value === 'true' || value === 1 || value === '1';
+  }
+
   function activeAttendanceMeal(menu) {
     const meals = menu?.meals || [];
     const active = meals.find((meal) => String(meal.key) === String(state.attendanceMealKey)) || meals[0] || null;
@@ -485,6 +503,9 @@
   }
 
   function confirmMealDefinitions(preview) {
+    if (!shouldSplitConfirmByMeal()) {
+      return preview?.dateSummaries?.length ? [{ key: 'all-meals', name: '合计' }] : [];
+    }
     const meals = [];
     const keys = new Set();
     (preview?.dateSummaries || []).forEach((summary) => {
@@ -506,7 +527,9 @@
   }
 
   function confirmMealRows(preview, mealKey) {
-    if (!mealKey || !demandService.aggregateMealRows) return [];
+    if (!mealKey) return [];
+    if (mealKey === 'all-meals') return preview?.rows || [];
+    if (!demandService.aggregateMealRows) return [];
     return demandService.aggregateMealRows(preview, mealKey);
   }
 
@@ -1202,13 +1225,13 @@
     const title = loginPage
       ? '登录'
         : state.screen === 'confirm'
-        ? '确认需求'
+        ? '食材需求确认'
         : state.screen === 'order-detail'
           ? '订单详情'
         : state.screen === 'detail'
           ? '提交记录详情'
         : state.tab === 'attendance'
-          ? '需求填报'
+          ? '食材需求填报'
           : state.tab === 'profile'
               ? (profileSubpage && state.profileView === 'orders' ? '订单列表' : profileSubpage ? '提交记录' : '个人中心')
               : state.tab === 'home'
@@ -1354,7 +1377,10 @@
 
   function renderRecipeDemandButton() {
     const disabled = !menuFor(state.date);
-    return '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>需求填报<span aria-hidden="true">›</span></button>';
+    return '<div class="school-mobile-recipe-demand-actions" aria-label="需求填报入口">'
+      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary">辅料需求填报</button>'
+      + '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>食材需求填报</button>'
+      + '</div>';
   }
 
   function renderRecipePage() {
@@ -1405,7 +1431,7 @@
       + notice
       + '<div class="school-mobile-section-heading"><div class="school-mobile-section-heading-content"><strong>餐次就餐人数</strong></div><div class="school-mobile-attendance-heading-actions">' + modeAction + '</div></div>'
       + '<div class="school-mobile-attendance-meal-grid">' + (meals || '<div class="school-mobile-empty">当前食谱暂无餐次</div>') + '</div>'
-      + '<section class="school-mobile-demand-section" aria-label="按餐次查看采购商品">'
+      + '<section class="school-mobile-demand-section" aria-label="' + (shouldSplitConfirmByMeal() ? '按餐次查看采购商品' : '查看采购商品') + '">'
       + renderAttendanceDemandTabs(menu)
       + '<div id="schoolMobileAttendanceDemand">' + renderDemandRows(menu, state.attendance, state.attendanceMealKey) + '</div>'
       + '</section>'
@@ -1477,6 +1503,7 @@
   }
 
   function renderAttendanceDemandTabs(menu) {
+    if (!shouldSplitConfirmByMeal()) return '';
     const activeMeal = activeAttendanceMeal(menu);
     const meals = menu?.meals || [];
     if (!meals.length) return '';
@@ -1487,8 +1514,10 @@
 
   function renderDemandRows(menu, record, activeMealKey = '') {
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
-    const meal = (calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey))
-      || calculation.mealRows?.[0];
+    const meal = shouldSplitConfirmByMeal()
+      ? ((calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey))
+        || calculation.mealRows?.[0])
+      : { key: 'all-meals', name: '合计', rows: calculation.rows || [] };
     const rows = (meal?.rows || []).filter((row) => Number(row.totalQty || 0) > 0);
     if (!rows.length) return '<div class="school-mobile-demand-list"><div class="school-mobile-empty">填写人数后显示商品需求</div></div>';
     return '<div class="school-mobile-demand-list">' + rows.map((row) => {
@@ -1655,12 +1684,18 @@
   function participantHasPurchaseDemand(preview, participant) {
     const participantKey = participant?.key;
     if (!participantKey) return false;
+    if (participantKey === DEFAULT_ORDER_PARTICIPANT.key) {
+      return (preview.rows || []).some((row) => row.mappingStatus === '已关联' && Number(row.totalQty || 0) > 0);
+    }
     return (preview.rows || []).some((row) => (
       row.mappingStatus === '已关联' && Number(row.participantQty?.[participantKey] || 0) > 0
     ));
   }
 
   function confirmParticipants(preview) {
+    if (!shouldSplitConfirmByPersonType()) {
+      return participantHasPurchaseDemand(preview, DEFAULT_ORDER_PARTICIPANT) ? [DEFAULT_ORDER_PARTICIPANT] : [];
+    }
     return (preview.participants || []).filter((participant) => participantHasPurchaseDemand(preview, participant));
   }
 
@@ -1673,9 +1708,12 @@
 
   function purchaseQuantityValue(row, participant, mealKey = '') {
     const key = purchaseQuantityKey(row, participant.key, mealKey);
+    const defaultValue = participant.key === DEFAULT_ORDER_PARTICIPANT.key
+      ? purchaseTotalQuantity(row, participants())
+      : purchaseQuantity(row.participantQty?.[participant.key], row);
     return Object.prototype.hasOwnProperty.call(state.purchaseQtyOverrides, key)
       ? state.purchaseQtyOverrides[key]
-      : purchaseQuantity(row.participantQty?.[participant.key], row);
+      : defaultValue;
   }
 
   function hasConfirmPurchaseQuantity(preview) {
@@ -1749,6 +1787,7 @@
   }
 
   function renderConfirmOrderTags(preview, activeParticipant) {
+    if (!shouldSplitConfirmByPersonType()) return '';
     const available = confirmParticipants(preview);
     if (!available.length) return '<div class="school-mobile-empty">暂无可提交的订单标签</div>';
     return '<div class="school-mobile-order-tag-list" role="tablist" aria-label="提交需求包含的订单标签">'
@@ -1759,6 +1798,7 @@
   }
 
   function renderConfirmMealTabs(preview, activeMeal) {
+    if (!shouldSplitConfirmByMeal()) return '';
     const meals = confirmMealDefinitions(preview);
     if (!meals.length) return '';
     return '<div class="school-mobile-meal-tabs school-mobile-confirm-meal-tabs" role="tablist" aria-label="采购量餐次切换">'
@@ -1797,11 +1837,14 @@
     const confirmEditActions = activeParticipant
       ? '<div class="school-mobile-confirm-edit-actions">' + unitPriceActions + purchaseQuantityActions + '</div>'
       : '';
+    const orderTagSwitcher = shouldSplitConfirmByPersonType()
+      ? '<div class="school-mobile-confirm-switchers"><div class="school-mobile-order-tags-inline">' + renderConfirmOrderTags(preview, activeParticipant) + '</div></div>'
+      : '';
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
       + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
       + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>需求天数</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
-      + '<div class="school-mobile-confirm-switchers"><div class="school-mobile-order-tags-inline">' + renderConfirmOrderTags(preview, activeParticipant) + '</div></div>'
+      + orderTagSwitcher
       + '<section class="school-mobile-confirm-card school-mobile-purchase-card">'
       + renderConfirmMealTabs(preview, activeMeal)
       + '<div class="school-mobile-section-heading" style="margin-top:0"><strong>采购商品</strong>' + confirmEditActions + '</div>'
@@ -1817,7 +1860,9 @@
     const rows = participantKey
       ? rowsForMeal.filter((row) => (
         row.mappingStatus === '已关联'
-        && Number(row.participantQty?.[participantKey] || 0) > 0
+        && (participantKey === DEFAULT_ORDER_PARTICIPANT.key
+          ? Number(row.totalQty || 0) > 0
+          : Number(row.participantQty?.[participantKey] || 0) > 0)
       ))
       : [];
     if (!rows.length) return '<div class="school-mobile-empty">暂无可提交商品</div>';
@@ -2594,8 +2639,10 @@
     const menu = menuFor(target.dataset.menuDate || state.date);
     if (!menu) return;
     const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
-    const meal = (calculation.mealRows || []).find((item) => String(item.key) === String(target.dataset.demandMealKey))
-      || calculation.mealRows?.[0];
+    const meal = shouldSplitConfirmByMeal()
+      ? ((calculation.mealRows || []).find((item) => String(item.key) === String(target.dataset.demandMealKey))
+        || calculation.mealRows?.[0])
+      : { key: 'all-meals', name: '合计', rows: calculation.rows || [] };
     const row = (meal?.rows || []).find((item) => purchaseRowKey(item) === target.dataset.demandKey);
     if (!row) return;
     state.sheet = { type: 'demand-detail', detail: { menu, meal, row } };
