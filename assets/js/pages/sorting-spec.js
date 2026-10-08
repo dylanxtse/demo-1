@@ -164,106 +164,252 @@
   }
 
   const importTemplateHeaders = ['商品编号', '商品名称（计量单位/品牌/规格）', '是否标品', '计量单位', '分包单位', '分包系数', '状态', '备注'];
+  const xlsxMimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const xlsxTemplatePath = './assets/templates/分包规格导入模板.xlsx';
 
-  function importProductDisplayName(product) {
-    return window.DomUtils?.formatProductDisplay?.(product, state.products)
-      || `${product?.name || '--'}（${product?.unit || '--'}/${product?.brand || '--'}/${product?.spec || '--'}）`;
+  function xmlEscape(value) {
+    return String(value ?? '')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
-  function csvCell(value) {
-    return `"${String(value ?? '').replace(/"/g, '""')}"`;
+  function xlsxColumnName(index) {
+    let name = '';
+    let value = index + 1;
+    while (value > 0) {
+      const remainder = (value - 1) % 26;
+      name = String.fromCharCode(65 + remainder) + name;
+      value = Math.floor((value - 1) / 26);
+    }
+    return name;
   }
 
-  function importTemplateCsv() {
-    const rows = state.products.map((product) => [
-      product.code,
-      importProductDisplayName(product),
-      isStandardProduct(product) ? '是' : '否',
-      product.unit || '',
-      '',
-      '',
-      '启用',
-      ''
+  function xlsxCrc32(bytes) {
+    let checksum = 0xFFFFFFFF;
+    bytes.forEach((byte) => {
+      checksum ^= byte;
+      for (let bit = 0; bit < 8; bit += 1) {
+        checksum = (checksum >>> 1) ^ ((checksum & 1) ? 0xEDB88320 : 0);
+      }
+    });
+    return (checksum ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function createStoredZip(entries) {
+    const encoder = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let localOffset = 0;
+
+    entries.forEach(({ name, content }) => {
+      const nameBytes = encoder.encode(name);
+      const dataBytes = encoder.encode(content);
+      const checksum = xlsxCrc32(dataBytes);
+      const localHeader = new Uint8Array(30 + nameBytes.length);
+      const localView = new DataView(localHeader.buffer);
+      localView.setUint32(0, 0x04034B50, true);
+      localView.setUint16(4, 20, true);
+      localView.setUint16(6, 0x0800, true);
+      localView.setUint16(8, 0, true);
+      localView.setUint32(14, checksum, true);
+      localView.setUint32(18, dataBytes.length, true);
+      localView.setUint32(22, dataBytes.length, true);
+      localView.setUint16(26, nameBytes.length, true);
+      localView.setUint16(28, 0, true);
+      localHeader.set(nameBytes, 30);
+      localParts.push(localHeader, dataBytes);
+
+      const centralHeader = new Uint8Array(46 + nameBytes.length);
+      const centralView = new DataView(centralHeader.buffer);
+      centralView.setUint32(0, 0x02014B50, true);
+      centralView.setUint16(4, 20, true);
+      centralView.setUint16(6, 20, true);
+      centralView.setUint16(8, 0x0800, true);
+      centralView.setUint16(10, 0, true);
+      centralView.setUint32(16, checksum, true);
+      centralView.setUint32(20, dataBytes.length, true);
+      centralView.setUint32(24, dataBytes.length, true);
+      centralView.setUint16(28, nameBytes.length, true);
+      centralView.setUint16(30, 0, true);
+      centralView.setUint16(32, 0, true);
+      centralView.setUint16(34, 0, true);
+      centralView.setUint32(38, 0, true);
+      centralView.setUint32(42, localOffset, true);
+      centralHeader.set(nameBytes, 46);
+      centralParts.push(centralHeader);
+
+      localOffset += localHeader.length + dataBytes.length;
+    });
+
+    const centralSize = centralParts.reduce((total, part) => total + part.length, 0);
+    const endRecord = new Uint8Array(22);
+    const endView = new DataView(endRecord.buffer);
+    endView.setUint32(0, 0x06054B50, true);
+    endView.setUint16(8, entries.length, true);
+    endView.setUint16(10, entries.length, true);
+    endView.setUint32(12, centralSize, true);
+    endView.setUint32(16, localOffset, true);
+    return new Blob([...localParts, ...centralParts, endRecord], { type: xlsxMimeType });
+  }
+
+  function createXlsxBlob(rows) {
+    const rowCount = Math.max(rows.length, 1);
+    const columnCount = Math.max(rows.reduce((max, row) => Math.max(max, row.length), 0), 1);
+    const lastCell = `${xlsxColumnName(columnCount - 1)}${rowCount}`;
+    const rowXml = rows.map((row, rowIndex) => `<row r="${rowIndex + 1}">${row.map((value, columnIndex) => {
+      const cellRef = `${xlsxColumnName(columnIndex)}${rowIndex + 1}`;
+      return `<c r="${cellRef}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
+    }).join('')}</row>`).join('');
+    const worksheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastCell}"/><sheetData>${rowXml}</sheetData></worksheet>`;
+    const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="分包规格" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+    const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
+    const rootRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="/xl/workbook.xml"/></Relationships>`;
+    const workbookRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
+    return createStoredZip([
+      { name: '[Content_Types].xml', content: contentTypesXml },
+      { name: '_rels/.rels', content: rootRelsXml },
+      { name: 'xl/workbook.xml', content: workbookXml },
+      { name: 'xl/_rels/workbook.xml.rels', content: workbookRelsXml },
+      { name: 'xl/worksheets/sheet1.xml', content: worksheetXml }
     ]);
-    return [importTemplateHeaders, ...rows]
-      .map((row) => row.map(csvCell).join(','))
-      .join('\n');
-  }
-
-  function downloadText(filename, text) {
-    const blob = new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadImportTemplate() {
-    downloadText('分包规格导入模板.csv', importTemplateCsv());
-  }
-
-  function importFailureCsv(failures) {
-    const headers = [...importTemplateHeaders, '失败原因'];
-    const rows = failures.map((failure) => [
-      failure.productCode,
-      failure.productName,
-      failure.standardProduct,
-      failure.baseUnit,
-      failure.packageUnit,
-      failure.packageQty,
-      failure.status,
-      failure.remark,
-      failure.reason
-    ]);
-    return [headers, ...rows]
-      .map((row) => row.map(csvCell).join(','))
-      .join('\n');
   }
 
   function downloadImportFailures() {
     const failures = state.importResultModal?.failures || [];
     if (!failures.length) return;
-    downloadText('分包规格导入失败模板.csv', importFailureCsv(failures));
+    const rows = [
+      [...importTemplateHeaders, '失败原因'],
+      ...failures.map((failure) => [
+        failure.productCode,
+        failure.productName,
+        failure.standardProduct,
+        failure.baseUnit,
+        failure.packageUnit,
+        failure.packageQty,
+        failure.status,
+        failure.remark,
+        failure.reason
+      ])
+    ];
+    const blob = createXlsxBlob(rows);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = '分包规格导入失败模板.xlsx';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  function parseCsv(text) {
-    const rows = [];
-    let row = [];
-    let cell = '';
-    let quoted = false;
-    const source = String(text || '').replace(/^\uFEFF/, '');
+  function excelColumnIndex(reference) {
+    const letters = String(reference || '').match(/^[A-Z]+/i)?.[0] || '';
+    return letters.toUpperCase().split('').reduce((index, letter) => index * 26 + letter.charCodeAt(0) - 64, 0) - 1;
+  }
 
-    for (let index = 0; index < source.length; index += 1) {
-      const character = source[index];
-      if (character === '"') {
-        if (quoted && source[index + 1] === '"') {
-          cell += '"';
-          index += 1;
-        } else {
-          quoted = !quoted;
-        }
-      } else if (character === ',' && !quoted) {
-        row.push(cell.trim());
-        cell = '';
-      } else if ((character === '\n' || character === '\r') && !quoted) {
-        if (character === '\r' && source[index + 1] === '\n') index += 1;
-        row.push(cell.trim());
-        if (row.some((value) => value !== '')) rows.push(row);
-        row = [];
-        cell = '';
-      } else {
-        cell += character;
+  function readZipEntries(bytes) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const minOffset = Math.max(0, bytes.byteLength - 65557);
+    let endOffset = -1;
+    for (let offset = bytes.byteLength - 22; offset >= minOffset; offset -= 1) {
+      if (view.getUint32(offset, true) === 0x06054B50) {
+        endOffset = offset;
+        break;
       }
     }
-    if (cell !== '' || row.length) {
-      row.push(cell.trim());
-      if (row.some((value) => value !== '')) rows.push(row);
+    if (endOffset < 0) throw new Error('无法读取XLSX文件');
+
+    const entryCount = view.getUint16(endOffset + 10, true);
+    const centralOffset = view.getUint32(endOffset + 16, true);
+    const decoder = new TextDecoder();
+    const entries = new Map();
+    let offset = centralOffset;
+    for (let index = 0; index < entryCount; index += 1) {
+      if (view.getUint32(offset, true) !== 0x02014B50) throw new Error('XLSX文件结构不正确');
+      const nameLength = view.getUint16(offset + 28, true);
+      const extraLength = view.getUint16(offset + 30, true);
+      const commentLength = view.getUint16(offset + 32, true);
+      const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+      const localHeaderOffset = view.getUint32(offset + 42, true);
+      const localNameLength = view.getUint16(localHeaderOffset + 26, true);
+      const localExtraLength = view.getUint16(localHeaderOffset + 28, true);
+      entries.set(name, {
+        compression: view.getUint16(offset + 10, true),
+        compressedSize: view.getUint32(offset + 20, true),
+        dataOffset: localHeaderOffset + 30 + localNameLength + localExtraLength
+      });
+      offset += 46 + nameLength + extraLength + commentLength;
+    }
+    return { bytes, entries };
+  }
+
+  async function readXlsxEntry(zip, name) {
+    const entry = zip.entries.get(name);
+    if (!entry) return null;
+    const compressed = zip.bytes.slice(entry.dataOffset, entry.dataOffset + entry.compressedSize);
+    if (entry.compression === 0) return compressed;
+    if (entry.compression !== 8 || typeof DecompressionStream !== 'function') {
+      throw new Error('当前浏览器不支持读取该XLSX文件，请使用最新版浏览器');
+    }
+    const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  function parseXlsxXml(xmlText) {
+    const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+    if (xml.getElementsByTagName('parsererror').length) throw new Error('XLSX文件内容无法解析');
+    return xml;
+  }
+
+  function xlsxElements(node, localName) {
+    if (typeof node?.getElementsByTagNameNS === 'function') {
+      return Array.from(node.getElementsByTagNameNS('*', localName));
+    }
+    return Array.from(node?.getElementsByTagName?.(localName) || []);
+  }
+
+  async function parseXlsx(file) {
+    const encoder = new TextDecoder();
+    const zip = readZipEntries(new Uint8Array(await file.arrayBuffer()));
+    const workbookXml = parseXlsxXml(encoder.decode(await readXlsxEntry(zip, 'xl/workbook.xml')));
+    const workbookRelsXml = parseXlsxXml(encoder.decode(await readXlsxEntry(zip, 'xl/_rels/workbook.xml.rels')));
+    const sheet = xlsxElements(workbookXml, 'sheet')[0];
+    const relationshipId = sheet?.getAttribute('r:id');
+    const relationship = xlsxElements(workbookRelsXml, 'Relationship').find((item) => item.getAttribute('Id') === relationshipId);
+    const target = relationship?.getAttribute('Target');
+    if (!target) throw new Error('XLSX文件中没有可读取的工作表');
+    const sheetPath = target.replace(/^\//, '').replace(/^xl\//, '').replace(/^/, 'xl/');
+    const sheetXml = parseXlsxXml(encoder.decode(await readXlsxEntry(zip, sheetPath)));
+    const sharedStrings = [];
+    const sharedStringsBytes = await readXlsxEntry(zip, 'xl/sharedStrings.xml');
+    if (sharedStringsBytes) {
+      const sharedStringsXml = parseXlsxXml(encoder.decode(sharedStringsBytes));
+      xlsxElements(sharedStringsXml, 'si').forEach((item) => {
+        sharedStrings.push(xlsxElements(item, 't').map((textNode) => textNode.textContent || '').join(''));
+      });
     }
 
+    return xlsxElements(sheetXml, 'row').map((rowNode) => {
+      const values = [];
+      xlsxElements(rowNode, 'c').forEach((cellNode) => {
+        const cellIndex = excelColumnIndex(cellNode.getAttribute('r'));
+        const type = cellNode.getAttribute('t');
+        const valueNode = xlsxElements(cellNode, 'v')[0];
+        let value = valueNode?.textContent || '';
+        if (type === 'inlineStr') value = xlsxElements(cellNode, 't').map((textNode) => textNode.textContent || '').join('');
+        if (type === 's') value = sharedStrings[Number(value)] || '';
+        if (type === 'b') value = value === '1' ? '是' : '否';
+        values[cellIndex] = value;
+      });
+      return values.map((value) => value ?? '');
+    }).filter((row) => row.some((value) => String(value).trim() !== ''));
+  }
+
+  function parseImportRows(rows) {
     if (rows.length < 2) throw new Error('文件中没有可导入的数据');
     const headerMap = {
       商品编号: 'productCode',
@@ -279,11 +425,11 @@
       启用状态: 'status',
       备注: 'remark'
     };
-    const headers = rows.shift().map((header) => headerMap[header.replace(/\s/g, '')] || '');
+    const headers = rows[0].map((header) => headerMap[String(header || '').replace(/\s/g, '')] || '');
     if (!headers.includes('productCode') || !headers.includes('packageUnit') || !headers.includes('packageQty')) {
-      throw new Error('请使用分包规格导入模板CSV文件');
+      throw new Error('请使用分包规格导入模板XLSX文件');
     }
-    return rows.map((values) => headers.reduce((record, key, index) => {
+    return rows.slice(1).map((values) => headers.reduce((record, key, index) => {
       if (key) record[key] = values[index] || '';
       return record;
     }, {}));
@@ -294,12 +440,12 @@
     const resultElement = document.getElementById('sortingSpecImportResult');
     const file = fileInput?.files?.[0];
     if (!file) {
-      state.importResult = '请选择需要导入的CSV文件';
+      state.importResult = '请选择需要导入的XLSX文件';
       if (resultElement) resultElement.textContent = state.importResult;
       return;
     }
-    if (!/\.csv$/i.test(file.name)) {
-      state.importResult = '仅支持CSV格式文件，请下载模板后填写上传';
+    if (!/\.xlsx$/i.test(file.name)) {
+      state.importResult = '仅支持XLSX格式文件，请下载模板后填写上传';
       if (resultElement) resultElement.textContent = state.importResult;
       return;
     }
@@ -310,7 +456,7 @@
     }
 
     try {
-      const rows = parseCsv(await file.text());
+      const rows = parseImportRows(await parseXlsx(file));
       const importedCodes = new Set();
       const failures = [];
       let successCount = 0;
@@ -642,11 +788,11 @@
         <div class="unshelf-modal-body">
           <div class="market-price-import-section sorting-spec-import-section">
             <label class="unshelf-reason-label">模版</label>
-            <div class="sorting-spec-import-template-row"><a href="./market-price-import-template.html?type=sorting-spec" class="market-price-import-template-link">分包规格导入模板.csv</a><button class="btn-text" type="button" data-spec-action="download-template">下载</button></div>
+            <div class="sorting-spec-import-template-row"><a href="${xlsxTemplatePath}" download="分包规格导入模板.xlsx" class="market-price-import-template-link">分包规格导入模板.xlsx</a></div>
           </div>
           <div class="market-price-import-section sorting-spec-import-section">
             <label class="unshelf-reason-label">上传文件</label>
-            <div class="market-price-import-upload"><button class="btn btn-sm btn-blue" type="button" data-spec-action="trigger-import-upload">上传</button><input type="file" id="sortingSpecImportFile" accept=".csv,text/csv" hidden><span class="market-price-import-upload-hint">只能上传CSV文件，且不超过10M</span></div>
+            <div class="market-price-import-upload"><button class="btn btn-sm btn-blue" type="button" data-spec-action="trigger-import-upload">上传</button><input type="file" id="sortingSpecImportFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden><span class="market-price-import-upload-hint">只能上传xlsx文件，且不超过10M</span></div>
             <span class="market-price-import-filename" id="sortingSpecImportFileName">${escapeHtml(state.importFileName)}</span>
             <div class="sorting-spec-import-result" id="sortingSpecImportResult" role="status">${escapeHtml(state.importResult)}</div>
           </div>
@@ -864,7 +1010,6 @@
           render();
         }
         if (action === 'trigger-import-upload') document.getElementById('sortingSpecImportFile')?.click();
-        if (action === 'download-template') downloadImportTemplate();
         if (action === 'download-import-failures') downloadImportFailures();
         if (action === 'confirm-import') importSpecsFromFile();
         if (action === 'reset') {
@@ -892,9 +1037,9 @@
         const file = event.target.files?.[0];
         const nameElement = document.getElementById('sortingSpecImportFileName');
         if (!file) return;
-        if (!/\.csv$/i.test(file.name)) {
+        if (!/\.xlsx$/i.test(file.name)) {
           state.importFileName = '';
-          state.importResult = '仅支持CSV格式文件，请下载模板后填写上传';
+          state.importResult = '仅支持XLSX格式文件，请下载模板后填写上传';
           event.target.value = '';
         } else if (file.size > 10 * 1024 * 1024) {
           state.importFileName = '';
