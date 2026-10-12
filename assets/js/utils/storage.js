@@ -2371,7 +2371,7 @@
     });
     order.orderLines = order.items;
     syncProgress(state, order);
-    if (order.status !== 'COMPLETED' && order.status !== 'CLOSED' && order.status !== 'REJECTED') {
+    if (order.status !== 'COMPLETED' && order.status !== 'CLOSED' && order.status !== 'REJECTED' && order.status !== 'PENDING_CONFIRM') {
       if (order.sortingCompleted) order.status = 'READY_FOR_SHIPPING';
     }
     const shipping = state.shippingOrders.find((item) => item.orderId === orderId);
@@ -2380,6 +2380,87 @@
       shipping.items = tasks.map((task) => ({ ...clone(task), shippingQty: number(task.actualQty) }));
     }
     return order;
+  }
+
+  function hasGeneratedPurchaseOrder(state, order) {
+    if (!order) return false;
+    return (state.purchaseTasks || []).some((task) => (task.orderLines || []).some((line) => {
+      if (!orderReferenceMatches(order, line)) return false;
+      const allocation = line.allocation || {};
+      return allocation.status === '已生成采购单' || Boolean(String(allocation.purchaseOrderNo || '').trim());
+    }));
+  }
+
+  function orderReferenceMatches(order, record) {
+    if (!order || !record) return false;
+    const orderIds = new Set([order.id, order.orderId].filter(Boolean).map((value) => String(value)));
+    const orderNos = new Set([order.orderNo].filter(Boolean).map((value) => String(value)));
+    const recordIds = [record.orderId, record.sourceOrderId].filter(Boolean).map((value) => String(value));
+    const recordNos = [record.orderNo, record.sourceOrderNo].filter(Boolean).map((value) => String(value));
+    return recordIds.some((value) => orderIds.has(value)) || recordNos.some((value) => orderNos.has(value));
+  }
+
+  function refreshPurchaseTask(task) {
+    const lines = Array.isArray(task.orderLines) ? task.orderLines : [];
+    const sum = (field) => Number(lines.reduce((total, line) => total + number(line[field]), 0).toFixed(2));
+    task.orderCount = lines.length;
+    task.orderQty = sum('orderQty');
+    task.stockDeduction = sum('stockDeduction');
+    task.inTransitDeduction = sum('inTransitDeduction');
+    task.toPurchaseQty = sum('toPurchaseQty');
+    task.generatedCount = lines.filter((line) => line.allocation?.status === '已生成采购单').length;
+    task.assignedCount = lines.filter((line) => line.allocation?.supplier || line.allocation?.purchaseType).length;
+    task.progressCount = `${task.assignedCount} / ${task.orderCount}`;
+    task.progress = task.orderCount ? `${Math.round(task.assignedCount / task.orderCount * 100)}%` : '0%';
+    return task;
+  }
+
+  function resetOrderGeneratedData(state, order) {
+    const tasks = taskList(state, order.id);
+    const taskIds = new Set(tasks.map((task) => task.id));
+    tasks.forEach((task) => {
+      if (task.sortingCompleted && number(task.actualQty) > 0) {
+        window.InventoryLedgerService.release({
+          productId: task.productId,
+          warehouse: task.warehouse,
+          qty: task.actualQty,
+          unit: task.unit,
+          orderId: task.orderId,
+          orderLineId: task.orderLineId,
+          remark: '取消确认供货释放分拣预占'
+        });
+      }
+    });
+    state.sortingTasks = (state.sortingTasks || []).filter((task) => task.orderId !== order.id);
+    state.shortageItems = (state.shortageItems || []).filter((item) => (
+      item.orderId !== order.id && !taskIds.has(item.id) && !taskIds.has(item.sortingTaskId)
+    ));
+    state.shippingOrders = (state.shippingOrders || []).filter((shipping) => shipping.orderId !== order.id);
+    state.sortingProgress = (state.sortingProgress || []).filter((progress) => (
+      progress.id !== `PROGRESS-${order.id}` && progress.orderId !== order.id
+    ));
+    if (Array.isArray(state.purchaseTasks)) {
+      state.purchaseTasks = state.purchaseTasks
+        .map((task) => {
+          if (!Array.isArray(task.orderLines)) return task;
+          task.orderLines = task.orderLines.filter((line) => !orderReferenceMatches(order, line));
+          return refreshPurchaseTask(task);
+        })
+        .filter((task) => Array.isArray(task.orderLines) && task.orderLines.length);
+    }
+    order.items = (order.items || []).map((line) => {
+      const next = { ...line };
+      ['actualQty', 'sortingStatus', 'shortageQty', 'shippedQty', 'shippedAmount'].forEach((field) => delete next[field]);
+      return next;
+    });
+    order.orderLines = order.items;
+    order.sortingCompleted = false;
+    order.shippingAt = '';
+    order.shippingAmount = 0;
+  }
+
+  function canCancelConfirmSupply(state, order) {
+    return ['READY_FOR_SHIPPING', 'PENDING_CONFIRM'].includes(order?.status) && !hasGeneratedPurchaseOrder(state, order);
   }
 
   function createSortingTasks(state, order) {
@@ -2736,6 +2817,10 @@
         return order;
       });
     },
+    canCancelConfirmSupply(orderId) {
+      const state = window.DemoStore.snapshot();
+      return canCancelConfirmSupply(state, getOrder(state, orderId));
+    },
     transition(resource, id, action, payload = {}) {
       return window.DemoStore.transact((state) => {
         if (resource === 'sortingItems') return transitionSorting(state, id, action, payload);
@@ -2758,7 +2843,20 @@
             if (order.status !== 'PENDING_CONFIRM') throw new Error('当前订单不在待确认状态');
             order.status = 'READY_FOR_SHIPPING';
             order.confirmedAt = now();
+            createSortingTasks(state, order);
+            createShippingOrder(state, order);
             appendOperationLog(order, '确认供货', '当前用户');
+          } else if (action === 'cancelConfirmSupply') {
+            if (!['READY_FOR_SHIPPING', 'PENDING_CONFIRM'].includes(order.status)) throw new Error('当前订单不能取消确认供货');
+            if (hasGeneratedPurchaseOrder(state, order)) {
+              const error = new Error('订单已生成采购单，不能取消确认供货');
+              error.code = 'ORDER_PURCHASE_ORDER_GENERATED';
+              throw error;
+            }
+            resetOrderGeneratedData(state, order);
+            order.status = 'PENDING_CONFIRM';
+            delete order.confirmedAt;
+            appendOperationLog(order, '取消确认供货', '当前用户');
           } else if (action === 'close') {
             order.status = 'CLOSED';
             appendOperationLog(order, '关闭订单', '当前用户');

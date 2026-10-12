@@ -212,7 +212,7 @@
   }
 
   function visibleActions(item) {
-    return [
+    const actions = [
       { key: 'approve', label: '审核' },
       { key: 'edit', label: '编辑' },
       { key: 'copy', label: '复制' },
@@ -220,6 +220,10 @@
       { key: 'close', label: '关闭', danger: true },
       { key: 'delete', label: '删除', danger: true }
     ];
+    if (window.OrderFlowService?.canCancelConfirmSupply?.(item.id)) {
+      actions.splice(2, 0, { key: 'cancelConfirmSupply', label: '取消确认供货', danger: true });
+    }
+    return actions;
   }
 
   function actionDisabled(status, action) {
@@ -229,7 +233,8 @@
       copy: true,
       return: status === 'COMPLETED',
       close: !['COMPLETED', 'CLOSED'].includes(status),
-      delete: ['PENDING_AUDIT', 'PENDING_CONFIRM'].includes(status)
+      delete: ['PENDING_AUDIT', 'PENDING_CONFIRM'].includes(status),
+      cancelConfirmSupply: ['READY_FOR_SHIPPING', 'PENDING_CONFIRM'].includes(status)
     };
     return enabled[action] ? '' : 'disabled';
   }
@@ -364,7 +369,10 @@
     if (action === 'delete') {
       return confirmAction('删除订单', '删除后订单将不再显示，且无法恢复，是否确认删除？', () => service.remove('orders', id));
     }
-    const transitionLabels = { close: ['关闭订单', '确定要关闭该订单吗？'] };
+    const transitionLabels = {
+      close: ['关闭订单', '确定要关闭该订单吗？'],
+      cancelConfirmSupply: ['取消确认供货', '取消确认供货后，订单将保持待确认状态，是否继续？']
+    };
     const info = transitionLabels[action];
     if (info) confirmAction(info[0], info[1], () => service.transition('orders', id, action));
   }
@@ -432,7 +440,14 @@
       return confirmAction('批量确认', '确定要确认选中的订单吗？', async () => {
         const ids = [...state.selected];
         if (!ids.length) throw new Error('请选择要操作的订单');
-        await service.batch('orders', ids, 'confirm');
+        const confirmedOrders = await service.batch('orders', ids, 'confirm');
+        confirmedOrders.forEach((order) => {
+          try {
+            window.PurchaseService?.generateNetVegetableTasks?.(order);
+          } catch (error) {
+            console.error('净菜原料采购任务生成失败', error);
+          }
+        });
         state.selected.clear();
       });
     }
