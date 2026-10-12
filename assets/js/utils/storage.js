@@ -2460,7 +2460,7 @@
   }
 
   function canCancelConfirmSupply(state, order) {
-    return ['READY_FOR_SHIPPING', 'PENDING_CONFIRM'].includes(order?.status) && !hasGeneratedPurchaseOrder(state, order);
+    return order?.status === 'READY_FOR_SHIPPING' && !hasGeneratedPurchaseOrder(state, order);
   }
 
   function createSortingTasks(state, order) {
@@ -2847,7 +2847,7 @@
             createShippingOrder(state, order);
             appendOperationLog(order, '确认供货', '当前用户');
           } else if (action === 'cancelConfirmSupply') {
-            if (!['READY_FOR_SHIPPING', 'PENDING_CONFIRM'].includes(order.status)) throw new Error('当前订单不能取消确认供货');
+            if (order.status !== 'READY_FOR_SHIPPING') throw new Error('当前订单不在待发货状态');
             if (hasGeneratedPurchaseOrder(state, order)) {
               const error = new Error('订单已生成采购单，不能取消确认供货');
               error.code = 'ORDER_PURCHASE_ORDER_GENERATED';

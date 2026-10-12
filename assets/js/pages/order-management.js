@@ -220,6 +220,9 @@
       { key: 'close', label: '关闭', danger: true },
       { key: 'delete', label: '删除', danger: true }
     ];
+    if (item.status === 'PENDING_CONFIRM') {
+      actions.unshift({ key: 'confirm', label: '确认供货' });
+    }
     if (window.OrderFlowService?.canCancelConfirmSupply?.(item.id)) {
       actions.splice(2, 0, { key: 'cancelConfirmSupply', label: '取消确认供货', danger: true });
     }
@@ -230,11 +233,12 @@
     const enabled = {
       approve: status === 'PENDING_AUDIT',
       edit: ['DRAFT', 'PENDING', 'PENDING_AUDIT', 'PENDING_CONFIRM', 'REJECTED'].includes(status),
+      confirm: status === 'PENDING_CONFIRM',
       copy: true,
       return: status === 'COMPLETED',
       close: !['COMPLETED', 'CLOSED'].includes(status),
       delete: ['PENDING_AUDIT', 'PENDING_CONFIRM'].includes(status),
-      cancelConfirmSupply: ['READY_FOR_SHIPPING', 'PENDING_CONFIRM'].includes(status)
+      cancelConfirmSupply: status === 'READY_FOR_SHIPPING'
     };
     return enabled[action] ? '' : 'disabled';
   }
@@ -371,7 +375,7 @@
     }
     const transitionLabels = {
       close: ['关闭订单', '确定要关闭该订单吗？'],
-      cancelConfirmSupply: ['取消确认供货', '取消确认供货后，订单将保持待确认状态，是否继续？']
+      cancelConfirmSupply: ['取消确认供货', '取消确认供货后，订单状态将回滚为待确认，是否继续？']
     };
     const info = transitionLabels[action];
     if (info) confirmAction(info[0], info[1], () => service.transition('orders', id, action));
