@@ -18,7 +18,7 @@
       <div class="operations-filter-advanced" id="goodsAdvancedFilters"><div class="operations-filter-grid">
         <div class="operations-field"><label class="filter-label" for="goodsCustomerType">客户类型</label><select class="filter-select" id="goodsCustomerType"><option value="">全部</option><option>学校</option><option>幼儿园</option><option>机关单位</option></select></div>
         <div class="operations-field"><label class="filter-label" for="goodsOrderTag">订单标签</label><select class="filter-select" id="goodsOrderTag"><option value="">全部</option><option>营养餐</option><option>普通餐</option><option>应急保供</option></select></div>
-        <div class="operations-field"><label class="filter-label" for="goodsOrderStatus">单据状态</label><select class="filter-select" id="goodsOrderStatus"><option value="">全部</option><option value="DRAFT">暂存</option><option value="PENDING_CONFIRM">待确认</option><option value="PENDING_AUDIT">待审核</option><option value="READY_FOR_SORTING">待分拣</option><option value="READY_FOR_SHIPPING">待发货</option><option value="REJECTED">已驳回</option><option value="SHIPPED">已发货</option><option value="CLOSED">已关闭</option></select></div>
+        <div class="operations-field"><label class="filter-label" for="goodsOrderStatus">单据状态</label><select class="filter-select" id="goodsOrderStatus"><option value="">全部</option><option value="DRAFT">暂存</option><option value="PENDING_CONFIRM">待确认</option><option value="PENDING_AUDIT">待审核</option><option value="READY_FOR_SHIPPING">待发货</option><option value="COMPLETED">已完成</option><option value="REJECTED">已驳回</option><option value="CLOSED">已关闭</option></select></div>
         <div class="operations-field"><label class="filter-label" for="goodsSupplement">是否补单</label><select class="filter-select" id="goodsSupplement"><option value="">全部</option><option>是</option><option>否</option></select></div>
         <div class="operations-field"><label class="filter-label" for="goodsOrderNo">订单号</label><input class="filter-input" id="goodsOrderNo" maxlength="40" placeholder="请输入订单号"></div>
         <div class="operations-field"><label class="filter-label" for="goodsWarehouse">仓库</label><select class="filter-select" id="goodsWarehouse"><option value="">全部</option><option>中心仓</option><option>北区仓</option><option>临时仓</option></select></div>
@@ -35,8 +35,8 @@
   </section>`;
   const root = window.AppShell.mount({ title: '订单管理', content });
   let rows = [];
-  const statusMap = { DRAFT: '暂存', PENDING: '待审核', PENDING_CONFIRM: '待确认', PENDING_AUDIT: '待审核', READY_FOR_SORTING: '待分拣', READY_FOR_SHIPPING: '待发货', REJECTED: '已驳回', APPROVED: '已审核', CONFIRMED: '已确认', SHIPPED: '已发货', COMPLETED: '已完成', CLOSED: '已关闭' };
-  const statusClassMap = { DRAFT: 'info', PENDING: 'warning', PENDING_CONFIRM: 'warning', PENDING_AUDIT: 'warning', READY_FOR_SORTING: 'info', READY_FOR_SHIPPING: 'warning', REJECTED: 'danger', APPROVED: 'success', CONFIRMED: 'success', SHIPPED: 'success', COMPLETED: 'success', CLOSED: 'danger' };
+  const statusMap = { DRAFT: '暂存', PENDING: '待审核', PENDING_CONFIRM: '待确认', PENDING_AUDIT: '待审核', READY_FOR_SHIPPING: '待发货', REJECTED: '已驳回', APPROVED: '已审核', CONFIRMED: '已确认', COMPLETED: '已完成', CLOSED: '已关闭' };
+  const statusClassMap = { DRAFT: 'info', PENDING: 'warning', PENDING_CONFIRM: 'warning', PENDING_AUDIT: 'warning', READY_FOR_SHIPPING: 'warning', REJECTED: 'danger', APPROVED: 'success', CONFIRMED: 'success', COMPLETED: 'success', CLOSED: 'danger' };
   const esc = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const money = (value) => Number(value || 0).toFixed(2);
   const productIsNetVegetable = (line) => {

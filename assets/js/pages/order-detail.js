@@ -30,18 +30,16 @@
     PENDING: '待审核',
     PENDING_CONFIRM: '待确认',
     PENDING_AUDIT: '待审核',
-    READY_FOR_SORTING: '待分拣',
     READY_FOR_SHIPPING: '待发货',
     REJECTED: '已驳回',
     APPROVED: '已审核',
     CONFIRMED: '已确认',
     COMPLETED: '已完成',
-    SHIPPED: '已发货',
     CLOSED: '已关闭'
   };
 
   const getStatusClass = (status) => {
-    if (status === 'COMPLETED' || status === 'SHIPPED') return 'online';
+    if (status === 'COMPLETED') return 'online';
     if (['PENDING', 'PENDING_CONFIRM', 'PENDING_AUDIT', 'READY_FOR_SHIPPING', 'DRAFT'].includes(status)) return 'draft';
     if (status === 'REJECTED') return 'cancelled';
     return 'offline';

@@ -13,7 +13,6 @@
     PENDING: ['待审核', 'warning'],
     PENDING_CONFIRM: ['待确认', 'warning'],
     PENDING_AUDIT: ['待审核', 'warning'],
-    READY_FOR_SORTING: ['待分拣', 'info'],
     READY_FOR_SHIPPING: ['待发货', 'warning'],
     APPROVED: ['已审核', 'success'],
     CONFIRMED: ['已确认', 'success'],
@@ -26,7 +25,6 @@
     SORTED: ['已分拣', 'success'],
     PARTIAL: ['部分完成', 'warning'],
     SHORTAGE: ['缺货', 'danger'],
-    SHIPPED: ['已发货', 'success'],
     UPLOADED: ['已上传', 'success']
   };
 

@@ -94,7 +94,7 @@
       return {
         ...item,
         mealName: orderMealName(item.mealName || item.mealKey || order?.mealName || order?.mealKey),
-        shipped: orderStatus === 'SHIPPED' || shippingStatus === 'SHIPPED' ? '是' : '否',
+        shipped: orderStatus === 'COMPLETED' || shippingStatus === 'SHIPPED' ? '是' : '否',
         stock: matchedRows.reduce((total, row) => total + Number(row.currentStock || 0), 0)
       };
     });

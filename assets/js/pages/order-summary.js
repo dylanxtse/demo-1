@@ -14,9 +14,7 @@
       { key: 'status', label: '单据状态', options: [
         { label: '待确认', value: 'PENDING_CONFIRM' },
         { label: '待审核', value: 'PENDING_AUDIT' },
-        { label: '待分拣', value: 'READY_FOR_SORTING' },
         { label: '待发货', value: 'READY_FOR_SHIPPING' },
-        { label: '已发货', value: 'SHIPPED' },
         { label: '已完成', value: 'COMPLETED' }
       ] },
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },

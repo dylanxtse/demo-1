@@ -17,9 +17,12 @@
     },
     orders: {
       PENDING: 'PENDING_AUDIT',
-      CONFIRMED: 'READY_FOR_SORTING',
-      APPROVED: 'READY_FOR_SORTING',
-      COMPLETED: 'SHIPPED'
+      CONFIRMED: 'READY_FOR_SHIPPING',
+      APPROVED: 'READY_FOR_SHIPPING',
+      READY_FOR_SORTING: 'READY_FOR_SHIPPING',
+      待分拣: 'READY_FOR_SHIPPING',
+      SHIPPED: 'COMPLETED',
+      已发货: 'COMPLETED'
     },
     inboundOrders: {
       待入库: 'PENDING',
@@ -95,7 +98,6 @@
     PENDING: '待处理',
     PENDING_CONFIRM: '待确认',
     PENDING_AUDIT: '待审核',
-    READY_FOR_SORTING: '待分拣',
     READY_FOR_SHIPPING: '待发货',
     PARTIAL: '部分完成',
     SORTED: '已分拣',

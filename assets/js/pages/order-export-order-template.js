@@ -59,8 +59,8 @@
 
   const statusMap = {
     PENDING: '待审核', PENDING_CONFIRM: '待确认', PENDING_AUDIT: '待审核',
-    READY_FOR_SORTING: '待分拣', READY_FOR_SHIPPING: '待发货',
-    APPROVED: '已审核', CONFIRMED: '已确认', SHIPPED: '已发货',
+    READY_FOR_SHIPPING: '待发货',
+    APPROVED: '已审核', CONFIRMED: '已确认',
     COMPLETED: '已完成', CLOSED: '已关闭', DRAFT: '暂存', REJECTED: '已驳回'
   };
   const statusLabel = (status) => statusMap[status] || status || '--';

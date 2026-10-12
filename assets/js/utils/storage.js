@@ -31,7 +31,7 @@
   const storageKey = 'procurement-demo-v3';
   const previousStorageKey = 'procurement-demo-v2';
   const backupStorageKey = 'procurement-demo-v3-migration-backup';
-  const schemaVersion = '20260908-order-detail-schema-v1';
+  const schemaVersion = '20261012-order-status-v1';
   const returnDemoOrderSeedRevision = 'return-demo-orders-v2';
   const warehouseMonitorPointSeed = [
     {
@@ -756,10 +756,11 @@
     });
     let status = source.status || 'PENDING';
     if (status === 'PENDING') status = sourceType === 'CUSTOMER' ? 'PENDING_CONFIRM' : 'PENDING_AUDIT';
-    if (status === 'APPROVED') status = 'READY_FOR_SORTING';
-    if (status === 'CONFIRMED') status = 'READY_FOR_SORTING';
-    if (status === 'COMPLETED') status = 'SHIPPED';
-    const shippingAt = source.shippingAt || (status === 'SHIPPED' ? `${createdAt.slice(0, 10)} 06:30:00` : '');
+    if (status === 'APPROVED') status = 'READY_FOR_SHIPPING';
+    if (status === 'CONFIRMED') status = 'READY_FOR_SHIPPING';
+    if (status === 'READY_FOR_SORTING' || status === '待分拣') status = 'READY_FOR_SHIPPING';
+    if (status === 'SHIPPED' || status === '已发货') status = 'COMPLETED';
+    const shippingAt = source.shippingAt || (status === 'COMPLETED' ? `${createdAt.slice(0, 10)} 06:30:00` : '');
     const record = {
       ...clone(source),
       id,
@@ -790,6 +791,23 @@
       updatedAt: source.updatedAt || createdAt
     };
     return normalizeOrderShape(record, 'enterprise');
+  }
+
+  function normalizeOrderStatuses(state) {
+    let changed = false;
+    (state.orders || []).forEach((order) => {
+      const normalizedStatus = {
+        SHIPPED: 'COMPLETED',
+        已发货: 'COMPLETED',
+        READY_FOR_SORTING: 'READY_FOR_SHIPPING',
+        待分拣: 'READY_FOR_SHIPPING'
+      }[order.status];
+      if (normalizedStatus) {
+        order.status = normalizedStatus;
+        changed = true;
+      }
+    });
+    return changed;
   }
 
   function normalizeOrderLogs(order, createdAt, creator) {
@@ -1533,7 +1551,7 @@
   function makeShippingOrders(orders, sortingTasks) {
     return orders.map((order) => {
       const tasks = sortingTasks.filter((task) => task.orderId === order.id);
-      const shipped = order.status === 'SHIPPED' || tasks.some((task) => task.shipped === '是');
+      const shipped = order.status === 'COMPLETED' || tasks.some((task) => task.shipped === '是');
       const sortingCompleted = tasks.length > 0 && tasks.every((task) => task.sortingCompleted);
       return {
         id: `SHIP-${order.id}`,
@@ -1933,6 +1951,7 @@
       const dateTimesNormalized = normalizeStateDateTimes(state);
       const productMetadataNormalized = normalizeProductMetadata(state);
       const orderNumbersNormalized = normalizeOrderNumbers(state);
+      const orderStatusesNormalized = normalizeOrderStatuses(state);
       const processingModuleReset = resetProcessingModuleData(state);
       const processingIdsNormalized = normalizeProcessingIds(state);
       const processingRelationsNormalized = normalizeProcessingRelations(state);
@@ -1944,7 +1963,7 @@
       const settingsNormalized = normalizeSettings(state);
       const decimalsNormalized = normalizeStateDecimals(state);
       const statisticsResourcesNormalized = ensureStatisticsResources(state);
-      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || processingModuleReset || processingIdsNormalized || processingRelationsNormalized || processingOutputsNormalized || contractsNormalized || returnDemoOrdersNormalized || orderTagsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized || statisticsResourcesNormalized) persist();
+      if (source.version !== schemaVersion || organizationNormalized || migrated || logsAdded || receiptFieldsNormalized || dateTimesNormalized || productMetadataNormalized || orderNumbersNormalized || orderStatusesNormalized || processingModuleReset || processingIdsNormalized || processingRelationsNormalized || processingOutputsNormalized || contractsNormalized || returnDemoOrdersNormalized || orderTagsNormalized || warehouseCodesNormalized || settingsNormalized || decimalsNormalized || statisticsResourcesNormalized) persist();
     }
     else {
       state = buildSeed();
@@ -1954,6 +1973,7 @@
       normalizeStateDateTimes(state);
       normalizeProductMetadata(state);
       normalizeOrderNumbers(state);
+      normalizeOrderStatuses(state);
       resetProcessingModuleData(state);
       normalizeProcessingIds(state);
       normalizeProcessingRelations(state);
@@ -2351,7 +2371,7 @@
     });
     order.orderLines = order.items;
     syncProgress(state, order);
-    if (order.status !== 'SHIPPED' && order.status !== 'CLOSED' && order.status !== 'REJECTED') {
+    if (order.status !== 'COMPLETED' && order.status !== 'CLOSED' && order.status !== 'REJECTED') {
       if (order.sortingCompleted) order.status = 'READY_FOR_SHIPPING';
     }
     const shipping = state.shippingOrders.find((item) => item.orderId === orderId);
@@ -2687,8 +2707,8 @@
       return window.DemoStore.transact((state) => {
         const order = getOrder(state, orderId);
         if (!order) throw new Error('订单不存在或已删除');
-        if (['SHIPPED', 'CLOSED'].includes(order.status)) {
-          const error = new Error('已发货或已关闭订单不能删除');
+        if (['COMPLETED', 'CLOSED'].includes(order.status)) {
+          const error = new Error('已完成或已关闭订单不能删除');
           error.code = 'ORDER_NOT_DELETABLE';
           throw error;
         }
@@ -2730,13 +2750,13 @@
           if (!order) throw new Error('订单不存在');
           if (action === 'approve') {
             if (order.status !== 'PENDING_AUDIT') throw new Error('当前订单不在待审核状态');
-            order.status = 'READY_FOR_SORTING';
+            order.status = 'READY_FOR_SHIPPING';
             order.auditor = '当前用户';
             order.auditAt = now();
             appendOperationLog(order, '审核通过', order.auditor);
           } else if (action === 'confirm') {
             if (order.status !== 'PENDING_CONFIRM') throw new Error('当前订单不在待确认状态');
-            order.status = 'READY_FOR_SORTING';
+            order.status = 'READY_FOR_SHIPPING';
             order.confirmedAt = now();
             appendOperationLog(order, '确认供货', '当前用户');
           } else if (action === 'close') {
@@ -2777,7 +2797,7 @@
           shipping.sortingStatus = 'SORTED';
           shipping.shippingAmount = Number(shippingAmount.toFixed(2));
           shipping.items = tasks.map((task) => ({ ...clone(task), shippingQty: number(task.actualQty) }));
-          order.status = 'SHIPPED';
+          order.status = 'COMPLETED';
           order.shippingAmount = Number(shippingAmount.toFixed(2));
           order.shippingAt = now();
           appendOperationLog(shipping, '完成发货', order.creator || '当前用户');
