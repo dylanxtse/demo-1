@@ -41,6 +41,9 @@
   const dialogNet = document.getElementById('sortingTerminalItemDialogNet');
   const dialogQuantity = document.getElementById('sortingTerminalItemDialogQuantity');
   const dialogWarning = document.getElementById('sortingTerminalItemDialogWarning');
+  const dialogPackageCount = document.getElementById('sortingTerminalItemDialogPackageCount');
+  const dialogPackageRemainder = document.getElementById('sortingTerminalItemDialogPackageRemainder');
+  const dialogPackageQuantity = document.getElementById('sortingTerminalItemDialogPackageQuantity');
   document.getElementById('sortingTerminalCustomerItemSelected').textContent = `${selected.name}${selected.canteen}`;
 
   function savedDoneIds(customer) {
@@ -119,8 +122,24 @@
     renderSidebar();
   }
 
+  function updatePackageBreakdown() {
+    const quantity = Number(dialogQuantity.value);
+    const validQuantity = dialogQuantity.value !== '' && Number.isFinite(quantity) && quantity >= 0;
+    const breakdown = window.SortingPackageBreakdown?.calculate(
+      { goodsCode: activeTask?.code }, validQuantity ? quantity : 0
+    );
+    const packageUnit = breakdown?.packageUnit || '';
+    dialogPackageCount.textContent = validQuantity && breakdown
+      ? `${breakdown.packageCount}${packageUnit ? ` ${packageUnit}` : ''}` : '--';
+    dialogPackageRemainder.textContent = validQuantity && breakdown
+      ? `${breakdown.packageRemainder} 斤` : '--';
+    dialogPackageQuantity.textContent = breakdown
+      ? `${breakdown.packageCoefficient} 斤${packageUnit ? `/${packageUnit}` : ''}` : '--';
+  }
+
   function updateQuantityWarning() {
     if (!activeTask || activeTask.done) return;
+    updatePackageBreakdown();
     const quantity = Number(dialogQuantity.value);
     dialogWarning.textContent = !dialogQuantity.value || !Number.isFinite(quantity) || quantity <= 0
       ? '' : quantity > activeTask.amount * 1.1

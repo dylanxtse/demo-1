@@ -71,6 +71,9 @@
   const dialogNet = document.getElementById('sortingTerminalItemDialogNet');
   const dialogQuantity = document.getElementById('sortingTerminalItemDialogQuantity');
   const dialogWarning = document.getElementById('sortingTerminalItemDialogWarning');
+  const dialogPackageCount = document.getElementById('sortingTerminalItemDialogPackageCount');
+  const dialogPackageRemainder = document.getElementById('sortingTerminalItemDialogPackageRemainder');
+  const dialogPackageQuantity = document.getElementById('sortingTerminalItemDialogPackageQuantity');
   let filter = 'all';
   let activeTask = null;
   let grossWeight = 0;
@@ -87,8 +90,24 @@
     } catch (_) { /* The current page still reflects the changed tasks. */ }
   }
 
+  function updatePackageBreakdown() {
+    const quantity = Number(dialogQuantity.value);
+    const validQuantity = dialogQuantity.value !== '' && Number.isFinite(quantity) && quantity >= 0;
+    const breakdown = window.SortingPackageBreakdown?.calculate(
+      { goodsCode: productCode }, validQuantity ? quantity : 0
+    );
+    const packageUnit = breakdown?.packageUnit || '';
+    dialogPackageCount.textContent = validQuantity && breakdown
+      ? `${breakdown.packageCount}${packageUnit ? ` ${packageUnit}` : ''}` : '--';
+    dialogPackageRemainder.textContent = validQuantity && breakdown
+      ? `${breakdown.packageRemainder} ${unit}` : '--';
+    dialogPackageQuantity.textContent = breakdown
+      ? `${breakdown.packageCoefficient} ${unit}${packageUnit ? `/${packageUnit}` : ''}` : '--';
+  }
+
   function updateQuantityWarning() {
     if (!activeTask || activeTask.done) return;
+    updatePackageBreakdown();
     const quantity = Number(dialogQuantity.value);
     dialogWarning.textContent = !dialogQuantity.value || !Number.isFinite(quantity) || quantity <= 0
       ? '' : quantity > activeTask.amount * 1.1

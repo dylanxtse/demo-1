@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>客户分拣任务 - 分拣终端</title>
-  <link rel="stylesheet" href="./assets/css/sorting-terminal-item.css">
-  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer-item.css">
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-item.css?v=20261019-package-panel-left-1">
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer-item.css?v=20261019-dialog-match-1">
 </head>
 <body>
   <main class="sorting-terminal-customer-item" data-user-end="sorting-terminal">
@@ -72,7 +72,6 @@
           <button class="sorting-terminal-item-dialog-scale-action" id="sortingTerminalItemDialogTareScale" type="button">去皮</button>
           <button class="sorting-terminal-item-dialog-shortage" id="sortingTerminalItemDialogShortage" type="button">标记缺货</button>
           <button class="sorting-terminal-item-dialog-reset" id="sortingTerminalItemDialogPendingReset" type="button">重置</button>
-          <button class="sorting-terminal-item-dialog-print-label" id="sortingTerminalItemDialogPrintLabel" type="button">打印标签</button>
         </div>
         <div class="sorting-terminal-item-dialog-weights">
           <div class="sorting-terminal-item-dialog-weight-field">
@@ -80,7 +79,6 @@
           </div>
           <div class="sorting-terminal-item-dialog-weight-field">
             <label for="sortingTerminalItemDialogTare">皮重：</label><input id="sortingTerminalItemDialogTare" type="text" inputmode="decimal" autocomplete="off" aria-label="皮重"><span data-weight-unit>斤</span>
-            <button type="button" data-edit-target="sortingTerminalItemDialogTare" aria-label="修改皮重">✎</button>
           </div>
           <div class="sorting-terminal-item-dialog-weight-field">
             <label for="sortingTerminalItemDialogNet">净重：</label><input id="sortingTerminalItemDialogNet" type="text" inputmode="decimal" autocomplete="off" aria-label="净重"><span data-weight-unit>斤</span>
@@ -93,6 +91,12 @@
         </div>
         <button class="sorting-terminal-item-dialog-accumulate" id="sortingTerminalItemDialogAccumulate" type="button">累加</button>
         <p class="sorting-terminal-item-dialog-warning" id="sortingTerminalItemDialogWarning" role="status" aria-live="polite"></p>
+        <div class="sorting-terminal-item-dialog-packages" aria-live="polite">
+          <span>分包件数：<output id="sortingTerminalItemDialogPackageCount">--</output></span>
+          <span>分包尾数：<output id="sortingTerminalItemDialogPackageRemainder">--</output></span>
+          <span>分包规格：<output id="sortingTerminalItemDialogPackageQuantity">--</output></span>
+          <button class="sorting-terminal-item-dialog-print-label" id="sortingTerminalItemDialogPrintLabel" type="button">打印标签</button>
+        </div>
         <div class="sorting-terminal-item-dialog-keypad" id="sortingTerminalItemDialogKeypad" aria-label="数字键盘">
           <span>1</span><span>2</span><span>3</span><span>⌫</span>
           <span>4</span><span>5</span><span>6</span><span>清空</span>
@@ -102,7 +106,8 @@
       </div>
     </dialog>
   </main>
-  <script src="./assets/js/pages/sorting-terminal-customer-item.js"></script>
+  <script src="./assets/js/utils/storage.js?v=20261019-package-breakdown-1"></script>
+  <script src="./assets/js/pages/sorting-terminal-customer-item.js?v=20261019-dialog-match-1"></script>
   <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
 </body>
 </html>

@@ -63,10 +63,9 @@ button { cursor: pointer; }
 .sorting-terminal-item-dialog.is-pending h2 { top: 4%; }
 .sorting-terminal-item-dialog.is-pending .sorting-terminal-item-dialog-details { top: 13%; }
 .sorting-terminal-item-dialog-pending { position: absolute; inset: 0; }
-.sorting-terminal-item-dialog-pending-actions { position: absolute; top: 29%; right: 2%; left: 2%; display: grid; height: 7%; min-height: 44px; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.sorting-terminal-item-dialog-pending-actions { position: absolute; top: 29%; right: 2%; left: 2%; display: grid; height: 7%; min-height: 44px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .sorting-terminal-item-dialog-pending-actions button { width: 100%; height: 100%; min-height: 0; padding: 0 7px; border: 0; border-radius: 5px; color: #fff; font-size: clamp(20px, 2.2vw, 36px); font-weight: 600; }
 .sorting-terminal-item-dialog-pending-actions .sorting-terminal-item-dialog-scale-action { background: #0750c5; }
-.sorting-terminal-item-dialog-pending-actions .sorting-terminal-item-dialog-print-label { background: #0750c5; }
 .sorting-terminal-item-dialog-pending-actions .sorting-terminal-item-dialog-shortage { background: #ec7f91; }
 .sorting-terminal-item-dialog-pending-actions .sorting-terminal-item-dialog-reset { position: static; background: #03b9bd; }
 .sorting-terminal-item-dialog-weights { position: absolute; top: 38%; right: 2%; left: 2%; display: grid; height: 8%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
@@ -76,7 +75,12 @@ button { cursor: pointer; }
 .sorting-terminal-item-dialog-weight-field button { width: 30px; flex: 0 0 30px; padding: 0; border: 0; background: transparent; color: #808080; font-size: 30px; }
 .sorting-terminal-item-dialog-accumulate { position: absolute; top: 46%; left: 2%; width: 11%; height: 6%; min-height: 36px; border: 0; border-radius: 5px; background: #0750c5; color: #fff; font-size: clamp(18px, 2vw, 30px); font-weight: 600; }
 .sorting-terminal-item-dialog-warning { position: absolute; top: 47%; right: 2%; width: 25%; margin: 0; color: #fa5e62; font-size: clamp(13px, 1.3vw, 20px); text-align: center; }
-.sorting-terminal-item-dialog-keypad { position: absolute; top: 53%; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 7px; padding: 18px 14px; background: #f6f7f9; }
+.sorting-terminal-item-dialog-packages { position: absolute; top: 53%; right: 74%; bottom: 0; left: 0; display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 7px; padding: 18px 0 18px 14px; background: #f6f7f9; color: #15213c; font-size: clamp(16px, 1.6vw, 23px); font-weight: 600; }
+.sorting-terminal-item-dialog-packages span { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 3px; padding: 0 10px; border-radius: 8px; background: #fff; white-space: nowrap; }
+.sorting-terminal-item-dialog-packages output { color: #0750c5; font-variant-numeric: tabular-nums; }
+.sorting-terminal-item-dialog-packages .sorting-terminal-item-dialog-print-label { min-width: 0; border: 0; border-radius: 8px; background: #0750c5; color: #fff; font-size: clamp(18px, 2vw, 30px); font-weight: 600; }
+.sorting-terminal-item-dialog-packages .sorting-terminal-item-dialog-print-label:hover { background: #0543a8; }
+.sorting-terminal-item-dialog-keypad { position: absolute; top: 53%; right: 0; bottom: 0; left: 26%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 7px; padding: 18px 14px; background: #f6f7f9; }
 .sorting-terminal-item-dialog-keypad :is(button, span) { display: grid; min-width: 0; min-height: 0; place-items: center; border: 0; border-radius: 8px; background: #fff; color: #333; font-size: clamp(30px, 3.2vw, 56px); }
 .sorting-terminal-item-dialog-keypad span { cursor: default; user-select: none; }
 .sorting-terminal-item-dialog-keypad .sorting-terminal-item-dialog-zero { grid-column: span 2; }
@@ -129,7 +133,7 @@ button { cursor: pointer; }
   .sorting-terminal-item-dialog-state { top: 75%; font-size: 42px; }
   .sorting-terminal-item-dialog.is-pending h2 { top: 4%; font-size: 17px; }
   .sorting-terminal-item-dialog.is-pending .sorting-terminal-item-dialog-details { top: 15%; font-size: 15px; }
-  .sorting-terminal-item-dialog-pending-actions { top: 35%; right: 5%; left: 5%; height: 7%; min-height: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .sorting-terminal-item-dialog-pending-actions { top: 35%; right: 5%; left: 5%; height: 7%; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
   .sorting-terminal-item-dialog-pending-actions button { padding: 0 2px; font-size: clamp(11px, 2vw, 14px); white-space: nowrap; }
   .sorting-terminal-item-dialog-weights { top: 44%; right: 5%; left: 5%; height: 12%; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 3px; }
   .sorting-terminal-item-dialog-weight-field { gap: 3px; font-size: 13px; }
@@ -138,7 +142,10 @@ button { cursor: pointer; }
   .sorting-terminal-item-dialog-weight-field button { width: 20px; flex-basis: 20px; font-size: 19px; }
   .sorting-terminal-item-dialog-accumulate { top: 58%; left: 5%; width: 24%; height: 5%; min-height: 0; font-size: 15px; }
   .sorting-terminal-item-dialog-warning { top: 58%; right: 5%; width: 60%; font-size: 12px; }
-  .sorting-terminal-item-dialog-keypad { top: 65%; gap: 5px; padding: 10px 6px; }
+  .sorting-terminal-item-dialog-packages { top: 65%; right: 64%; bottom: 0; left: 0; gap: 5px; padding: 10px 0 10px 6px; font-size: 12px; }
+  .sorting-terminal-item-dialog-packages span { padding: 0 5px; }
+  .sorting-terminal-item-dialog-packages .sorting-terminal-item-dialog-print-label { font-size: 14px; }
+  .sorting-terminal-item-dialog-keypad { top: 65%; right: 0; left: 36%; gap: 5px; padding: 10px 6px; }
   .sorting-terminal-item-dialog-keypad :is(button, span) { font-size: 23px; }
   .sorting-terminal-item-dialog-keypad .sorting-terminal-item-dialog-confirm { font-size: 25px; }
 }
