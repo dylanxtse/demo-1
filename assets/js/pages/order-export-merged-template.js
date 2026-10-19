@@ -84,8 +84,12 @@
   function renderGroup(group, index) {
     const customers = [...group.customers.values()];
     const rowspan = customers.length;
+    const packages = customers.map(packageText);
+    const packageCountTotal = packages.every(([count]) => count !== '--')
+      ? packages.reduce((sum, [count]) => sum + Number(count), 0)
+      : '--';
     return customers.map((customer, customerIndex) => {
-      const [packageCount, packageRemainder] = packageText(customer);
+      const [packageCount, packageRemainder] = packages[customerIndex];
       return `<tr>
       ${customerIndex === 0 ? `<td rowspan="${rowspan}">${index + 1}</td>
         <td rowspan="${rowspan}" class="order-merge-product">${escapeHtml(group.name)}</td>
@@ -96,6 +100,7 @@
       <td class="order-merge-number">${quantityText(customer.quantity)}</td>
       <td class="order-merge-number">${amountText(customer.amountCents)}</td>
       <td class="order-merge-number">${packageCount}</td>
+      ${customerIndex === 0 ? `<td rowspan="${rowspan}" class="order-merge-number">${packageCountTotal}</td>` : ''}
       <td class="order-merge-number">${packageRemainder}</td>
       ${customerIndex === 0 ? `<td rowspan="${rowspan}" class="order-merge-number">${quantityText(group.quantity)}</td>
         <td rowspan="${rowspan}" class="order-merge-number">${amountText(group.amountCents)}</td>` : ''}
@@ -108,12 +113,12 @@
   root.innerHTML = `<main class="order-merge-page">
     <div class="order-merge-table-wrap">
       <table class="order-merge-table" aria-label="商品归并导出模板">
-        <colgroup><col class="col-sequence"><col class="col-product"><col class="col-unit"><col class="col-customer-count"><col class="col-customer"><col class="col-canteen"><col class="col-quantity"><col class="col-amount"><col class="col-package-count"><col class="col-package-remainder"><col class="col-quantity-total"><col class="col-amount-total"></colgroup>
+        <colgroup><col class="col-sequence"><col class="col-product"><col class="col-unit"><col class="col-customer-count"><col class="col-customer"><col class="col-canteen"><col class="col-quantity"><col class="col-amount"><col class="col-package-count"><col class="col-package-count-total"><col class="col-package-remainder"><col class="col-quantity-total"><col class="col-amount-total"></colgroup>
         <thead>
-          <tr class="order-merge-title"><th colspan="12">商品归并</th></tr>
-          <tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>客户数量</th><th>客户名称</th><th>食堂</th><th>下单数量</th><th>下单金额</th><th>分包数量</th><th>分包尾数</th><th>下单数量合计</th><th>下单金额合计</th></tr>
+          <tr class="order-merge-title"><th colspan="13">商品归并</th></tr>
+          <tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>客户数量</th><th>客户名称</th><th>食堂</th><th>下单数量</th><th>下单金额</th><th>分包数量</th><th>分包数量合计</th><th>分包尾数</th><th>下单数量合计</th><th>下单金额合计</th></tr>
         </thead>
-        <tbody>${groups.length ? groups.map(renderGroup).join('') : '<tr><td colspan="12" class="order-merge-empty">暂无可归并的订单商品</td></tr>'}</tbody>
+        <tbody>${groups.length ? groups.map(renderGroup).join('') : '<tr><td colspan="13" class="order-merge-empty">暂无可归并的订单商品</td></tr>'}</tbody>
       </table>
     </div>
   </main>

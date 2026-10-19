@@ -4,17 +4,18 @@ body { margin: 0; padding: 20px 20px 72px; overflow: auto; background: #fff; col
 .order-merge-table-wrap { width: 100%; overflow-x: auto; }
 .order-merge-table { width: 100%; min-width: 1900px; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
 .order-merge-table .col-sequence { width: 2.5%; }
-.order-merge-table .col-product { width: 18%; }
-.order-merge-table .col-unit { width: 8%; }
+.order-merge-table .col-product { width: 16%; }
+.order-merge-table .col-unit { width: 7%; }
 .order-merge-table .col-customer-count { width: 6%; }
-.order-merge-table .col-customer { width: 18%; }
+.order-merge-table .col-customer { width: 16%; }
 .order-merge-table .col-canteen { width: 6%; }
 .order-merge-table .col-quantity,
 .order-merge-table .col-amount { width: 6.5%; }
 .order-merge-table .col-package-count,
 .order-merge-table .col-package-remainder { width: 6%; }
-.order-merge-table .col-quantity-total { width: 8%; }
-.order-merge-table .col-amount-total { width: 8.5%; }
+.order-merge-table .col-package-count-total { width: 7%; }
+.order-merge-table .col-quantity-total { width: 7%; }
+.order-merge-table .col-amount-total { width: 7.5%; }
 .order-merge-table th,
 .order-merge-table td { height: 25px; padding: 2px 4px; border: 1px solid #2d2d2d; text-align: center; vertical-align: middle; line-height: 1.25; overflow-wrap: anywhere; }
 .order-merge-table th { font-weight: 600; white-space: nowrap; }
@@ -31,5 +32,6 @@ body { margin: 0; padding: 20px 20px 72px; overflow: auto; background: #fff; col
   .order-merge-table { min-width: 0; font-size: 11px; }
   .order-merge-table th,
   .order-merge-table td { padding: 2px; }
+  .order-merge-table th { white-space: normal; }
   .order-merge-actions { display: none; }
 }
