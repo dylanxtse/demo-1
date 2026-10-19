@@ -73,6 +73,7 @@
       seq: index + 1,
       isNetVegetable: product.isNetVegetable ?? product.name === '土豆丝',
       isStandardProduct: flag(product.isStandardProduct) || flag(product.isStandard),
+      storageCondition: product.storageCondition || window.ProductStorageCondition?.infer(product.name) || '常温',
       allowSchoolModifyPurchaseQuantity: canModifyPurchaseQuantity(product),
       purchaseType: product.purchaseType,
       defaultSupplier: product.defaultSupplier || '平台默认供应商',

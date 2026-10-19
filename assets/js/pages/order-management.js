@@ -95,8 +95,8 @@
           <div class="order-export-wrap">
             <button class="btn btn-sm standard-list-export-print" id="exportButton">${downloadIcon}导出</button>
             <div class="order-export-dropdown">
-              <button type="button" class="order-export-dropdown-item" data-action="export-detail">商品明细导出</button>
-              <button type="button" class="order-export-dropdown-item" data-action="export-order">订单导出</button>
+              <button type="button" class="order-export-dropdown-item" data-action="export-independent">独立导出</button>
+              <button type="button" class="order-export-dropdown-item" data-action="export-merged">商品归并导出</button>
             </div>
           </div>
         </div>
@@ -154,25 +154,6 @@
     else window.location.href = url;
   }
 
-  function openExportTemplate(rows) {
-    const exportKey = `order-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const payload = {
-      version: '20260920-order-export-1',
-      companyName: '集采企业',
-      exportedAt: new Date().toISOString(),
-      rows: rows || []
-    };
-    const serializedPayload = JSON.stringify(payload);
-    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
-    try {
-      if (window.sessionStorage?.setItem) {
-        window.sessionStorage.setItem(exportKey, serializedPayload);
-        query = `exportKey=${encodeURIComponent(exportKey)}`;
-      }
-    } catch (error) { /* fallback to URL */ }
-    navigate(`./order-export-template.html?${query}`);
-  }
-
   function openOrderExportTemplate(rows) {
     const exportKey = `order-export-order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const payload = {
@@ -190,6 +171,33 @@
       }
     } catch (error) { /* fallback to URL */ }
     navigate(`./order-export-order-template.html?${query}`);
+  }
+
+  function openMergedExportTemplate(rows) {
+    const exportKey = `order-export-merged-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = {
+      version: '20261019-order-merged-export-1',
+      exportedAt: new Date().toISOString(),
+      rows: (rows || []).map((order) => ({
+        ...order,
+        items: (Array.isArray(order.items) ? order.items
+          : Array.isArray(order.orderLines) ? order.orderLines : []).map((line) => ({
+          ...line,
+          packageCoefficient: window.SortingPackageBreakdown?.calculate(
+            line, line.quantity ?? line.orderQty
+          )?.packageCoefficient || 0
+        }))
+      }))
+    };
+    const serializedPayload = JSON.stringify(payload);
+    let query = `exportData=${encodeURIComponent(serializedPayload)}`;
+    try {
+      if (window.sessionStorage?.setItem) {
+        window.sessionStorage.setItem(exportKey, serializedPayload);
+        query = `exportKey=${encodeURIComponent(exportKey)}`;
+      }
+    } catch (error) { /* fallback to URL */ }
+    navigate(`./order-export-merged-template.html?${query}`);
   }
 
   function collectCondition() {
@@ -462,13 +470,13 @@
       if (!isOpen) dropdown?.classList.add('open');
       return;
     }
-    const exportItem = event.target.closest('[data-action="export-detail"], [data-action="export-order"]');
+    const exportItem = event.target.closest('[data-action="export-independent"], [data-action="export-merged"]');
     if (exportItem) {
       document.querySelectorAll('.order-export-dropdown.open').forEach((el) => el.classList.remove('open'));
       const action = exportItem.dataset.action;
       const result = await service.list('orders', { page: 1, pageSize: 999999, condition: state.condition });
-      if (action === 'export-detail') openExportTemplate(result.items);
-      else if (action === 'export-order') openOrderExportTemplate(result.items);
+      if (action === 'export-independent') openOrderExportTemplate(result.items);
+      else if (action === 'export-merged') openMergedExportTemplate(result.items);
       return;
     }
   });

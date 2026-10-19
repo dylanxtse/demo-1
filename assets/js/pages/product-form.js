@@ -33,6 +33,7 @@
     'name',
     'isNetVegetable',
     'isStandardProduct',
+    'storageCondition',
     'correspondingFood',
     'purchaseType',
     'defaultSupplier',

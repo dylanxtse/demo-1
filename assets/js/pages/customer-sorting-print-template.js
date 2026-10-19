@@ -73,11 +73,11 @@
     const specs = new Map(defaultPackageSpecs.map((spec) => [String(spec.productCode), spec]));
     (Array.isArray(saved) ? saved : []).forEach((spec) => specs.set(String(spec.productCode), spec));
     const spec = specs.get(String(item.goodsCode || item.productCode || item.productId));
-    const actual = Number(item.actualQty || 0);
-    if (!actual || !spec || !Number(spec.packageQty)) return { unit: '--', quantity: '--', remainder: '--', coefficient: '--' };
-    const quantityValue = Math.floor(actual / Number(spec.packageQty));
-    const remainder = Number((actual - quantityValue * Number(spec.packageQty)).toFixed(2));
-    return { unit: spec.packageUnit || '--', quantity: String(quantityValue), remainder: remainder ? String(remainder) : '', coefficient: String(spec.packageQty) };
+    const ordered = Number(item.orderQty);
+    if (!Number.isFinite(ordered) || ordered < 0 || !spec || spec.status === 'DISABLE' || !Number(spec.packageQty)) return { unit: '--', quantity: '--', remainder: '--', coefficient: '--' };
+    const quantityValue = Math.floor(ordered / Number(spec.packageQty) + 1e-9);
+    const remainder = Number((ordered - quantityValue * Number(spec.packageQty)).toFixed(4));
+    return { unit: spec.packageUnit || '--', quantity: String(quantityValue), remainder: String(remainder), coefficient: String(spec.packageQty) };
   }
 
   function renderTable(rows) {
@@ -92,7 +92,7 @@
   root.innerHTML = `<main class="customer-sorting-print-page">${pages.map((pageRows, pageIndex) => {
     const first = pageIndex === 0;
     const meta = first ? '' : `<div class="customer-sorting-print-meta"><span>${escapeHtml(formatMetaTime(payload.printedAt))}</span></div>`;
-    const title = first ? `<h1 class="customer-sorting-print-title">客户分拣打印--${escapeHtml(formatDateTime(payload.printedAt))}</h1>` : '';
+    const title = first ? `<h1 class="customer-sorting-print-title">客户分拣单--${escapeHtml(formatDateTime(payload.printedAt))}</h1>` : '';
     return `<section class="customer-sorting-print-paper">${title}${meta}${renderTable(pageRows)}<footer class="customer-sorting-print-footer"><span>${text(payload.sourceUrl)}</span><span>${pageIndex + 1}/${pages.length}</span></footer></section>`;
   }).join('')}<nav class="customer-sorting-print-actions"><a href="./sorting-management.html">返回分拣管理</a></nav></main>`;
 

@@ -10,6 +10,13 @@
     '土豆', '牛奶', '大玉米棒子', '鲫鱼', '大米', '西红柿', '金龙鱼豆油',
     '鸡腿肉', '土豆块', '胡萝卜丝', '胡萝卜片', '青椒丝', '什锦配菜'
   ]);
+  const inferStorageCondition = (name) => {
+    const productName = String(name || '').trim();
+    if (/鸡腿肉/.test(productName)) return '冷冻';
+    if (/牛奶|鸡蛋|鲫鱼|玉米棒子|西红柿|白菜|胡萝卜|青椒|西兰花|苹果|什锦配菜|土豆丝|土豆块/.test(productName)) return '冷藏';
+    return '常温';
+  };
+  window.ProductStorageCondition = { infer: inferStorageCondition };
   window.MockProducts = [
     { seq: 1, code: 'SP0300039', name: '土豆丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '4.80', status: '已上架', alias: '净菜土豆丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-06-03 17:52:26' },
     { seq: 21, code: 'SP0300040', name: '土豆', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-根茎类', marketPrice: '3.20', status: '已上架', alias: '鲜土豆', origin: '山东', shelfLife: '15天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-29 09:00:00' },
@@ -46,6 +53,7 @@
     { seq: 33, code: 'SP0300061', name: '西兰花块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '7.80', status: '已上架', alias: '净菜西兰花块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 10:00:00' }
   ].map((product) => ({
     ...product,
+    storageCondition: product.storageCondition || inferStorageCondition(product.name),
     isStandardProduct: product.isStandardProduct === true || seededStandardProductNames.has(String(product.name || '').trim())
   }));
 })();

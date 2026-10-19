@@ -80,6 +80,34 @@
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
+  const defaultSortingPackageSpecs = new Map([
+    ['SP0300061', 10, '包'], ['SP0300039', 10, '包'], ['SP0300025', 5, '包'],
+    ['SP0300019', 10, '袋'], ['SP0300034', 25, '袋'], ['SP0300020', 10, '箱'],
+    ['SP0300051', 10, '包'], ['SP0300055', 10, '包'], ['SP0300059', 10, '包'],
+    ['SP0300031', 5, '箱'], ['SP0300030', 10, '箱'], ['SP0300015', 10, '筐'],
+    ['SP0300037', 10, '箱'], ['SP0300014', 10, '筐'], ['SP0300040', 10, '袋'],
+    ['SP0300029', 5, '箱']
+  ].map(([code, packageQty, packageUnit]) => [code, { packageQty, packageUnit, status: 'ENABLE' }]));
+
+  function sortingPackageBreakdown(item, orderQuantity = item?.orderQty) {
+    const code = String(item?.goodsCode || item?.productId || item?.productCode || '');
+    const saved = window.AppStorage?.read('procurement-sorting-package-specs-v2', null);
+    const specs = new Map(defaultSortingPackageSpecs);
+    (Array.isArray(saved) ? saved : []).forEach((entry) => specs.set(String(entry.productCode), entry));
+    const spec = specs.get(code);
+    const coefficient = Number(spec?.packageQty);
+    const quantity = Number(orderQuantity);
+    if (!spec || spec.status === 'DISABLE' || !Number.isFinite(coefficient) || coefficient <= 0
+      || !Number.isFinite(quantity) || quantity < 0) return null;
+    const packageCount = Math.floor(quantity / coefficient + 1e-9);
+    return {
+      packageCount,
+      packageRemainder: Number((quantity - packageCount * coefficient).toFixed(4)),
+      packageUnit: spec.packageUnit || '',
+      packageCoefficient: coefficient
+    };
+  }
+  window.SortingPackageBreakdown = { calculate: sortingPackageBreakdown };
   const timestamp = () => window.BusinessRules?.now() || new Date().toISOString().slice(0, 19).replace('T', ' ');
   const normalizeDateTime = (value) => window.BusinessRules?.normalizeDateTime(value) || String(value || '');
 
@@ -535,6 +563,7 @@
       id: product.id || product.code,
       productId: product.code,
       seq: product.seq || index + 1,
+      storageCondition: product.storageCondition || window.ProductStorageCondition?.infer(product.name) || '常温',
       isNetVegetable: product.isNetVegetable === true || seededNetVegetables.has(product.code),
       isStandardProduct: product.isStandardProduct === true || product.isStandardProduct === 'true'
         || product.isStandardProduct === '是' || product.isStandard === true || product.isStandard === 'true'
@@ -946,6 +975,11 @@
       const productCode = product.code || product.productId;
       const isSeededNetVegetable = seededNetVegetables.has(productCode);
       const sourceProduct = window.MockProducts?.find((item) => (item.code || item.id) === productCode);
+      if (!product.storageCondition) {
+        product.storageCondition = sourceProduct?.storageCondition
+          || window.ProductStorageCondition?.infer(product.name) || '常温';
+        changed = true;
+      }
       // 修正旧演示数据：黑大米按重量计量，袋为分包单位（1袋 = 25KG）。
       if (productCode === 'SP0300034' && product.unit === '袋') {
         product.unit = 'KG';
@@ -1532,6 +1566,7 @@
         mealKey: order.mealKey || '',
         mealName: order.mealName || '',
         orderQty: number(line.quantity),
+        ...sortingPackageBreakdown(line, line.quantity),
         actualQty,
         unit: line.unit || '',
         warehouse: order.warehouse || '',
@@ -2482,6 +2517,7 @@
       mealKey: order.mealKey || '',
       mealName: order.mealName || '',
       orderQty: number(line.quantity),
+      ...sortingPackageBreakdown(line, line.quantity),
       actualQty: 0,
       unit: line.unit || '',
       warehouse: order.warehouse || '中心仓',

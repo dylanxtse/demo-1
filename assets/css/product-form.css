@@ -84,6 +84,11 @@
   min-width: 0;
 }
 
+.storage-condition-field {
+  grid-column: 1;
+  grid-row: 2;
+}
+
 .multi-unit-row {
   position: relative;
   width: 100%;
@@ -776,6 +781,11 @@
   align-content: start;
 }
 
+.product-form.is-readonly .storage-condition-field {
+  grid-column: auto;
+  grid-row: auto;
+}
+
 .product-form.is-readonly .form-field {
   grid-template-columns: 150px minmax(0, 1fr);
   column-gap: 12px;
@@ -801,6 +811,7 @@
 @media (max-width: 1100px) {
   .form-grid { grid-template-columns: minmax(360px, 640px); }
   .product-form.is-readonly .form-grid { grid-template-columns: minmax(360px, 640px); }
+  .storage-condition-field { grid-row: auto; }
   .procurement-row,
   .shelf-life-fields-row,
   .weighing-row { grid-column: 1; grid-template-columns: minmax(360px, 640px); }

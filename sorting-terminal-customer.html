@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客户分拣 - 分拣终端</title>
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer.css">
+</head>
+<body>
+  <main class="sorting-terminal-customer" data-user-end="sorting-terminal">
+    <header class="sorting-terminal-customer-header">
+      <a class="sorting-terminal-customer-back" href="./sorting-terminal-home.html"><span class="sorting-terminal-customer-back-icon" aria-hidden="true"></span>返回</a>
+      <h1>客户分拣</h1>
+      <form class="sorting-terminal-customer-filters" id="sortingTerminalCustomerFilters" role="search">
+        <label for="sortingTerminalCustomerKeyword">客户名称</label>
+        <div class="sorting-terminal-customer-search-box">
+          <input id="sortingTerminalCustomerKeyword" type="search" placeholder="客户名称/编码" autocomplete="off">
+          <button type="submit" aria-label="搜索客户"><span class="sorting-terminal-customer-search-icon" aria-hidden="true"></span></button>
+        </div>
+        <label for="sortingTerminalCustomerRoute">线路</label>
+        <select id="sortingTerminalCustomerRoute" aria-label="线路">
+          <option value="all">全部线路</option>
+          <option value="east">东区线路</option>
+          <option value="west">西区线路</option>
+        </select>
+      </form>
+    </header>
+    <section class="sorting-terminal-customer-main" aria-label="客户分拣列表">
+      <div class="sorting-terminal-customer-content">
+        <h2>请选择客户</h2>
+        <div class="sorting-terminal-customer-grid" id="sortingTerminalCustomerGrid"></div>
+        <p class="sorting-terminal-customer-feedback" id="sortingTerminalCustomerFeedback" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+  <script src="./assets/js/pages/sorting-terminal-customer.js"></script>
+  <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
+</body>
+</html>

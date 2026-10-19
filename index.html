@@ -792,7 +792,7 @@
       
           <section class="main-section">
             
-        <header class="app-header    " data-header-bound="true">
+        <header class="app-header    ">
           <div class="header-left">
             
             <span class="header-company" style="font-size:18px">产品部学校食材集采供应链有限公司</span>
@@ -810,7 +810,7 @@
               <span class="header-user-name ">管理员</span>
               <svg class="icon-svg" viewBox="0 0 24 24" style="width:12px;height:12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
               <div class="header-user-menu" role="menu">
-                <button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="education">切换至教育局端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="supplier">切换至供应商端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="operations">切换至运维管理平台</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="school">切换至学校端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="mobile">切换至移动端</button>
+                <button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="education">切换至教育局端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="supplier">切换至供应商端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="operations">切换至运维管理平台</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="school">切换至学校端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="mobile">切换至移动端</button><button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="sorting-terminal">切换至分拣终端</button>
                 <button type="button" role="menuitem">个人中心</button>
                 <button type="button" role="menuitem">退出登录</button>
               </div>
@@ -910,10 +910,10 @@
         </div>
         <div class="operations-toolbar">
           <div class="operations-toolbar-main"><div class="toolbar-dropdown">
-        <button class="btn toolbar-dropdown-main btn-primary " type="button" data-toolbar-action="batchPrintQr" disabled="">一键打印</button>
+        <button class="btn toolbar-dropdown-main btn-primary " type="button" data-toolbar-action="batchSort" disabled="">一键分拣</button>
         <button class="btn toolbar-dropdown-toggle btn-primary" type="button" data-toolbar-dropdown-toggle="" aria-label="更多操作" disabled="">▾</button>
-        <div class="toolbar-dropdown-menu"><button type="button" data-toolbar-option="batchSort">一键分拣</button><button type="button" data-toolbar-option="batchResetSort">一键重置分拣</button></div>
-      </div><button class="btn  " type="button" data-toolbar-action="batchShortage">批量标记缺货</button></div>
+        <div class="toolbar-dropdown-menu"><button type="button" data-toolbar-option="batchResetSort">一键重置分拣</button></div>
+      </div><button class="btn btn-primary " type="button" data-toolbar-action="batchShortage">批量标记缺货</button><button class="btn btn-primary " type="button" data-toolbar-action="batchPrintQr" disabled="">一键打印</button></div>
           <div class="operations-toolbar-side"><button class="btn  standard-list-export-print" type="button" data-toolbar-action="export"><svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>导出</button><button class="btn  standard-list-export-print" type="button" data-toolbar-action="printDocument"><svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>打印</button></div>
         </div>
         <div class="operations-table-container">
@@ -1067,18 +1067,18 @@
   <script src="./assets/js/components/navigation-guard.js?v=20260819-navigation-2"></script><script src="./assets/js/components/header.js?v=20260819-navigation-2"></script>
   <script src="./assets/js/components/page-tabs.js?v=20260819-navigation-2"></script>
   <script src="./assets/js/components/sidebar.js?v=20260928-1"></script>
-  <script src="./assets/js/components/app-shell.js?v=20260819-navigation-2"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script>
+  <script src="./assets/js/components/app-shell.js?v=20261019-terminal-switch-scope"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/prototype-tools-theme.js?v=20260904-display-1" data-prototype-tools-script="theme" data-loaded="true"></script>
   <script src="./assets/js/components/date-range-picker.js"></script>
   <script src="./assets/js/components/pagination.js?v=20260831-sorting-sync-1"></script>
   <script src="./assets/js/utils/dom.js?v=20260831-sorting-sync-1"></script>
   <script src="./assets/js/utils/business-rules.js"></script>
-  <script src="./assets/js/utils/storage.js?v=20260909-order-meal-filter-1"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script>
+  <script src="./assets/js/utils/storage.js?v=20261019-sorting-package-order-qty"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script><script src="./assets/js/data/project-iteration-records.js?v=20260904-ganxian-2" data-prototype-tools-script="iteration-data" data-loaded="true"></script>
   <script src="./assets/js/services/repository.js"></script><script src="./assets/js/data/mock-dataset.js?v=20260928-clear-remark-1"></script>
 
   <script src="./assets/js/config/order-meal-options.js?v=20260909-order-meal-filter-2"></script>
   <script src="./assets/js/services/operations-service.js?v=20260909-order-meal-filter-1"></script>
   <script src="./assets/js/services/sorting-customer-service.js?v=20260928-1"></script>
-  <script src="./assets/js/pages/sorting-management.js?v=20260928-sorting-package-calc-1"></script>
+  <script src="./assets/js/pages/sorting-management.js?v=20261019-sorting-label-fields-2"></script>
   <script src="./assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1" data-prototype-tools-script="iteration" data-loaded="true"></script><script src="./assets/js/prototype-tools/src/project-iteration-panel.js?v=20260904-link-1" data-prototype-tools-script="iteration" data-loaded="true"></script><script src="./assets/js/pages/record-page.js?v=20260928-inline-refresh-2"></script>
 <div class="project-iteration-panel-root" data-project-iteration-read-only="false" data-project-iteration-panel="true" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);">
       <div class="project-iteration-backdrop" data-project-iteration-close=""></div>
@@ -1453,4 +1453,4 @@
       </aside>
       <div class="project-iteration-toast" data-project-iteration-toast="" role="alert" aria-live="assertive" aria-atomic="true"></div></div><div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel3" class="calendar-panel single-calendar-panel"></div>
 <div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel3" class="calendar-panel single-calendar-panel"></div>
-<div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel9" class="calendar-panel single-calendar-panel"></div></body></html>
+<div class="record-annotation-overlay is-markers-hidden" aria-label="页面标注" style="--prototype-project-color: #0249c4; --prototype-accent: #e2a336; --prototype-accent-strong: #e09b24; --prototype-accent-contrast: #172033; --prototype-accent-rgb: 226, 163, 54; --prototype-accent-soft: rgba(226, 163, 54, .10); --prototype-accent-faint: rgba(226, 163, 54, .06); --prototype-accent-border: rgba(226, 163, 54, .32); --prototype-accent-shadow: rgba(226, 163, 54, .16);"></div><div id="datePickerPanel9" class="calendar-panel single-calendar-panel"></div><script>window.AppHeader?.bind(document.getElementById('app'));</script></body></html>

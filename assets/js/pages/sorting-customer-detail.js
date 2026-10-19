@@ -78,47 +78,25 @@
     const marker = item.isNetVegetable ? '<span class="net-vegetable-tag">净菜</span>' : '';
     return `<span class="product-display-text">${marker}${escapeHtml(display)}</span>`;
   };
-  const defaultPackageSpecs = [
-    { productCode: 'SP0300025', packageQty: 5, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300019', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
-    { productCode: 'SP0300034', packageQty: 25, packageUnit: '袋', status: 'ENABLE' },
-    { productCode: 'SP0300020', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
-    { productCode: 'SP0300015', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
-    { productCode: 'SP0300037', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
-    { productCode: 'SP0300014', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
-    { productCode: 'SP0300040', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
-    { productCode: 'SP0300029', packageQty: 5, packageUnit: '箱', status: 'ENABLE' }
-  ];
-  const packageSpecFor = (item) => {
-    const saved = window.AppStorage?.read('procurement-sorting-package-specs-v2', null);
-    const specs = Array.isArray(saved) && saved.length ? saved : defaultPackageSpecs;
-    const productCode = item.goodsCode || item.productId || item.productCode;
-    return specs.find((spec) => String(spec.productCode) === String(productCode) && spec.status !== 'DISABLE') || null;
-  };
-  const packageCountOf = (item, spec) => {
-    const actual = Number(item.actualQty || 0);
-    const packageQty = Number(spec?.packageQty || 0);
-    if (!actual || !packageQty) return null;
-    return Math.floor(actual / packageQty);
+  const packageBreakdown = (item) => {
+    if (Number(item.packageCoefficient) > 0 && Number.isFinite(Number(item.packageCount))) return item;
+    return window.SortingPackageBreakdown?.calculate(item, item.orderQty) || null;
   };
   const renderPackageUnit = (item) => {
-    const spec = packageSpecFor(item);
-    return spec ? escapeHtml(spec.packageUnit || '--') : '--';
+    const breakdown = packageBreakdown(item);
+    return breakdown ? escapeHtml(breakdown.packageUnit || '--') : '--';
   };
   const renderPackageCoefficient = (item) => {
-    const spec = packageSpecFor(item);
-    return spec ? escapeHtml(spec.packageQty) : '--';
+    const breakdown = packageBreakdown(item);
+    return breakdown ? escapeHtml(breakdown.packageCoefficient) : '--';
   };
   const renderPackageCount = (item) => {
-    const count = packageCountOf(item, packageSpecFor(item));
-    return count === null ? '--' : String(count);
+    const breakdown = packageBreakdown(item);
+    return breakdown ? String(breakdown.packageCount) : '--';
   };
   const renderPackageRemainder = (item) => {
-    const spec = packageSpecFor(item);
-    const count = packageCountOf(item, spec);
-    if (!spec || count === null) return '--';
-    const remainder = Number((Number(item.actualQty || 0) - count * Number(spec.packageQty)).toFixed(2));
-    return remainder > 0 ? String(remainder) : '';
+    const breakdown = packageBreakdown(item);
+    return breakdown ? String(breakdown.packageRemainder) : '--';
   };
 
   function toast(message, type = '') {

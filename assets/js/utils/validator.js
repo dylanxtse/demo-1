@@ -2,6 +2,7 @@
   const rules = {
     category: { required: true, label: '商品分类' },
     name: { required: true, label: '商品名称' },
+    storageCondition: { required: true, label: '储存条件' },
     purchaseType: { required: true, label: '采购类型' },
     responsible: { required: true, label: '采购负责人' },
     unit: { required: true, label: '计量单位' },
@@ -20,6 +21,9 @@
           errors[field] = `${rule.label}必须是大于或等于${rule.minimum}的数字`;
         }
       });
+      if (data.storageCondition && !['冷冻', '冷藏', '常温'].includes(data.storageCondition)) {
+        errors.storageCondition = '请选择有效的储存条件';
+      }
       if (data.shelfLifeEnabled) {
         const value = String(data.shelfLifeValue ?? '').trim();
         const unit = String(data.shelfLifeUnit ?? '').trim();

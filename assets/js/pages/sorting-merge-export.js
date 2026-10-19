@@ -13,6 +13,10 @@
     return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   }
 
+  function packageBreakdown(item) {
+    return window.SortingPackageBreakdown?.calculate(item, item.orderQty) || null;
+  }
+
   function currentDate() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -53,14 +57,19 @@
       <td rowspan="${rowspan}">${escapeHtml(first.goodsName || '--')}</td>
       <td rowspan="${rowspan}">${escapeHtml(first.unit || '--')}</td>
       <td rowspan="${rowspan}">${items.length}</td>`;
-    return items.map((item, itemIndex) => `<tr>
+    return items.map((item, itemIndex) => {
+      const breakdown = packageBreakdown(item);
+      return `<tr>
       ${itemIndex === 0 ? groupCells : ''}
       <td>${escapeHtml(item.customerName || '--')}</td>
       <td>${escapeHtml(item.canteen || '--')}</td>
       <td>${escapeHtml(item.remark || '')}</td>
       <td>${formatNumber(item.orderQty)}</td>
+      <td>${breakdown ? breakdown.packageCount : '--'}</td>
+      <td>${breakdown ? formatNumber(breakdown.packageRemainder) : '--'}</td>
       ${itemIndex === 0 ? `<td rowspan="${rowspan}">${formatNumber(total)}</td><td rowspan="${rowspan}">${escapeHtml(stock)}</td>` : ''}
-    </tr>`).join('');
+    </tr>`;
+    }).join('');
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -73,7 +82,7 @@
   document.getElementById('mergeExportDate').textContent = `期望送达时间：${expectedAt}`;
   document.getElementById('mergeExportBody').innerHTML = groups.length
     ? groups.map(renderGroup).join('')
-    : '<tr><td colspan="10" style="text-align:center">暂无可归并数据</td></tr>';
+    : '<tr><td colspan="12" style="text-align:center">暂无可归并数据</td></tr>';
 
   const page = document.querySelector('.sorting-merge-export-page');
   const zoomValue = document.querySelector('[data-action="zoom-reset"]');

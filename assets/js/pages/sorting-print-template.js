@@ -88,11 +88,11 @@
     const specs = new Map(defaultPackageSpecs.map((spec) => [String(spec.productCode), spec]));
     (Array.isArray(saved) ? saved : []).forEach((spec) => specs.set(String(spec.productCode), spec));
     const spec = specs.get(String(item.goodsCode || item.productCode || item.productId));
-    const actual = Number(item.actualQty || 0);
-    if (!actual || !spec || !Number(spec.packageQty)) return { unit: '--', quantity: '--', remainder: '--', coefficient: '--' };
-    const quantity = Math.floor(actual / Number(spec.packageQty));
-    const remainder = Number((actual - quantity * Number(spec.packageQty)).toFixed(2));
-    return { unit: spec.packageUnit || '--', quantity: String(quantity), remainder: remainder ? String(remainder) : '', coefficient: String(spec.packageQty) };
+    const ordered = Number(item.orderQty);
+    if (!Number.isFinite(ordered) || ordered < 0 || !spec || spec.status === 'DISABLE' || !Number(spec.packageQty)) return { unit: '--', quantity: '--', remainder: '--', coefficient: '--' };
+    const quantity = Math.floor(ordered / Number(spec.packageQty) + 1e-9);
+    const remainder = Number((ordered - quantity * Number(spec.packageQty)).toFixed(4));
+    return { unit: spec.packageUnit || '--', quantity: String(quantity), remainder: String(remainder), coefficient: String(spec.packageQty) };
   }
 
   function normalizeRows(rows) {
@@ -135,7 +135,7 @@
   function renderPage(rows, pageIndex, totalPages, payload) {
     const isFirstPage = pageIndex === 0;
     const meta = isFirstPage ? '' : `<div class="sorting-print-meta"><span>${escapeHtml(formatMetaTime(payload.printedAt))}</span></div>`;
-    const title = isFirstPage ? `<h1 class="sorting-print-title">商品分拣打印--${escapeHtml(formatDateTime(payload.printedAt))}</h1>` : '';
+    const title = isFirstPage ? `<h1 class="sorting-print-title">商品分拣单--${escapeHtml(formatDateTime(payload.printedAt))}</h1>` : '';
     return `<section class="sorting-print-paper">
       ${title}
       ${meta}

@@ -1,4 +1,12 @@
 (function () {
+  if (document.querySelector('[data-user-end="sorting-terminal"]')) return;
+  document.querySelectorAll('.sorting-terminal-switch-wrap').forEach((node) => node.remove());
+  const style = document.createElement('style');
+  style.textContent = '.sorting-terminal-switch-wrap { display: none !important; }';
+  document.head.appendChild(style);
+})();
+
+(function () {
   if (document.querySelector('link[data-common-business-components]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -137,7 +145,8 @@
       'school-purchase-accounts.html',
       'school-notice-management.html'
     ]),
-    mobile: new Set(['school-mobile.html'])
+    mobile: new Set(['school-mobile.html']),
+    'sorting-terminal': new Set(['sorting-terminal-login.html', 'sorting-terminal-home.html', 'sorting-terminal-product.html'])
   };
   const switchRoutes = {
     enterprise: './index.html',
@@ -145,6 +154,7 @@
     supplier: './supplier.html',
     operations: './operations.html',
     school: './school-product-management.html',
+    'sorting-terminal': './sorting-terminal-login.html',
     mobile: './school-mobile.html'
   };
   const switchSelectors = '[data-shell-switch], [data-user-end-switch], [data-platform-switch], [data-school-mobile-switch]';

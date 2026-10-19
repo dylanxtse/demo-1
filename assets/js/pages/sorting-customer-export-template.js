@@ -86,11 +86,11 @@
     const specs = new Map(defaultPackageSpecs.map((spec) => [String(spec.productCode), spec]));
     (Array.isArray(saved) ? saved : []).forEach((spec) => specs.set(String(spec.productCode), spec));
     const spec = specs.get(String(item.goodsCode || item.productCode || item.productId));
-    const actual = Number(item.actualQty || 0);
-    if (!actual || !spec || !Number(spec.packageQty)) return { unit: '--', quantity: '--', remainder: '--', coefficient: '--' };
-    const quantityValue = Math.floor(actual / Number(spec.packageQty));
-    const remainder = Number((actual - quantityValue * Number(spec.packageQty)).toFixed(2));
-    return { unit: spec.packageUnit || '--', quantity: String(quantityValue), remainder: remainder ? String(remainder) : '', coefficient: String(spec.packageQty) };
+    const ordered = Number(item.orderQty);
+    if (!Number.isFinite(ordered) || ordered < 0 || !spec || spec.status === 'DISABLE' || !Number(spec.packageQty)) return { unit: '--', quantity: '--', remainder: '--', coefficient: '--' };
+    const quantityValue = Math.floor(ordered / Number(spec.packageQty) + 1e-9);
+    const remainder = Number((ordered - quantityValue * Number(spec.packageQty)).toFixed(4));
+    return { unit: spec.packageUnit || '--', quantity: String(quantityValue), remainder: String(remainder), coefficient: String(spec.packageQty) };
   }
 
   function renderItemRow(item) {

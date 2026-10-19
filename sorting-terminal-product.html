@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品分拣 - 分拣终端</title>
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-product.css">
+</head>
+<body>
+  <main class="sorting-terminal-product" data-user-end="sorting-terminal">
+    <header class="sorting-terminal-product-header">
+      <a class="sorting-terminal-product-back" href="./sorting-terminal-home.html"><span class="sorting-terminal-product-back-icon" aria-hidden="true"></span>返回</a>
+      <h1>商品分拣</h1>
+      <form class="sorting-terminal-product-search" id="sortingTerminalProductSearch" role="search">
+        <label for="sortingTerminalProductKeyword">商品名称</label>
+        <div class="sorting-terminal-product-search-box">
+          <input id="sortingTerminalProductKeyword" type="search" placeholder="商品名称/编码" autocomplete="off">
+          <button type="submit" aria-label="搜索商品"><span class="sorting-terminal-product-search-icon" aria-hidden="true"></span></button>
+        </div>
+      </form>
+    </header>
+    <div class="sorting-terminal-product-layout">
+      <nav class="sorting-terminal-product-categories" id="sortingTerminalProductCategories" aria-label="商品分类"></nav>
+      <section class="sorting-terminal-product-main" aria-label="商品分类列表">
+        <div class="sorting-terminal-product-list" id="sortingTerminalProductGroups"></div>
+      </section>
+    </div>
+  </main>
+  <script src="./assets/js/pages/sorting-terminal-product.js"></script>
+  <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
+</body>
+</html>

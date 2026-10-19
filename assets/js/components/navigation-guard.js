@@ -5,7 +5,8 @@
     supplier: 'supplier.html',
     operations: 'operations.html',
     school: 'school.html',
-    mobile: 'school-mobile.html'
+    mobile: 'school-mobile.html',
+    'sorting-terminal': 'sorting-terminal-login.html'
   });
 
   // 页面文件属于哪个用户端由这里集中维护。未知页面默认跟随当前端，避免影响端内扩展页面。
@@ -58,6 +59,9 @@
     'school-recipe-demand-records.html': 'school',
     'school-recipe-demand-record-detail.html': 'school',
     'school-mobile.html': 'mobile',
+    'sorting-terminal-login.html': 'sorting-terminal',
+    'sorting-terminal-home.html': 'sorting-terminal',
+    'sorting-terminal-product.html': 'sorting-terminal',
     'school-canteen-management.html': 'school',
     'school-canteen-form.html': 'school',
     'school-product-management.html': 'school',

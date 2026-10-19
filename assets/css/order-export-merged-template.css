@@ -1,0 +1,35 @@
+* { box-sizing: border-box; }
+body { margin: 0; padding: 20px 20px 72px; overflow: auto; background: #fff; color: #111; font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif; }
+.order-merge-page { min-width: 0; }
+.order-merge-table-wrap { width: 100%; overflow-x: auto; }
+.order-merge-table { width: 100%; min-width: 1900px; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
+.order-merge-table .col-sequence { width: 2.5%; }
+.order-merge-table .col-product { width: 18%; }
+.order-merge-table .col-unit { width: 8%; }
+.order-merge-table .col-customer-count { width: 6%; }
+.order-merge-table .col-customer { width: 18%; }
+.order-merge-table .col-canteen { width: 6%; }
+.order-merge-table .col-quantity,
+.order-merge-table .col-amount { width: 6.5%; }
+.order-merge-table .col-package-count,
+.order-merge-table .col-package-remainder { width: 6%; }
+.order-merge-table .col-quantity-total { width: 8%; }
+.order-merge-table .col-amount-total { width: 8.5%; }
+.order-merge-table th,
+.order-merge-table td { height: 25px; padding: 2px 4px; border: 1px solid #2d2d2d; text-align: center; vertical-align: middle; line-height: 1.25; overflow-wrap: anywhere; }
+.order-merge-table th { font-weight: 600; white-space: nowrap; }
+.order-merge-table .order-merge-title th { height: 26px; font-size: 17px; }
+.order-merge-product { font-weight: 500; }
+.order-merge-number { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.order-merge-empty { height: 64px !important; color: #666; }
+.order-merge-actions { position: fixed; right: 0; bottom: 0; left: 0; display: flex; justify-content: center; align-items: center; min-height: 56px; background: rgba(255,255,255,.96); border-top: 1px solid #ddd; }
+.order-merge-actions a { padding: 7px 18px; border: 1px solid #ccd2da; border-radius: 4px; color: #536174; font-size: 13px; text-decoration: none; }
+.order-merge-actions a:hover { background: #f5f7fa; }
+@media print {
+  body { padding: 0; }
+  .order-merge-table-wrap { overflow: visible; }
+  .order-merge-table { min-width: 0; font-size: 11px; }
+  .order-merge-table th,
+  .order-merge-table td { padding: 2px; }
+  .order-merge-actions { display: none; }
+}

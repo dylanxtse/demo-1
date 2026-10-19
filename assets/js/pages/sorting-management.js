@@ -38,6 +38,9 @@
   }
 
   const printCustomers = (groups) => openCustomerPrintTemplate(groups);
+  const printCustomerLabels = (groups) => openSortingLabelTemplate(
+    (Array.isArray(groups) ? groups : []).flatMap((group) => group.items || []), 'customer'
+  );
   function navigate(url) {
     if (window.AppNavigation?.navigate) window.AppNavigation.navigate(url);
     else window.location.href = url;
@@ -64,6 +67,44 @@
   }
 
   const printSortingDocument = (items) => openSortingPrintTemplate(items);
+
+  function openSortingLabelTemplate(rows, mode) {
+    const products = window.DemoStore.get('products') || [];
+    const orders = window.DemoStore.get('orders') || [];
+    const productByCode = new Map();
+    [...(window.MockProducts || []), ...products].forEach((product) => {
+      [product.code, product.productId, product.id].filter(Boolean).forEach((code) => {
+        const previous = productByCode.get(String(code));
+        productByCode.set(String(code), {
+          ...product,
+          storageCondition: product.storageCondition && product.storageCondition !== '--'
+            ? product.storageCondition : previous?.storageCondition || ''
+        });
+      });
+    });
+    const orderById = new Map(orders.filter((order) => order.id).map((order) => [String(order.id), order]));
+    const orderByNo = new Map(orders.filter((order) => order.orderNo).map((order) => [String(order.orderNo), order]));
+    const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', morningSnack: '早点', afternoonSnack: '午点', eveningSnack: '晚点' };
+    const payload = {
+      version: '20261019-sorting-label-print-1',
+      mode,
+      printedAt: new Date().toISOString(),
+      rows: (Array.isArray(rows) ? rows : []).map((row) => {
+        const product = productByCode.get(String(row.productId || ''))
+          || productByCode.get(String(row.goodsCode || row.productCode || ''));
+        const order = orderById.get(String(row.orderId || '')) || orderByNo.get(String(row.orderNo || ''));
+        const meal = order?.mealName || order?.mealKey || row.mealName || row.mealKey || '';
+        return {
+          ...row,
+          storageCondition: product?.storageCondition || row.storageCondition || '',
+          mealName: window.OrderMealNameByKey?.[meal] || mealNames[meal] || meal
+        };
+      })
+    };
+    navigate(`./sorting-label-print.html?printData=${encodeURIComponent(JSON.stringify(payload))}`);
+  }
+
+  const printSortingLabels = (items) => openSortingLabelTemplate(items, 'product');
 
   function openSortingCustomerExportTemplate(groups) {
     const exportKey = `sorting-customer-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -109,63 +150,29 @@
     return `${actual}/${order}${unit}`;
   }
 
-  const defaultPackageSpecs = [
-    { productCode: 'SP0300061', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300039', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300025', packageQty: 5, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300019', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
-    { productCode: 'SP0300034', packageQty: 25, packageUnit: '袋', status: 'ENABLE' },
-    { productCode: 'SP0300020', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
-    { productCode: 'SP0300051', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300055', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300059', packageQty: 10, packageUnit: '包', status: 'ENABLE' },
-    { productCode: 'SP0300031', packageQty: 5, packageUnit: '箱', status: 'ENABLE' },
-    { productCode: 'SP0300030', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
-    { productCode: 'SP0300015', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
-    { productCode: 'SP0300037', packageQty: 10, packageUnit: '箱', status: 'ENABLE' },
-    { productCode: 'SP0300014', packageQty: 10, packageUnit: '筐', status: 'ENABLE' },
-    { productCode: 'SP0300040', packageQty: 10, packageUnit: '袋', status: 'ENABLE' },
-    { productCode: 'SP0300029', packageQty: 5, packageUnit: '箱', status: 'ENABLE' }
-  ];
-
-  function packageSpecFor(item) {
-    const saved = window.AppStorage?.read('procurement-sorting-package-specs-v2', null);
-    const specsByCode = new Map(defaultPackageSpecs.map((spec) => [String(spec.productCode), spec]));
-    (Array.isArray(saved) ? saved : []).forEach((spec) => specsByCode.set(String(spec.productCode), spec));
-    const specs = [...specsByCode.values()];
-    return specs.find((spec) => String(spec.productCode) === String(item.goodsCode) && spec.status !== 'DISABLE') || null;
-  }
-
-  function sortingQtyOf(item, spec) {
-    const actual = Number(item.actualQty || 0);
-    const per = Number(spec.packageQty || 0);
-    if (!actual || !per) return null;
-    return Math.floor(actual / per);
+  function packageBreakdown(item) {
+    if (Number(item.packageCoefficient) > 0 && Number.isFinite(Number(item.packageCount))) return item;
+    return window.SortingPackageBreakdown?.calculate(item, item.orderQty) || null;
   }
 
   function renderSortingSpec(item) {
-    const spec = packageSpecFor(item);
-    return spec ? escapeHtml(spec.packageUnit || '--') : '--';
+    const breakdown = packageBreakdown(item);
+    return breakdown ? escapeHtml(breakdown.packageUnit || '--') : '--';
   }
 
   function renderSortingCoefficient(item) {
-    const spec = packageSpecFor(item);
-    return spec ? escapeHtml(spec.packageQty) : '--';
+    const breakdown = packageBreakdown(item);
+    return breakdown ? escapeHtml(breakdown.packageCoefficient) : '--';
   }
 
   function renderSortingQty(item) {
-    const spec = packageSpecFor(item);
-    const qty = spec ? sortingQtyOf(item, spec) : null;
-    return qty === null ? '--' : String(qty);
+    const breakdown = packageBreakdown(item);
+    return breakdown ? String(breakdown.packageCount) : '--';
   }
 
   function renderSortingRemainder(item) {
-    const spec = packageSpecFor(item);
-    if (!spec) return '--';
-    const qty = sortingQtyOf(item, spec);
-    if (qty === null) return '--';
-    const remainder = Number((Number(item.actualQty || 0) - qty * Number(spec.packageQty)).toFixed(2));
-    return remainder > 0 ? String(remainder) : '';
+    const breakdown = packageBreakdown(item);
+    return breakdown ? String(breakdown.packageRemainder) : '--';
   }
 
   function isShortage(item) {
@@ -254,21 +261,27 @@
         ],
         toolbar: [
           {
+            key: 'batchSort',
+            label: '一键分拣',
+            primary: true,
+            requiresSelection: true,
+            batchTransition: 'sort',
+            message: '确定一键分拣选中商品吗？',
+            dropdownVisibleStatuses: [''],
+            defaultActionByStatus: { SORTED: 'batchResetSort' },
+            labelByStatus: { SORTED: '一键重置分拣' },
+            dropdownOptions: [
+              { key: 'batchResetSort', label: '一键重置分拣', requiresSelection: true, batchTransition: 'resetSort', message: '确定一键重置选中商品的分拣状态吗？', visibleStatuses: ['SORTED', 'PARTIAL', ''] }
+            ]
+          },
+          { key: 'batchShortage', label: '批量标记缺货', primary: true, batchTransition: 'markShortage', message: '确定标记选中商品为缺货？', visibleStatuses: ['PENDING', ''] },
+          {
             key: 'batchPrintQr',
             label: '一键打印',
             primary: true,
             requiresSelection: true,
-            validateSelection: (items) => items.length && items.every((item) => item.status === 'SORTED') ? '' : '仅已分拣商品可以打印二维码',
-            toast: '已生成商品分拣二维码打印预览',
-            dropdownVisibleStatuses: [''],
-            defaultActionByStatus: { PENDING: 'batchSort', SORTED: 'batchResetSort', '': 'batchPrintQr' },
-            labelByStatus: { PENDING: '一键分拣', SORTED: '一键重置分拣', '': '一键打印' },
-            dropdownOptions: [
-              { key: 'batchSort', label: '一键分拣', batchTransition: 'sort', message: '确定一键分拣选中商品吗？', visibleStatuses: ['PENDING', ''] },
-              { key: 'batchResetSort', label: '一键重置分拣', batchTransition: 'resetSort', message: '确定一键重置选中商品的分拣状态吗？', visibleStatuses: ['SORTED', 'PARTIAL', ''] }
-            ]
+            onClick: printSortingLabels
           },
-          { key: 'batchShortage', label: '批量标记缺货', batchTransition: 'markShortage', message: '确定标记选中商品为缺货？', visibleStatuses: ['PENDING', ''] },
           {
             key: 'export',
             label: '导出',
@@ -282,11 +295,11 @@
           { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: printSortingDocument }
         ],
         rowActions: [
-          { key: 'sort', label: '分拣', transition: 'sort', visible: ['PENDING', 'PARTIAL'], disabled: isShortage, message: '确定分拣该商品吗？' },
+          { key: 'sort', label: '分拣', onClick: (item) => printSortingLabels([item]), visible: ['PENDING', 'PARTIAL'], disabled: isShortage },
           { key: 'markShortage', label: '标记缺货', transition: 'markShortage', visibleFn: (item) => !isShortage(item) && ['PENDING', 'PARTIAL'].includes(item.status), message: '确定标记该商品为缺货？' },
           { key: 'cancelShortage', label: '取消缺货', transition: 'cancelShortage', visibleFn: isShortage, message: '确定要取消该商品缺货状态吗？' },
           { key: 'resetSort', label: '重置', transition: 'resetSort', visible: ['SORTED', 'PARTIAL'], message: '确定重置该商品分拣状态和实际数量？' },
-          { key: 'print', label: '打印', visibleFn: (item) => item.status === 'SORTED', toast: '已生成商品分拣二维码打印预览' }
+          { key: 'print', label: '打印', onClick: (item) => printSortingLabels([item]) }
         ]
       },
       {
@@ -321,9 +334,22 @@
           { label: '全部', value: '' }
         ],
         toolbar: [
-          { key: 'batchSort', label: '一键分拣', primary: true, requiresSelection: true, batchTransition: 'sort', message: '确定分拣选中客户下可分拣的商品吗？已分拣、已发货和缺货商品将跳过。' },
+          {
+            key: 'batchSort',
+            label: '一键分拣',
+            primary: true,
+            requiresSelection: true,
+            batchTransition: 'sort',
+            message: '确定分拣选中客户下可分拣的商品吗？已分拣、已发货和缺货商品将跳过。',
+            dropdownVisibleStatuses: [''],
+            defaultActionByStatus: { SORTED: 'batchResetSort' },
+            labelByStatus: { SORTED: '一键重置分拣' },
+            dropdownOptions: [
+              { key: 'batchResetSort', label: '一键重置分拣', requiresSelection: true, batchTransition: 'resetSort', message: '确定重置选中客户下已分拣、未发货的商品吗？', visibleStatuses: ['SORTED', ''] }
+            ]
+          },
           { key: 'batchShortage', label: '批量标记缺货', primary: true, requiresSelection: true, batchTransition: 'markShortage', message: '确定将选中客户下尚未分拣、未发货的商品标记缺货吗？' },
-          { key: 'batchPrint', label: '一键打印', primary: true, requiresSelection: true, onClick: printCustomers },
+          { key: 'batchPrint', label: '一键打印', primary: true, requiresSelection: true, onClick: printCustomerLabels },
           { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: printCustomers },
           { key: 'export', label: '导出', icon: 'supplier-purchase-export', onClick: openSortingCustomerExportTemplate }
         ],

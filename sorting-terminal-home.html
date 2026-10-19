@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分拣终端</title>
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-home.css">
+</head>
+<body>
+  <main class="sorting-terminal-home" data-user-end="sorting-terminal">
+    <header class="sorting-terminal-home-header">
+      <h1>宜丰食材供应链管理有限公司</h1>
+      <label class="sorting-terminal-home-field sorting-terminal-date-field">
+        <span>期望送达日期</span>
+        <input id="sortingTerminalShippingDate" type="date" value="2025-09-05" aria-label="期望送达日期">
+      </label>
+      <label class="sorting-terminal-home-field sorting-terminal-warehouse-field">
+        <span>仓库</span>
+        <select id="sortingTerminalWarehouse" aria-label="仓库">
+          <option>宜丰东区仓库</option>
+          <option>宜丰西区仓库</option>
+        </select>
+      </label>
+      <div class="sorting-terminal-home-account">
+        <span class="sorting-terminal-home-wifi" aria-label="网络状态" role="img"></span>
+        <span class="sorting-terminal-home-user-icon" aria-hidden="true"></span>
+        <span id="sortingTerminalCurrentUser">丁磊</span>
+        <span class="sorting-terminal-home-divider" aria-hidden="true"></span>
+        <button type="button" id="sortingTerminalLogout" class="sorting-terminal-home-logout"><span aria-hidden="true" class="sorting-terminal-home-logout-icon"></span>退出</button>
+      </div>
+    </header>
+
+    <section class="sorting-terminal-home-content" aria-label="分拣终端首页">
+      <div class="sorting-terminal-home-cards">
+        <button type="button" class="sorting-terminal-home-card" data-feature="商品分拣">
+          <span class="sorting-terminal-home-card-icon is-product" aria-hidden="true"></span>
+          <span>商品分拣</span>
+        </button>
+        <button type="button" class="sorting-terminal-home-card" data-feature="客户分拣">
+          <span class="sorting-terminal-home-card-icon is-customer" aria-hidden="true"></span>
+          <span>客户分拣</span>
+        </button>
+        <button type="button" class="sorting-terminal-home-card" data-feature="分拣差异">
+          <span class="sorting-terminal-home-card-icon is-difference" aria-hidden="true"></span>
+          <span>分拣差异</span>
+        </button>
+        <button type="button" class="sorting-terminal-home-card" data-feature="缺货商品">
+          <span class="sorting-terminal-home-card-icon is-shortage" aria-hidden="true"></span>
+          <span>缺货商品</span>
+        </button>
+      </div>
+      <p class="sorting-terminal-home-action-status" id="sortingTerminalActionStatus" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <script src="./assets/js/pages/sorting-terminal-home.js"></script>
+  <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
+</body>
+</html>

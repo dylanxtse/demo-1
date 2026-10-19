@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 分拣终端</title>
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-login.css">
+</head>
+<body>
+  <main class="sorting-terminal-login" data-user-end="sorting-terminal">
+    <div class="sorting-terminal-login-art" aria-hidden="true"></div>
+    <div class="sorting-terminal-switch-wrap">
+      <button class="sorting-terminal-switch-toggle" type="button" id="sortingTerminalSwitchToggle" aria-haspopup="menu" aria-expanded="false" aria-controls="sortingTerminalSwitchMenu">切换 <span aria-hidden="true">⇄</span></button>
+      <div class="sorting-terminal-switch-menu" id="sortingTerminalSwitchMenu" role="menu" hidden>
+        <button type="button" role="menuitem" data-shell-switch="enterprise">切换至企业端</button>
+        <button type="button" role="menuitem" data-shell-switch="education">切换至教育局端</button>
+        <button type="button" role="menuitem" data-shell-switch="supplier">切换至供应商端</button>
+        <button type="button" role="menuitem" data-shell-switch="operations">切换至运维管理平台</button>
+        <button type="button" role="menuitem" data-shell-switch="school">切换至学校端</button>
+        <button type="button" role="menuitem" data-shell-switch="mobile">切换至移动端</button>
+      </div>
+    </div>
+    <section class="sorting-terminal-login-card" aria-labelledby="sortingTerminalWelcome">
+      <div class="sorting-terminal-login-topbar">
+        <label class="sorting-terminal-user-type-label" for="sortingTerminalUserType">
+          <span class="sr-only">用户类型</span>
+          <select id="sortingTerminalUserType" name="userType">
+            <option value="enterprise">企业用户</option>
+            <option value="supplier">供应商用户</option>
+          </select>
+        </label>
+      </div>
+      <h1 id="sortingTerminalWelcome">欢迎使用</h1>
+      <form class="sorting-terminal-login-form" id="sortingTerminalLoginForm" novalidate>
+        <div class="sorting-terminal-field">
+          <label class="sorting-terminal-input" for="sortingTerminalUsername">
+            <span class="sorting-terminal-input-icon sorting-terminal-user-icon" aria-hidden="true"></span>
+            <span class="sr-only">用户名称</span>
+            <input id="sortingTerminalUsername" name="username" type="text" autocomplete="username" aria-describedby="sortingTerminalUsernameError" placeholder="请输入用户名称" required>
+          </label>
+          <p class="sorting-terminal-field-error" id="sortingTerminalUsernameError" role="status" aria-live="polite"></p>
+        </div>
+        <div class="sorting-terminal-field">
+          <label class="sorting-terminal-input sorting-terminal-password-field" for="sortingTerminalPassword">
+            <span class="sorting-terminal-input-icon sorting-terminal-lock-icon" aria-hidden="true"></span>
+            <span class="sr-only">登录密码</span>
+            <input id="sortingTerminalPassword" name="password" type="password" autocomplete="current-password" aria-describedby="sortingTerminalPasswordError" placeholder="请输入登录密码" required>
+            <button class="sorting-terminal-password-toggle" id="sortingTerminalPasswordToggle" type="button" role="switch" aria-checked="false" aria-label="显示密码"><span aria-hidden="true"></span></button>
+          </label>
+          <p class="sorting-terminal-field-error" id="sortingTerminalPasswordError" role="status" aria-live="polite"></p>
+        </div>
+        <label class="sorting-terminal-remember"><input id="sortingTerminalRemember" type="checkbox">记住密码</label>
+        <button class="sorting-terminal-submit" type="submit">登录</button>
+      </form>
+    </section>
+  </main>
+  <script src="./assets/js/pages/sorting-terminal-login.js"></script>
+  <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
+</body>
+</html>

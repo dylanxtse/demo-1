@@ -13,6 +13,7 @@
       <a class="school-mobile-preview-back" href="./school.html" data-school-mobile-back aria-label="返回学校端 Web">
         <span aria-hidden="true">←</span>
       </a>
+      <button class="school-mobile-preview-switch" type="button" data-shell-switch="sorting-terminal">切换至分拣终端</button>
     </div>
     <section class="school-mobile-device" aria-label="iPhone 学校移动端原型外壳">
       <div class="school-mobile-device-speaker" aria-hidden="true"></div>
@@ -34,5 +35,6 @@
   <script src="./assets/js/services/operations-service.js?v=20260908-order-schema-1"></script>
   <script src="./assets/js/services/school-recipe-demand-service.js?v=20261008-auxiliary-submit-2"></script>
   <script src="./assets/js/pages/school-mobile.js?v=20261008-auxiliary-confirm-edit-10"></script>
+  <script>document.querySelector('[data-shell-switch="sorting-terminal"]')?.addEventListener('click', () => { window.location.href = './sorting-terminal-login.html'; });</script>
 </body>
 </html>

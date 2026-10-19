@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品分拣任务 - 分拣终端</title>
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-item.css">
+</head>
+<body>
+  <main class="sorting-terminal-item" data-user-end="sorting-terminal">
+    <header class="sorting-terminal-item-header">
+      <a class="sorting-terminal-item-back" id="sortingTerminalItemBack" href="./sorting-terminal-product.html"><span class="sorting-terminal-item-back-icon" aria-hidden="true"></span>返回</a>
+      <h1>商品分拣</h1>
+      <form class="sorting-terminal-item-search" id="sortingTerminalItemSearch" role="search">
+        <label for="sortingTerminalItemKeyword">客户名称</label>
+        <div class="sorting-terminal-item-search-box">
+          <input id="sortingTerminalItemKeyword" type="search" placeholder="商品名称/编码" autocomplete="off">
+          <button type="submit" aria-label="搜索"><span class="sorting-terminal-item-search-icon" aria-hidden="true"></span></button>
+        </div>
+      </form>
+      <button class="sorting-terminal-item-header-action is-teal" id="sortingTerminalItemSortAll" type="button">一键分拣</button>
+      <button class="sorting-terminal-item-header-action is-blue" id="sortingTerminalItemPrintAll" type="button">一键打印</button>
+      <div class="sorting-terminal-item-filter-wrap">
+        <button class="sorting-terminal-item-header-action is-teal" id="sortingTerminalItemFilterButton" type="button" aria-expanded="false" aria-controls="sortingTerminalItemFilterMenu">筛选方式</button>
+        <div class="sorting-terminal-item-filter-menu" id="sortingTerminalItemFilterMenu" hidden>
+          <button type="button" data-filter="all" aria-pressed="true">全部</button>
+          <button type="button" data-filter="pending" aria-pressed="false">未分拣</button>
+          <button type="button" data-filter="done" aria-pressed="false">已分拣</button>
+          <button type="button" data-filter="shortage" aria-pressed="false">缺货</button>
+        </div>
+      </div>
+    </header>
+    <section class="sorting-terminal-item-main" aria-label="商品分拣任务">
+      <div class="sorting-terminal-item-panel">
+        <div class="sorting-terminal-item-summary">
+          <div class="sorting-terminal-item-product" id="sortingTerminalItemProduct"></div>
+          <label class="sorting-terminal-item-weight" for="sortingTerminalItemWeight">
+            <span>当前称重：</span>
+            <input id="sortingTerminalItemWeight" type="number" min="0" step="0.01" value="120.00" inputmode="decimal">
+            <span id="sortingTerminalItemUnit">斤</span>
+          </label>
+        </div>
+        <div class="sorting-terminal-item-grid" id="sortingTerminalItemGrid"></div>
+        <p class="sorting-terminal-item-empty" id="sortingTerminalItemEmpty" hidden>暂无匹配的分拣任务</p>
+      </div>
+    </section>
+    <dialog class="sorting-terminal-item-dialog" id="sortingTerminalItemDialog" aria-labelledby="sortingTerminalItemDialogTitle">
+      <button class="sorting-terminal-item-dialog-close" id="sortingTerminalItemDialogClose" type="button" aria-label="关闭">×</button>
+      <h2 id="sortingTerminalItemDialogTitle"></h2>
+      <div class="sorting-terminal-item-dialog-details">
+        <div>
+          <p>订单数量：<span id="sortingTerminalItemDialogAmount"></span></p>
+          <p>阈值下限：<strong>10%</strong></p>
+        </div>
+        <div>
+          <p>商品备注：<span id="sortingTerminalItemDialogRemark"></span></p>
+          <p>阈值上限：<strong>10%</strong></p>
+        </div>
+      </div>
+      <div class="sorting-terminal-item-dialog-done" id="sortingTerminalItemDialogDone">
+        <button class="sorting-terminal-item-dialog-reset" id="sortingTerminalItemDialogReset" type="button">重置</button>
+        <div class="sorting-terminal-item-dialog-measurement"><output id="sortingTerminalItemDialogMeasured"></output><span id="sortingTerminalItemDialogUnit">斤</span></div>
+        <div class="sorting-terminal-item-dialog-state">已分拣</div>
+      </div>
+      <div class="sorting-terminal-item-dialog-pending" id="sortingTerminalItemDialogPending" hidden>
+        <div class="sorting-terminal-item-dialog-pending-actions">
+          <button class="sorting-terminal-item-dialog-scale-action" id="sortingTerminalItemDialogZeroScale" type="button">置零</button>
+          <button class="sorting-terminal-item-dialog-scale-action" id="sortingTerminalItemDialogTareScale" type="button">去皮</button>
+          <button class="sorting-terminal-item-dialog-shortage" id="sortingTerminalItemDialogShortage" type="button">标记缺货</button>
+          <button class="sorting-terminal-item-dialog-reset" id="sortingTerminalItemDialogPendingReset" type="button">重置</button>
+          <button class="sorting-terminal-item-dialog-print-label" id="sortingTerminalItemDialogPrintLabel" type="button">打印标签</button>
+        </div>
+        <div class="sorting-terminal-item-dialog-weights">
+          <div class="sorting-terminal-item-dialog-weight-field">
+            <span>毛重：</span><output id="sortingTerminalItemDialogGross"></output><span data-weight-unit>斤</span>
+          </div>
+          <div class="sorting-terminal-item-dialog-weight-field">
+            <label for="sortingTerminalItemDialogTare">皮重：</label><input id="sortingTerminalItemDialogTare" type="text" inputmode="decimal" autocomplete="off" aria-label="皮重"><span data-weight-unit>斤</span>
+          </div>
+          <div class="sorting-terminal-item-dialog-weight-field">
+            <label for="sortingTerminalItemDialogNet">净重：</label><input id="sortingTerminalItemDialogNet" type="text" inputmode="decimal" autocomplete="off" aria-label="净重"><span data-weight-unit>斤</span>
+            <button type="button" data-edit-target="sortingTerminalItemDialogNet" aria-label="修改净重">✎</button>
+          </div>
+          <div class="sorting-terminal-item-dialog-weight-field">
+            <label for="sortingTerminalItemDialogQuantity">总重：</label><input id="sortingTerminalItemDialogQuantity" type="text" inputmode="decimal" autocomplete="off" aria-label="总重" aria-describedby="sortingTerminalItemDialogWarning"><span data-weight-unit>斤</span>
+            <button type="button" data-edit-target="sortingTerminalItemDialogQuantity" aria-label="修改总重">✎</button>
+          </div>
+        </div>
+        <button class="sorting-terminal-item-dialog-accumulate" id="sortingTerminalItemDialogAccumulate" type="button">累加</button>
+        <p class="sorting-terminal-item-dialog-warning" id="sortingTerminalItemDialogWarning" role="status" aria-live="polite"></p>
+        <div class="sorting-terminal-item-dialog-keypad" id="sortingTerminalItemDialogKeypad" aria-label="数字键盘">
+          <span>1</span><span>2</span><span>3</span><span>⌫</span>
+          <span>4</span><span>5</span><span>6</span><span>清空</span>
+          <span>7</span><span>8</span><span>9</span><button class="sorting-terminal-item-dialog-confirm" id="sortingTerminalItemDialogConfirm" type="button">确认</button>
+          <span class="sorting-terminal-item-dialog-zero">0</span><span>.</span>
+        </div>
+      </div>
+    </dialog>
+  </main>
+  <script src="./assets/js/pages/sorting-terminal-item.js"></script>
+  <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
+</body>
+</html>
