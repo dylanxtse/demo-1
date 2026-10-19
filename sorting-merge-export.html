@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商品分拣归并</title>
   <link rel="stylesheet" href="./assets/css/variables.css">
-  <link rel="stylesheet" href="./assets/css/sorting-merge-export.css?v=20261019-package-columns-1">
+  <link rel="stylesheet" href="./assets/css/sorting-merge-export.css?v=20261019-package-total-1">
 </head>
 <body>
   <main class="sorting-merge-export-page">
     <table class="sorting-merge-export-table" aria-label="商品分拣归并模板">
       <colgroup>
         <col class="col-sequence"><col class="col-product"><col class="col-unit"><col class="col-customer-count">
-        <col class="col-customer"><col class="col-canteen"><col class="col-remark"><col class="col-quantity"><col class="col-package-count"><col class="col-package-remainder">
+        <col class="col-customer"><col class="col-canteen"><col class="col-remark"><col class="col-quantity"><col class="col-package-count"><col class="col-package-count-total"><col class="col-package-remainder">
         <col class="col-total"><col class="col-stock">
       </colgroup>
       <thead>
-        <tr class="merge-title-row"><th colspan="12">商品分拣归并</th></tr>
+        <tr class="merge-title-row"><th colspan="13">商品分拣归并</th></tr>
         <tr class="merge-meta-row">
           <th id="mergeExportWarehouse" colspan="6">仓库：赣县中心仓</th>
-          <th id="mergeExportDate" colspan="6">期望送达时间：--</th>
+          <th id="mergeExportDate" colspan="7">期望送达时间：--</th>
         </tr>
         <tr class="merge-header-row">
           <th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th>客户数量</th>
-          <th>客户名称</th><th>食堂</th><th>备注</th><th>下单数量</th><th>分包数量</th><th>分包尾数</th><th>下单数量合计</th><th>库存</th>
+          <th>客户名称</th><th>食堂</th><th>备注</th><th>下单数量</th><th>分包数量</th><th>分包数量合计</th><th>分包尾数</th><th>下单数量合计</th><th>库存</th>
         </tr>
       </thead>
       <tbody id="mergeExportBody"></tbody>
@@ -41,6 +41,6 @@
   <script src="./assets/js/utils/storage.js"></script>
   <script src="./assets/js/services/repository.js"></script>
   <script src="./assets/js/data/mock-dataset.js"></script>
-  <script src="./assets/js/pages/sorting-merge-export.js?v=20261019-package-columns-1"></script>
+  <script src="./assets/js/pages/sorting-merge-export.js?v=20261019-package-total-1"></script>
 </body>
 </html>

@@ -52,13 +52,17 @@
     const items = group.items;
     const rowspan = items.length;
     const total = items.reduce((sum, item) => sum + Number(item.orderQty || 0), 0);
+    const breakdowns = items.map(packageBreakdown);
+    const packageCountTotal = breakdowns.every(Boolean)
+      ? breakdowns.reduce((sum, breakdown) => sum + breakdown.packageCount, 0)
+      : '--';
     const stock = first.stock ?? first.currentStock ?? '--';
     const groupCells = `<td rowspan="${rowspan}">${index + 1}</td>
       <td rowspan="${rowspan}">${escapeHtml(first.goodsName || '--')}</td>
       <td rowspan="${rowspan}">${escapeHtml(first.unit || '--')}</td>
       <td rowspan="${rowspan}">${items.length}</td>`;
     return items.map((item, itemIndex) => {
-      const breakdown = packageBreakdown(item);
+      const breakdown = breakdowns[itemIndex];
       return `<tr>
       ${itemIndex === 0 ? groupCells : ''}
       <td>${escapeHtml(item.customerName || '--')}</td>
@@ -66,6 +70,7 @@
       <td>${escapeHtml(item.remark || '')}</td>
       <td>${formatNumber(item.orderQty)}</td>
       <td>${breakdown ? breakdown.packageCount : '--'}</td>
+      ${itemIndex === 0 ? `<td rowspan="${rowspan}">${packageCountTotal}</td>` : ''}
       <td>${breakdown ? formatNumber(breakdown.packageRemainder) : '--'}</td>
       ${itemIndex === 0 ? `<td rowspan="${rowspan}">${formatNumber(total)}</td><td rowspan="${rowspan}">${escapeHtml(stock)}</td>` : ''}
     </tr>`;
@@ -82,7 +87,7 @@
   document.getElementById('mergeExportDate').textContent = `期望送达时间：${expectedAt}`;
   document.getElementById('mergeExportBody').innerHTML = groups.length
     ? groups.map(renderGroup).join('')
-    : '<tr><td colspan="12" style="text-align:center">暂无可归并数据</td></tr>';
+    : '<tr><td colspan="13" style="text-align:center">暂无可归并数据</td></tr>';
 
   const page = document.querySelector('.sorting-merge-export-page');
   const zoomValue = document.querySelector('[data-action="zoom-reset"]');
