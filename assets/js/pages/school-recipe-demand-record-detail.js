@@ -145,7 +145,7 @@
       const orderCell = `<button type="button" class="school-recipe-demand-order-link" data-action="order" data-id="${escapeHtml(order.orderId)}">${orderNumber}</button>`;
       const linkedOrder = window.SchoolOrderService?.get?.(order.orderId);
       const orderAmount = linkedOrder?.orderAmount ?? order.orderAmount;
-      return `<tr><td>${orderCell}</td><td>${escapeHtml(record.expectedAt || order.expectedAt || '--')}</td><td>${escapeHtml(order.mealName || (record.orderMode === 'combined' ? '不区分餐次' : '--'))}</td><td>${escapeHtml(order.orderTag || '--')}</td><td class="is-number">${orderAmount == null || orderAmount === '' ? '--' : money(orderAmount)}</td></tr>`;
+      return `<tr><td>${orderCell}</td><td>${escapeHtml(record.expectedAt || order.expectedAt || '--')}</td><td>${escapeHtml(order.mealName || '--')}</td><td>${escapeHtml(order.orderTag || '--')}</td><td class="is-number">${orderAmount == null || orderAmount === '' ? '--' : money(orderAmount)}</td></tr>`;
     }).join('') || '<tr><td colspan="5" class="school-recipe-demand-record-detail-empty-cell">暂无关联订单</td></tr>';
   }
 

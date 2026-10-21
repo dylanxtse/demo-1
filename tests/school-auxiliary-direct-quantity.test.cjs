@@ -171,7 +171,9 @@ test('商品数量确认页带入多个已填日期，同餐次相同商品合�
     return { querySelector() { return page; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
-  assert.match(confirmHtml, new RegExp(`用料日期：<strong>${date}、${secondDate}</strong>`));
+  assert.match(confirmHtml, /<span class="section-title-mark">用料日期明细<\/span>/);
+  assert.match(confirmHtml, new RegExp(`<td>${date}</td><td class="is-number">1</td>`));
+  assert.match(confirmHtml, new RegExp(`<td>${secondDate}</td><td class="is-number">1</td>`));
   assert.match(confirmHtml, /填报天数：<strong>2<\/strong>/);
   assert.match(confirmHtml, /<td class="is-number">5\.5<\/td>/);
 
@@ -183,7 +185,7 @@ test('商品数量确认页带入多个已填日期，同餐次相同商品合�
   assert.equal(context.SchoolOrderService.get(breakfastOrder.orderId).items[0].orderQty, 5.5);
 });
 
-test('商品数量确认页缩略展示三个以上已填日期', () => {
+test('商品数量确认页按表格展示三个以上已填日期', () => {
   const context = app();
   const service = context.SchoolRecipeAuxiliaryDirectService;
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
@@ -197,9 +199,8 @@ test('商品数量确认页缩略展示三个以上已填日期', () => {
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
-  assert.match(html, new RegExp(`用料日期：<strong>${dates[0]}、${dates[2]}</strong>`));
-  assert.match(html, /<summary>查看全部<\/summary>/);
-  dates.forEach((filledDate) => assert.ok(html.includes(`<span>${filledDate}</span>`)));
+  assert.match(html, /<th>用料日期<\/th><th>商品种数<\/th><th>操作<\/th>/);
+  dates.forEach((filledDate) => assert.ok(html.includes(`<td>${filledDate}</td>`)));
 });
 
 test('商品数量按人员类型拆单时分别汇总、显示采购量并生成对应订单', async () => {
@@ -302,6 +303,16 @@ test('多天合并仅使用辅料设置的商品，一次总量只生成一笔�
   assert.equal(order.mealName, '');
   assert.equal(order.items[0].orderQty, 2);
   assert.equal(order.recipeDemandDate, draft.dates.join('、'));
+  context.SchoolRecipeDemandService = { get: () => result.record, participantsFor: () => [] };
+  context.location = { search: `?id=${result.record.id}` };
+  let recordDetailHtml = '';
+  context.AppShell = { mount({ content }) {
+    recordDetailHtml = content;
+    return { querySelector: () => null };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-record-detail.js'), 'utf8'), context);
+  assert.match(recordDetailHtml, new RegExp(`<td>--</td><td>${order.orderTag}</td>`));
+  assert.doesNotMatch(recordDetailHtml, /不区分餐次/);
   const enterpriseOrder = context.DemoStore.get('orders').find((item) => item.orderId === order.id);
   assert.equal(enterpriseOrder?.orderMode, 'combined');
   assert.equal(enterpriseOrder?.items[0]?.quantity, 2);
@@ -370,18 +381,36 @@ test('多天合并填报页直接显示辅料设置商品，确认页不显示�
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
   context.location = { search: `?mode=quantity&orderMode=combined&date=${date}&canteen=${canteen.id}` };
   let confirmHtml = '';
+  const confirmListeners = {};
+  const confirmPage = {
+    get outerHTML() { return confirmHtml; },
+    set outerHTML(value) { confirmHtml = value; }
+  };
   context.AppShell = { mount({ content }) {
     confirmHtml = content;
-    return { querySelector() { return null; }, addEventListener() {} };
+    return {
+      querySelector(selector) { return selector === '#schoolRecipeAuxiliaryDirectConfirmPage' ? confirmPage : null; },
+      addEventListener(type, handler) { confirmListeners[type] = handler; }
+    };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
   assert.match(confirmHtml, /用料食堂：<strong>第一食堂<\/strong>/);
   assert.match(confirmHtml, /填报天数：<strong>2<\/strong>/);
-  assert.match(confirmHtml, /用料日期：/);
+  assert.match(confirmHtml, /<span class="section-title-mark">用料日期明细<\/span>/);
+  assert.match(confirmHtml, new RegExp(`<td>${date}</td><td class="is-number">1</td>`));
+  assert.match(confirmHtml, /<th>用料日期<\/th><th>商品种数<\/th><th>操作<\/th>/);
   assert.doesNotMatch(confirmHtml, /下单方式：|期望送达：/);
   assert.match(confirmHtml, /<td colspan="6">合计金额<\/td>/);
   assert.doesNotMatch(confirmHtml, /本次合并订单合计金额/);
   assert.doesNotMatch(confirmHtml, /data-aux-direct-confirm-meal=/);
+  confirmListeners.click({ target: { closest(selector) {
+    return selector === '[data-aux-direct-delete-date]'
+      ? { dataset: { auxDirectDeleteDate: date }, disabled: false } : null;
+  } } });
+  assert.match(confirmHtml, /填报天数：<strong>1<\/strong>/);
+  assert.doesNotMatch(confirmHtml, new RegExp(`<td>${date}</td>`));
+  assert.match(confirmHtml, /data-aux-direct-delete-date="2026-09-18" title="至少保留一个填报日期" disabled/);
+  assert.deepEqual(Array.from(service.readCombinedDraft(canteen).dates), [date, '2026-09-18']);
 });
 
 test('分天分餐次确认只读取当前日期，不混入其他日期的草稿', () => {
@@ -401,6 +430,7 @@ test('分天分餐次确认只读取当前日期，不混入其他日期的草�
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
   assert.match(html, /用料食堂：<strong>第一食堂<\/strong>/);
   assert.match(html, /填报天数：<strong>1<\/strong>/);
+  assert.match(html, new RegExp(`data-aux-direct-delete-date="${date}" title="至少保留一个填报日期" disabled`));
   assert.doesNotMatch(html, /下单方式：|期望送达：/);
   assert.match(html, /<td class="is-number">2<\/td>/);
   assert.doesNotMatch(html, /2026-09-17/);
