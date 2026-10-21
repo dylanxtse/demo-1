@@ -320,7 +320,7 @@
       participantPersonTimes: clone(summary.calculation.participantPeople),
       totalPersonTimes,
       productCount,
-      source: '食谱下单',
+      source: '需求填报',
       submittedBy: '管理员',
       submittedById: 'USER-HEAD-ADMIN',
       submittedAt: DEMO_RECORD_CREATED_AT,
@@ -692,7 +692,7 @@
       orderId: order.id,
       orderNo: order.orderNo,
       sourceType: 'CUSTOMER',
-      source: '食谱下单',
+      source: '需求填报',
       customerName: order.customerName,
       customerType: '学校',
       canteen: order.canteen,
@@ -888,7 +888,7 @@
           recipeParticipantType: participant.label,
           expectedAt: record.expectedAt,
           supplement: '否',
-          source: '食谱下单',
+          source: '需求填报',
           status: '待审核',
           creator: operator.name,
           items
@@ -1019,11 +1019,11 @@
       dateSummaries, items,
       participantPersonTimes: Object.fromEntries(orderParticipants.map((participant) => [participant.key, 0])),
       studentPersonTimes: 0, teacherPersonTimes: 0, totalPersonTimes: 0,
-      productCount: items.length, source: '学校端食谱直接填量下单',
+      productCount: items.length, source: '学校端食谱下单',
       submittedBy: operator.name, submittedById: operator.id, submittedAt: createdAt,
       orders: [], enterpriseSyncWarnings: [],
       operationLogs: [{ action: '提交需求并下单', operator: operator.name, operatorId: operator.id,
-        result: '提交成功', time: createdAt, description: `直接填写 ${preview.dates.join('、')} 的食材采购量` }]
+        result: '提交成功', time: createdAt, description: `提交 ${preview.dates.join('、')} 的食材需求` }]
     };
     writeAll([...records, record]);
     const mealGroups = splitByMeal ? preview.meals.map((meal) => ({ key: meal.key, name: meal.name, meals: [meal] }))
@@ -1048,7 +1048,7 @@
             productCode: row.productCode, productName: row.productName, unit: row.unit,
             brand: row.brand, spec: row.spec, isNetVegetable: row.isNetVegetable,
             isStandardProduct: row.isStandardProduct, orderQty: amount, orderPrice: row.orderPrice,
-            remark: `食谱${orderDates.join('、')}${group.name}直接填量需求`
+            remark: `食谱${orderDates.join('、')}${group.name}需求`
           });
         });
         const order = schoolOrderService.create({
@@ -1060,7 +1060,7 @@
           mealKey: splitByMeal ? group.key : '', mealName: group.name, mealPeople: '',
           recipeDemandRecordId: record.id, recipeDemandRecordNo: record.recordNo,
           recipeDemandDate: orderDates.join('、'), recipeParticipantType: participant.label,
-          expectedAt, supplement: '否', source: '食谱下单', status: '待审核', creator: operator.name,
+          expectedAt, supplement: '否', source: '需求填报', status: '待审核', creator: operator.name,
           items: [...merged.values()]
         });
         let enterpriseOrder = null;
@@ -1080,7 +1080,7 @@
     }
     record.operationLogs.push({ action: '订单生成', operator: operator.name, operatorId: operator.id,
       result: `${record.orders.length} 笔`, time: timestamp(),
-      description: `直接填量生成订单：${record.orders.map((order) => order.orderNo).join('、')}` });
+      description: `生成订单：${record.orders.map((order) => order.orderNo).join('、')}` });
     writeAll([...records, record]);
     return { record: clone(record), orders: clone(record.orders), preview: clone(preview) };
   }

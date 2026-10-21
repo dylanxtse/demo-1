@@ -670,7 +670,7 @@
     backdrop.className = 'operations-modal-backdrop';
     backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-demand-submit-modal" role="dialog" aria-modal="true" aria-label="提示">
       <header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header>
-      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteenName)}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div><div class="info-item"><span class="info-label">期望送达时间：</span><span class="info-value">${escapeHtml(isDirectMode ? calculatedExpectedAt(preview.dates) : state.expectedAt || '--')}</span></div></div></div></div>
+      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteenName)}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div></div></div></div>
       <footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer>
     </section>`;
     document.body.appendChild(backdrop);

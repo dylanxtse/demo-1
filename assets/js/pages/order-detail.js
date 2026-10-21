@@ -107,13 +107,13 @@
     return `<div class="info-item"><span class="info-label">${label}：</span><span class="info-value">${escapeHtml(value || '--')}</span></div>`;
   }
 
-  const recipeDemandSourceNames = new Set(['食谱下单', '辅料下单', '学校端食谱下单', '学校端辅料下单']);
+  const recipeDemandSourceNames = new Set(['需求填报', '食谱下单', '辅料下单', '学校端食谱下单', '学校端辅料下单']);
   const isRecipeDemandOrder = (order) => {
     const source = String(order?.source || '').trim();
     return Boolean(order?.recipeDemandRecordId || order?.recipeDemandRecordNo || order?.recipeParticipantType
       || order?.recipeDemandDate || recipeDemandSourceNames.has(source));
   };
-  const recipeOrderSource = (order) => isRecipeDemandOrder(order) ? '食谱下单' : order?.source;
+  const recipeOrderSource = (order) => isRecipeDemandOrder(order) ? '需求填报' : order?.source;
   const participantTypeName = (value) => ({
     student: '学生',
     teacher: '教师',

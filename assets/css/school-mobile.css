@@ -60,16 +60,7 @@ button {
   width: 390px;
   min-width: 390px;
   align-items: center;
-  justify-content: space-between;
-}
-
-.school-mobile-preview-switch {
-  padding: 8px 13px;
-  border: 1px solid #c8d7ed;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, .92);
-  color: #2868bf;
-  font-size: 13px;
+  justify-content: flex-start;
 }
 
 .school-mobile-preview-back {

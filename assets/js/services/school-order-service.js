@@ -142,7 +142,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-DEMO-20260829-breakfast-student', orderNo: 'DD202608290300001',
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
-        orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 520,
+        orderTag: '学生-不区分', source: '需求填报', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 520,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
         operationAction: '创建订单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
@@ -156,7 +156,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-DEMO-20260829-breakfast-teacher', orderNo: 'DD202608290300002',
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
-        orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 42,
+        orderTag: '教师-不区分', source: '需求填报', creator: '管理员', mealKey: 'breakfast', mealName: '早餐', mealPeople: 42,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
         operationAction: '创建订单', operationDescription: `早餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
@@ -170,7 +170,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-DEMO-20260829-lunch-student', orderNo: 'DD202608290300003',
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
-        orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 680,
+        orderTag: '学生-不区分', source: '需求填报', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 680,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
         operationAction: '创建订单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
@@ -185,7 +185,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-DEMO-20260829-lunch-teacher', orderNo: 'DD202608290300004',
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
-        orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 48,
+        orderTag: '教师-不区分', source: '需求填报', creator: '管理员', mealKey: 'lunch', mealName: '午餐', mealPeople: 48,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
         operationAction: '创建订单', operationDescription: `午餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
@@ -200,7 +200,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-DEMO-20260829-dinner-student', orderNo: 'DD202608290300005',
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
-        orderTag: '学生-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 460,
+        orderTag: '学生-不区分', source: '需求填报', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 460,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '学生',
         operationAction: '创建订单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
@@ -214,7 +214,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-DEMO-20260829-dinner-teacher', orderNo: 'DD202608290300006',
         createdAt: '2026-08-29 16:20:00', expectedAt: '2026-09-06 07:30:00',
-        orderTag: '教师-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 36,
+        orderTag: '教师-不区分', source: '需求填报', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 36,
         recipeDemandRecordId, recipeDemandRecordNo, recipeDemandDate: '2026-09-07', recipeParticipantType: '教师',
         operationAction: '创建订单', operationDescription: `晚餐、需求提交记录 ${recipeDemandRecordNo}`,
         items: [
@@ -228,7 +228,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-20260929-XQ2026092991306-participant_其他-dinner-AUX', orderNo: 'DD202609290300001',
         createdAt: '2026-09-29 16:20:00', expectedAt: '2026-09-28 07:30:00',
-        orderTag: '其他-不区分', source: '食谱下单', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 120,
+        orderTag: '其他-不区分', source: '需求填报', creator: '管理员', mealKey: 'dinner', mealName: '晚餐', mealPeople: 120,
         recipeDemandRecordId: 'AUXILIARY-DEMAND-20260929162000-DEMO', recipeDemandRecordNo: 'XQ2026092991306',
         recipeDemandDate: '2026-09-29', recipeParticipantType: '其他',
         operationAction: '创建订单', operationDescription: '晚餐、需求提交记录 XQ2026092991306',
@@ -527,7 +527,7 @@
     canteens: ['静安第一中学食堂（演示）', '第一食堂', '静安第一中学食堂'],
     tags: ['其他-不区分', '学生-不区分', '教师-不区分', '普通餐', '营养餐', '应急保供'],
     statuses: ['待审核', '待发货', '待出库', '已完成', '已驳回', '已关闭'],
-    sources: ['平台下单', '客户下单', '食谱下单'],
+    sources: ['平台下单', '客户下单', '需求填报'],
     receiptStatuses: ['未收货', '已收货', '部分收货'],
     getAll() {
       return readOrders().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));

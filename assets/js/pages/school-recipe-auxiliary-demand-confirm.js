@@ -398,7 +398,7 @@
           recipeParticipantType: participant.label,
           expectedAt: record.expectedAt,
           supplement: '否',
-          source: '食谱下单',
+          source: '需求填报',
           status: '待审核',
           creator: currentOperator.name,
           items
@@ -409,7 +409,7 @@
             orderId: order.id,
             orderNo: order.orderNo,
             sourceType: 'CUSTOMER',
-            source: '食谱下单',
+            source: '需求填报',
             customerName: order.customerName,
             customerType: '学校',
             canteen: order.canteen,
@@ -513,7 +513,7 @@
     backdrop.className = 'operations-modal-backdrop';
     backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-demand-submit-modal" role="dialog" aria-modal="true" aria-label="提示">
       <header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header>
-      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteen.name || '第一食堂')}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div><div class="info-item"><span class="info-label">期望送达时间：</span><span class="info-value">${escapeHtml(state.expectedAt || expectedAt())}</span></div></div></div></div>
+      <div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(currentCanteen.name || '第一食堂')}</span></div><div class="info-item"><span class="info-label">用料日期：</span><span class="info-value">${escapeHtml(preview.dates.join('、') || '--')}</span></div></div></div></div>
       <footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer>
     </section>`;
     document.body.appendChild(backdrop);
@@ -596,13 +596,13 @@
         : (() => { const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0); const key = purchaseKey(groupKey, product, '合计'); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(groupKey, product, '合计', demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="采购量"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })();
       const priceKey = unitPriceKey(product);
       const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell"><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${amount(unitPriceValue(product))}" data-aux-unit-price data-unit-price-key="${escapeHtml(priceKey)}"${canModifyUnitPrice() ? '' : ' disabled'} aria-label="${escapeHtml(`${product.name}单价`)}"></td>`;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(product.auxiliaryName)}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}">移除</button></td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}">移除</button></td></tr>`;
     }).join('');
     const activeMeal = splitMeal ? meals.find((meal) => meal.key === state.meal) : null;
-    const labelColumns = 6 + (splitPerson ? labels.length * 2 : 2);
+    const labelColumns = 5 + (splitPerson ? labels.length * 2 : 2);
     const mealAmount = selected.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0);
     const totals = `<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${labelColumns}">${escapeHtml(activeMeal?.name || '本次商品')}合计金额</td><td class="is-number" data-aux-meal-total>¥${money(mealAmount)}</td><td aria-hidden="true"></td></tr><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="${labelColumns}">所有餐次合计金额</td><td class="is-number" data-aux-grand-total>¥${money(allProductAmount())}</td><td aria-hidden="true"></td></tr></tfoot>`;
-    return rows ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table school-recipe-demand-auxiliary-product-table" style="min-width:${Math.max(1300, 960 + (splitPerson ? labels.length : 1) * 228)}px"><colgroup><col class="col-index"><col class="col-auxiliary"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-unit-price">${colgroup}<col class="col-subtotal"><col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">辅料</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">单位</th><th rowspan="2">单价</th>${columns}<th rowspan="2">小计</th><th rowspan="2">操作</th></tr><tr>${subColumns}</tr></thead><tbody>${rows}</tbody>${totals}</table></div>` : '<div class="school-recipe-demand-empty">暂无辅料商品</div>';
+    return rows ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table school-recipe-demand-auxiliary-product-table" style="min-width:${Math.max(1210, 870 + (splitPerson ? labels.length : 1) * 228)}px"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-unit-price">${colgroup}<col class="col-subtotal"><col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">单位</th><th rowspan="2">单价</th>${columns}<th rowspan="2">小计</th><th rowspan="2">操作</th></tr><tr>${subColumns}</tr></thead><tbody>${rows}</tbody>${totals}</table></div>` : '<div class="school-recipe-demand-empty">暂无辅料商品</div>';
   }
 
   function render(preview = buildPreview()) {

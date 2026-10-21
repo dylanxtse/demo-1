@@ -87,7 +87,7 @@
       ...(mealKey ? { mealKey, mealName: mealNames[mealKey], mealPeople: mealPeople[mealKey]?.[participantKey] || 0 } : {}),
       recipeDemandRecordId: 'RECIPE-DEMAND-DEMO-20260829',
       expectedAt: '2026-09-06 07:30:00',
-      source: '食谱下单',
+      source: '需求填报',
       createdAt: '2026-08-29 16:20:00',
       creator: '管理员',
       shippingAt: '',
@@ -116,13 +116,13 @@
     .replace(/'/g, '&#39;');
   const value = (item, fallback = '--') => item === '' || item == null ? fallback : escapeHtml(item);
   const infoItem = (label, item) => `<div class="info-item"><span class="info-label">${escapeHtml(label)}：</span><span class="info-value">${value(item)}</span></div>`;
-  const recipeDemandSourceNames = new Set(['食谱下单', '辅料下单', '学校端食谱下单', '学校端辅料下单']);
+  const recipeDemandSourceNames = new Set(['需求填报', '食谱下单', '辅料下单', '学校端食谱下单', '学校端辅料下单']);
   const isRecipeDemandOrder = (item) => {
     const source = String(item?.source || '').trim();
     return Boolean(item?.recipeDemandRecordId || item?.recipeDemandRecordNo || item?.recipeParticipantType
       || item?.recipeDemandDate || recipeDemandSourceNames.has(source));
   };
-  const recipeOrderSource = (item) => isRecipeDemandOrder(item) ? '食谱下单' : item?.source;
+  const recipeOrderSource = (item) => isRecipeDemandOrder(item) ? '需求填报' : item?.source;
   const participantTypeName = (item) => ({ student: '学生', teacher: '教师', staff: '教职工' }[String(item || '').trim()] || String(item || '').trim());
   const participantDisplayName = (order, type, nutritious, combined) => {
     const base = participantTypeName(type);

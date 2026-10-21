@@ -138,6 +138,7 @@ test('数量模式显示填报切换和确认页金额，并返回原日期', ()
   context.AppNavigationGuard = { navigate(url) { target = url; } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
   assert.match(confirmHtml, /商品需求确认/);
+  assert.doesNotMatch(confirmHtml, /<th>辅料<\/th>/);
   assert.match(confirmHtml, /早餐合计金额/);
   assert.match(confirmHtml, /所有餐次合计金额/);
   assert.match(confirmHtml, /¥137\.50/);

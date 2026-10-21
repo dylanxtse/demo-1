@@ -213,14 +213,14 @@
       schoolName: orderService.SCHOOL_NAME || '静安第一中学',
       canteen: preview.canteen.name || '第一食堂', canteenId: preview.canteen.id || '',
       participants: clone(orderParticipants), dates: clone(preview.dates), expectedAt, recipeVersion: '',
-      source: '学校端辅料直接填量下单', submittedBy: operator.name,
+      source: '学校端商品需求下单', submittedBy: operator.name,
       submittedById: operator.id, submittedAt: createdAt,
       dateSummaries, items,
       participantPersonTimes: Object.fromEntries(orderParticipants.map((person) => [person.key, 0])),
       studentPersonTimes: 0, teacherPersonTimes: 0, totalPersonTimes: 0,
       productCount: items.length, orders: [], enterpriseSyncWarnings: [],
       operationLogs: [{ action: '提交需求并下单', operator: operator.name, operatorId: operator.id,
-        result: '提交成功', time: createdAt, description: `直接填写 ${preview.dates.join('、')} 的辅料采购量` }]
+        result: '提交成功', time: createdAt, description: `提交 ${preview.dates.join('、')} 的商品需求` }]
     };
     const saveRecord = () => window.DemoStore?.replace?.(resource, [...records, record]);
     saveRecord();
@@ -242,7 +242,7 @@
           orderItems.set(key, { productCode: row.productCode, productName: row.productName,
             unit: row.unit, brand: row.brand, spec: row.spec, orderQty: amount,
             orderPrice: row.orderPrice, isNetVegetable: false, isStandardProduct: false,
-            remark: `辅料${orderDates.join('、')}${group.name}直接填量需求` });
+            remark: `商品${orderDates.join('、')}${group.name}需求` });
         });
         const order = orderService.create({
           id: `SCHOOL-ORDER-${String(createdAt).slice(0, 10).replace(/-/g, '')}-${record.recordNo}-${person.key}-${group.key}-AUX`,
@@ -253,13 +253,13 @@
           mealKey: byMeal ? group.key : '', mealName: group.name, mealPeople: '',
           recipeDemandRecordId: record.id, recipeDemandRecordNo: record.recordNo,
           recipeDemandDate: orderDates.join('、'), recipeParticipantType: person.label,
-          expectedAt, supplement: '否', source: '食谱下单', status: '待审核',
+          expectedAt, supplement: '否', source: '需求填报', status: '待审核',
           creator: operator.name, items: [...orderItems.values()]
         });
         let enterpriseOrder = null;
         try {
           enterpriseOrder = await window.OperationsService?.create?.('orders', {
-            orderId: order.id, orderNo: order.orderNo, sourceType: 'CUSTOMER', source: '食谱下单',
+            orderId: order.id, orderNo: order.orderNo, sourceType: 'CUSTOMER', source: '需求填报',
             customerName: order.customerName, customerType: '学校', canteen: order.canteen,
             canteenId: order.canteenId, orderTag: person.orderTag, orderTagId: person.tagId || person.key,
             orderTagName: person.tagName || person.label, nutritious: person.nutritious || '不区分',
@@ -288,7 +288,7 @@
     }
     record.operationLogs.push({ action: '订单生成', operator: operator.name,
       operatorId: operator.id, result: `${record.orders.length} 笔`, time: timestamp(),
-      description: `直接填量生成订单：${record.orders.map((order) => order.orderNo).join('、')}` });
+      description: `生成订单：${record.orders.map((order) => order.orderNo).join('、')}` });
     saveRecord();
     return { record: clone(record), orders: clone(record.orders), preview: clone(preview) };
   }

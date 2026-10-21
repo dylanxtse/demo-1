@@ -110,7 +110,7 @@
     }));
     const orderAmount = Number(normalizedItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2));
     return {
-      id, orderId: id, orderNo, sourceType: 'CUSTOMER', source: '食谱下单',
+      id, orderId: id, orderNo, sourceType: 'CUSTOMER', source: '需求填报',
       customerName: '静安第一中学', customerType: '学校', canteen: '第一食堂',
       orderTag, mealKey, mealName, mealPeople, recipeParticipantType: participantType,
       recipeDemandRecordId: recordId, recipeDemandRecordNo: recordNo, recipeDemandDate: recordDate,

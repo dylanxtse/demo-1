@@ -22,7 +22,7 @@
 
   const content = `<section class="page-card operations-page order-module-page school-recipe-demand-records-page" id="schoolRecipeDemandRecordsPage" aria-label="需求提交记录">
     <form class="operations-filter filter-section" id="schoolRecipeDemandRecordsFilter"><div class="operations-filter-main"><div class="operations-filter-grid"><div class="operations-field"><label class="filter-label" for="schoolRecipeDemandRecordKeyword">记录编号</label><input class="filter-input" id="schoolRecipeDemandRecordKeyword" type="text" placeholder="请输入记录编号" aria-label="记录编号"></div>${dateFilter('schoolRecipeDemandRecordSubmittedDate', '提交日期')}${dateFilter('schoolRecipeDemandRecordUsageDate', '用料日期')}${dateFilter('schoolRecipeDemandRecordExpectedAt', '期望送达时间')}</div><div class="operations-filter-actions"><button type="submit" class="btn btn-primary btn-sm">查询</button><button type="button" class="btn btn-sm" data-action="reset">重置</button></div></div></form>
-    <div class="school-recipe-demand-records-table-wrap"><table class="school-recipe-demand-records-table"><colgroup><col class="col-record-no"><col class="col-date"><col class="col-expected-time"><col class="col-canteen"><col class="col-total"><col class="col-product"><col class="col-order"><col class="col-operator"><col class="col-time"><col class="col-action"></colgroup><thead><tr><th>记录编号</th><th>用料日期</th><th>期望送达时间</th><th>食堂</th><th>总人次</th><th>商品种数</th><th>生成订单数</th><th>操作人</th><th>提交时间</th><th>操作</th></tr></thead><tbody id="schoolRecipeDemandRecordsBody"></tbody></table></div>
+    <div class="school-recipe-demand-records-table-wrap"><table class="school-recipe-demand-records-table"><colgroup><col class="col-record-no"><col class="col-demand-type"><col class="col-date"><col class="col-canteen"><col class="col-total"><col class="col-product"><col class="col-order"><col class="col-operator"><col class="col-time"><col class="col-action"></colgroup><thead><tr><th>记录编号</th><th>填报类型</th><th>用料日期</th><th>食堂</th><th>总人次</th><th>商品种数</th><th>生成订单数</th><th>操作人</th><th>提交时间</th><th>操作</th></tr></thead><tbody id="schoolRecipeDemandRecordsBody"></tbody></table></div>
     <div class="pagination school-recipe-demand-records-pagination" id="schoolRecipeDemandRecordsPagination"></div>
   </section>`;
   const root = window.AppShell.mount({ title: '需求提交记录', content, variant: 'school', companyName: '静安第一中学', emptyText: '需求提交记录' });
@@ -49,9 +49,9 @@
     const pageRecords = records.slice(start, start + pager.pageSize);
     const body = page.querySelector('#schoolRecipeDemandRecordsBody');
     body.innerHTML = pageRecords.length ? pageRecords.map((record) => `<tr>
-      <td><button type="button" class="school-recipe-demand-record-number" data-action="detail" data-id="${escapeHtml(record.id)}"><strong>${escapeHtml(record.recordNo || '--')}</strong></button>${record.entryMode === 'quantity' ? '<small>直接填量</small>' : ''}</td>
+      <td><button type="button" class="school-recipe-demand-record-number" data-action="detail" data-id="${escapeHtml(record.id)}"><strong>${escapeHtml(record.recordNo || '--')}</strong></button></td>
+      <td>${record.auxiliary === true || /辅料|商品需求/.test(String(record.source || '')) ? '商品需求填报' : '食材需求填报'}</td>
       <td class="school-recipe-demand-record-dates">${escapeHtml(dateText(record.dates))}</td>
-      <td>${escapeHtml(expectedAtValue(record) || '--')}</td>
       <td>${escapeHtml(record.canteen || '--')}</td>
       <td class="is-number is-total">${record.entryMode === 'quantity' ? '--' : number(record.totalPersonTimes)}</td>
       <td class="is-number">${number(record.productCount)}</td>

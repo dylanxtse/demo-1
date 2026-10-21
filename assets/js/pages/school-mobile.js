@@ -2360,7 +2360,7 @@
     const linkedOrders = orderService.getAll().filter((order) => (
       recordIds.has(String(order.recipeDemandRecordId || ''))
       || recordNumbers.has(String(order.recipeDemandRecordNo || ''))
-      || (order.source === '食谱下单' && names.has(String(order.creator || '')))
+      || (['需求填报', '食谱下单'].includes(order.source) && names.has(String(order.creator || '')))
     ));
     const schoolName = String(orderService.SCHOOL_NAME || '');
     const schoolOrders = orderService.getAll().filter((order) => {

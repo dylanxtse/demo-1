@@ -197,17 +197,50 @@
 .school-recipe-demand-detail-product-table .col-standard { width: 80px; }
 .school-recipe-demand-detail-product-table .col-code { width: 110px; }
 .school-recipe-demand-detail-product-table .col-unit { width: 56px; }
+.school-recipe-demand-detail-product-table .col-price { width: 100px; }
 .school-recipe-demand-detail-product-table .col-quantity { width: 112px; }
 .school-recipe-demand-detail-product-table .col-purchase { width: 116px; }
+.school-recipe-demand-detail-product-table .col-subtotal { width: 130px; }
+
+.school-recipe-demand-detail-product-table td:last-child {
+  text-align: right;
+}
+
+.school-recipe-demand-product-total {
+  flex: 0 0 auto;
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 32px;
+  padding: 8px 24px;
+  border-top: 1px solid var(--border-light);
+  color: var(--text-primary);
+  background: #f8fafc;
+  box-shadow: 0 -2px 6px rgb(31 51 81 / 6%);
+  font-size: 12px;
+}
+
+.school-recipe-demand-product-total strong {
+  min-width: 130px;
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
 
 .school-recipe-demand-order-table {
   min-width: 640px;
+}
+
+.school-recipe-demand-order-table td.is-number {
+  text-align: center;
 }
 
 .school-recipe-demand-order-table .col-order-no { width: 220px; }
 .school-recipe-demand-order-table .col-date { width: 140px; }
 .school-recipe-demand-order-table .col-meal { width: 100px; }
 .school-recipe-demand-order-table .col-tag { width: 180px; }
+.school-recipe-demand-order-table .col-amount { width: 130px; }
 
 .school-recipe-demand-detail-product-name {
   overflow: hidden;
