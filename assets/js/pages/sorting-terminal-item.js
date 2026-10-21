@@ -51,6 +51,7 @@
     measured: Number.isFinite(Number(savedProgress?.measuredById?.[index]))
       ? Number(savedProgress.measuredById[index]) : doneIds.has(index) && index !== 3 ? 35 : 0,
     done: doneIds.has(index),
+    shippedQty: Math.max(0, Number(savedProgress?.shippedById?.[index]) || 0),
     shortage: savedProgress ? (savedProgress.shortageIds || []).includes(index) : index === 3 && doneIds.has(index)
   })) : [];
   const grid = document.getElementById('sortingTerminalItemGrid');
@@ -65,6 +66,7 @@
   const dialogMeasured = document.getElementById('sortingTerminalItemDialogMeasured');
   const dialogUnit = document.getElementById('sortingTerminalItemDialogUnit');
   const dialogDone = document.getElementById('sortingTerminalItemDialogDone');
+  const dialogState = dialogDone.querySelector('.sorting-terminal-item-dialog-state');
   const dialogPending = document.getElementById('sortingTerminalItemDialogPending');
   const dialogGross = document.getElementById('sortingTerminalItemDialogGross');
   const dialogTare = document.getElementById('sortingTerminalItemDialogTare');
@@ -85,7 +87,8 @@
       localStorage.setItem(storageKey, JSON.stringify({
         doneIds: tasks.filter((task) => task.done).map((task) => task.id),
         shortageIds: tasks.filter((task) => task.shortage).map((task) => task.id),
-        measuredById: Object.fromEntries(tasks.filter((task) => task.measured).map((task) => [task.id, task.measured]))
+        measuredById: Object.fromEntries(tasks.filter((task) => task.measured).map((task) => [task.id, task.measured])),
+        shippedById: Object.fromEntries(tasks.filter((task) => task.shippedQty > 0).map((task) => [task.id, task.shippedQty]))
       }));
     } catch (_) { /* The current page still reflects the changed tasks. */ }
   }
@@ -142,6 +145,7 @@
     dialogAmount.textContent = `${task.amount} ${unit}`;
     dialogRemark.textContent = productName === '菠菜' ? '去根配送' : '无';
     dialogMeasured.textContent = String(task.measured);
+    dialogState.textContent = task.shippedQty > 0 ? '已发货' : '已分拣';
     dialogUnit.textContent = unit;
     dialogPending.querySelectorAll('[data-weight-unit]').forEach((label) => { label.textContent = unit; });
     dialog.classList.toggle('is-pending', !task.done);
@@ -168,7 +172,7 @@
     amount.textContent = `${task.amount}${unit}`;
     const measured = document.createElement('div');
     measured.className = 'sorting-terminal-item-card-measured';
-    measured.textContent = `称重：${task.measured} ${unit}`;
+    measured.textContent = task.shippedQty > 0 ? `已发货：${task.shippedQty} ${unit}` : `称重：${task.measured} ${unit}`;
     body.append(customer, amount, measured);
     if (task.shortage) {
       const badge = document.createElement('span');
@@ -253,6 +257,7 @@
     const task = activeTask;
     task.done = false;
     task.measured = 0;
+    task.shippedQty = 0;
     task.shortage = false;
     saveProgress();
     render();
@@ -320,6 +325,7 @@
     const task = activeTask;
     task.done = false;
     task.measured = 0;
+    task.shippedQty = 0;
     task.shortage = true;
     saveProgress();
     render();
@@ -345,6 +351,7 @@
     const task = activeTask;
     task.done = true;
     task.measured = quantity;
+    task.shippedQty = window.DemoStore?.getSettings()?.autoShipAfterSorting ? quantity : 0;
     task.shortage = false;
     saveProgress();
     render();

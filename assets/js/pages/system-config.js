@@ -4,6 +4,8 @@
     marketInquiryPriceMode: 'min',
     orderCutoffDays: '0',
     orderCutoffTime: '',
+    recipeDeliveryAdvanceDays: '0',
+    recipeDeliveryTime: '07:30',
     orderPricePriority1: '协议价',
     orderPricePriority2: '市场价',
     orderPricePriority3: '近一次销售价',
@@ -24,6 +26,7 @@
     sortingBlock: false,
     sortingNoShip: false,
     printerType: '佳博',
+    autoShipAfterSorting: false,
     autoOutbound: false,
     refrigeratedTempMin: '',
     refrigeratedTempMax: '',
@@ -130,6 +133,16 @@
             <span class="config-time-wrap">${configInput('orderCutoffTime', '选择时间', 'config-time-input')}<span class="config-clock">◷</span></span>${clearButton('orderCutoffTime')}
           </div>
         </div>
+        <div class="config-row recipe-delivery-row">
+          <div class="config-label">食谱下单送达时间${help('仅影响学校端食谱下单，手动添加订单不受影响')}</div>
+          <div class="config-inline-fields">
+            <span>用料日期前</span><input class="config-input config-days-input" type="number" min="0" max="365" step="1" data-config="recipeDeliveryAdvanceDays" aria-label="食谱下单配送提前天数" readonly><span>天的</span>
+            <input class="config-input recipe-delivery-time-input" type="time" data-config="recipeDeliveryTime" aria-label="食谱下单固定送达时间" readonly>
+            <button class="config-apply" type="button" data-action="edit-recipe-delivery">编辑</button>
+            <button class="config-apply" type="button" data-action="apply-recipe-delivery" hidden>应用</button>
+            <button class="config-apply" type="button" data-action="cancel-recipe-delivery" hidden>取消</button>
+          </div>
+        </div>
         <div class="config-row priority-row">
           <div class="config-label">下单单价取值优先级</div>
           <div class="config-priority-group">
@@ -188,6 +201,10 @@
           <div class="config-label">打印机设置</div>
           ${configSelect('printerType', 'printer-select')}
         </div>
+        <div class="config-row permission-row">
+          <div class="config-label">分拣称自动发货${help('每件商品确认分拣后，立即按该商品的实际分拣数量发货')}</div>
+          ${configCheckbox('autoShipAfterSorting', '分拣后按分拣数量自动发货')}
+        </div>
 
         <h2 class="system-config-title">发货配置</h2>
         <div class="config-row permission-row shipping-row">
@@ -238,6 +255,8 @@
   const persistedSettings = window.DemoStore.getSettings() || {};
   let savedSettings = { ...defaults, ...persistedSettings };
   let pendingScrollPosition = null;
+  const recipeDeliveryKeys = new Set(['recipeDeliveryAdvanceDays', 'recipeDeliveryTime']);
+  let recipeDeliveryEditing = false;
 
   function readScrollPosition() {
     const scroll = root.querySelector('.system-config-scroll');
@@ -307,20 +326,40 @@
     return next;
   }
 
-  function persistSettings() {
-    const scrollPosition = pendingScrollPosition || readScrollPosition();
-    const next = readFormSettings();
-    window.DemoStore.updateSettings(next);
-    savedSettings = Object.assign(savedSettings, next);
-    restoreScrollPosition(scrollPosition);
-    pendingScrollPosition = null;
+  function setRecipeDeliveryEditing(editing) {
+    recipeDeliveryEditing = editing;
+    root.querySelector('.recipe-delivery-row')?.classList.toggle('is-editing', editing);
+    recipeDeliveryKeys.forEach((key) => {
+      const input = root.querySelector(`[data-config="${key}"]`);
+      if (input) input.readOnly = !editing;
+    });
+    root.querySelector('[data-action="edit-recipe-delivery"]').hidden = editing;
+    root.querySelector('[data-action="apply-recipe-delivery"]').hidden = !editing;
+    root.querySelector('[data-action="cancel-recipe-delivery"]').hidden = !editing;
+  }
+
+  function showStatus(message = '配置已保存', isError = false) {
     const status = root.querySelector('#configStatus');
+    status.textContent = message;
+    status.classList.toggle('error', isError);
     status.hidden = false;
     window.clearTimeout(status._hideTimer);
     status._hideTimer = window.setTimeout(() => { status.hidden = true; }, 1600);
   }
 
+  function persistSettings(options = {}) {
+    const scrollPosition = pendingScrollPosition || readScrollPosition();
+    const next = readFormSettings();
+    if (!options.applyRecipeDelivery) recipeDeliveryKeys.forEach((key) => { next[key] = savedSettings[key]; });
+    window.DemoStore.updateSettings(next);
+    savedSettings = Object.assign(savedSettings, next);
+    restoreScrollPosition(scrollPosition);
+    pendingScrollPosition = null;
+    showStatus();
+  }
+
   applySettingsToForm();
+  setRecipeDeliveryEditing(false);
 
   root.addEventListener('pointerdown', (event) => {
     if (event.target.closest('[data-config], [data-radio-config], .config-radio, .config-checkbox, [data-clear]')) {
@@ -335,14 +374,45 @@
 
   root.addEventListener('change', (event) => {
     if (event.target.matches('[data-config], [data-radio-config]')) {
+      if (recipeDeliveryKeys.has(event.target.dataset.config)) return;
       if (event.target.dataset.config === 'purchasePriceMode') updatePurchasePriorityFields(event.target.value);
       persistSettings();
     }
   });
   root.addEventListener('input', (event) => {
+    if (recipeDeliveryKeys.has(event.target.dataset.config)) return;
     if (event.target.matches('.config-input')) persistSettings();
   });
   root.addEventListener('click', (event) => {
+    if (event.target.closest('[data-action="edit-recipe-delivery"]')) {
+      setRecipeDeliveryEditing(true);
+      root.querySelector('[data-config="recipeDeliveryAdvanceDays"]')?.focus();
+      return;
+    }
+    if (!recipeDeliveryEditing && event.target.closest('.recipe-delivery-row [data-config]')) {
+      setRecipeDeliveryEditing(true);
+      return;
+    }
+    if (event.target.closest('[data-action="cancel-recipe-delivery"]')) {
+      recipeDeliveryKeys.forEach((key) => {
+        const input = root.querySelector(`[data-config="${key}"]`);
+        if (input) input.value = savedSettings[key] ?? defaults[key];
+      });
+      setRecipeDeliveryEditing(false);
+      pendingScrollPosition = null;
+      return;
+    }
+    if (event.target.closest('[data-action="apply-recipe-delivery"]')) {
+      const daysInput = root.querySelector('[data-config="recipeDeliveryAdvanceDays"]');
+      const timeInput = root.querySelector('[data-config="recipeDeliveryTime"]');
+      const days = String(daysInput.value).trim();
+      if (!/^\d+$/.test(days) || Number(days) > 365) { showStatus('请输入0到365的整数天数', true); daysInput.focus(); return; }
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput.value)) { showStatus('请选择配送时间', true); timeInput.focus(); return; }
+      daysInput.value = String(Number(days));
+      persistSettings({ applyRecipeDelivery: true });
+      setRecipeDeliveryEditing(false);
+      return;
+    }
     const clear = event.target.closest('[data-clear]');
     if (clear) {
       clear.dataset.clear.split(',').forEach((key) => {

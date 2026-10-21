@@ -14,9 +14,11 @@
     || new Date().toISOString().slice(0, 19).replace('T', ' ');
   const mealTypes = [
     { key: 'breakfast', name: '早餐' },
+    { key: 'morningSnack', name: '早点' },
     { key: 'lunch', name: '午餐' },
+    { key: 'afternoonSnack', name: '午点' },
     { key: 'dinner', name: '晚餐' },
-    { key: 'snack', name: '加餐' }
+    { key: 'eveningSnack', name: '晚点' }
   ];
   const legacyParticipants = [
     { key: 'student', label: '学生', tagName: '学生', nutritious: '不区分', orderTag: '学生-不区分', legacyKey: 'student' },
@@ -34,9 +36,18 @@
   }
 
   function readAll() {
-    if (!window.DemoStore) return clone(memoryRecords);
-    const current = window.DemoStore.get(RESOURCE);
-    return Array.isArray(current) ? clone(current) : [];
+    const current = window.DemoStore ? window.DemoStore.get(RESOURCE) : memoryRecords;
+    if (!Array.isArray(current)) return [];
+    const normalized = clone(current).map((record) => {
+      if (!record?.meals?.snack) return record;
+      const mealKeys = new Set((recipeService?.getMenu?.(record.date)?.meals || []).map((meal) => meal.key));
+      if (!mealKeys.has('afternoonSnack')) return record;
+      const meals = { ...record.meals, afternoonSnack: record.meals.afternoonSnack || record.meals.snack };
+      delete meals.snack;
+      return { ...record, meals };
+    });
+    if (JSON.stringify(normalized) !== JSON.stringify(current)) writeRecords(normalized);
+    return normalized;
   }
 
   function resolveCanteen(canteen) {

@@ -2514,7 +2514,7 @@
   }
 
   function recordMealName(value) {
-    const fallbackNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
+    const fallbackNames = { breakfast: '早餐', morningSnack: '早点', lunch: '午餐', afternoonSnack: '午点', dinner: '晚餐', eveningSnack: '晚点', snack: '午点' };
     const raw = String(value || '').trim();
     if (!raw) return '--';
     return raw.split(/[、,，/]/).map((part) => {
@@ -2526,9 +2526,11 @@
   function recordMealDefinitions(summary) {
     const fallbackMeals = attendanceService?.mealTypes || [
       { key: 'breakfast', name: '早餐' },
+      { key: 'morningSnack', name: '早点' },
       { key: 'lunch', name: '午餐' },
+      { key: 'afternoonSnack', name: '午点' },
       { key: 'dinner', name: '晚餐' },
-      { key: 'snack', name: '加餐' }
+      { key: 'eveningSnack', name: '晚点' }
     ];
     const menuMeals = menuFor(summary?.date)?.meals || [];
     const knownMeals = [...menuMeals, ...fallbackMeals];

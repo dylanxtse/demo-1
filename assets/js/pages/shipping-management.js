@@ -16,6 +16,7 @@
     { key: 'route', label: '线路', emptyLabel: '请选择', options: ['东城一线', '南城二线', '北城一线', '西城一线'] },
     { key: 'status', label: '发货状态', options: [
       { label: '未发货', value: 'PENDING' },
+      { label: '部分发货', value: 'PARTIAL' },
       { label: '已发货', value: 'SHIPPED' }
     ] },
     { key: 'sortingStatus', label: '分拣状态', options: [
@@ -71,7 +72,7 @@
 
   function shippingStatus(item) {
     const value = item.status;
-    const label = value === 'SHIPPED' || value === '已发货' ? '已发货' : value === 'PENDING' || value === '未发货' ? '未发货' : (window.BusinessRules?.statusLabel?.('shippingOrders', value) || value || '--');
+    const label = value === 'SHIPPED' || value === '已发货' ? '已发货' : value === 'PARTIAL' ? '部分发货' : value === 'PENDING' || value === '未发货' ? '未发货' : (window.BusinessRules?.statusLabel?.('shippingOrders', value) || value || '--');
     return statusMarkup(label, value);
   }
 
@@ -198,8 +199,7 @@
         const displayName = window.DomUtils?.formatProductDisplay?.(data) || `${data.goodsName || data.productName || '商品'}（${data.unit || '--'}/${data.brand || '--'}/${data.spec || '--'}）`;
         const orderQty = data.orderQty ?? data.quantity;
         const unitPrice = data.unitPrice ?? data.orderPrice ?? product.marketPrice ?? 0;
-        const actualShippingQty = [data.shippingQty, data.actualQty, data.shippedQty].find((value) => Number(value) > 0);
-        const shippingQty = actualShippingQty ?? orderQty ?? 0;
+        const shippingQty = data.shippingQty ?? data.shippedQty ?? data.actualQty ?? orderQty ?? 0;
         const lineId = data.id || data.orderLineId || `${item.id}-${index}`;
         const packageInfo = packageBreakdown(data, product, shippingQty);
         return `<tr data-expanded-item="${escapeHtml(lineId)}">
@@ -215,7 +215,7 @@
           <td>${escapeHtml(packageInfo.coefficient)}</td>
           <td><span data-record-expanded-subtotal>${decimalNumber(Number(shippingQty) * Number(unitPrice))}</span></td>
           <td>${statusMarkup(sortingLabel(data.status || data.sortingStatus), data.status || data.sortingStatus)}</td>
-          <td>${shippingStatus(item)}</td>
+          <td>${shippingStatus({ status: data.shippingStatus || (item.status === 'SHIPPED' ? 'SHIPPED' : 'PENDING') })}</td>
           <td><div class="shipping-expanded-date-control"><input data-record-expanded-date type="text" value="${escapeHtml(data.productionDate || '')}" placeholder="请选择日期" readonly aria-label="${escapeHtml(displayName)}生产日期"><span class="shipping-expanded-calendar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg></span></div></td>
           <td><button class="shipping-expanded-report-button" type="button" data-record-expanded-report aria-label="上传质检报告"><span aria-hidden="true">+</span></button></td>
         </tr>`;
@@ -267,10 +267,10 @@
   ];
 
   const shippingRowActions = [
-    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' }
+    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING', 'PARTIAL'], confirmTitle: '发货出库', message: '是否确定发货？' }
   ];
   const orderShippingRowActions = [
-    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING'], confirmTitle: '发货出库', message: '是否确定发货？' }
+    { key: 'ship', label: '发货出库', transition: 'ship', visible: ['PENDING', 'PARTIAL'], confirmTitle: '发货出库', message: '是否确定发货？' }
   ];
 
   window.RecordPageConfig = {
@@ -332,6 +332,7 @@
     toolbar: shippingToolbar,
     statusMap: {
       PENDING: ['未发货', 'warning'],
+      PARTIAL: ['部分发货', 'warning'],
       SHIPPED: ['已发货', 'success'],
       COMPLETED: ['已处理', 'success']
     }

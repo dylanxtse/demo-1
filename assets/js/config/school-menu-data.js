@@ -7,12 +7,10 @@
     ] },
     { name: '订单管理', icon: 'cart', href: './school-order-management.html' },
     { name: '食谱中心', icon: 'layers', children: [
-      { name: '营养食谱', href: './school-recipe-center.html' },
-      { name: '需求填报', children: [
-        { name: '食材需求填报', href: './school-recipe-attendance.html' },
-        { name: '辅料需求填报', href: './school-recipe-auxiliary-attendance.html' }
-      ] },
-      { name: '需求提交记录', href: './school-recipe-demand-records.html' }
+      { name: '食材需求填报', href: './school-recipe-attendance.html' },
+      { name: '商品需求填报', href: './school-recipe-auxiliary-attendance.html' },
+      { name: '需求提交记录', href: './school-recipe-demand-records.html' },
+      { name: '营养食谱', href: './school-recipe-center.html' }
     ] },
     { name: '财务对账', icon: 'wallet', children: [
       { name: '采购对账', href: './school-purchase-reconciliation.html' },

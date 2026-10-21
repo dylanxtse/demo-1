@@ -5,6 +5,7 @@
   if (!attendanceService || !orderService) return;
 
   const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') === 'quantity') return;
   const normalizeRecipeDate = (value) => {
     const match = String(value || '').trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
     return match ? `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}` : '';
@@ -20,7 +21,11 @@
     .map((menu) => ({ ...menu, date: normalizeRecipeDate(menu.date) }))
     .filter((menu) => menu.date)
     .sort((a, b) => a.date.localeCompare(b.date));
-  const allDates = [...new Set(allMenus.map((menu) => menu.date))];
+  const allDates = [...new Set([
+    ...allMenus.map((menu) => menu.date),
+    ...Object.keys(readDrafts()?.[canteenScope] || {}).map(normalizeRecipeDate),
+    requestedDate
+  ].filter(Boolean))].sort();
   const mealNameFallbacks = {
     breakfast: '早餐',
     morningSnack: '早点',
@@ -28,12 +33,16 @@
     afternoonSnack: '午点',
     dinner: '晚餐',
     eveningSnack: '晚点',
-    snack: '加餐'
+    snack: '午点'
   };
-  const mealDefinitionsForDate = (targetDate) => (allMenus.find((menu) => menu.date === targetDate)?.meals || [])
+  const mealsWithoutRecipe = [
+    { key: 'breakfast', name: '早餐' },
+    { key: 'lunch', name: '午餐' },
+    { key: 'dinner', name: '晚餐' }
+  ];
+  const mealDefinitionsForDate = (targetDate) => (allMenus.find((menu) => menu.date === targetDate)?.meals || mealsWithoutRecipe)
     .map((meal) => ({ key: String(meal.key || ''), name: meal.name || mealNameFallbacks[meal.key] || meal.key }))
     .filter((meal) => meal.key);
-  const meals = [...new Map(allMenus.flatMap((menu) => mealDefinitionsForDate(menu.date)).map((meal) => [meal.key, meal])).values()];
   const products = [
     { id: 'aux-oil', auxiliaryName: '油', name: '金龙鱼5L桶装油', brand: '金龙鱼', code: 'SP0300030', spec: '5L/桶', doseUnit: 'L', doseDisplay: '12 ml', purchaseUnit: '桶', packSize: 5, dose: 0.012, marketPrice: 55 },
     { id: 'aux-salt', auxiliaryName: '盐', name: '食盐', brand: '—', code: 'SP0300031', spec: '500g/袋', doseUnit: 'kg', doseDisplay: '4 g', purchaseUnit: '袋', packSize: 0.5, dose: 0.004, marketPrice: 18.5 },
@@ -42,10 +51,8 @@
   const draftForDate = (targetDate) => {
     const source = readDrafts()?.[canteenScope]?.[targetDate] || {};
     const dateMeals = mealDefinitionsForDate(targetDate);
-    const hasSnackMeal = dateMeals.some((meal) => meal.key === 'snack');
-    const hasDinnerMeal = dateMeals.some((meal) => meal.key === 'dinner');
-    if (!hasSnackMeal || hasDinnerMeal || Object.prototype.hasOwnProperty.call(source, 'snack') || !source.dinner) return source;
-    return { ...source, snack: source.dinner };
+    if (!dateMeals.some((meal) => meal.key === 'afternoonSnack') || source.afternoonSnack || !source.snack) return source;
+    return { ...source, afternoonSnack: source.snack };
   };
   const selectedProductsFromAttendance = () => {
     const selectedIds = window.AppStorage?.read?.(selectedKey, {})?.[canteenScope] || ['aux-oil', 'aux-salt'];
@@ -76,6 +83,7 @@
   const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const amount = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
+  const money = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const participantFields = (value) => {
     const participant = participantForKey(value);
     return [...new Set([
@@ -97,6 +105,7 @@
   ]));
   const totalPeopleForDate = (targetDate) => Object.values(participantPersonTimes(targetDate)).reduce((sum, value) => sum + Number(value || 0), 0);
   const filledDates = () => allDates.filter((targetDate) => totalPeopleForDate(targetDate) > 0);
+  const meals = [...new Map((filledDates().length ? filledDates() : [date]).flatMap(mealDefinitionsForDate).map((meal) => [meal.key, meal])).values()];
   const purchase = (value, product) => product.packSize ? Math.ceil(value / product.packSize) * product.packSize : value;
   const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
   const productKey = (product) => String(product?.code || product?.id || '');
@@ -120,6 +129,16 @@
       .filter((meal) => availableMealKeys.has(meal.key))
       .reduce((mealTotal, meal) => mealTotal + people(draftForDate(targetDate)[meal.key], label) * product.dose, 0);
   }, 0);
+  const productSubtotal = (product, mealList, groupKey) => {
+    const purchaseQty = splitPerson
+      ? labels.reduce((sum, label) => sum + purchaseValue(groupKey, product, label, demandFor(product, mealList, label)), 0)
+      : purchaseValue(groupKey, product, '合计', labels.reduce((sum, label) => sum + demandFor(product, mealList, label), 0));
+    return unitPriceValue(product) * purchaseQty;
+  };
+  const allProductAmount = () => (splitMeal
+    ? meals.map((meal) => ({ key: meal.key, mealList: [meal] }))
+    : [{ key: 'all-meals', mealList: meals }]
+  ).reduce((total, group) => total + selected.reduce((sum, product) => sum + productSubtotal(product, group.mealList, group.key), 0), 0);
   const productDisplay = (product) => `${product.name}（${product.doseUnit}/${product.brand}/${product.spec}）`;
   const number = (value) => Number(value || 0);
   const timestamp = () => window.BusinessRules?.now?.()
@@ -129,18 +148,12 @@
     const parsed = new Date(`${String(value || fallbackDate)}T00:00:00`);
     return Number.isNaN(parsed.getTime()) ? new Date(`${fallbackDate}T00:00:00`) : parsed;
   };
-  const dateValue = (value) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
   const dateLabel = (value) => {
     const parsed = dateObject(value);
     return `${String(parsed.getMonth() + 1).padStart(2, '0')}月${String(parsed.getDate()).padStart(2, '0')}日 星期${weekdayNames[parsed.getDay()]}`;
   };
-  const expectedAt = () => {
-    const deliveryDate = dateObject([...state.selectedDates].sort()[0] || date);
-    deliveryDate.setDate(deliveryDate.getDate() - 1);
-    return `${dateValue(deliveryDate)} 07:30:00`;
-  };
+  const expectedAt = () => window.RecipeDeliveryRule?.expectedAt?.([...state.selectedDates]) || '';
   state.expectedAt = expectedAt();
-  let expectedAtPicker = null;
   const operator = () => {
     const session = window.SchoolMobileAuth?.getSession?.() || window.DemoStore?.getSession?.() || {};
     return { name: session.displayName || session.username || '当前用户', id: session.userId || session.id || '' };
@@ -261,10 +274,16 @@
   const mealGroups = () => splitMeal
     ? meals.map((meal) => ({ key: meal.key, name: meal.name, meals: [meal] }))
     : [{ key: 'all-meals', name: meals.map((meal) => meal.name).join('、'), meals }];
+  const aggregateOrderParticipant = {
+    key: 'all-participants', label: '其他', tagName: '其他', nutritious: '不区分',
+    orderTag: '其他-不区分', tagId: 'other-non-nutritious'
+  };
   const orderItemsFor = (group, label) => selected.map((product) => {
-    const demandQty = demandFor(product, group.meals, label);
-    if (!(demandQty > 0)) return null;
-    const quantity = purchaseValue(group.key, product, label, demandQty);
+    const demandQty = splitPerson
+      ? demandFor(product, group.meals, label)
+      : labels.reduce((sum, participantLabel) => sum + demandFor(product, group.meals, participantLabel), 0);
+    const quantity = purchaseValue(group.key, product, splitPerson ? label : '合计', demandQty);
+    if (!(quantity > 0)) return null;
     const orderPrice = unitPriceValue(product);
     return {
       productCode: product.code,
@@ -299,6 +318,9 @@
 
   async function submitAuxiliary(preview) {
     if (!preview.canSubmit) throw new Error(preview.message || '当前需求不能提交');
+    if (!(allProductAmount() > 0)) throw new Error('请至少保留一项大于 0 的采购量');
+    state.expectedAt = window.RecipeDeliveryRule?.expectedAt?.(preview.dates) || '';
+    if (!state.expectedAt) throw new Error('期望送达时间配置无效，请联系企业管理员');
     const createdAt = timestamp();
     const currentOperator = operator();
     const records = readDemandRecords();
@@ -348,12 +370,14 @@
     };
     writeDemandRecords([...records, record]);
 
-    for (const participant of preview.participants) {
+    for (const participant of (splitPerson ? preview.participants : [aggregateOrderParticipant])) {
       for (const group of mealGroups()) {
         const items = orderItemsFor(group, participant.key);
         if (!items.length) continue;
         const mealPeople = [...state.selectedDates].reduce((total, targetDate) => (
-          total + group.meals.reduce((sum, meal) => sum + people(draftForDate(targetDate)[meal.key], participant.key), 0)
+          total + group.meals.reduce((sum, meal) => sum + (splitPerson
+            ? people(draftForDate(targetDate)[meal.key], participant.key)
+            : labels.reduce((personTotal, label) => personTotal + people(draftForDate(targetDate)[meal.key], label), 0)), 0)
         ), 0);
         const order = orderService.create({
           id: `SCHOOL-ORDER-${String(createdAt).slice(0, 10).replace(/-/g, '')}-${record.recordNo}-${participant.key}-${group.key}-AUX`,
@@ -473,7 +497,7 @@
         clearAuxiliaryDraft(preview.dates);
         closeSubmitConfirm();
         showToast('操作成功');
-        window.setTimeout(() => navigate(`./school-recipe-auxiliary-attendance.html?date=${encodeURIComponent(date)}`), 700);
+        window.setTimeout(() => navigate(`./school-recipe-auxiliary-attendance.html?mode=people&date=${encodeURIComponent(date)}`), 700);
       })
       .catch((error) => {
         state.submitting = false;
@@ -560,6 +584,7 @@
 
   function renderProducts() {
     const activeMeals = mealRows().filter(Boolean);
+    const groupKey = splitMeal ? state.meal : 'all-meals';
     const columns = splitPerson
       ? labels.map((label) => `<th colspan="2">${escapeHtml(participantDisplayName(label))}</th>`).join('')
       : '<th colspan="2">合计</th>';
@@ -567,37 +592,43 @@
     const colgroup = splitPerson ? labels.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-purchase">';
     const rows = selected.map((product, index) => {
       const cells = splitPerson
-        ? labels.flatMap((label) => { const demand = demandFor(product, activeMeals, label); const key = purchaseKey(splitMeal ? state.meal : 'all-meals', product, label); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(splitMeal ? state.meal : 'all-meals', product, label, demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="${escapeHtml(`${participantDisplayName(label)}采购量`)}"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })
-        : (() => { const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0); const key = purchaseKey(splitMeal ? state.meal : 'all-meals', product, '合计'); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(splitMeal ? state.meal : 'all-meals', product, '合计', demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="采购量"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })();
+        ? labels.flatMap((label) => { const demand = demandFor(product, activeMeals, label); const key = purchaseKey(groupKey, product, label); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(groupKey, product, label, demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="${escapeHtml(`${participantDisplayName(label)}采购量`)}"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })
+        : (() => { const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0); const key = purchaseKey(groupKey, product, '合计'); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(groupKey, product, '合计', demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="采购量"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })();
       const priceKey = unitPriceKey(product);
       const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell"><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${amount(unitPriceValue(product))}" data-aux-unit-price data-unit-price-key="${escapeHtml(priceKey)}"${canModifyUnitPrice() ? '' : ' disabled'} aria-label="${escapeHtml(`${product.name}单价`)}"></td>`;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(product.auxiliaryName)}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}">移除</button></td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(product.auxiliaryName)}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}">移除</button></td></tr>`;
     }).join('');
-    return rows ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table school-recipe-demand-auxiliary-product-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-unit-price">${colgroup}<col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">辅料</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">单位</th><th rowspan="2">单价</th>${columns}<th rowspan="2">操作</th></tr><tr>${subColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-demand-empty">暂无辅料商品</div>';
+    const activeMeal = splitMeal ? meals.find((meal) => meal.key === state.meal) : null;
+    const labelColumns = 6 + (splitPerson ? labels.length * 2 : 2);
+    const mealAmount = selected.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0);
+    const totals = `<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${labelColumns}">${escapeHtml(activeMeal?.name || '本次商品')}合计金额</td><td class="is-number" data-aux-meal-total>¥${money(mealAmount)}</td><td aria-hidden="true"></td></tr><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="${labelColumns}">所有餐次合计金额</td><td class="is-number" data-aux-grand-total>¥${money(allProductAmount())}</td><td aria-hidden="true"></td></tr></tfoot>`;
+    return rows ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table school-recipe-demand-auxiliary-product-table" style="min-width:${Math.max(1300, 960 + (splitPerson ? labels.length : 1) * 228)}px"><colgroup><col class="col-index"><col class="col-auxiliary"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-unit-price">${colgroup}<col class="col-subtotal"><col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">辅料</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">单位</th><th rowspan="2">单价</th>${columns}<th rowspan="2">小计</th><th rowspan="2">操作</th></tr><tr>${subColumns}</tr></thead><tbody>${rows}</tbody>${totals}</table></div>` : '<div class="school-recipe-demand-empty">暂无辅料商品</div>';
   }
 
   function render(preview = buildPreview()) {
     const tabs = splitMeal ? `<div class="school-recipe-meal-tabs school-recipe-demand-meal-tabs" role="tablist">${meals.map((meal) => `<button type="button" class="school-recipe-meal-tab${meal.key === state.meal ? ' is-active' : ''}" data-meal="${meal.key}" role="tab">${meal.name}</button>`).join('')}</div>` : '';
-    return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliaryDemandConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back">← <span>返回</span></button><h1>辅料需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteen.name || '第一食堂')}</strong></div><div class="operations-field school-recipe-demand-delivery-field"><label class="filter-label" for="schoolRecipeAuxiliaryExpectedAt">期望送达时间</label><div class="date-input-control"><input class="filter-input" id="schoolRecipeAuxiliaryExpectedAt" type="text" value="${escapeHtml(state.expectedAt)}" placeholder="请选择日期" readonly aria-label="期望送达时间"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div></div></div><section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderAuxiliaryDateSummary(preview)}</section><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div><button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button></header><div class="school-recipe-demand-meal-toolbar">${tabs}</div>${renderProducts()}</section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit"${preview.canSubmit && !state.submitting ? '' : ' disabled'}>提交需求并下单</button></footer></main></section>`;
+    return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliaryDemandConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back">← <span>返回</span></button><h1>商品需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteen.name || '第一食堂')}</strong></div><div class="school-recipe-demand-days-summary"><span>填报天数：</span><strong>${preview.dates.length}</strong></div></div><section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderAuxiliaryDateSummary(preview)}</section><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div><button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button></header><div class="school-recipe-demand-meal-toolbar">${tabs}</div>${renderProducts()}</section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit"${preview.canSubmit && allProductAmount() > 0 && !state.submitting ? '' : ' disabled'}>提交需求并下单</button></footer></main></section>`;
   }
 
-  const root = window.AppShell.mount({ title: '辅料需求确认', content: render(buildPreview()), variant: 'school', companyName: '静安第一中学', emptyText: '辅料需求确认' });
-  function mountExpectedAtPicker() {
-    expectedAtPicker?.destroy?.();
-    const input = root.querySelector('#schoolRecipeAuxiliaryExpectedAt');
-    if (!input || !window.DatePicker?.mount) return;
-    expectedAtPicker = window.DatePicker.mount({
-      input,
-      panelId: 'schoolRecipeAuxiliaryExpectedAtPickerPanel',
-      withTime: true,
-      maxDate: [...state.selectedDates].sort()[0] || date,
-      onChange(value) { state.expectedAt = value; }
-    });
-  }
-  mountExpectedAtPicker();
+  const root = window.AppShell.mount({ title: '商品需求确认', content: render(buildPreview()), variant: 'school', companyName: '静安第一中学', emptyText: '商品需求确认' });
+  window.SchoolRecipeConfirmStickyTotals?.mount(root);
   const rerender = () => {
+    state.expectedAt = expectedAt();
     root.querySelector('#schoolRecipeAuxiliaryDemandConfirmPage').outerHTML = render(buildPreview());
-    mountExpectedAtPicker();
+    window.SchoolRecipeConfirmStickyTotals?.mount(root);
+  };
+  const refreshProductAmounts = () => {
+    const activeMeals = mealRows().filter(Boolean);
+    const groupKey = splitMeal ? state.meal : 'all-meals';
+    root.querySelectorAll?.('[data-aux-product-subtotal]').forEach((cell, index) => {
+      if (selected[index]) cell.textContent = `¥${money(productSubtotal(selected[index], activeMeals, groupKey))}`;
+    });
+    const mealTotalCell = root.querySelector('[data-aux-meal-total]');
+    if (mealTotalCell) mealTotalCell.textContent = `¥${money(selected.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0))}`;
+    const grandTotalCell = root.querySelector('[data-aux-grand-total]');
+    if (grandTotalCell) grandTotalCell.textContent = `¥${money(allProductAmount())}`;
+    const submitButton = root.querySelector('[data-action="submit"]');
+    if (submitButton && !state.submitting) submitButton.disabled = !(buildPreview().canSubmit && allProductAmount() > 0);
   };
   root.addEventListener('click', (event) => {
     const meal = event.target.closest('[data-meal]');
@@ -646,13 +677,17 @@
       showToast('已恢复填报页商品和默认计算量');
       return;
     }
-    if (event.target.closest('[data-action="back"]')) { navigate(`./school-recipe-auxiliary-attendance.html?date=${encodeURIComponent(date)}`); return; }
+    if (event.target.closest('[data-action="back"]')) { navigate(`./school-recipe-auxiliary-attendance.html?mode=people&date=${encodeURIComponent(date)}`); return; }
     if (event.target.closest('[data-action="submit"]')) {
       if (state.submitting) return;
       if (!validateEditableFields()) return;
       const preview = buildPreview();
       if (!preview.canSubmit) {
         showToast(preview.message || '请先完成需求确认', true);
+        return;
+      }
+      if (!(allProductAmount() > 0)) {
+        showToast('请至少保留一项大于 0 的采购量', true);
         return;
       }
       openSubmitConfirm(preview);
@@ -674,6 +709,7 @@
     input.setAttribute('aria-invalid', 'false');
     if (input.matches('[data-aux-unit-price]') && !input.disabled) state.unitPriceOverrides[input.dataset.unitPriceKey] = input.value;
     if (input.matches('[data-aux-purchase-quantity]')) state.purchaseQtyOverrides[input.dataset.purchaseKey] = input.value;
+    refreshProductAmounts();
   });
   root.addEventListener('change', (event) => {
     const input = event.target.closest('[data-aux-unit-price], [data-aux-purchase-quantity]');
@@ -697,5 +733,6 @@
       }
       state.purchaseQtyOverrides[input.dataset.purchaseKey] = input.value;
     }
+    refreshProductAmounts();
   });
 })();

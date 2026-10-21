@@ -60,6 +60,10 @@
 .school-auxiliary-remove:hover { opacity: .75; }
 .school-auxiliary-empty { padding: 42px 20px; color: #9aa4b2; text-align: center; }
 .school-auxiliary-footer { display: flex; align-items: center; justify-content: space-between; min-height: 60px; padding: 12px 22px; border-top: 1px solid var(--border-light); background: #fff; }
+.school-auxiliary-direct-footer .school-recipe-direct-footer-left { display: flex; align-items: center; gap: 8px; }
+.school-auxiliary-direct-scroll .school-recipe-direct-meal-tabs { margin-top: 16px; }
+.school-auxiliary-direct-table { min-width: 780px; }
+.school-auxiliary-direct-table .school-recipe-direct-input-wrap { width: 112px; }
 .school-auxiliary-footer > .school-recipe-attendance-draft-actions { display: flex; align-items: center; gap: 8px; }
 .school-auxiliary-footer p { margin: 0; color: #8994a4; font-size: 13px; }
 .school-auxiliary-footer strong { color: #354052; font-weight: 600; }

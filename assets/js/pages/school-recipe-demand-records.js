@@ -49,11 +49,11 @@
     const pageRecords = records.slice(start, start + pager.pageSize);
     const body = page.querySelector('#schoolRecipeDemandRecordsBody');
     body.innerHTML = pageRecords.length ? pageRecords.map((record) => `<tr>
-      <td><button type="button" class="school-recipe-demand-record-number" data-action="detail" data-id="${escapeHtml(record.id)}"><strong>${escapeHtml(record.recordNo || '--')}</strong></button></td>
+      <td><button type="button" class="school-recipe-demand-record-number" data-action="detail" data-id="${escapeHtml(record.id)}"><strong>${escapeHtml(record.recordNo || '--')}</strong></button>${record.entryMode === 'quantity' ? '<small>直接填量</small>' : ''}</td>
       <td class="school-recipe-demand-record-dates">${escapeHtml(dateText(record.dates))}</td>
       <td>${escapeHtml(expectedAtValue(record) || '--')}</td>
       <td>${escapeHtml(record.canteen || '--')}</td>
-      <td class="is-number is-total">${number(record.totalPersonTimes)}</td>
+      <td class="is-number is-total">${record.entryMode === 'quantity' ? '--' : number(record.totalPersonTimes)}</td>
       <td class="is-number">${number(record.productCount)}</td>
       <td class="is-number">${number(record.orders?.length)}</td>
       <td>${escapeHtml(record.submittedBy || '--')}</td>

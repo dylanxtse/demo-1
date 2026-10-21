@@ -53,27 +53,31 @@
     const aliasedPath = routeAliases[targetPath] || routeAliases[targetFileName] || targetPath;
     const [targetFile, targetQuery = ''] = aliasedPath.split('?');
     const cleanPath = targetFile.replace(/\.html$/, '');
-    function hrefMatches(href) {
+    function hrefMatches(href, exactQuery) {
       if (!href) return false;
       const [hrefFile, hrefQuery = ''] = href.split('?');
       const cleanHref = hrefFile.replace(/^\.?\//, '').replace(/\.html$/, '');
       if (cleanHref !== cleanPath) return false;
-      return targetQuery ? hrefQuery === targetQuery : !hrefQuery;
+      return exactQuery ? hrefQuery === targetQuery : !hrefQuery;
     }
     let foundPath = null;
-    function findInChildren(items, path) {
+    function findInChildren(items, path, exactQuery) {
       items.forEach((item, index) => {
         const currentPath = [...path, index];
-        if (hrefMatches(item.href)) {
+        if (hrefMatches(item.href, exactQuery)) {
           foundPath = currentPath;
         }
-        if (item.children) findInChildren(item.children, currentPath);
+        if (item.children) findInChildren(item.children, currentPath, exactQuery);
       });
     }
-    menu.forEach((item, index) => {
-      if (hrefMatches(item.href)) foundPath = [index];
-      if (item.children) findInChildren(item.children, [index]);
-    });
+    function findMatch(exactQuery) {
+      menu.forEach((item, index) => {
+        if (hrefMatches(item.href, exactQuery)) foundPath = [index];
+        if (item.children) findInChildren(item.children, [index], exactQuery);
+      });
+    }
+    findMatch(true);
+    if (!foundPath) findMatch(false);
     if (!foundPath) return;
 
     const clearSelected = (items) => items?.forEach((item) => {

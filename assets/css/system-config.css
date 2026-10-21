@@ -164,6 +164,8 @@
 .config-days-input { width: 78px; text-align: center; }
 .config-time-wrap { position: relative; display: inline-flex; align-items: center; }
 .config-time-input { width: 240px; padding-right: 30px; margin-left: 14px; }
+.recipe-delivery-time-input { width: 120px; }
+.recipe-delivery-row:not(.is-editing) .config-input[readonly] { background: #f7f8fa; cursor: pointer; }
 .config-clock { position: absolute; right: 10px; color: #8b929d; font-size: 18px; line-height: 1; }
 .config-inline-fields { gap: 8px; flex-wrap: wrap; }
 .config-clear,
@@ -181,6 +183,7 @@
 .config-apply { margin-left: 18px; }
 .config-clear:hover,
 .config-apply:hover { color: #17429e; }
+.config-apply:disabled { color: #a7afbd; cursor: default; }
 
 .permission-row { margin-bottom: 14px; }
 .config-checkbox-group { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
@@ -222,6 +225,7 @@
   font-size: 13px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
 }
+.config-toast.error { color: #d93025; }
 
 @media (max-width: 1200px) {
   .system-config-page { padding-left: 24px; padding-right: 24px; }

@@ -46,7 +46,8 @@
     dinner: '晚餐',
     morningSnack: '早点',
     afternoonSnack: '午点',
-    eveningSnack: '晚点'
+    eveningSnack: '晚点',
+    snack: '午点'
   };
 
   function orderMealName(value) {

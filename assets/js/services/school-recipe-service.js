@@ -160,7 +160,7 @@
         create('14', '香蕉', [banana()]),
         create('15', '土豆丝', [potato(), oil()])
       ],
-      snack: [
+      afternoonSnack: [
         create('01', '牛奶', [milk()]),
         create('02', '时令水果', [apple()]),
         create('03', '玉米', [corn()]),
@@ -270,7 +270,7 @@
             ]
           },
           {
-            key: 'snack', name: '加餐',
+            key: 'afternoonSnack', name: '午点',
             dishes: [dish('DISH-20260908-04', '时令苹果', [
               ingredient('苹果', '苹果', 'SP0300014', 0.10, '斤')
             ])]
@@ -498,13 +498,23 @@
     const current = Array.isArray(storedMenus)
       ? storedMenus.map((menu) => ({
         ...menu,
-        meals: (menu.meals || []).map((meal) => ({
-          ...meal,
-          dishes: (meal.dishes || []).map((dish) => ({
-            ...dish,
-            ingredients: (dish.ingredients || []).map(normalizeIngredient)
-          }))
-        }))
+        meals: (menu.meals || []).reduce((result, meal) => {
+          const legacySnack = meal.key === 'snack';
+          const normalized = {
+            ...meal,
+            ...(legacySnack ? { key: 'afternoonSnack', name: '午点' } : {}),
+            dishes: (meal.dishes || [])
+              .filter((item) => !legacySnack || !String(item.id || '').includes('-SNACK-EXTRA-'))
+              .map((item) => ({ ...item, ingredients: (item.ingredients || []).map(normalizeIngredient) }))
+          };
+          const existing = result.find((item) => item.key === normalized.key);
+          if (!existing) result.push(normalized);
+          else {
+            const knownIds = new Set((existing.dishes || []).map((item) => item.id));
+            existing.dishes.push(...normalized.dishes.filter((item) => !knownIds.has(item.id)));
+          }
+          return result;
+        }, [])
       }))
       : storedMenus;
     const normalizedChanged = Array.isArray(storedMenus) && JSON.stringify(current) !== JSON.stringify(storedMenus);
@@ -639,9 +649,11 @@
     convertGramsToProductUnit,
     mealTypes: [
       { key: 'breakfast', name: '早餐' },
+      { key: 'morningSnack', name: '早点' },
       { key: 'lunch', name: '午餐' },
+      { key: 'afternoonSnack', name: '午点' },
       { key: 'dinner', name: '晚餐' },
-      { key: 'snack', name: '加餐' }
+      { key: 'eveningSnack', name: '晚点' }
     ],
     getAll() { return clone(readMenus()); },
     getMeta() { return clone(readMeta()); },

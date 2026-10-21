@@ -418,6 +418,9 @@
     allowClientEditPrice: true,
     splitOrderByMeal: true,
     splitOrderByPersonType: false,
+    recipeDeliveryAdvanceDays: '0',
+    recipeDeliveryTime: '07:30',
+    autoShipAfterSorting: false,
     amountDecimal: '2',
     quantityDecimal: '0',
     decimalSettingsVersion: '20260815-default-decimals'
@@ -2412,7 +2415,11 @@
     const shipping = state.shippingOrders.find((item) => item.orderId === orderId);
     if (shipping) {
       shipping.sortingStatus = order.sortingCompleted ? 'SORTED' : 'PENDING';
-      shipping.items = tasks.map((task) => ({ ...clone(task), shippingQty: number(task.actualQty) }));
+      shipping.items = tasks.map((task) => ({
+        ...clone(task),
+        shippingQty: shipping.status === 'PARTIAL' ? number(task.shippedQty) : task.shippedQty === undefined ? number(task.actualQty) : number(task.shippedQty),
+        shippingStatus: task.shipped === '是' || shipping.status === 'SHIPPED' ? 'SHIPPED' : 'PENDING'
+      }));
     }
     return order;
   }
@@ -2517,7 +2524,7 @@
       mealKey: order.mealKey || '',
       mealName: order.mealName || '',
       orderQty: number(line.quantity),
-      ...sortingPackageBreakdown(line, line.quantity),
+      ...window.SortingPackageBreakdown.calculate(line, line.quantity),
       actualQty: 0,
       unit: line.unit || '',
       warehouse: order.warehouse || '中心仓',
@@ -2677,17 +2684,108 @@
     return outbound;
   }
 
+  function refreshPartialShipping(state, shipping) {
+    if (!shipping || shipping.status === 'SHIPPED') return;
+    const order = getOrder(state, shipping.orderId);
+    const tasks = taskList(state, shipping.orderId);
+    const shippingAmount = (order.items || []).reduce((sum, line) => sum + number(line.shippedAmount), 0);
+    shipping.shippingAmount = Number(shippingAmount.toFixed(2));
+    order.shippingAmount = shipping.shippingAmount;
+    shipping.status = tasks.some((task) => number(task.shippedQty) > 0) ? 'PARTIAL' : 'PENDING';
+    shipping.items = tasks.map((task) => ({
+      ...clone(task),
+      shippingQty: number(task.shippedQty),
+      shippingStatus: task.shipped === '是' ? 'SHIPPED' : 'PENDING'
+    }));
+  }
+
+  function shipSortedItem(state, shipping, task) {
+    if (!shipping || shipping.status === 'SHIPPED' || number(task.actualQty) <= 0) return;
+    const order = getOrder(state, task.orderId);
+    const line = order.items.find((item) => item.orderLineId === task.orderLineId);
+    const qty = number(task.actualQty);
+    if (line) {
+      line.shippedQty = qty;
+      line.shippedAmount = qty * number(line.unitPrice);
+    }
+    window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '自动发货释放分拣预占' });
+    window.InventoryLedgerService.pendingOutbound({ productId: task.productId, warehouse: task.warehouse, qty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '自动发货后待出库占用' });
+    task.shipped = '是';
+    task.shippedQty = qty;
+    task.shippedAt = now();
+    order.shippingAt ||= task.shippedAt;
+    appendOperationLog(shipping, '商品自动发货', task.sorter || '当前用户', `${task.goodsName || task.productId} 按实拣数量 ${qty} ${task.unit || ''} 自动发货`);
+    refreshPartialShipping(state, shipping);
+  }
+
+  function shipSortedOrder(state, shipping) {
+    if (shipping.status === 'SHIPPED') return shipping;
+    const tasks = taskList(state, shipping.orderId);
+    if (!tasks.length || !tasks.every((task) => task.sortingCompleted)) {
+      const error = new Error('请先完成订单全部明细的分拣操作');
+      error.code = 'SORTING_REQUIRED';
+      throw error;
+    }
+    const order = getOrder(state, shipping.orderId);
+    let shippingAmount = 0;
+    tasks.forEach((task) => {
+      const line = order.items.find((item) => item.orderLineId === task.orderLineId);
+      if (line) {
+        line.shippedQty = number(task.actualQty);
+        line.shippedAmount = number(task.actualQty) * number(line.unitPrice);
+        shippingAmount += line.shippedAmount;
+      }
+      if (task.shipped !== '是' && number(task.actualQty) > 0) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: task.actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '发货释放分拣预占' });
+      if (task.shipped !== '是' && number(task.actualQty) > 0) window.InventoryLedgerService.pendingOutbound({ productId: task.productId, warehouse: task.warehouse, qty: task.actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '发货后待出库占用' });
+      task.shipped = '是';
+      task.shippedQty = number(task.actualQty);
+      task.shippedAt ||= now();
+    });
+    shipping.status = 'SHIPPED';
+    shipping.sortingStatus = 'SORTED';
+    shipping.shippingAmount = Number(shippingAmount.toFixed(2));
+    shipping.items = tasks.map((task) => ({ ...clone(task), shippingQty: number(task.actualQty), shippingStatus: 'SHIPPED' }));
+    order.status = 'COMPLETED';
+    order.shippingAmount = Number(shippingAmount.toFixed(2));
+    order.shippingAt = now();
+    appendOperationLog(shipping, '完成发货', order.creator || '当前用户');
+    appendOperationLog(order, '完成发货', order.creator || '当前用户');
+    const outboundStatus = state.settings.outboundAuditEnabled ? 'PENDING_AUDIT' : 'COMPLETED';
+    const outbound = createOutbound(state, order, outboundStatus);
+    if (!state.settings.outboundAuditEnabled) completeOutbound(outbound);
+    return shipping;
+  }
+
   function transitionSorting(state, taskId, action, payload = {}) {
     const task = getTask(state, taskId);
     if (!task) throw new Error('分拣任务不存在');
     const order = getOrder(state, task.orderId);
     if (!order) throw new Error('关联订单不存在');
+    const shipping = state.shippingOrders.find((item) => item.orderId === task.orderId);
+    let reversedShipment = false;
     if (action === 'sort') {
       const actualQty = Math.max(0, number(payload.actualQty ?? task.orderQty));
       const oldQty = task.sortingCompleted ? number(task.actualQty) : 0;
-      if (task.sortingCompleted && actualQty === oldQty) return task;
+      if (task.sortingCompleted && actualQty === oldQty) {
+        if (state.settings.autoShipAfterSorting && shipping && shipping.status !== 'SHIPPED' && task.shipped !== '是') {
+          shipSortedItem(state, shipping, task);
+          if (taskList(state, task.orderId).every((item) => item.sortingCompleted)) shipSortedOrder(state, shipping);
+        }
+        return task;
+      }
+      if (shipping?.status === 'SHIPPED') throw new Error('订单已完成发货，不能重新分拣');
+      if (task.shipped === '是') {
+        const shippedQty = number(task.shippedQty ?? task.actualQty);
+        if (shippedQty > 0) window.InventoryLedgerService.releasePendingOutbound({ productId: task.productId, warehouse: task.warehouse, qty: shippedQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重新分拣撤销原自动发货占用' });
+        const line = order.items.find((item) => item.orderLineId === task.orderLineId);
+        if (line) { line.shippedQty = 0; line.shippedAmount = 0; }
+        task.shipped = '否';
+        task.shippedQty = 0;
+        task.shippedAt = '';
+        reversedShipment = true;
+      }
       // 演示场景不校验实际分拣数量是否超出库存。
-      if (oldQty > 0) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: oldQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重新分拣释放原预占' });
+      if (oldQty > 0 && !reversedShipment) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: oldQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重新分拣释放原预占' });
       if (actualQty > 0) window.InventoryLedgerService.reserve({ productId: task.productId, warehouse: task.warehouse, qty: actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '订单分拣预占' });
       task.actualQty = actualQty;
       task.status = 'SORTED';
@@ -2698,7 +2796,18 @@
       task.sorter = payload.sorter || task.sorter || '当前用户';
       task.sortingAt = now();
     } else if (action === 'resetSort') {
-      if (task.sortingCompleted && number(task.actualQty) > 0) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: task.actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重置分拣释放预占' });
+      if (shipping?.status === 'SHIPPED') throw new Error('订单已完成发货，不能重置分拣');
+      if (task.shipped === '是') {
+        const shippedQty = number(task.shippedQty ?? task.actualQty);
+        if (shippedQty > 0) window.InventoryLedgerService.releasePendingOutbound({ productId: task.productId, warehouse: task.warehouse, qty: shippedQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重置分拣撤销自动发货占用' });
+        const line = order.items.find((item) => item.orderLineId === task.orderLineId);
+        if (line) { line.shippedQty = 0; line.shippedAmount = 0; }
+        task.shipped = '否';
+        task.shippedQty = 0;
+        task.shippedAt = '';
+        reversedShipment = true;
+      }
+      if (task.sortingCompleted && number(task.actualQty) > 0 && !reversedShipment) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: task.actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '重置分拣释放预占' });
       task.actualQty = 0;
       task.status = 'PENDING';
       task.sortingCompleted = false;
@@ -2717,6 +2826,12 @@
     appendOperationLog(task, action === 'sort' ? '完成分拣' : action === 'resetSort' ? '重置分拣' : action === 'markShortage' ? '标记短缺' : '取消短缺', task.sorter || '当前用户');
     syncShortage(state, task);
     syncOrder(state, task.orderId);
+    if (action === 'sort' && state.settings.autoShipAfterSorting && shipping) {
+      shipSortedItem(state, shipping, task);
+      if (taskList(state, task.orderId).every((item) => item.sortingCompleted)) shipSortedOrder(state, shipping);
+    } else if (reversedShipment) {
+      refreshPartialShipping(state, shipping);
+    }
     return task;
   }
 
@@ -2908,38 +3023,7 @@
         if (resource === 'shippingOrders' && action === 'ship') {
           const shipping = state.shippingOrders.find((item) => item.id === id || item.shippingOrderId === id);
           if (!shipping) throw new Error('发货单不存在');
-          if (shipping.status === 'SHIPPED') return shipping;
-          const tasks = taskList(state, shipping.orderId);
-          if (!tasks.length || !tasks.every((task) => task.sortingCompleted)) {
-            const error = new Error('请先完成订单全部明细的分拣操作');
-            error.code = 'SORTING_REQUIRED';
-            throw error;
-          }
-          const order = getOrder(state, shipping.orderId);
-          let shippingAmount = 0;
-          tasks.forEach((task) => {
-            const line = order.items.find((item) => item.orderLineId === task.orderLineId);
-            if (line) {
-              line.shippedQty = number(task.actualQty);
-              line.shippedAmount = number(task.actualQty) * number(line.unitPrice);
-              shippingAmount += line.shippedAmount;
-            }
-            if (number(task.actualQty) > 0) window.InventoryLedgerService.release({ productId: task.productId, warehouse: task.warehouse, qty: task.actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '发货释放分拣预占' });
-            if (number(task.actualQty) > 0) window.InventoryLedgerService.pendingOutbound({ productId: task.productId, warehouse: task.warehouse, qty: task.actualQty, unit: task.unit, orderId: task.orderId, orderLineId: task.orderLineId, remark: '发货后待出库占用' });
-          });
-          shipping.status = 'SHIPPED';
-          shipping.sortingStatus = 'SORTED';
-          shipping.shippingAmount = Number(shippingAmount.toFixed(2));
-          shipping.items = tasks.map((task) => ({ ...clone(task), shippingQty: number(task.actualQty) }));
-          order.status = 'COMPLETED';
-          order.shippingAmount = Number(shippingAmount.toFixed(2));
-          order.shippingAt = now();
-          appendOperationLog(shipping, '完成发货', order.creator || '当前用户');
-          appendOperationLog(order, '完成发货', order.creator || '当前用户');
-          const outboundStatus = state.settings.outboundAuditEnabled ? 'PENDING_AUDIT' : 'COMPLETED';
-          const outbound = createOutbound(state, order, outboundStatus);
-          if (!state.settings.outboundAuditEnabled) completeOutbound(outbound);
-          return shipping;
+          return shipSortedOrder(state, shipping);
         }
         if (resource === 'outboundOrders' && (action === 'complete' || action === 'approve' || action === 'audit')) {
           const outbound = state.outboundOrders.find((item) => item.id === id || item.outboundOrderId === id);

@@ -2,7 +2,15 @@
   const service = window.SchoolOrderService;
   if (!service) return;
   const calendarIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg>';
-  const DEFAULT_ORDER_DATE_RANGE = Object.freeze({ start: '2026-07-29', end: '2026-09-04' });
+  function defaultOrderDateRange() {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const end = new Date(start);
+    start.setDate(start.getDate() - 30);
+    end.setDate(end.getDate() + 7);
+    const format = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return { start: format(start), end: format(end) };
+  }
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -180,11 +188,12 @@
   }
 
   function render() {
+    const defaultDateRange = defaultOrderDateRange();
     const content = `<section class="page-card school-order-page" id="schoolOrderPage" aria-label="订单管理">
       <form class="school-order-filter" id="schoolOrderFilters">
         <div class="school-order-filter-layout">
           <div class="school-order-filter-grid">
-          <label class="operations-field"><span class="filter-label">期望送达日期</span><div class="school-order-date-range date-range-picker" id="schoolOrderDateRange"><input id="schoolOrderDateDisplay" class="filter-input date-range-display" type="text" placeholder="请选择日期范围" readonly aria-label="期望送达日期"><span class="date-range-icon" aria-hidden="true">${calendarIcon}</span><input id="schoolOrderStartDate" type="hidden" data-date-start value="${DEFAULT_ORDER_DATE_RANGE.start}"><input id="schoolOrderEndDate" type="hidden" data-date-end value="${DEFAULT_ORDER_DATE_RANGE.end}"></div></label>
+          <label class="operations-field"><span class="filter-label">期望送达日期</span><div class="school-order-date-range date-range-picker" id="schoolOrderDateRange"><input id="schoolOrderDateDisplay" class="filter-input date-range-display" type="text" placeholder="请选择日期范围" readonly aria-label="期望送达日期"><span class="date-range-icon" aria-hidden="true">${calendarIcon}</span><input id="schoolOrderStartDate" type="hidden" data-date-start value="${defaultDateRange.start}"><input id="schoolOrderEndDate" type="hidden" data-date-end value="${defaultDateRange.end}"></div></label>
           <label class="operations-field"><span class="filter-label">供货企业</span><select id="schoolOrderSupplier" class="filter-select" aria-label="供货企业">${selectOptions(service.suppliers || [service.SUPPLIER_NAME], '', '全部')}</select></label>
           <label class="operations-field"><span class="filter-label">订单标签</span><select id="schoolOrderTag" class="filter-select" aria-label="订单标签"><option value="" disabled hidden selected>请选择</option>${(service.tags || []).map((tag) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join('')}</select></label>
           <label class="operations-field school-order-filter-supplement"><span class="filter-label">是否补单</span><select id="schoolOrderSupplement" class="filter-select" aria-label="是否补单">${selectOptions(['是', '否'], '', '全部')}</select></label>
@@ -286,7 +295,8 @@
       const action = actionButton.dataset.action;
       const id = actionButton.dataset.id;
       if (action === 'reset') {
-        orderDateRangePicker?.setValue(DEFAULT_ORDER_DATE_RANGE.start, DEFAULT_ORDER_DATE_RANGE.end, false);
+        const range = defaultOrderDateRange();
+        orderDateRangePicker?.setValue(range.start, range.end, false);
         page.querySelectorAll('select').forEach((input) => { input.value = ''; });
         page.querySelector('#schoolOrderNo').value = '';
         refresh(true);

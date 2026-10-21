@@ -1,6 +1,7 @@
 (function () {
   const attendanceService = window.SchoolRecipeAttendanceService;
   const canteenConfig = window.SchoolCanteenConfigService;
+  const directService = window.SchoolRecipeAuxiliaryDirectService;
   const currentCanteenKey = window.AppStorage?.read?.('school-recipe-auxiliary-current-canteen', '第一食堂');
   let currentCanteen = canteenConfig?.getCanteen?.(currentCanteenKey) || { name: currentCanteenKey };
   let configuredParticipants = attendanceService?.participantsFor?.(currentCanteen) || [];
@@ -51,9 +52,14 @@
     afternoonSnack: '午点',
     dinner: '晚餐',
     eveningSnack: '晚点',
-    snack: '加餐'
+    snack: '午点'
   };
-  const mealDefinitionsForDate = (date) => (menuForDate(date)?.meals || []).map((meal) => ({
+  const mealsWithoutRecipe = [
+    { key: 'breakfast', name: '早餐' },
+    { key: 'lunch', name: '午餐' },
+    { key: 'dinner', name: '晚餐' }
+  ];
+  const mealDefinitionsForDate = (date) => (menuForDate(date)?.meals || mealsWithoutRecipe).map((meal) => ({
     key: String(meal.key || ''),
     name: meal.name || mealNameFallbacks[meal.key] || meal.key
   })).filter((meal) => meal.key);
@@ -93,16 +99,20 @@
   const compatibleDraftForDate = (date, draft) => {
     const source = draft || {};
     const dateMeals = mealDefinitionsForDate(date);
-    const hasSnackMeal = dateMeals.some((meal) => meal.key === 'snack');
-    const hasDinnerMeal = dateMeals.some((meal) => meal.key === 'dinner');
-    if (!hasSnackMeal || hasDinnerMeal || Object.prototype.hasOwnProperty.call(source, 'snack') || !source.dinner) return source;
-    return { ...source, snack: source.dinner };
+    if (!dateMeals.some((meal) => meal.key === 'afternoonSnack') || source.afternoonSnack || !source.snack) return source;
+    return { ...source, afternoonSnack: source.snack };
   };
   const recipeDateList = [...recipeDates].sort();
   const firstDate = recipeDateList[0] || '2026-09-29';
   const draftStorageKey = 'school-recipe-auxiliary-attendance-drafts-v1';
   const selectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
   const viewStorageKey = 'school-recipe-auxiliary-attendance-view-v1';
+  const defaultModeKey = 'school-recipe-auxiliary-default-mode-v1';
+  const savedDefaultMode = window.AppStorage?.read?.(defaultModeKey, 'people');
+  const defaultMode = savedDefaultMode === 'quantity' ? 'quantity' : 'people';
+  const pageParams = new URLSearchParams(window.location.search);
+  const requestedMode = pageParams.get('mode');
+  const initialMode = ['people', 'quantity'].includes(requestedMode) ? requestedMode : defaultMode;
   const canteenScope = String(currentCanteen.id || currentCanteen.name || '第一食堂');
   const availableCanteens = (canteenConfig?.readCanteens?.() || []).filter((canteen) => canteen && canteen.name && canteen.name !== '默认');
   const readDrafts = () => window.AppStorage?.read?.(draftStorageKey, {}) || {};
@@ -111,7 +121,7 @@
     return match ? `${match[1]}-${String(match[2]).padStart(2, '0')}-01` : '';
   };
   const storedView = window.AppStorage?.read?.(viewStorageKey, {})?.[canteenScope] || {};
-  const requestedDate = normalizeRecipeDate(new URLSearchParams(window.location.search).get('date'));
+  const requestedDate = normalizeRecipeDate(pageParams.get('date'));
   const savedDate = requestedDate || normalizeRecipeDate(storedView.selectedDate);
   const selectedDate = savedDate || firstDate;
   const savedMonthStart = normalizeMonthStart(storedView.monthStart);
@@ -182,13 +192,13 @@
     return true;
   };
   loadDraft(dateState.selectedDate);
-  if (menuForDate(dateState.selectedDate)) persistDraft();
+  if (initialMode === 'people') persistDraft();
 
   const storedSelectedStorage = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
   const storedSelectedIds = Array.isArray(storedSelectedStorage[canteenScope]) ? storedSelectedStorage[canteenScope] : [];
   const initialSelectedIds = storedSelectedIds.length ? new Set(storedSelectedIds) : new Set(products.map((product) => product.id));
   const mealKeys = Object.keys(meals);
-  const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', attendanceMode: 'dining', highlightEmpty: false, selected: products.filter((product) => initialSelectedIds.has(product.id)) };
+  const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '', mode: initialMode, defaultMode, attendanceMode: 'dining', highlightEmpty: false, selected: products.filter((product) => initialSelectedIds.has(product.id)) };
   if (!state.selected.length) state.selected = products.slice();
   const persistSelectedProducts = () => {
     const next = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
@@ -221,6 +231,13 @@
     const value = window.DemoStore?.getSettings?.()?.splitOrderByMeal;
     return value !== false && value !== 'false' && value !== 0 && value !== '0';
   };
+  const shouldSplitOrderByPersonType = () => {
+    const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
+    return value === true || value === 'true' || value === 1 || value === '1';
+  };
+  const hasDirectRowDraft = (draft, row) => Object.keys(draft || {}).some((key) =>
+    (key === row.key || key.startsWith(`${row.key}::`)) && String(draft[key] ?? '').trim() !== '');
+  const directPreview = (date = dateState.selectedDate) => directService?.buildPreview(date, currentCanteen, directService.readDraft(date, currentCanteen));
   const people = () => meals[state.meal];
   const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
   const parseDate = (value) => new Date(`${String(value)}T00:00:00`);
@@ -249,7 +266,17 @@
   const auxiliaryServiceOptions = () => ({ canteen: currentCanteen, participants: auxiliaryParticipants() });
 
   function dateStatus(date) {
-    if (!recipeDates.has(date)) return 'no-menu';
+    if (state.mode === 'quantity') {
+      const preview = directPreview(date);
+      return preview?.canSubmit ? 'complete' : preview?.selectedRows?.length ? 'partial' : 'empty';
+    }
+    if (!recipeDates.has(date)) {
+      const draft = date === dateState.selectedDate ? meals : readDrafts()?.[canteenScope]?.[date];
+      if (!draft?.__manual && date !== dateState.selectedDate) return 'empty';
+      const values = mealDefinitionsForDate(date).flatMap((meal) => configuredGroups.map((participant) => valueForParticipant(draft?.[meal.key], participant)));
+      const filled = values.filter((value) => value !== '' && value != null).length;
+      return filled === 0 ? 'empty' : filled === values.length ? 'complete' : 'partial';
+    }
     return attendanceService.status(menuForDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
   }
 
@@ -259,8 +286,14 @@
   }
 
   function renderOverview() {
-    const total = menuForDate(dateState.selectedDate) ? totalDiningPeople() : 0;
-    return `<div class="school-recipe-attendance-overview school-auxiliary-overview" id="schoolAuxiliaryOverview" aria-label="辅料需求填报概况"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span>用料日期：</span><strong>${longDate(dateState.selectedDate)}</strong></div><div class="school-recipe-attendance-overview-item school-recipe-attendance-total"><span>实际就餐人次：</span><strong data-aux-overview-total>${total}</strong></div></div></div>`;
+    const total = totalDiningPeople();
+    return `<div class="school-recipe-attendance-overview school-auxiliary-overview" id="schoolAuxiliaryOverview" aria-label="商品需求填报概况"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span>用料日期：</span><strong>${longDate(dateState.selectedDate)}</strong></div>${state.mode === 'people' ? `<div class="school-recipe-attendance-overview-item school-recipe-attendance-total"><span>实际就餐人次：</span><strong data-aux-overview-total>${total}</strong></div>` : ''}</div></div>`;
+  }
+
+  function renderModeSwitcher() {
+    return `<div class="school-recipe-entry-switch" aria-label="商品需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
+      ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
+    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${state.mode === mode}" class="school-recipe-entry-tab${state.mode === mode ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${state.defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div><button type="button" class="school-recipe-entry-set-default" data-aux-entry-set-default${state.defaultMode === state.mode ? ' disabled' : ''}>设为默认</button></div>`;
   }
 
   function renderDatePanel() {
@@ -276,10 +309,10 @@
       if (!date) return '<span class="school-recipe-attendance-date-placeholder" aria-hidden="true"></span>';
       const hasRecipe = recipeDates.has(date);
       const status = dateStatus(date);
-      const week = status === 'empty' || status === 'no-menu' ? ' is-hidden' : '';
-      return `<button type="button" class="school-recipe-attendance-date-item ${date === dateState.selectedDate ? 'is-selected' : ''} is-${status}" data-aux-date="${date}" title="${hasRecipe ? '有菜谱' : '无菜谱'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
+      const week = status === 'empty' ? ' is-hidden' : '';
+      return `<button type="button" class="school-recipe-attendance-date-item ${date === dateState.selectedDate ? 'is-selected' : ''} is-${status}" data-aux-date="${date}" title="${hasRecipe ? '有菜谱' : '可填报商品需求'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
     }).join('');
-    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="辅料需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>本月菜谱</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
+    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>本月日期</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
   }
 
   function rowData(product) {
@@ -340,17 +373,44 @@
     return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm school-auxiliary-restore-default" type="button" data-restore-default>恢复默认</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm" type="button" data-confirm-demand>确认需求</button></div></footer>`;
   }
 
+  function renderDirectForm() {
+    const preview = directPreview();
+    const activeMeal = preview.meals.find((meal) => meal.key === state.directMeal) || preview.meals[0];
+    state.directMeal = activeMeal?.key || '';
+    const draft = directService.readDraft(dateState.selectedDate, currentCanteen);
+    const hasDateValues = Object.values(draft).some((value) => String(value).trim() !== '');
+    const hasMealValues = (activeMeal?.rows || []).some((row) => hasDirectRowDraft(draft, row));
+    const filledProducts = new Set(preview.selectedRows.map((row) => row.productCode)).size;
+    const tabs = `<div class="school-recipe-meal-tabs school-recipe-direct-meal-tabs" role="tablist" aria-label="切换采购餐次">${preview.meals.map((meal) => `<button type="button" class="school-recipe-meal-tab${meal.key === state.directMeal ? ' is-active' : ''}" role="tab" aria-selected="${meal.key === state.directMeal}" data-aux-direct-meal="${escapeHtml(meal.key)}">${escapeHtml(meal.name)}</button>`).join('')}</div>`;
+    const directParticipants = shouldSplitOrderByPersonType() ? configuredGroups : [];
+    const quantityHeaders = directParticipants.length
+      ? directParticipants.map((person) => `<th>${escapeHtml(participantDisplayName(person))}采购量</th>`).join('')
+      : '<th>采购量</th>';
+    const quantityCols = directParticipants.length
+      ? directParticipants.map(() => '<col style="width:140px">').join('')
+      : '<col style="width:140px">';
+    const quantityCells = (row, meal) => {
+      const values = directParticipants.length ? directParticipants.map((person, index) => ({
+        key: `${row.key}::${person.key}`, name: participantDisplayName(person),
+        value: draft[`${row.key}::${person.key}`] ?? (index === 0 ? draft[row.key] : '')
+      })) : [{ key: row.key, name: '', value: draft[row.key] ?? (row.orderQty > 0 ? row.orderQty : '') }];
+      return values.map(({ key, name, value }) => `<td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="any" inputmode="decimal" placeholder="0" value="${escapeHtml(value)}" data-aux-direct-quantity="${escapeHtml(key)}" aria-label="${escapeHtml(`${meal.name}${row.productName}${name}采购量`)}"></div></td>`).join('');
+    };
+    const rows = (activeMeal?.rows || []).map((row, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(row.auxiliaryName)}</td><td class="product-cell">${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td>${quantityCells(row, activeMeal)}</tr>`).join('');
+    const table = `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-recipe-direct-table school-auxiliary-direct-table" style="min-width:${Math.max(780, 668 + (directParticipants.length || 1) * 140)}px"><colgroup><col style="width:58px"><col style="width:110px"><col style="width:300px"><col style="width:120px"><col style="width:80px">${quantityCols}</colgroup><thead><tr><th>序号</th><th>辅料</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th>${quantityHeaders}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    const clearMenu = `<div class="school-recipe-attendance-reset-dropdown${hasDateValues ? '' : ' is-disabled'}"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-direct-clear-toggle aria-expanded="false" aria-haspopup="menu"${hasDateValues ? '' : ' disabled'}>清空数量<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-direct-clear="meal"${hasMealValues ? '' : ' disabled'}>清空当前餐次数量</button><button type="button" role="menuitem" data-aux-direct-clear="date"${hasDateValues ? '' : ' disabled'}>清空当前日期数量</button></div></div>`;
+    return `<div class="school-auxiliary-scroll school-auxiliary-direct-scroll"><div class="school-recipe-attendance-section-heading school-recipe-direct-heading"><span class="section-title-mark">填写采购量</span><p>无需采购时采购量填 0 或不填</p></div>${tabs}${table}</div><footer class="school-auxiliary-footer school-auxiliary-direct-footer"><div class="school-recipe-direct-footer-left">${clearMenu}<span data-aux-direct-summary>已填写 ${filledProducts} 种商品</span></div><button type="button" class="btn btn-primary btn-sm${preview.canSubmit ? '' : ' btn-disabled'}" data-aux-direct-confirm${preview.canSubmit ? '' : ' disabled'}>需求确认</button></footer>`;
+  }
+
   function renderDetail() {
-    return menuForDate(dateState.selectedDate)
-      ? renderForm()
-      : '<div class="school-recipe-attendance-detail-empty"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div><p>请选择有菜谱的日期</p></div>';
+    return state.mode === 'quantity' ? renderDirectForm() : renderForm();
   }
 
   function renderPage() {
-    return `<section class="page-card school-auxiliary-page" id="schoolAuxiliaryPage"><div class="school-auxiliary-body">${renderDatePanel()}<main class="school-auxiliary-detail">${renderCanteenBar()}${renderOverview()}${renderDetail()}</main></div></section>`;
+    return `<section class="page-card school-auxiliary-page" id="schoolAuxiliaryPage">${renderModeSwitcher()}<div class="school-auxiliary-body">${renderDatePanel()}<main class="school-auxiliary-detail">${renderCanteenBar()}${renderOverview()}${renderDetail()}</main></div></section>`;
   }
 
-  const root = window.AppShell.mount({ title: '辅料需求填报', variant: 'school', content: renderPage(), emptyText: '辅料需求填报' });
+  const root = window.AppShell.mount({ title: '商品需求填报', variant: 'school', content: renderPage(), emptyText: '商品需求填报' });
   const rerenderPage = () => {
     const page = root.querySelector('#schoolAuxiliaryPage');
     if (page) page.outerHTML = renderPage();
@@ -361,6 +421,57 @@
   const refreshDatePanel = () => { const panel = root.querySelector('.school-auxiliary-recipe-date-panel'); if (panel) panel.outerHTML = renderDatePanel(); };
 
   root.addEventListener('click', (event) => {
+    if (event.target.closest('[data-aux-entry-set-default]')) {
+      state.defaultMode = state.mode;
+      window.AppStorage?.write?.(defaultModeKey, state.defaultMode);
+      rerenderPage();
+      showToast('已设为默认填报方式');
+      return;
+    }
+    const entryButton = event.target.closest('[data-aux-entry-mode]');
+    if (entryButton) {
+      const nextMode = entryButton.dataset.auxEntryMode;
+      if (nextMode === state.mode || !['people', 'quantity'].includes(nextMode)) return;
+      if (state.attendanceMode === 'non-dining') {
+        showToast('请先保存不就餐人数，再切换填报方式', true);
+        return;
+      }
+      if (state.mode === 'people') persistDraft();
+      state.mode = nextMode;
+      state.directMeal = '';
+      rerenderPage();
+      return;
+    }
+    const directMealTab = event.target.closest('[data-aux-direct-meal]');
+    if (directMealTab) {
+      state.directMeal = directMealTab.dataset.auxDirectMeal;
+      rerenderPage();
+      return;
+    }
+    if (event.target.closest('[data-aux-direct-clear-toggle]')) {
+      event.target.closest('.school-recipe-attendance-reset-dropdown')?.classList.toggle('is-open');
+      return;
+    }
+    const directClear = event.target.closest('[data-aux-direct-clear]');
+    if (directClear && !directClear.disabled) {
+      const draft = directService.readDraft(dateState.selectedDate, currentCanteen);
+      if (directClear.dataset.auxDirectClear === 'meal') {
+        directPreview().meals.find((meal) => meal.key === state.directMeal)?.rows.forEach((row) => { Object.keys(draft).filter((key) => key === row.key || key.startsWith(`${row.key}::`)).forEach((key) => { delete draft[key]; }); });
+        directService.writeDraft(dateState.selectedDate, currentCanteen, draft);
+      } else directService.writeDraft(dateState.selectedDate, currentCanteen, {});
+      rerenderPage();
+      showToast(directClear.dataset.auxDirectClear === 'meal' ? '已清空当前餐次采购量' : '已清空当前日期采购量');
+      return;
+    }
+    if (event.target.closest('[data-aux-direct-confirm]')) {
+      const preview = directPreview();
+      if (!preview.canSubmit) {
+        showToast(preview.message, true);
+        return;
+      }
+      window.location.href = `./school-recipe-auxiliary-demand-confirm.html?mode=quantity&date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
+      return;
+    }
     const canteenButton = event.target.closest('[data-aux-canteen]');
     if (canteenButton) {
       window.AppStorage?.write?.('school-recipe-auxiliary-current-canteen', canteenButton.dataset.auxCanteen);
@@ -369,31 +480,36 @@
     }
     const dateButton = event.target.closest('[data-aux-date]');
     if (dateButton) {
-      persistDraft();
+      if (state.mode === 'people') persistDraft();
       dateState.selectedDate = dateButton.dataset.auxDate;
       meals = createMealsForDate(dateState.selectedDate);
       state.meal = Object.keys(meals).includes('lunch') ? 'lunch' : Object.keys(meals)[0] || '';
+      state.directMeal = '';
       state.attendanceMode = 'dining';
       state.highlightEmpty = false;
       loadDraft(dateState.selectedDate);
-      if (menuForDate(dateState.selectedDate)) persistDraft();
+      if (state.mode === 'people') persistDraft();
       persistView();
       rerenderPage();
       return;
     }
     const monthButton = event.target.closest('[data-aux-month]');
     if (monthButton && !monthButton.disabled) {
-      persistDraft();
+      if (state.mode === 'people') persistDraft();
       const nextMonth = shiftMonth(dateState.monthStart, monthButton.dataset.auxMonth === 'prev' ? -1 : 1);
       dateState.monthStart = nextMonth;
       const dates = monthDates(nextMonth);
-      if (!dates.includes(dateState.selectedDate)) dateState.selectedDate = dates.find((date) => recipeDates.has(date)) || dates[0];
+      if (!dates.includes(dateState.selectedDate)) {
+        const day = Math.min(Number(dateState.selectedDate.slice(8, 10)) || 1, dates.length);
+        dateState.selectedDate = dates[day - 1];
+      }
       meals = createMealsForDate(dateState.selectedDate);
       state.meal = Object.keys(meals).includes('lunch') ? 'lunch' : Object.keys(meals)[0] || '';
+      state.directMeal = '';
       state.attendanceMode = 'dining';
       state.highlightEmpty = false;
       loadDraft(dateState.selectedDate);
-      if (menuForDate(dateState.selectedDate)) persistDraft();
+      if (state.mode === 'people') persistDraft();
       persistView();
       rerenderPage();
       return;
@@ -481,11 +597,40 @@
         return;
       }
       state.highlightEmpty = false;
-      window.location.href = `./school-recipe-auxiliary-demand-confirm.html?date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
+      window.location.href = `./school-recipe-auxiliary-demand-confirm.html?mode=people&date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
     }
   });
 
   root.addEventListener('input', (event) => {
+    const directInput = event.target.closest('[data-aux-direct-quantity]');
+    if (directInput) {
+      const draft = directService.readDraft(dateState.selectedDate, currentCanteen);
+      if (directInput.value === '') delete draft[directInput.dataset.auxDirectQuantity];
+      else draft[directInput.dataset.auxDirectQuantity] = directInput.value;
+      directService.writeDraft(dateState.selectedDate, currentCanteen, draft);
+      const preview = directPreview();
+      const invalid = directInput.value !== '' && (!Number.isFinite(Number(directInput.value)) || Number(directInput.value) < 0);
+      directInput.setAttribute('aria-invalid', String(invalid));
+      const button = root.querySelector('[data-aux-direct-confirm]');
+      if (button) {
+        button.disabled = !preview.canSubmit;
+        button.classList.toggle('btn-disabled', !preview.canSubmit);
+      }
+      const summary = root.querySelector('[data-aux-direct-summary]');
+      if (summary) summary.textContent = `已填写 ${new Set(preview.selectedRows.map((row) => row.productCode)).size} 种商品`;
+      const clearToggle = root.querySelector('[data-aux-direct-clear-toggle]');
+      if (clearToggle) {
+        clearToggle.disabled = !Object.values(draft).some((value) => String(value).trim() !== '');
+        clearToggle.closest('.school-recipe-attendance-reset-dropdown')?.classList.toggle('is-disabled', clearToggle.disabled);
+      }
+      root.querySelectorAll('[data-aux-direct-clear]').forEach((item) => {
+        item.disabled = item.dataset.auxDirectClear === 'meal'
+          ? !preview.meals.find((meal) => meal.key === state.directMeal)?.rows.some((row) => hasDirectRowDraft(draft, row))
+          : clearToggle?.disabled;
+      });
+      refreshDatePanel();
+      return;
+    }
     const input = event.target.closest('[data-person-type]');
     if (!input) return;
     const meal = meals[input.dataset.mealKey || state.meal];

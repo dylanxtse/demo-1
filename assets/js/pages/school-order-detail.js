@@ -9,7 +9,7 @@
     if (!participantKey) return null;
     const participant = participantKey === 'teacher' ? '教师' : '学生';
     const mealKey = mealMatch?.[1] || '';
-    const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
+    const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '午点' };
     const mealPeople = {
       breakfast: { student: 520, teacher: 42 },
       lunch: { student: 680, teacher: 48 },
