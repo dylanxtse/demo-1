@@ -767,6 +767,7 @@
     const record = {
       id: `RECIPE-DEMAND-${datePart(createdAt)}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       recordNo: nextRecordNo(records, createdAt),
+      entryMode: 'people', demandType: options.auxiliaryProducts ? 'auxiliary' : 'ingredient',
       schoolName: SCHOOL_NAME,
       canteen: preview.canteen.name || CANTEEN_NAME,
       canteenId: preview.canteen.id || '',
@@ -1006,13 +1007,15 @@
         participants: clone(orderParticipants),
         participantPersonTimes: Object.fromEntries(orderParticipants.map((participant) => [participant.key, 0])),
         studentPersonTimes: 0, teacherPersonTimes: 0, totalPersonTimes: 0,
-        productCount: items.length, items
+        productCount: items.length,
+        filledMeals: summary.meals.filter((meal) => meal.rows.some((row) => row.orderQty > 0)).map((meal) => meal.name || meal.key),
+        items
       };
     });
     const items = toRecordRows(preview.selectedRows);
     const record = {
       id: `RECIPE-DEMAND-${datePart(createdAt)}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      recordNo: nextRecordNo(records, createdAt), entryMode: 'quantity', schoolName: SCHOOL_NAME,
+      recordNo: nextRecordNo(records, createdAt), entryMode: 'quantity', demandType: 'ingredient', schoolName: SCHOOL_NAME,
       canteen: preview.canteen.name || CANTEEN_NAME, canteenId: preview.canteen.id || '',
       participants: clone(orderParticipants), dates: clone(preview.dates), expectedAt,
       recipeVersion: preview.dateSummaries.find((summary) => summary.menu)?.menu?.version || recipeService.MENU_VERSION,

@@ -1226,7 +1226,8 @@ button {
   line-height: 21px;
 }
 
-.school-mobile-date-strip-attendance .school-mobile-date-item {
+.school-mobile-date-strip-attendance .school-mobile-date-item,
+.school-mobile-date-strip-quantity .school-mobile-date-item {
   width: 44px;
   min-width: 44px;
   height: 54px;
@@ -1244,19 +1245,23 @@ button {
 
 .school-mobile-date-strip-attendance .school-mobile-date-item strong,
 .school-mobile-date-strip-attendance .school-mobile-date-item small,
+.school-mobile-date-strip-quantity .school-mobile-date-item strong,
+.school-mobile-date-strip-quantity .school-mobile-date-item small,
 .school-mobile-date-strip-recipe .school-mobile-date-item strong,
 .school-mobile-date-strip-recipe .school-mobile-date-item small {
   font-weight: 400;
 }
 
 .school-mobile-date-strip-attendance .school-mobile-date-item strong,
+.school-mobile-date-strip-quantity .school-mobile-date-item strong,
 .school-mobile-date-strip-recipe .school-mobile-date-item strong {
   font-size: 16px;
   line-height: 18px;
 }
 
 .school-mobile-date-strip-recipe .school-mobile-date-item.is-no-menu,
-.school-mobile-date-strip-attendance .school-mobile-date-item.is-no-menu {
+.school-mobile-date-strip-attendance .school-mobile-date-item.is-no-menu,
+.school-mobile-date-strip-quantity .school-mobile-date-item.is-no-menu {
   border-color: transparent;
   color: #8994a4;
   background: #f3f5f7;
@@ -1273,7 +1278,8 @@ button {
   background: #fff4db;
 }
 
-.school-mobile-date-strip-attendance .school-mobile-date-item.is-complete {
+.school-mobile-date-strip-attendance .school-mobile-date-item.is-complete,
+.school-mobile-date-strip-quantity .school-mobile-date-item.is-complete {
   border-color: #a9d3b6;
   background: #eaf7ee;
 }
@@ -2947,6 +2953,14 @@ button.school-mobile-demand-row:active {
   font-weight: 600;
 }
 
+.school-mobile-record-kind {
+  min-width: 0;
+  color: var(--mobile-ink-3);
+  font-size: 9px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
 .school-mobile-record-status {
   display: inline-flex;
   min-height: 20px;
@@ -2970,6 +2984,8 @@ button.school-mobile-demand-row:active {
   gap: 7px;
   margin: 12px 0;
 }
+
+.school-mobile-record-metrics.is-quantity { grid-template-columns: repeat(2, 1fr); }
 
 .school-mobile-record-metrics > div {
   padding: 8px 5px;
@@ -3482,6 +3498,60 @@ button.school-mobile-demand-row:active {
   color: var(--mobile-ink-3);
   font-size: 10px;
 }
+
+.school-mobile-entry-mode-intro {
+  margin: 0 0 12px;
+  color: var(--mobile-ink-3);
+  font-size: 12px;
+}
+
+.school-mobile-entry-mode-option {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 16px;
+  border: 1px solid #dce7f6;
+  border-radius: 12px;
+  background: #f8fbff;
+  text-align: left;
+}
+
+.school-mobile-entry-mode-option strong { color: var(--mobile-ink); font-size: 14px; }
+.school-mobile-entry-mode-option small { grid-column: 1; color: var(--mobile-ink-3); font-size: 11px; }
+.school-mobile-entry-mode-option > span { grid-column: 2; grid-row: 1 / 3; color: var(--mobile-blue); font-size: 22px; }
+
+.school-mobile-direct-summary { grid-template-columns: minmax(0, 1fr); align-items: center; }
+.school-mobile-direct-summary > div:first-child { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.school-mobile-direct-summary > div:first-child strong { min-width: 0; font-size: 12px; }
+.school-mobile-direct-summary > div:first-child small { flex: 0 0 auto; margin: 0; color: var(--mobile-ink-3); font-size: 10px; white-space: nowrap; }
+.school-mobile-direct-page .school-mobile-demand-section { margin: 14px -16px 20px; padding: 0 12px 12px; background: #fff; border-radius: 0; }
+.school-mobile-direct-page .school-mobile-meal-tabs { margin: 0; padding: 8px 2px; overflow-x: auto; }
+.school-mobile-direct-participant-tabs { display: flex; gap: 8px; padding: 0 2px 10px; overflow-x: auto; scrollbar-width: none; }
+.school-mobile-direct-participant-tabs::-webkit-scrollbar { display: none; }
+.school-mobile-direct-participant-tab { min-width: 68px; height: 28px; flex: 0 0 auto; padding: 0 12px; border: 1px solid var(--mobile-line); border-radius: 14px; color: var(--mobile-ink-2); background: #fff; font-size: 11px; white-space: nowrap; }
+.school-mobile-direct-participant-tab.is-active { border-color: var(--mobile-blue); color: var(--mobile-blue); background: #edf5ff; }
+.school-mobile-direct-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px; gap: 8px; align-items: center; padding: 13px 12px; border-top: 1px solid var(--mobile-line); }
+.school-mobile-direct-row-details { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 6px; }
+.school-mobile-direct-product-name { min-width: 0; color: var(--mobile-ink); font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
+.school-mobile-direct-row-details small, .school-mobile-direct-row-details > span { color: var(--mobile-ink-3); font-size: 10px; line-height: 13px; }
+.school-mobile-direct-row-details > span { overflow-wrap: anywhere; }
+.school-mobile-direct-row-purchase { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 7px; }
+.school-mobile-direct-field { display: flex; width: 100%; flex-direction: column; align-items: center; gap: 3px; color: var(--mobile-ink-2); font-size: 10px; }
+.school-mobile-direct-input-wrap { display: flex; width: 100%; align-items: center; justify-content: center; gap: 3px; }
+.school-mobile-direct-step-button { display: inline-flex; width: 22px; height: 26px; flex: 0 0 22px; align-items: center; justify-content: center; padding: 0; border: 1px solid #cbdcf2; border-radius: 6px; color: var(--mobile-blue); background: #fff; font-size: 15px; line-height: 1; }
+.school-mobile-direct-step-button:active { background: #edf5ff; }
+.school-mobile-direct-input-wrap input { width: 40px; min-width: 0; height: 26px; padding: 0 2px; border: 1px solid #cbdcf2; border-radius: 6px; color: var(--mobile-ink); background: #fff; font-size: 12px; text-align: center; appearance: textfield; }
+.school-mobile-direct-input-wrap input::-webkit-inner-spin-button, .school-mobile-direct-input-wrap input::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.school-mobile-direct-confirm-products .school-mobile-meal-tabs { overflow-x: auto; }
+.school-mobile-direct-confirm-row { display: flex; justify-content: space-between; gap: 8px; padding: 11px 0; border-top: 1px solid var(--mobile-line); }
+.school-mobile-direct-confirm-row > div:last-child { text-align: right; }
+.school-mobile-direct-confirm-row strong { display: block; color: var(--mobile-ink); font-size: 11px; }
+.school-mobile-direct-confirm-row small { display: block; margin-top: 4px; color: var(--mobile-ink-3); font-size: 10px; }
+.school-mobile-direct-total { display: flex; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--mobile-line); background: #f8fbff; font-size: 12px; }
+.school-mobile-direct-total strong { color: var(--mobile-blue); font-size: 14px; }
 
 .school-mobile-expected-at-sheet {
   max-height: 90%;

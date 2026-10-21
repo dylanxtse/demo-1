@@ -204,12 +204,14 @@
         participants: clone(orderParticipants),
         participantPersonTimes: Object.fromEntries(orderParticipants.map((person) => [person.key, 0])),
         studentPersonTimes: 0, teacherPersonTimes: 0, totalPersonTimes: 0,
-        productCount: items.length, items };
+        productCount: items.length,
+        filledMeals: summary.meals.filter((meal) => meal.rows.some((row) => row.orderQty > 0)).map((meal) => meal.name || meal.key),
+        items };
     });
     const items = recordRows(preview.selectedRows);
     const record = {
       id: `AUXILIARY-DEMAND-${String(createdAt).replace(/[-: ]/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
-      recordNo: nextRecordNo(records, createdAt), entryMode: 'quantity', auxiliary: true,
+      recordNo: nextRecordNo(records, createdAt), entryMode: 'quantity', demandType: 'auxiliary', auxiliary: true,
       schoolName: orderService.SCHOOL_NAME || '静安第一中学',
       canteen: preview.canteen.name || '第一食堂', canteenId: preview.canteen.id || '',
       participants: clone(orderParticipants), dates: clone(preview.dates), expectedAt, recipeVersion: '',

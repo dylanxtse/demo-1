@@ -3,6 +3,7 @@
   const recipeService = window.SchoolRecipeService;
   const attendanceService = window.SchoolRecipeAttendanceService;
   const demandService = window.SchoolRecipeDemandService;
+  const auxiliaryDirectService = window.SchoolRecipeAuxiliaryDirectService;
   const orderService = window.SchoolOrderService;
   const canteenConfig = window.SchoolCanteenConfigService;
   const MAX_ATTENDANCE_PEOPLE = 100000;
@@ -425,6 +426,10 @@
     canteen: initialCanteen,
     attendance: null,
     attendanceInputMode: 'dining',
+    demandEntryMode: 'people',
+    directMealKey: '',
+    directParticipantKey: '',
+    directDates: [],
     attendanceValidationHighlightDate: '',
     sheet: null,
     toast: null,
@@ -1230,8 +1235,10 @@
     const demandFillBackToRecipe = state.screen === 'main' && ['attendance', 'auxiliary'].includes(state.tab);
     const title = loginPage
       ? '登录'
+        : state.screen === 'direct-confirm'
+        ? (state.tab === 'auxiliary' ? '商品需求确认' : '食材需求确认')
         : state.screen === 'confirm'
-        ? (state.confirmMode === 'auxiliary' ? '辅料需求确认' : '食材需求确认')
+        ? (state.confirmMode === 'auxiliary' ? '商品需求确认' : '食材需求确认')
         : state.screen === 'order-detail'
           ? '订单详情'
         : state.screen === 'detail'
@@ -1239,7 +1246,7 @@
         : state.tab === 'attendance'
           ? '食材需求填报'
         : state.tab === 'auxiliary'
-          ? '辅料需求填报'
+          ? '商品需求填报'
           : state.tab === 'profile'
               ? (profileSubpage && state.profileView === 'orders' ? '订单列表' : profileSubpage ? '提交记录' : '个人中心')
               : state.tab === 'home'
@@ -1248,6 +1255,7 @@
                   ? '食谱下单'
                   : '食谱中心';
     const shouldShowBack = state.screen === 'confirm'
+      || state.screen === 'direct-confirm'
       || state.screen === 'detail'
       || state.screen === 'order-detail'
       || demandFillBackToRecipe
@@ -1261,7 +1269,7 @@
     return '<header class="school-mobile-topbar">'
       + '<div class="school-mobile-topbar-main">'
       + '<div class="school-mobile-topbar-left">' + back
-      + (state.screen === 'confirm' || loginPage ? '' : canteenDisplay)
+      + (['confirm', 'direct-confirm'].includes(state.screen) || loginPage ? '' : canteenDisplay)
       + '</div>'
       + '<strong class="school-mobile-topbar-title">' + title + '</strong>'
       + '</div>'
@@ -1271,6 +1279,7 @@
   function renderDateStrip(mode) {
     const currentParticipants = participants();
     const isAttendanceLocked = mode === 'attendance' && state.attendanceInputMode === 'non-dining';
+    const directDates = mode === 'quantity' ? new Set(directFilledDates()) : null;
     const monthKey = isSupportedMonth(state.monthKey) ? state.monthKey : anchorMonthKey;
     const items = Array.from({ length: daysInMonth(monthKey) }, (_, index) => {
       const date = dateKeyFor(monthKey, index + 1);
@@ -1280,12 +1289,15 @@
         attendanceFor(date),
         { canteen: currentCanteen(), participants: currentParticipants }
       );
+      const directFilled = directDates?.has(date);
       const statusKey = mode === 'attendance'
         ? menu ? attendanceStatus.key : 'no-menu'
+        : mode === 'quantity' ? directFilled ? 'complete' : menu ? 'published' : 'no-menu'
         : menu ? 'published' : 'no-menu';
       const statusClass = 'is-' + statusKey;
       const statusLabel = mode === 'attendance'
         ? menu ? attendanceStatus.label || '未填写' : '无菜谱'
+        : mode === 'quantity' ? directFilled ? '已填写' : menu ? '未填写' : '无菜谱'
         : menu ? '已发布' : '暂无菜谱';
       return '<button type="button" class="school-mobile-date-item '
         + (date === state.date ? 'is-selected ' : '') + statusClass
@@ -1386,9 +1398,168 @@
   function renderRecipeDemandButton() {
     const disabled = !menuFor(state.date);
     return '<div class="school-mobile-recipe-demand-actions" aria-label="需求填报入口">'
-      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary' + (disabled ? ' is-disabled' : '') + '" data-action="open-auxiliary-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>辅料需求填报</button>'
       + '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>食材需求填报</button>'
+      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary' + (disabled ? ' is-disabled' : '') + '" data-action="open-auxiliary-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>商品需求填报</button>'
       + '</div>';
+  }
+
+  const directDraftKey = 'school-recipe-demand-direct-drafts-v1';
+  const directMoney = (value) => '¥' + Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function directDraftScope(date) {
+    const canteen = currentCanteen();
+    return `${canteen.id || canteen.name || state.canteen}::${date}`;
+  }
+
+  function readDirectDraft(date) {
+    if (state.tab === 'auxiliary') return auxiliaryDirectService?.readDraft(date, currentCanteen()) || {};
+    return { ...(window.AppStorage?.read?.(directDraftKey, {})?.[directDraftScope(date)] || {}) };
+  }
+
+  function writeDirectDraft(date, values) {
+    if (state.tab === 'auxiliary') {
+      auxiliaryDirectService?.writeDraft(date, currentCanteen(), values);
+      return;
+    }
+    const drafts = window.AppStorage?.read?.(directDraftKey, {}) || {};
+    const scope = directDraftScope(date);
+    if (Object.keys(values).length) drafts[scope] = values;
+    else delete drafts[scope];
+    window.AppStorage?.write?.(directDraftKey, drafts);
+  }
+
+  function directPreview(date, quantities = readDirectDraft(date)) {
+    return state.tab === 'auxiliary'
+      ? auxiliaryDirectService.buildPreview(date, currentCanteen(), quantities)
+      : demandService.buildDirectPreview(date, quantities, { canteen: currentCanteen() });
+  }
+
+  function directFilledDates() {
+    if (state.tab === 'auxiliary') return auxiliaryDirectService?.readFilledDates(currentCanteen()) || [];
+    const prefix = directDraftScope('');
+    const drafts = window.AppStorage?.read?.(directDraftKey, {}) || {};
+    return Object.keys(drafts).filter((key) => key.startsWith(prefix))
+      .map((key) => key.slice(prefix.length))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date) && directPreview(date, drafts[directDraftScope(date)]).selectedRows.length)
+      .sort();
+  }
+
+  function directDatesPreview(dates = state.directDates) {
+    const drafts = Object.fromEntries(dates.map((date) => [date, readDirectDraft(date)]));
+    return state.tab === 'auxiliary'
+      ? auxiliaryDirectService.buildDatesPreview(dates, currentCanteen(), drafts)
+      : demandService.buildDirectDatesPreview(dates, drafts, { canteen: currentCanteen() });
+  }
+
+  function renderEntryModeSheet() {
+    const type = state.sheet?.demandType === 'auxiliary' ? '商品' : '食材';
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-entry-mode-sheet" role="dialog" aria-modal="true" aria-label="选择填报方式">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>选择填报方式</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
+      + '<p class="school-mobile-entry-mode-intro">' + type + '需求填报</p>'
+      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="people"><strong>就餐人数填报</strong><small>填写各餐次就餐人数，自动计算采购需求</small><span aria-hidden="true">›</span></button>'
+      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>采购数量填报</strong><small>直接填写各商品的采购数量</small><span aria-hidden="true">›</span></button>'
+      + '</section></div>';
+  }
+
+  function renderDirectQuantity() {
+    const preview = directPreview(state.date);
+    const meals = preview.meals || [];
+    const active = meals.find((meal) => meal.key === state.directMealKey) || meals[0];
+    state.directMealKey = active?.key || '';
+    const draft = readDirectDraft(state.date);
+    const split = shouldSplitConfirmByPersonType();
+    const tabs = meals.map((meal) => '<button type="button" class="school-mobile-meal-tag ' + (meal.key === state.directMealKey ? 'is-active' : '') + '" data-action="select-direct-meal" data-meal-key="' + escapeHtml(meal.key) + '" role="tab" aria-selected="' + (meal.key === state.directMealKey) + '">' + escapeHtml(meal.name) + '</button>').join('');
+    const activeParticipant = split ? (preview.participants || []).find((person) => person.key === state.directParticipantKey) || preview.participants?.[0] : null;
+    state.directParticipantKey = activeParticipant?.key || '';
+    const participantTabs = split ? '<div class="school-mobile-direct-participant-tabs" role="tablist" aria-label="人员类型切换">'
+      + (preview.participants || []).map((person) => '<button type="button" class="school-mobile-direct-participant-tab' + (person.key === state.directParticipantKey ? ' is-active' : '') + '" data-action="select-direct-participant" data-participant-key="' + escapeHtml(person.key) + '" role="tab" aria-selected="' + (person.key === state.directParticipantKey) + '">' + escapeHtml(orderTagName(person)) + '</button>').join('') + '</div>' : '';
+    const rows = (active?.rows || []).map((row) => {
+      const key = row.key + (activeParticipant ? '::' + activeParticipant.key : '');
+      const label = activeParticipant ? orderTagName(activeParticipant) : '采购量';
+      const value = activeParticipant ? (draft[key] ?? row.participantQty?.[activeParticipant.key] ?? 0) : (draft[key] ?? '');
+      const field = '<div class="school-mobile-direct-field"><span class="school-mobile-direct-input-wrap"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="-1" aria-label="减少' + escapeHtml(row.productName + ' ' + label) + '">−</button><input type="number" inputmode="decimal" min="0" ' + (row.isStandardProduct ? 'step="1"' : 'step="any"') + ' data-action="direct-quantity-input" data-quantity-key="' + escapeHtml(key) + '" aria-label="' + escapeHtml(row.productName + ' ' + label) + '" value="' + escapeHtml(value) + '" placeholder="0"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="1" aria-label="增加' + escapeHtml(row.productName + ' ' + label) + '">+</button></span></div>';
+      return '<article class="school-mobile-direct-row">'
+        + '<div class="school-mobile-direct-row-details"><strong class="school-mobile-direct-product-name">' + escapeHtml(row.productName || '') + '</strong><small>' + escapeHtml(row.productCode || '') + ' · ' + (row.isStandardProduct ? '标品' : '非标品') + '</small><span>' + directMoney(row.orderPrice) + '/' + escapeHtml(row.unit || '') + '</span></div>'
+        + '<div class="school-mobile-direct-row-purchase">' + field + '</div>'
+        + '</article>';
+    }).join('');
+    const filledDays = directFilledDates();
+    return '<div class="school-mobile-attendance-page school-mobile-direct-page"><div class="school-mobile-scroll school-mobile-attendance-scroll">'
+      + renderDateStrip('quantity')
+      + '<section class="school-mobile-summary-card school-mobile-direct-summary"><div><strong>' + escapeHtml(dateText(state.date)) + '</strong><small>' + escapeHtml(state.canteen) + '</small></div></section>'
+      + '<section class="school-mobile-demand-section"><div class="school-mobile-meal-tabs" role="tablist" aria-label="餐次切换">' + tabs + '</div>' + participantTabs
+      + (rows || '<div class="school-mobile-empty">当前餐次暂无可填报商品</div>') + '</section>'
+      + (preview.missingMappings?.length ? '<div class="school-mobile-notice"><i>!</i><span>当前食谱有未关联商品，请先完善关联。</span></div>' : '')
+      + '</div><div class="school-mobile-attendance-actions"><div class="school-mobile-filled-days"><span>已填写</span><strong>' + number(filledDays.length) + ' 天</strong></div><button type="button" class="school-mobile-button is-primary" data-action="direct-continue"' + (filledDays.length ? '' : ' disabled') + '>确认需求</button></div></div>';
+  }
+
+  function renderDirectConfirm() {
+    const preview = directDatesPreview();
+    const splitByMeal = shouldSplitConfirmByMeal();
+    const splitByPerson = shouldSplitConfirmByPersonType();
+    const participants = splitByPerson ? (preview.participants || []).filter((person) => preview.selectedRows.some((row) => Number(row.participantQty?.[person.key] || 0) > 0)) : [];
+    const activeParticipant = participants.find((person) => person.key === state.directParticipantKey) || participants[0] || null;
+    state.directParticipantKey = activeParticipant?.key || '';
+    const meals = splitByMeal ? preview.meals.filter((meal) => !activeParticipant || meal.rows.some((row) => Number(row.participantQty?.[activeParticipant.key] || 0) > 0)) : [];
+    const active = meals.find((meal) => meal.key === state.directMealKey) || meals[0];
+    state.directMealKey = active?.key || '';
+    const tabs = splitByMeal ? '<div class="school-mobile-meal-tabs" role="tablist" aria-label="餐次切换">' + meals.map((meal) => '<button type="button" class="school-mobile-meal-tag ' + (meal.key === state.directMealKey ? 'is-active' : '') + '" data-action="select-direct-meal" data-meal-key="' + escapeHtml(meal.key) + '" role="tab" aria-selected="' + (meal.key === state.directMealKey) + '">' + escapeHtml(meal.name) + '</button>').join('') + '</div>' : '';
+    const participantTabs = splitByPerson ? '<div class="school-mobile-direct-participant-tabs" role="tablist" aria-label="人员类型切换">' + participants.map((person) => '<button type="button" class="school-mobile-direct-participant-tab' + (person.key === state.directParticipantKey ? ' is-active' : '') + '" data-action="select-direct-participant" data-participant-key="' + escapeHtml(person.key) + '" role="tab" aria-selected="' + (person.key === state.directParticipantKey) + '">' + escapeHtml(orderTagName(person)) + '</button>').join('') + '</div>' : '';
+    const groupedRows = new Map();
+    (splitByMeal ? active?.rows || [] : preview.selectedRows).forEach((row) => {
+      const quantity = Number(activeParticipant ? row.participantQty?.[activeParticipant.key] : row.orderQty) || 0;
+      if (quantity <= 0) return;
+      const key = `${row.productCode}::${row.unit}`;
+      const existing = groupedRows.get(key);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.amount += quantity * Number(row.orderPrice || 0);
+      } else {
+        groupedRows.set(key, { row, quantity, amount: quantity * Number(row.orderPrice || 0) });
+      }
+    });
+    const visibleRows = [...groupedRows.values()];
+    const rows = visibleRows.map(({ row, quantity, amount }) => '<div class="school-mobile-direct-confirm-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode || '') + ' · ' + escapeHtml(row.unit || '') + '</small></div><div><strong>' + number(quantity) + ' ' + escapeHtml(row.unit || '') + '</strong><small>' + directMoney(amount) + '</small></div></div>').join('');
+    const total = visibleRows.reduce((sum, row) => sum + row.amount, 0);
+    return '<div class="school-mobile-confirm-page school-mobile-direct-confirm-page"><div class="school-mobile-scroll">'
+      + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + preview.dates.map((date) => '<div class="school-mobile-confirm-date is-selected is-complete" aria-label="用料日期 ' + escapeHtml(date) + ' 已填报"><strong>' + escapeHtml(shortDate(date)) + '</strong><small class="school-mobile-confirm-date-weekday">星期' + escapeHtml(weekdayText(date)) + '</small><small>已填报</small></div>').join('') + '</div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div></section>'
+      + '<section class="school-mobile-confirm-card school-mobile-direct-confirm-products"><h2>商品需求汇总</h2>' + tabs + participantTabs + (rows || '<div class="school-mobile-empty">当前拆单类型暂无商品需求</div>') + '</section>'
+      + (preview.message ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
+      + '</div><div class="school-mobile-direct-total"><span>合计金额</span><strong>' + directMoney(total) + '</strong></div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回</button><button type="button" class="school-mobile-button is-primary" data-action="direct-submit"' + (preview.canSubmit && !state.submitting ? '' : ' disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
+  }
+
+  async function submitDirectDemand() {
+    if (state.submitting) return;
+    const preview = directDatesPreview();
+    if (!preview.canSubmit) return showToast(preview.message || '当前需求不能提交', true);
+    ensureDemoSession();
+    const dates = [...state.directDates];
+    const drafts = Object.fromEntries(dates.map((date) => [date, readDirectDraft(date)]));
+    const expectedAt = dates[0] + ' 07:30:00';
+    state.submitting = true;
+    render();
+    try {
+      const result = state.tab === 'auxiliary'
+        ? await auxiliaryDirectService.submitDates(dates, currentCanteen(), drafts, expectedAt)
+        : await demandService.submitDirectDates(dates, drafts, { canteen: currentCanteen(), expectedAt });
+      dates.forEach((date) => writeDirectDraft(date, {}));
+      state.submitting = false;
+      state.screen = 'main';
+      state.tab = 'profile';
+      state.profileView = 'home';
+      state.profileSection = 'submissions';
+      state.record = result?.record || null;
+      state.directDates = [];
+      state.directMealKey = '';
+      state.sheet = null;
+      render();
+      showToast('需求已提交并生成订单');
+    } catch (error) {
+      state.submitting = false;
+      render();
+      showToast(error?.message || '提交失败，请重试', true);
+    }
   }
 
   function renderRecipePage() {
@@ -2290,7 +2461,7 @@
       : '';
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
-      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div></section>'
       + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>需求天数</span><strong>' + number(state.confirmDates.size) + '</strong></div></div></section>'
       + orderTagSwitcher
       + '<section class="school-mobile-confirm-card school-mobile-purchase-card">'
@@ -2506,9 +2677,9 @@
     const rows = sourceRecords.filter((record) => !keyword || String(record.recordNo || '').includes(keyword));
     if (!rows.length) return '<div class="school-mobile-empty">暂无匹配的提交记录</div>';
     return rows.map((record) => '<article class="school-mobile-record-card">'
-      + '<header><strong>' + escapeHtml(record.recordNo || '--') + '</strong></header>'
+      + '<header><strong>' + escapeHtml(record.recordNo || '--') + '</strong><span class="school-mobile-record-kind">' + escapeHtml(recordDemandType(record) + '-' + recordEntryMode(record)) + '</span></header>'
       + '<div class="school-mobile-record-date">用料日期：' + escapeHtml((record.dates || []).join('、') || '--') + '</div>'
-      + '<div class="school-mobile-record-metrics"><div><span>总人次</span><strong>' + number(record.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(record.productCount) + '</strong></div><div><span>订单数</span><strong>' + number((record.orders || []).length) + '</strong></div></div>'
+      + '<div class="school-mobile-record-metrics' + (record.entryMode === 'quantity' ? ' is-quantity' : '') + '">' + (record.entryMode === 'quantity' ? '' : '<div><span>总人次</span><strong>' + number(record.totalPersonTimes) + '</strong></div>') + '<div><span>商品种数</span><strong>' + number(record.productCount) + '</strong></div><div><span>订单数</span><strong>' + number((record.orders || []).length) + '</strong></div></div>'
       + '<footer><small>' + escapeHtml(record.submittedAt || '--') + '</small><button type="button" class="school-mobile-button" data-action="record" data-record-id="' + escapeHtml(record.id) + '">查看详情</button></footer>'
       + '</article>').join('');
   }
@@ -2542,11 +2713,38 @@
     return mealKeys.map((key) => knownMeals.find((meal) => meal.key === key) || { key, name: recordMealName(key) });
   }
 
-  function recordFilledMealNames(summary) {
+  function recordFilledMealNames(summary, record) {
+    if (record?.entryMode === 'quantity') {
+      if (Array.isArray(summary?.filledMeals) && summary.filledMeals.length) {
+        return [...new Set(summary.filledMeals.map(recordMealName))];
+      }
+      const ordersForDate = (record.orders || []).filter((order) => {
+        const dates = Array.isArray(order.dates) ? order.dates : String(order.date || '').split('、');
+        return dates.includes(summary?.date);
+      });
+      const splitMealNames = ordersForDate.filter((order) => order.mealKey)
+        .map((order) => recordOrderMealName(order));
+      if (splitMealNames.length) return [...new Set(splitMealNames)];
+      const itemMealNames = (summary?.items || []).flatMap((item) => item.mealNames || []);
+      if (itemMealNames.length) return [...new Set(itemMealNames.map(recordMealName))];
+      return [...new Set(ordersForDate.flatMap((order) => String(order.mealName || '').split('、'))
+        .map((name) => name.trim()).filter(Boolean).map(recordMealName))];
+    }
     const attendance = summary?.attendance?.meals || {};
     return recordMealDefinitions(summary)
       .filter((meal) => Object.values(attendance[meal.key] || {}).some((value) => value !== '' && value != null && String(value).trim() !== ''))
       .map((meal) => meal.name || recordMealName(meal.key));
+  }
+
+  function recordDemandType(record) {
+    const auxiliary = record?.demandType === 'auxiliary' || record?.auxiliary === true
+      || /商品需求|辅料需求/.test(String(record?.source || ''))
+      || (record?.items || []).some((item) => item.doseUnit && item.dose != null);
+    return auxiliary ? '商品需求填报' : '食材需求填报';
+  }
+
+  function recordEntryMode(record) {
+    return record?.entryMode === 'quantity' ? '采购数量填报' : '就餐人数填报';
   }
 
   function recordOrderMealName(order) {
@@ -2913,15 +3111,18 @@
     const record = state.record;
     if (!record) return '<div class="school-mobile-scroll"><div class="school-mobile-empty">未找到该提交记录</div></div>';
     const summaries = (record.dateSummaries || []).map((summary) => {
-      const filledMeals = recordFilledMealNames(summary);
+      const filledMeals = recordFilledMealNames(summary, record);
       const mealText = filledMeals.length ? filledMeals.join('、') : '未填写';
-      return '<div class="school-mobile-detail-date"><div class="school-mobile-detail-date-main"><strong>' + escapeHtml(summary.date) + '</strong><span class="school-mobile-detail-date-meals">' + escapeHtml(mealText) + '</span></div><span>' + number(summary.totalPersonTimes) + ' 人次 · ' + number(summary.productCount) + ' 种商品</span></div>';
+      const metrics = (record.entryMode === 'quantity' ? '' : number(summary.totalPersonTimes) + ' 人次 · ') + number(summary.productCount) + ' 种商品';
+      return '<div class="school-mobile-detail-date"><div class="school-mobile-detail-date-main"><strong>' + escapeHtml(summary.date) + '</strong><span class="school-mobile-detail-date-meals">' + escapeHtml(mealText) + '</span></div><span>' + escapeHtml(metrics) + '</span></div>';
     }).join('');
     const orders = (record.orders || []).map((order) => '<div class="school-mobile-order-row"><strong>' + escapeHtml(order.orderNo || order.id || '--') + '</strong><span class="school-mobile-order-meal">' + escapeHtml(recordOrderMealName(order)) + '</span><span class="school-mobile-record-order-tag">' + escapeHtml(order.orderTag || order.orderTagName || order.recipeParticipantType || '食谱需求') + '</span></div>').join('');
     return '<div class="school-mobile-scroll">'
       + '<section class="school-mobile-info-card"><h2>基本信息</h2><div class="school-mobile-info-grid">'
       + '<div><span>记录编号</span><strong>' + escapeHtml(record.recordNo || '--') + '</strong></div>'
       + '<div><span>食堂</span><strong>' + escapeHtml(record.canteen || state.canteen) + '</strong></div>'
+      + '<div><span>填报类型</span><strong>' + escapeHtml(recordDemandType(record)) + '</strong></div>'
+      + '<div><span>填报方式</span><strong>' + escapeHtml(recordEntryMode(record)) + '</strong></div>'
       + '<div><span>操作人</span><strong>' + escapeHtml(record.submittedBy || '--') + '</strong></div>'
       + '<div><span>期望送达时间</span><strong>' + escapeHtml(record.expectedAt || '--') + '</strong></div>'
       + '<div><span>提交时间</span><strong>' + escapeHtml(record.submittedAt || '--') + '</strong></div>'
@@ -3169,7 +3370,9 @@
   }
 
   function render() {
-    const content = state.screen === 'confirm'
+    const content = state.screen === 'direct-confirm'
+      ? renderDirectConfirm()
+      : state.screen === 'confirm'
       ? (state.confirmMode === 'auxiliary' ? renderAuxiliaryConfirm() : renderConfirm())
       : state.screen === 'product-orders'
       ? renderProductOrders()
@@ -3180,15 +3383,17 @@
       : state.tab === 'home'
           ? renderHome()
           : state.tab === 'attendance'
-            ? renderAttendance()
+            ? state.demandEntryMode === 'quantity' ? renderDirectQuantity() : renderAttendance()
           : state.tab === 'auxiliary'
-            ? renderAttendance()
+            ? state.demandEntryMode === 'quantity' ? renderDirectQuantity() : renderAttendance()
           : state.tab === 'cart'
             ? renderProductCart()
           : state.tab === 'profile'
             ? renderProfile()
             : renderRecipePage();
-    const sheet = state.sheet?.type === 'canteen'
+    const sheet = state.sheet?.type === 'entry-mode'
+      ? renderEntryModeSheet()
+      : state.sheet?.type === 'canteen'
       ? renderCanteenSheet()
       : ['account-switch', 'account-logout'].includes(state.sheet?.type)
         ? renderAccountSwitchSheet()
@@ -3480,6 +3685,22 @@
       render();
       showToast(error?.message || '提交失败，请稍后重试', true);
     }
+  }
+
+  function updateDirectQuantity(input) {
+    const draft = readDirectDraft(state.date);
+    const key = input.dataset.quantityKey;
+    if (input.value === '') {
+      if (state.directParticipantKey) draft[key] = '0';
+      else delete draft[key];
+    }
+    else draft[key] = input.value;
+    writeDirectDraft(state.date, draft);
+    const filledDays = directFilledDates();
+    const counter = app.querySelector('.school-mobile-direct-page .school-mobile-filled-days strong');
+    if (counter) counter.textContent = number(filledDays.length) + ' 天';
+    const button = app.querySelector('[data-action="direct-continue"]');
+    if (button) button.disabled = !filledDays.length;
   }
 
   app.addEventListener('click', (event) => {
@@ -3811,27 +4032,75 @@
 
     if (action === 'open-attendance') {
       if (!menuFor(state.date)) return;
-      state.screen = 'main';
-      state.tab = 'attendance';
-      state.attendanceReturnTab = 'recipe';
-      state.attendanceInputMode = 'dining';
-      state.sheet = null;
-      loadAttendance();
+      state.sheet = { type: 'entry-mode', demandType: 'ingredient' };
       render();
       return;
     }
 
     if (action === 'open-auxiliary-attendance') {
       if (!menuFor(state.date)) return;
+      state.sheet = { type: 'entry-mode', demandType: 'auxiliary' };
+      render();
+      return;
+    }
+
+    if (action === 'choose-entry-mode' && state.sheet?.type === 'entry-mode') {
+      state.demandEntryMode = target.dataset.entryMode === 'quantity' ? 'quantity' : 'people';
       state.screen = 'main';
-      state.tab = 'auxiliary';
+      state.tab = state.sheet.demandType === 'auxiliary' ? 'auxiliary' : 'attendance';
       state.attendanceReturnTab = 'recipe';
       state.attendanceInputMode = 'dining';
       state.attendanceValidationHighlightDate = '';
       state.sheet = null;
-      loadAttendance();
-      fillDefaultsIfEmpty();
+      state.directMealKey = '';
+      state.directParticipantKey = '';
+      if (state.demandEntryMode === 'people') {
+        loadAttendance();
+        fillDefaultsIfEmpty();
+      }
       render();
+      return;
+    }
+
+    if (action === 'select-direct-meal') {
+      state.directMealKey = target.dataset.mealKey || '';
+      render();
+      return;
+    }
+
+    if (action === 'select-direct-participant') {
+      state.directParticipantKey = target.dataset.participantKey || '';
+      render();
+      return;
+    }
+
+    if (action === 'direct-quantity-step') {
+      const input = target.closest('.school-mobile-direct-input-wrap')?.querySelector('input');
+      if (!input) return;
+      const current = Number(input.value);
+      const amount = Number.isFinite(current) && current >= 0 && (input.step !== '1' || Number.isInteger(current)) ? current : 0;
+      const delta = target.dataset.step === '-1' ? -1 : 1;
+      input.value = String(Math.max(0, Number((amount + delta).toFixed(6))));
+      updateDirectQuantity(input);
+      return;
+    }
+
+    if (action === 'direct-continue') {
+      const dates = directFilledDates();
+      const preview = directDatesPreview(dates);
+      if (!preview.canSubmit) {
+        showToast(preview.message || '请先填写采购数量', true);
+        return;
+      }
+      state.directDates = dates;
+      state.directMealKey = '';
+      state.screen = 'direct-confirm';
+      render();
+      return;
+    }
+
+    if (action === 'direct-submit') {
+      submitDirectDemand();
       return;
     }
 
@@ -3870,6 +4139,13 @@
       return;
     }
     if (action === 'back') {
+      if (state.screen === 'direct-confirm') {
+        state.screen = 'main';
+        state.directDates = [];
+        state.directMealKey = '';
+        render();
+        return;
+      }
       if (state.screen === 'product-orders') {
         state.screen = 'main';
         state.tab = 'home';
@@ -3884,6 +4160,8 @@
       if (state.screen === 'main' && ['attendance', 'auxiliary'].includes(state.tab)) {
         state.tab = state.attendanceReturnTab || 'recipe';
         state.attendanceInputMode = 'dining';
+        state.demandEntryMode = 'people';
+        state.directMealKey = '';
         state.attendanceReturnTab = '';
         state.sheet = null;
         render();
@@ -3961,12 +4239,12 @@
       return;
     }
     if (action === 'change-month') {
-      if (['attendance', 'auxiliary'].includes(state.tab) && state.attendanceInputMode === 'non-dining') return;
+      if (['attendance', 'auxiliary'].includes(state.tab) && state.demandEntryMode === 'people' && state.attendanceInputMode === 'non-dining') return;
       changeMonth(target.dataset.monthDelta);
       return;
     }
     if (action === 'select-date') {
-      if (['attendance', 'auxiliary'].includes(state.tab) && state.attendanceInputMode === 'non-dining') return;
+      if (['attendance', 'auxiliary'].includes(state.tab) && state.demandEntryMode === 'people' && state.attendanceInputMode === 'non-dining') return;
       const strip = target.closest('[data-date-strip]');
       if (strip) {
         const scrollKey = (strip.dataset.stripMode || '') + '|' + (strip.dataset.monthKey || '');
@@ -4332,6 +4610,10 @@
     const target = event.target.closest('[data-action]');
     if (!target || !app.contains(target)) return;
     const action = target.dataset.action;
+    if (action === 'direct-quantity-input') {
+      updateDirectQuantity(target);
+      return;
+    }
     if ((action === 'order-detail-quantity' || action === 'order-detail-remark') && state.orderDetailEditing) {
       const index = Number(target.dataset.orderItemIndex);
       const item = Number.isInteger(index) ? state.orderDetailDraft?.items?.[index] : null;
@@ -4450,6 +4732,14 @@
         if (!canModifyConfirmUnitPrice()) return;
         validateConfirmUnitPriceInput(productTarget, { format: true });
         rememberConfirmUnitPrice(productTarget);
+        return;
+      }
+      if (productAction === 'direct-quantity-input') {
+        const value = productTarget.value.trim();
+        if (value && (!Number.isFinite(Number(value)) || Number(value) < 0 || (productTarget.step === '1' && !Number.isInteger(Number(value))))) {
+          showToast(productTarget.step === '1' ? '标品采购量需填写非负整数' : '采购量需填写非负数', true);
+        }
+        render();
         return;
       }
       if (productAction === 'product-checkout-date') {

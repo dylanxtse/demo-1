@@ -45,6 +45,8 @@ test('直接填量生成学校订单、企业订单和独立需求记录', async
     canteen: '第一食堂', expectedAt: `${date} 07:30:00`
   });
   assert.equal(result.record.entryMode, 'quantity');
+  assert.equal(result.record.demandType, 'ingredient');
+  assert.equal(result.record.dateSummaries[0].filledMeals.length, 2);
   assert.equal(result.record.totalPersonTimes, 0);
   assert.equal(result.record.productCount, 1);
   assert.equal(result.orders.length, 1);
