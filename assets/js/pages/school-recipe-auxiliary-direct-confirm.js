@@ -29,11 +29,11 @@
   const renderDateTable = (demand) => {
     const cannotDelete = demand.dates.length <= 1;
     const rows = demand.dateSummaries.map((summary) => {
-      const products = orderMode === 'combined' ? demand.selectedRows : summary.selectedRows;
-      const productCount = new Set(products.map((row) => `${row.productCode}::${row.unit}`)).size;
-      return `<tr><td>${escapeHtml(summary.date)}</td><td class="is-number">${quantity(productCount)}</td><td class="school-recipe-demand-table-action"><button type="button" class="school-recipe-demand-delete" data-aux-direct-delete-date="${escapeHtml(summary.date)}" title="${cannotDelete ? '至少保留一个填报日期' : '删除该日期填报'}" ${cannotDelete ? 'disabled' : ''}>删除</button></td></tr>`;
+      const productCount = orderMode === 'combined' ? ''
+        : `<td class="is-number">${quantity(new Set(summary.selectedRows.map((row) => `${row.productCode}::${row.unit}`)).size)}</td>`;
+      return `<tr><td>${escapeHtml(summary.date)}</td>${productCount}<td class="school-recipe-demand-table-action"><button type="button" class="school-recipe-demand-delete" data-aux-direct-delete-date="${escapeHtml(summary.date)}" title="${cannotDelete ? '至少保留一个填报日期' : '删除该日期填报'}" ${cannotDelete ? 'disabled' : ''}>删除</button></td></tr>`;
     }).join('');
-    return `<div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-direct-date-table"><thead><tr><th>用料日期</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-direct-date-table"><thead><tr><th>用料日期</th>${orderMode === 'combined' ? '' : '<th>商品种数</th>'}<th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   };
   const returnUrl = () => `./school-recipe-auxiliary-attendance.html?mode=quantity${orderMode === 'legacy' ? '' : `&orderMode=${orderMode}`}&date=${encodeURIComponent(date)}`;
   const navigate = (url) => {

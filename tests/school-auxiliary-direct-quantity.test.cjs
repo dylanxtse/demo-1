@@ -313,6 +313,8 @@ test('多天合并仅使用辅料设置的商品，一次总量只生成一笔�
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-record-detail.js'), 'utf8'), context);
   assert.match(recordDetailHtml, new RegExp(`<td>--</td><td>${order.orderTag}</td>`));
   assert.doesNotMatch(recordDetailHtml, /不区分餐次/);
+  assert.match(recordDetailHtml, /<h3>用料日期明细<\/h3>[\s\S]*?<thead><tr><th>用料日期<\/th><\/tr><\/thead>/);
+  assert.doesNotMatch(recordDetailHtml, /<th>用料日期<\/th><th>商品种数<\/th>/);
   const enterpriseOrder = context.DemoStore.get('orders').find((item) => item.orderId === order.id);
   assert.equal(enterpriseOrder?.orderMode, 'combined');
   assert.equal(enterpriseOrder?.items[0]?.quantity, 2);
@@ -397,8 +399,9 @@ test('多天合并填报页直接显示辅料设置商品，确认页不显示�
   assert.match(confirmHtml, /用料食堂：<strong>第一食堂<\/strong>/);
   assert.match(confirmHtml, /填报天数：<strong>2<\/strong>/);
   assert.match(confirmHtml, /<span class="section-title-mark">用料日期明细<\/span>/);
-  assert.match(confirmHtml, new RegExp(`<td>${date}</td><td class="is-number">1</td>`));
-  assert.match(confirmHtml, /<th>用料日期<\/th><th>商品种数<\/th><th>操作<\/th>/);
+  assert.match(confirmHtml, new RegExp(`<td>${date}</td><td class="school-recipe-demand-table-action">`));
+  assert.match(confirmHtml, /<th>用料日期<\/th><th>操作<\/th>/);
+  assert.doesNotMatch(confirmHtml, /<th>商品种数<\/th>/);
   assert.doesNotMatch(confirmHtml, /下单方式：|期望送达：/);
   assert.match(confirmHtml, /<td colspan="6">合计金额<\/td>/);
   assert.doesNotMatch(confirmHtml, /本次合并订单合计金额/);

@@ -160,6 +160,15 @@
   border: 1px solid var(--border-light);
 }
 
+.school-recipe-demand-record-detail-page .school-recipe-demand-date-detail-section.is-compact .school-recipe-demand-detail-table-wrap {
+  width: max-content;
+  max-width: 100%;
+}
+
+.school-recipe-demand-record-detail-page .school-recipe-demand-date-detail-table {
+  min-width: 0;
+}
+
 .school-recipe-demand-detail-table {
   width: 100%;
   min-width: 760px;
