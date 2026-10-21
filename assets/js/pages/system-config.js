@@ -134,10 +134,10 @@
           </div>
         </div>
         <div class="config-row recipe-delivery-row">
-          <div class="config-label">食谱下单送达时间${help('仅影响学校端食谱下单，手动添加订单不受影响')}</div>
+          <div class="config-label">需求填报下单送达时间${help('仅影响学校端需求填报下单，手动添加订单不受影响')}</div>
           <div class="config-inline-fields">
-            <span>用料日期前</span><input class="config-input config-days-input" type="number" min="0" max="365" step="1" data-config="recipeDeliveryAdvanceDays" aria-label="食谱下单配送提前天数" readonly><span>天的</span>
-            <input class="config-input recipe-delivery-time-input" type="time" data-config="recipeDeliveryTime" aria-label="食谱下单固定送达时间" readonly>
+            <span>用料日期前</span><input class="config-input config-days-input" type="number" min="0" max="365" step="1" data-config="recipeDeliveryAdvanceDays" aria-label="需求填报下单配送提前天数" readonly><span>天的</span>
+            <input class="config-input recipe-delivery-time-input" type="time" data-config="recipeDeliveryTime" aria-label="需求填报下单固定送达时间" readonly>
             <button class="config-apply" type="button" data-action="edit-recipe-delivery">编辑</button>
             <button class="config-apply" type="button" data-action="apply-recipe-delivery" hidden>应用</button>
             <button class="config-apply" type="button" data-action="cancel-recipe-delivery" hidden>取消</button>
