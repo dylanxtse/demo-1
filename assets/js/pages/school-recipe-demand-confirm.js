@@ -19,6 +19,7 @@
   };
   const state = {
     selectedDates: new Set(filledDateSummaries.map((summary) => summary.date)),
+    excludedDirectDates: new Set(),
     activeMealKey: '',
     expectedAt: '',
     submitting: false,
@@ -35,13 +36,6 @@
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-  const renderDirectDates = (dates) => {
-    const sorted = [...dates].sort();
-    if (sorted.length <= 2) {
-      return `<span>用料日期：<strong>${escapeHtml(sorted.join('、') || '--')}</strong></span>`;
-    }
-    return `<div class="school-recipe-direct-confirm-date-summary">用料日期：<strong>${escapeHtml(sorted[0])}、${escapeHtml(sorted.at(-1))}</strong><details><summary>查看全部</summary><div class="school-recipe-direct-confirm-date-list">${sorted.map((date) => `<span>${escapeHtml(date)}</span>`).join('')}</div></details></div>`;
-  };
   const number = (value) => Number(value || 0).toLocaleString('zh-CN', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
@@ -145,7 +139,7 @@
   const directDates = () => Object.keys(directDrafts)
     .filter((key) => key.startsWith(directScopePrefix))
     .map((key) => key.slice(directScopePrefix.length))
-    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date) && !state.excludedDirectDates.has(date)
       && demandService.buildDirectPreview(date, directDrafts[`${directScopePrefix}${date}`], { canteen: currentCanteenScope }).selectedRows.length)
     .sort();
   const directQuantitiesByDate = () => Object.fromEntries(directDates().map((date) => [date, directDrafts[`${directScopePrefix}${date}`]]));
@@ -431,7 +425,8 @@
     const canSubmit = preview.canSubmit && expectedAtIsAllowed(expectedAt, preview.dates) && !state.submitting;
     return `<main class="school-recipe-demand-detail-panel" aria-label="食材需求确认详情">
       <header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>食材需求确认</h1></header>
-      <div class="school-recipe-demand-detail-scroll"><div class="school-recipe-direct-confirm-meta"><span>用料食堂：<strong>${escapeHtml(currentCanteenName)}</strong></span><span>填报天数：<strong>${preview.dates.length}</strong></span>${renderDirectDates(preview.dates)}</div>
+      <div class="school-recipe-demand-detail-scroll"><div class="school-recipe-direct-confirm-meta"><span>用料食堂：<strong>${escapeHtml(currentCanteenName)}</strong></span><span>填报天数：<strong>${preview.dates.length}</strong></span></div>
+        <section class="school-recipe-demand-section school-recipe-demand-date-detail-section"><header><div><span class="section-title-mark">用料日期明细</span></div></header>${renderDirectDateTable(preview)}</section>
         <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>
           ${!preview.canSubmit ? `<div class="school-recipe-direct-confirm-warning">${escapeHtml(preview.message || '当前需求无法提交')}</div>` : ''}
           ${mealTabs}${table}
@@ -439,6 +434,16 @@
       </div>
       <footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit"${canSubmit ? '' : ' disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer>
     </main>`;
+  }
+
+  function renderDirectDateTable(preview) {
+    const summaries = preview.dateSummaries || [];
+    const cannotDelete = summaries.length <= 1;
+    const rows = summaries.map((summary) => {
+      const productCount = new Set((summary.selectedRows || []).map((row) => `${row.productCode}::${row.unit}`)).size;
+      return `<tr><td>${escapeHtml(summary.date)}</td><td class="is-number">${number(productCount)}</td><td class="school-recipe-demand-table-action"><button type="button" class="school-recipe-demand-delete" data-action="delete-direct-date" data-date="${escapeHtml(summary.date)}" title="${cannotDelete ? '至少保留一个填报日期' : '删除该日期填报'}" ${cannotDelete ? 'disabled' : ''}>删除</button></td></tr>`;
+    }).join('');
+    return `<div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-direct-date-table"><thead><tr><th>用料日期</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
   const content = `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeDemandConfirmPage" aria-label="食材需求确认"><div class="school-recipe-demand-confirm-body" id="schoolRecipeDemandConfirmBody"></div></section>`;
@@ -784,9 +789,15 @@
         renderBody({ preserveViewport: true });
         return;
       }
-      const action = event.target.closest('[data-action]')?.dataset.action;
+      const button = event.target.closest('[data-action]');
+      const action = button?.dataset.action;
       if (action === 'back') {
         navigate(attendanceReturnUrl());
+      } else if (action === 'delete-direct-date') {
+        const date = button.dataset.date;
+        if (button.disabled || !date || directDates().length <= 1 || !directDates().includes(date)) return;
+        state.excludedDirectDates.add(date);
+        renderBody({ preserveViewport: true });
       } else if (action === 'submit' && !state.submitting) {
         const preview = directPreview();
         if (!preview.canSubmit) {

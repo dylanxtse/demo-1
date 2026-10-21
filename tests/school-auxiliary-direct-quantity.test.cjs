@@ -379,7 +379,8 @@ test('多天合并填报页直接显示辅料设置商品，确认页不显示�
   assert.match(confirmHtml, /填报天数：<strong>2<\/strong>/);
   assert.match(confirmHtml, /用料日期：/);
   assert.doesNotMatch(confirmHtml, /下单方式：|期望送达：/);
-  assert.match(confirmHtml, /本次合并订单合计金额/);
+  assert.match(confirmHtml, /<td colspan="6">合计金额<\/td>/);
+  assert.doesNotMatch(confirmHtml, /本次合并订单合计金额/);
   assert.doesNotMatch(confirmHtml, /data-aux-direct-confirm-meal=/);
 });
 

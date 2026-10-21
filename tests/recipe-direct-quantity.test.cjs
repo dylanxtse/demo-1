@@ -190,7 +190,9 @@ test('直接填量确认汇总当前食堂多个日期，并按餐次合并相�
   context.AppShell = { mount() { return { querySelector() { return page; } }; } };
   context.location = { search: `?mode=quantity&date=${secondDate}&canteen=${encodeURIComponent(canteen.id || canteen.name)}` };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-confirm.js'), 'utf8'), context);
-  assert.match(body.innerHTML, new RegExp(`用料日期：<strong>${firstDate}、${secondDate}</strong>`));
+  assert.match(body.innerHTML, /<span class="section-title-mark">用料日期明细<\/span>/);
+  assert.match(body.innerHTML, new RegExp(`<td>${firstDate}</td><td class="is-number">1</td>`));
+  assert.match(body.innerHTML, new RegExp(`<td>${secondDate}</td><td class="is-number">1</td>`));
   assert.match(body.innerHTML, /填报天数：<strong>2<\/strong>/);
   assert.match(body.innerHTML, /<td class="is-number">5<\/td>/);
 
@@ -205,7 +207,7 @@ test('直接填量确认汇总当前食堂多个日期，并按餐次合并相�
   assert.equal(context.SchoolOrderService.get(breakfastOrder.orderId).items.find((row) => row.productCode === firstRow.productCode).orderQty, 5);
 });
 
-test('食材数量确认页的多个用料日期缩略展示并可查看全部', () => {
+test('食材数量确认页按明细展示日期，可删除日期且至少保留一天', () => {
   const context = app();
   const service = context.SchoolRecipeDemandService;
   const dates = context.SchoolRecipeService.getAll().slice(0, 3).map((menu) => menu.date);
@@ -217,14 +219,36 @@ test('食材数量确认页的多个用料日期缩略展示并可查看全部',
     `${canteen.id || canteen.name}::${date}`, drafts[date]
   ])));
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
-  const body = { innerHTML: '' };
-  const page = { querySelector(selector) { return selector === '#schoolRecipeDemandConfirmBody' ? body : null; }, addEventListener() {} };
+  const body = { innerHTML: '', scrollLeft: 0, scrollTop: 0, querySelector() { return null; }, querySelectorAll() { return []; } };
+  const listeners = {};
+  const page = { querySelector(selector) { return selector === '#schoolRecipeDemandConfirmBody' ? body : null; }, addEventListener(type, handler) { listeners[type] = handler; } };
   context.AppShell = { mount() { return { querySelector() { return page; } }; } };
   context.location = { search: `?mode=quantity&date=${dates[1]}&canteen=${canteen.id}` };
+  context.scrollTo = () => {};
+  context.requestAnimationFrame = (callback) => callback();
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-confirm.js'), 'utf8'), context);
-  assert.match(body.innerHTML, new RegExp(`用料日期：<strong>${dates[0]}、${dates[2]}</strong>`));
-  assert.match(body.innerHTML, /<summary>查看全部<\/summary>/);
-  dates.forEach((date) => assert.ok(body.innerHTML.includes(`<span>${date}</span>`)));
+  assert.match(body.innerHTML, /<th>用料日期<\/th><th>商品种数<\/th><th>操作<\/th>/);
+  dates.forEach((date) => assert.ok(body.innerHTML.includes(`<td>${date}</td>`)));
+  assert.match(body.innerHTML, /填报天数：<strong>3<\/strong>/);
+  const deleteDate = (date, disabled = false) => listeners.click({ target: {
+    closest(selector) {
+      if (selector === '[data-direct-confirm-meal-tab]') return null;
+      return selector === '[data-action]' ? { dataset: { action: 'delete-direct-date', date }, disabled } : null;
+    }
+  } });
+  deleteDate(dates[0]);
+  assert.doesNotMatch(body.innerHTML, new RegExp(`<td>${dates[0]}</td>`));
+  assert.match(body.innerHTML, /填报天数：<strong>2<\/strong>/);
+  deleteDate(dates[1]);
+  assert.match(body.innerHTML, /填报天数：<strong>1<\/strong>/);
+  assert.match(body.innerHTML, new RegExp(`<td>${dates[2]}</td>[\\s\\S]*?data-action="delete-direct-date" data-date="${dates[2]}" title="至少保留一个填报日期" disabled`));
+  const remainingPreview = service.buildDirectDatesPreview([dates[2]], { [dates[2]]: drafts[dates[2]] }, { canteen });
+  const remainingTotal = remainingPreview.selectedRows.reduce((sum, row) => sum + row.orderPrice * row.orderQty, 0);
+  const formattedTotal = remainingTotal.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  assert.ok(body.innerHTML.includes(`所有餐次合计金额</td><td class="is-number">¥${formattedTotal}</td>`));
+  deleteDate(dates[2]);
+  assert.match(body.innerHTML, /填报天数：<strong>1<\/strong>/);
+  assert.equal(Object.keys(context.AppStorage.read('school-recipe-demand-direct-drafts-v1', {})).length, 3);
 });
 
 test('按人员类型拆单时，直接填量分别汇总人员采购量并生成对应订单', async () => {
