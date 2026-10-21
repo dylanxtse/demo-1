@@ -101,7 +101,24 @@
         };
       })
     };
-    navigate(`./sorting-label-print.html?printData=${encodeURIComponent(JSON.stringify(payload))}`);
+    const printKey = `sorting-label-print-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const serializedPayload = JSON.stringify(payload);
+    let stored = false;
+    for (const storageName of ['sessionStorage', 'localStorage']) {
+      try {
+        const storage = window[storageName];
+        storage?.setItem(printKey, serializedPayload);
+        if (storage?.getItem(printKey) === serializedPayload) {
+          stored = true;
+          break;
+        }
+      } catch (error) { /* 尝试下一个浏览器存储。 */ }
+    }
+    if (!stored) {
+      window.alert('无法保存打印数据，请检查浏览器存储空间后重试');
+      return;
+    }
+    navigate(`./sorting-label-print.html?printKey=${encodeURIComponent(printKey)}`);
   }
 
   const printSortingLabels = (items) => openSortingLabelTemplate(items, 'product');
