@@ -6,7 +6,7 @@
       { name: '商品管理', href: './school-product-management.html' }
     ] },
     { name: '订单管理', icon: 'cart', href: './school-order-management.html' },
-    { name: '食谱中心', icon: 'layers', children: [
+    { name: '需求填报', icon: 'layers', children: [
       { name: '食材需求填报', href: './school-recipe-attendance.html' },
       { name: '商品需求填报', href: './school-recipe-auxiliary-attendance.html' },
       { name: '需求提交记录', href: './school-recipe-demand-records.html' },

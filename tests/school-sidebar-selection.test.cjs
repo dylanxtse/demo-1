@@ -27,7 +27,7 @@ function selectedMenu(pathname, search, variant = 'school') {
 test('食材填报和确认页带日期参数时仍展开并选中对应左侧菜单', () => {
   for (const pathname of ['/school-recipe-attendance.html', '/school-recipe-demand-confirm.html']) {
     const html = selectedMenu(pathname, '?mode=people&date=2026-09-07');
-    assert.match(html, /class="menu-item active expanded[^"]*"[^>]*>[\s\S]*?食谱中心/);
+    assert.match(html, /class="menu-item active expanded[^"]*"[^>]*>[\s\S]*?需求填报/);
     assert.match(html, /class="menu-sub-item selected[^"]*"[^>]*data-menu-link="\.\/school-recipe-attendance\.html"/);
   }
 });
