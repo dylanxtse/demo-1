@@ -271,3 +271,136 @@ test('商品数量按人员类型拆单时订单只关联该类型已填写的�
   assert.deepEqual(Array.from(breakfastOrders, (order) => order.dates.join('、')).sort(), [date, nextDate]);
   assert.deepEqual(Array.from(result.record.items[0].sourceDates), [date, nextDate]);
 });
+
+test('多天合并仅使用辅料设置的商品，一次总量只生成一笔无餐次订单', async () => {
+  const context = app();
+  context.DemoStore.updateSettings({ splitOrderByMeal: true, splitOrderByPersonType: true });
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  context.AppStorage.write('school-recipe-auxiliary-selected-products-v1', { [canteen.id]: ['aux-oil'] });
+  const oil = service.catalogProducts(canteen)[0];
+  assert.equal(oil.code, 'SP0300030');
+  assert.deepEqual(Array.from(service.catalogProducts(canteen), (product) => product.id), ['aux-oil']);
+  assert.deepEqual(Array.from(service.buildPreview(date, canteen).meals[0].rows, (row) => row.productCode), [oil.code]);
+  const draft = { dates: [date, '2026-09-18'], quantities: { [oil.code]: '2', SP0300034: '9' } };
+  service.writeCombinedDraft(canteen, draft);
+  assert.deepEqual(Array.from(service.readCombinedDraft(canteen).dates), draft.dates);
+  const preview = service.buildCombinedPreview(canteen);
+  assert.equal(preview.canSubmit, true);
+  assert.deepEqual(Array.from(preview.rows, (row) => row.productCode), [oil.code], '商品档案中的大米不能混入辅料填报');
+  assert.equal(preview.selectedRows[0].orderQty, 2);
+  assert.equal(service.buildCombinedPreview(canteen, { ...draft, quantities: { [oil.code]: '-1' } }).canSubmit, false);
+
+  const result = await service.submitDates(draft.dates, canteen, draft, `${date} 07:30:00`, 'combined');
+  assert.equal(result.record.orderMode, 'combined');
+  assert.equal(result.orders.length, 1);
+  assert.deepEqual(Array.from(result.orders[0].dates), draft.dates);
+  assert.equal(result.record.items[0].totalQty, 2);
+  assert.ok(result.record.dateSummaries.every((summary) => summary.items.length === 0), '周期总量不得复制到每天');
+  const order = context.SchoolOrderService.get(result.orders[0].orderId);
+  assert.equal(order.orderMode, 'combined');
+  assert.equal(order.mealName, '');
+  assert.equal(order.items[0].orderQty, 2);
+  assert.equal(order.recipeDemandDate, draft.dates.join('、'));
+  const enterpriseOrder = context.DemoStore.get('orders').find((item) => item.orderId === order.id);
+  assert.equal(enterpriseOrder?.orderMode, 'combined');
+  assert.equal(enterpriseOrder?.items[0]?.quantity, 2);
+});
+
+test('分天分餐次明确按日期和餐次下单，不受全局餐次合并设置影响', async () => {
+  const context = app();
+  context.DemoStore.updateSettings({ splitOrderByMeal: false });
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const meals = service.buildPreview(date, canteen).meals;
+  const nextDate = '2026-09-17';
+  const drafts = {
+    [date]: { [meals[0].rows[0].key]: '1', [meals[1].rows[0].key]: '2' },
+    [nextDate]: { [meals[0].rows[0].key]: '3' }
+  };
+  const result = await service.submitDates([date, nextDate], canteen, drafts, `${date} 07:30:00`, 'daily');
+  assert.equal(result.record.orderMode, 'daily');
+  assert.equal(result.orders.length, 3);
+  assert.ok(result.orders.every((row) => context.SchoolOrderService.get(row.orderId).orderMode === 'daily'));
+  assert.deepEqual(Array.from(result.orders, (order) => `${order.dates[0]}:${order.mealKey}`).sort(),
+    [`${date}:breakfast`, `${date}:lunch`, `${nextDate}:breakfast`]);
+  assert.deepEqual(Array.from(result.orders, (order) => context.SchoolOrderService.get(order.orderId).items[0].orderQty).sort((a, b) => a - b), [1, 2, 3]);
+});
+
+test('多天合并填报页直接显示辅料设置商品，确认页不显示餐次', () => {
+  const context = app();
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  context.AppStorage.write('school-recipe-auxiliary-selected-products-v1', { [canteen.id]: ['aux-salt'] });
+  context.location = { search: `?mode=quantity&orderMode=combined&date=${date}` };
+  const listeners = {};
+  const page = { outerHTML: '' };
+  context.AppShell = { mount({ content }) {
+    page.outerHTML = content;
+    return {
+      querySelector(selector) { return selector === '#schoolAuxiliaryPage' ? page : null; },
+      addEventListener(type, handler) { listeners[type] = handler; }
+    };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
+  assert.match(page.outerHTML, /多天合并下单/);
+  assert.doesNotMatch(page.outerHTML, /<span>下单方式<\/span>/);
+  assert.match(page.outerHTML, /<span class="section-title-mark">填写采购量<\/span>/);
+  assert.match(page.outerHTML, /id="schoolAuxiliaryOverview"[^]*用料日期：[^]*class="school-auxiliary-combined-dates"/, '已选日期显示在用料日期行');
+  assert.doesNotMatch(page.outerHTML, /用料日期：<\/span><strong>/, '合并模式不显示单日日期');
+  assert.doesNotMatch(page.outerHTML, /在左侧日历选择用料日期；按辅料设置中的商品填写周期总量/);
+  assert.match(page.outerHTML, /食盐/);
+  assert.match(page.outerHTML, /data-aux-combined-quantity="SP0300031"/);
+  assert.match(page.outerHTML, /placeholder="请输入"[^>]*data-aux-combined-quantity="SP0300031"/);
+  assert.doesNotMatch(page.outerHTML, /金龙鱼5L桶装油/);
+  assert.doesNotMatch(page.outerHTML, /data-aux-combined-add-product|data-aux-combined-remove-product|请选择已维护商品/);
+  assert.match(page.outerHTML, /选择用料日期（可多选）/);
+  assert.doesNotMatch(page.outerHTML, /data-aux-direct-meal=/);
+  listeners.click({ target: { closest(selector) {
+    return selector === '[data-aux-date]' ? { dataset: { auxDate: date } } : null;
+  } } });
+  const draft = service.readCombinedDraft(canteen);
+  assert.deepEqual(Array.from(draft.dates), [date]);
+  assert.match(page.outerHTML, /class="school-auxiliary-combined-date">2026-09-16/);
+  assert.equal((page.outerHTML.match(/class="school-auxiliary-combined-dates"/g) || []).length, 1);
+  assert.doesNotMatch(page.outerHTML, /school-auxiliary-combined-warning|请至少填写一项大于 0 的采购量/);
+  const salt = service.catalogProducts(canteen)[0];
+  service.writeCombinedDraft(canteen, { dates: [date, '2026-09-18'], quantities: { [salt.code]: 2 } });
+
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
+  context.location = { search: `?mode=quantity&orderMode=combined&date=${date}&canteen=${canteen.id}` };
+  let confirmHtml = '';
+  context.AppShell = { mount({ content }) {
+    confirmHtml = content;
+    return { querySelector() { return null; }, addEventListener() {} };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
+  assert.match(confirmHtml, /用料食堂：<strong>第一食堂<\/strong>/);
+  assert.match(confirmHtml, /填报天数：<strong>2<\/strong>/);
+  assert.match(confirmHtml, /用料日期：/);
+  assert.doesNotMatch(confirmHtml, /下单方式：|期望送达：/);
+  assert.match(confirmHtml, /本次合并订单合计金额/);
+  assert.doesNotMatch(confirmHtml, /data-aux-direct-confirm-meal=/);
+});
+
+test('分天分餐次确认只读取当前日期，不混入其他日期的草稿', () => {
+  const context = app();
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const key = service.buildPreview(date, canteen).meals[0].rows[0].key;
+  service.writeDraft(date, canteen, { [key]: 2 });
+  service.writeDraft('2026-09-17', canteen, { [key]: 4 });
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
+  context.location = { search: `?mode=quantity&orderMode=daily&date=${date}&canteen=${canteen.id}` };
+  let html = '';
+  context.AppShell = { mount({ content }) {
+    html = content;
+    return { querySelector() { return null; }, addEventListener() {} };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-direct-confirm.js'), 'utf8'), context);
+  assert.match(html, /用料食堂：<strong>第一食堂<\/strong>/);
+  assert.match(html, /填报天数：<strong>1<\/strong>/);
+  assert.doesNotMatch(html, /下单方式：|期望送达：/);
+  assert.match(html, /<td class="is-number">2<\/td>/);
+  assert.doesNotMatch(html, /2026-09-17/);
+});

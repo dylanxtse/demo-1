@@ -16,7 +16,7 @@
   const isAuxiliaryRecord = record?.auxiliary === true || /辅料|商品需求/.test(String(record?.source || ''));
   const isDirectQuantityRecord = record?.entryMode === 'quantity';
   const demandType = isAuxiliaryRecord ? '商品需求填报' : '食材需求填报';
-  const entryMethod = isDirectQuantityRecord ? '采购数量填报' : '就餐人数填报';
+  const entryMethod = isDirectQuantityRecord ? '商品数量填报' : '就餐人数填报';
   const productDisplay = (item) => {
     if (isAuxiliaryRecord) {
       const name = item?.productName || item?.goodsName || item?.name || item?.auxiliaryName || '--';
@@ -68,7 +68,7 @@
   }
 
   function renderEmpty() {
-    return `<section class="page-card processing-detail-page school-recipe-demand-record-detail-page" id="schoolRecipeDemandRecordDetailPage"><header class="processing-detail-page-header"><button type="button" class="back-link" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>需求提交记录详情</h1></header><div class="processing-detail-page-body school-recipe-demand-record-detail-empty"><p>未找到该需求提交记录</p><button type="button" class="btn btn-sm" data-action="back">返回</button></div></section>`;
+    return `<section class="page-card processing-detail-page school-recipe-demand-record-detail-page" id="schoolRecipeDemandRecordDetailPage"><header class="processing-detail-page-header"><button type="button" class="back-link" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>需求记录详情</h1></header><div class="processing-detail-page-body school-recipe-demand-record-detail-empty"><p>未找到该需求提交记录</p><button type="button" class="btn btn-sm" data-action="back">返回</button></div></section>`;
   }
 
   function renderAttendanceDetail(summary) {
@@ -145,12 +145,12 @@
       const orderCell = `<button type="button" class="school-recipe-demand-order-link" data-action="order" data-id="${escapeHtml(order.orderId)}">${orderNumber}</button>`;
       const linkedOrder = window.SchoolOrderService?.get?.(order.orderId);
       const orderAmount = linkedOrder?.orderAmount ?? order.orderAmount;
-      return `<tr><td>${orderCell}</td><td>${escapeHtml(record.expectedAt || order.expectedAt || '--')}</td><td>${escapeHtml(order.mealName || '--')}</td><td>${escapeHtml(order.orderTag || '--')}</td><td class="is-number">${orderAmount == null || orderAmount === '' ? '--' : money(orderAmount)}</td></tr>`;
+      return `<tr><td>${orderCell}</td><td>${escapeHtml(record.expectedAt || order.expectedAt || '--')}</td><td>${escapeHtml(order.mealName || (record.orderMode === 'combined' ? '不区分餐次' : '--'))}</td><td>${escapeHtml(order.orderTag || '--')}</td><td class="is-number">${orderAmount == null || orderAmount === '' ? '--' : money(orderAmount)}</td></tr>`;
     }).join('') || '<tr><td colspan="5" class="school-recipe-demand-record-detail-empty-cell">暂无关联订单</td></tr>';
   }
 
-  const content = record ? `<section class="page-card processing-detail-page school-recipe-demand-record-detail-page" id="schoolRecipeDemandRecordDetailPage" aria-label="需求提交记录详情">
-    <header class="processing-detail-page-header"><button type="button" class="back-link" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>需求提交记录详情</h1></header>
+  const content = record ? `<section class="page-card processing-detail-page school-recipe-demand-record-detail-page" id="schoolRecipeDemandRecordDetailPage" aria-label="需求记录详情">
+    <header class="processing-detail-page-header"><button type="button" class="back-link" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>需求记录详情</h1></header>
     <div class="processing-detail-page-body">
       <div class="processing-detail-section"><h3>基本信息</h3><div class="processing-detail-info school-recipe-demand-detail-info">${infoItem('记录编号', record.recordNo)}${infoItem('填报类型', demandType)}${infoItem('填报方式', entryMethod)}${infoItem('学校', record.schoolName)}${infoItem('食堂', record.canteen)}${infoItem('操作人', record.submittedBy)}${infoItem('提交时间', record.submittedAt)}${infoItem('需求商品种数', number(record.productCount))}${infoItem('生成订单数', number(record.orders?.length))}</div></div>
       ${record.enterpriseSyncWarnings?.length ? `<div class="school-recipe-demand-detail-notice is-warning">企业端同步提示：${escapeHtml(record.enterpriseSyncWarnings.join('；'))}</div>` : ''}
@@ -161,7 +161,7 @@
     <div class="school-recipe-demand-product-total"><span>合计金额</span><strong>${money(productTotal)}</strong></div>
     <footer class="processing-form-footer processing-detail-footer"><button type="button" class="btn btn-sm" data-action="back">返回</button></footer>
   </section>` : renderEmpty();
-  const root = window.AppShell.mount({ title: '需求提交记录详情', content, variant: 'school', companyName: '静安第一中学', emptyText: '需求提交记录详情' });
+  const root = window.AppShell.mount({ title: '需求记录详情', content, variant: 'school', companyName: '静安第一中学', emptyText: '需求记录详情' });
   const page = root.querySelector('#schoolRecipeDemandRecordDetailPage');
   page?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');

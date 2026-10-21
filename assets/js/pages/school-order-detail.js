@@ -170,6 +170,9 @@
   };
   const renderRecipeDemandInfo = (order) => {
     if (!isRecipeDemandOrder(order)) return '';
+    if (order.orderMode === 'combined' || order.orderMode === 'daily') {
+      return `<div class="processing-detail-section order-recipe-demand-info-section"><h3>商品需求信息</h3><div class="processing-detail-info">${infoItem('下单方式', order.orderMode === 'combined' ? '多天合并' : '分天分餐次')}${infoItem('用料日期', order.recipeDemandDate)}</div></div>`;
+    }
     const rows = recipeParticipantRows(order);
     const body = rows.length
       ? rows.map(({ type, count }) => `<tr><td>${escapeHtml(type)}</td><td>${escapeHtml(count)}</td></tr>`).join('')

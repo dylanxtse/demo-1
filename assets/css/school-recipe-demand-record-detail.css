@@ -202,10 +202,6 @@
 .school-recipe-demand-detail-product-table .col-purchase { width: 116px; }
 .school-recipe-demand-detail-product-table .col-subtotal { width: 130px; }
 
-.school-recipe-demand-detail-product-table td:last-child {
-  text-align: right;
-}
-
 .school-recipe-demand-product-total {
   flex: 0 0 auto;
   display: flex;

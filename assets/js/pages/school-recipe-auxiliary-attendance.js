@@ -108,11 +108,16 @@
   const selectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
   const viewStorageKey = 'school-recipe-auxiliary-attendance-view-v1';
   const defaultModeKey = 'school-recipe-auxiliary-default-mode-v1';
+  const orderModeKey = 'school-recipe-auxiliary-quantity-order-mode-v1';
   const savedDefaultMode = window.AppStorage?.read?.(defaultModeKey, 'people');
   const defaultMode = savedDefaultMode === 'quantity' ? 'quantity' : 'people';
   const pageParams = new URLSearchParams(window.location.search);
   const requestedMode = pageParams.get('mode');
   const initialMode = ['people', 'quantity'].includes(requestedMode) ? requestedMode : defaultMode;
+  const requestedOrderMode = pageParams.get('orderMode');
+  const savedOrderMode = window.AppStorage?.read?.(orderModeKey, 'daily');
+  const initialOrderMode = ['daily', 'combined'].includes(requestedOrderMode) ? requestedOrderMode
+    : ['daily', 'combined'].includes(savedOrderMode) ? savedOrderMode : 'daily';
   const canteenScope = String(currentCanteen.id || currentCanteen.name || '第一食堂');
   const availableCanteens = (canteenConfig?.readCanteens?.() || []).filter((canteen) => canteen && canteen.name && canteen.name !== '默认');
   const readDrafts = () => window.AppStorage?.read?.(draftStorageKey, {}) || {};
@@ -198,7 +203,9 @@
   const storedSelectedIds = Array.isArray(storedSelectedStorage[canteenScope]) ? storedSelectedStorage[canteenScope] : [];
   const initialSelectedIds = storedSelectedIds.length ? new Set(storedSelectedIds) : new Set(products.map((product) => product.id));
   const mealKeys = Object.keys(meals);
-  const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '', mode: initialMode, defaultMode, attendanceMode: 'dining', highlightEmpty: false, selected: products.filter((product) => initialSelectedIds.has(product.id)) };
+  const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '',
+    mode: initialMode, orderMode: initialOrderMode, defaultMode, attendanceMode: 'dining',
+    highlightEmpty: false, selected: products.filter((product) => initialSelectedIds.has(product.id)) };
   if (!state.selected.length) state.selected = products.slice();
   const persistSelectedProducts = () => {
     const next = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
@@ -267,6 +274,7 @@
 
   function dateStatus(date) {
     if (state.mode === 'quantity') {
+      if (state.orderMode === 'combined') return directService.readCombinedDraft(currentCanteen).dates.includes(date) ? 'complete' : 'empty';
       const preview = directPreview(date);
       return preview?.canSubmit ? 'complete' : preview?.selectedRows?.length ? 'partial' : 'empty';
     }
@@ -286,8 +294,14 @@
   }
 
   function renderOverview() {
+    if (state.mode === 'quantity' && state.orderMode === 'combined') {
+      const dates = directService.readCombinedDraft(currentCanteen).dates;
+      const tags = dates.map((date) => `<span class="school-auxiliary-combined-date">${escapeHtml(date)}<button type="button" data-aux-combined-remove-date="${escapeHtml(date)}" aria-label="移除 ${escapeHtml(date)}">×</button></span>`).join('');
+      return `<div class="school-recipe-attendance-overview school-auxiliary-overview school-auxiliary-combined-overview" id="schoolAuxiliaryOverview" aria-label="已选用料日期"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date school-auxiliary-combined-date-item"><span>用料日期：</span><div class="school-auxiliary-combined-dates">${tags || '<span class="school-auxiliary-combined-empty">请在日历中选择</span>'}</div></div></div></div>`;
+    }
     const total = totalDiningPeople();
-    return `<div class="school-recipe-attendance-overview school-auxiliary-overview" id="schoolAuxiliaryOverview" aria-label="商品需求填报概况"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span>用料日期：</span><strong>${longDate(dateState.selectedDate)}</strong></div>${state.mode === 'people' ? `<div class="school-recipe-attendance-overview-item school-recipe-attendance-total"><span>实际就餐人次：</span><strong data-aux-overview-total>${total}</strong></div>` : ''}</div></div>`;
+    const dateLabel = longDate(dateState.selectedDate);
+    return `<div class="school-recipe-attendance-overview school-auxiliary-overview" id="schoolAuxiliaryOverview" aria-label="商品需求填报概况"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span>用料日期：</span><strong>${escapeHtml(dateLabel)}</strong></div>${state.mode === 'people' ? `<div class="school-recipe-attendance-overview-item school-recipe-attendance-total"><span>实际就餐人次：</span><strong data-aux-overview-total>${total}</strong></div>` : ''}</div></div>`;
   }
 
   function renderModeSwitcher() {
@@ -310,9 +324,11 @@
       const hasRecipe = recipeDates.has(date);
       const status = dateStatus(date);
       const week = status === 'empty' ? ' is-hidden' : '';
-      return `<button type="button" class="school-recipe-attendance-date-item ${date === dateState.selectedDate ? 'is-selected' : ''} is-${status}" data-aux-date="${date}" title="${hasRecipe ? '有菜谱' : '可填报商品需求'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
+      const selected = state.mode === 'quantity' && state.orderMode === 'combined'
+        ? directService.readCombinedDraft(currentCanteen).dates.includes(date) : date === dateState.selectedDate;
+      return `<button type="button" class="school-recipe-attendance-date-item ${selected ? 'is-selected' : ''} is-${status}" data-aux-date="${date}" aria-pressed="${selected}" title="${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择或取消此用料日期' : hasRecipe ? '有菜谱' : '可填报商品需求'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
     }).join('');
-    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>本月日期</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
+    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择用料日期（可多选）' : '本月日期'}</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
   }
 
   function rowData(product) {
@@ -373,6 +389,27 @@
     return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm school-auxiliary-restore-default" type="button" data-restore-default>恢复默认</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm" type="button" data-confirm-demand>确认需求</button></div></footer>`;
   }
 
+  function renderOrderModeSwitcher() {
+    return `<div class="school-auxiliary-order-mode" role="group" aria-label="商品下单方式">
+      <button type="button" class="school-auxiliary-order-mode-button${state.orderMode === 'daily' ? ' is-active' : ''}" data-aux-order-mode="daily" aria-pressed="${state.orderMode === 'daily'}">分天分餐次下单</button>
+      <button type="button" class="school-auxiliary-order-mode-button${state.orderMode === 'combined' ? ' is-active' : ''}" data-aux-order-mode="combined" aria-pressed="${state.orderMode === 'combined'}">多天合并下单</button>
+    </div>`;
+  }
+
+  function renderCombinedForm() {
+    const draft = directService.readCombinedDraft(currentCanteen);
+    const preview = directService.buildCombinedPreview(currentCanteen, draft);
+    const catalog = directService.catalogProducts(currentCanteen);
+    const rows = catalog.map((product, index) => {
+      const code = String(product.code);
+      const value = draft.quantities[code] ?? '';
+      return `<tr><td>${index + 1}</td><td class="product-cell">${escapeHtml(product.auxiliaryName)}</td><td class="product-cell">${escapeHtml(`${product.name}（${product.unit}/${product.brand}/${product.spec}）`)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(product.unit)}</td><td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="any" inputmode="decimal" placeholder="请输入" value="${escapeHtml(value)}" data-aux-combined-quantity="${escapeHtml(code)}" aria-label="${escapeHtml(product.name)}周期采购总量"></div></td></tr>`;
+    }).join('');
+    const table = `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-combined-table"><thead><tr><th>序号</th><th>辅料</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>周期采购总量</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="school-auxiliary-combined-empty">暂无已设置的辅料商品</td></tr>'}</tbody></table></div>`;
+    const hasDraft = draft.dates.length || Object.values(draft.quantities).some((value) => String(value).trim() !== '');
+    return `<div class="school-auxiliary-scroll school-auxiliary-direct-scroll school-auxiliary-combined-scroll"><div class="school-recipe-attendance-section-heading school-recipe-direct-heading"><span class="section-title-mark">填写采购量</span></div>${table}</div><footer class="school-auxiliary-footer school-auxiliary-direct-footer"><div class="school-recipe-direct-footer-left"><button type="button" class="btn btn-sm" data-aux-combined-clear${hasDraft ? '' : ' disabled'}>清空本次填报</button><span data-aux-combined-summary>已选 ${draft.dates.length} 天、${preview.selectedRows.length} 种商品</span></div><button type="button" class="btn btn-primary btn-sm${preview.canSubmit ? '' : ' btn-disabled'}" data-aux-combined-confirm${preview.canSubmit ? '' : ' disabled'}>需求确认</button></footer>`;
+  }
+
   function renderDirectForm() {
     const preview = directPreview();
     const activeMeal = preview.meals.find((meal) => meal.key === state.directMeal) || preview.meals[0];
@@ -403,7 +440,9 @@
   }
 
   function renderDetail() {
-    return state.mode === 'quantity' ? renderDirectForm() : renderForm();
+    return state.mode === 'quantity'
+      ? `${renderOrderModeSwitcher()}${state.orderMode === 'combined' ? renderCombinedForm() : renderDirectForm()}`
+      : renderForm();
   }
 
   function renderPage() {
@@ -442,6 +481,34 @@
       rerenderPage();
       return;
     }
+    const orderModeButton = event.target.closest('[data-aux-order-mode]');
+    if (orderModeButton) {
+      const next = orderModeButton.dataset.auxOrderMode;
+      if (!['daily', 'combined'].includes(next) || next === state.orderMode) return;
+      state.orderMode = next;
+      window.AppStorage?.write?.(orderModeKey, next);
+      rerenderPage();
+      return;
+    }
+    const removeCombinedDate = event.target.closest('[data-aux-combined-remove-date]');
+    if (removeCombinedDate) {
+      const draft = directService.readCombinedDraft(currentCanteen);
+      draft.dates = draft.dates.filter((date) => date !== removeCombinedDate.dataset.auxCombinedRemoveDate);
+      directService.writeCombinedDraft(currentCanteen, draft);
+      rerenderPage();
+      return;
+    }
+    if (event.target.closest('[data-aux-combined-clear]')) {
+      directService.writeCombinedDraft(currentCanteen, null);
+      rerenderPage();
+      return;
+    }
+    if (event.target.closest('[data-aux-combined-confirm]')) {
+      const preview = directService.buildCombinedPreview(currentCanteen);
+      if (!preview.canSubmit) { showToast(preview.message, true); return; }
+      window.location.href = `./school-recipe-auxiliary-demand-confirm.html?mode=quantity&orderMode=combined&date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
+      return;
+    }
     const directMealTab = event.target.closest('[data-aux-direct-meal]');
     if (directMealTab) {
       state.directMeal = directMealTab.dataset.auxDirectMeal;
@@ -469,7 +536,7 @@
         showToast(preview.message, true);
         return;
       }
-      window.location.href = `./school-recipe-auxiliary-demand-confirm.html?mode=quantity&date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
+      window.location.href = `./school-recipe-auxiliary-demand-confirm.html?mode=quantity&orderMode=daily&date=${encodeURIComponent(dateState.selectedDate)}&canteen=${encodeURIComponent(canteenScope)}`;
       return;
     }
     const canteenButton = event.target.closest('[data-aux-canteen]');
@@ -480,6 +547,15 @@
     }
     const dateButton = event.target.closest('[data-aux-date]');
     if (dateButton) {
+      if (state.mode === 'quantity' && state.orderMode === 'combined') {
+        const draft = directService.readCombinedDraft(currentCanteen);
+        const date = dateButton.dataset.auxDate;
+        draft.dates = draft.dates.includes(date) ? draft.dates.filter((value) => value !== date)
+          : [...draft.dates, date].sort();
+        directService.writeCombinedDraft(currentCanteen, draft);
+        rerenderPage();
+        return;
+      }
       if (state.mode === 'people') persistDraft();
       dateState.selectedDate = dateButton.dataset.auxDate;
       meals = createMealsForDate(dateState.selectedDate);
@@ -498,6 +574,11 @@
       if (state.mode === 'people') persistDraft();
       const nextMonth = shiftMonth(dateState.monthStart, monthButton.dataset.auxMonth === 'prev' ? -1 : 1);
       dateState.monthStart = nextMonth;
+      if (state.mode === 'quantity' && state.orderMode === 'combined') {
+        persistView();
+        rerenderPage();
+        return;
+      }
       const dates = monthDates(nextMonth);
       if (!dates.includes(dateState.selectedDate)) {
         const day = Math.min(Number(dateState.selectedDate.slice(8, 10)) || 1, dates.length);
@@ -602,6 +683,26 @@
   });
 
   root.addEventListener('input', (event) => {
+    const combinedInput = event.target.closest('[data-aux-combined-quantity]');
+    if (combinedInput) {
+      const draft = directService.readCombinedDraft(currentCanteen);
+      if (combinedInput.value === '') delete draft.quantities[combinedInput.dataset.auxCombinedQuantity];
+      else draft.quantities[combinedInput.dataset.auxCombinedQuantity] = combinedInput.value;
+      directService.writeCombinedDraft(currentCanteen, draft);
+      const preview = directService.buildCombinedPreview(currentCanteen, draft);
+      const button = root.querySelector('[data-aux-combined-confirm]');
+      if (button) {
+        button.disabled = !preview.canSubmit;
+        button.classList.toggle('btn-disabled', !preview.canSubmit);
+      }
+      combinedInput.setAttribute('aria-invalid', String(combinedInput.value !== ''
+        && (!Number.isFinite(Number(combinedInput.value)) || Number(combinedInput.value) < 0
+          || (preview.rows.find((row) => row.productCode === combinedInput.dataset.auxCombinedQuantity)?.isStandardProduct
+            && !Number.isInteger(Number(combinedInput.value))))));
+      const summary = root.querySelector('[data-aux-combined-summary]');
+      if (summary) summary.textContent = `已选 ${draft.dates.length} 天、${preview.selectedRows.length} 种商品`;
+      return;
+    }
     const directInput = event.target.closest('[data-aux-direct-quantity]');
     if (directInput) {
       const draft = directService.readDraft(dateState.selectedDate, currentCanteen);

@@ -125,7 +125,7 @@
     'returnAmount', 'reconciliationAmount', 'productCount', 'orderLineCount', 'items', 'orderLines', 'warehouse', 'route',
     'receiver', 'phone', 'address', 'printed', 'sortingCompleted', 'recipeDemandRecordId',
     'recipeDemandRecordNo', 'recipeDemandDate', 'recipeParticipantType', 'purchaser', 'auditAt', 'auditor', 'rejectReason',
-    'auditOpinion', 'updatedAt', 'orderType', 'netVegetable', 'operationLogs'
+    'auditOpinion', 'updatedAt', 'orderType', 'orderMode', 'netVegetable', 'operationLogs'
   ]);
   const legacyOrderKeys = Object.freeze(['meal', 'mealType', 'purchaseType', 'purchaserName', 'purchaseManager', 'buyer']);
   const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);

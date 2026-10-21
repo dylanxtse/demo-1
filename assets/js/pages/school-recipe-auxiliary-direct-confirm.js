@@ -6,6 +6,7 @@
   if (!directService) return;
 
   const date = params.get('date') || '';
+  const orderMode = ['daily', 'combined'].includes(params.get('orderMode')) ? params.get('orderMode') : 'legacy';
   const canteen = canteenConfig?.getCanteen?.(params.get('canteen') || window.AppStorage?.read?.('school-recipe-auxiliary-current-canteen', '第一食堂')) || { id: '', name: '第一食堂' };
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const renderDirectDates = (dates) => {
@@ -21,12 +22,16 @@
     const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
     return value === true || value === 'true' || value === 1 || value === '1';
   };
-  const filledDates = () => directService.readFilledDates(canteen);
-  const quantitiesByDate = () => Object.fromEntries(filledDates().map((filledDate) => [filledDate, directService.readDraft(filledDate, canteen)]));
+  const filledDates = () => orderMode === 'combined' ? directService.readCombinedDraft(canteen).dates
+    : orderMode === 'daily' ? [date] : directService.readFilledDates(canteen);
+  const quantitiesByDate = () => orderMode === 'combined' ? directService.readCombinedDraft(canteen)
+    : Object.fromEntries(filledDates().map((filledDate) => [filledDate, directService.readDraft(filledDate, canteen)]));
   const expectedAt = (dates = filledDates()) => window.RecipeDeliveryRule?.expectedAt?.(dates) || '';
-  const preview = () => directService.buildDatesPreview(filledDates(), canteen, quantitiesByDate());
+  const preview = () => orderMode === 'combined'
+    ? directService.buildCombinedPreview(canteen, quantitiesByDate())
+    : directService.buildDatesPreview(filledDates(), canteen, quantitiesByDate());
   const state = { meal: '', submitting: false };
-  const returnUrl = () => `./school-recipe-auxiliary-attendance.html?mode=quantity&date=${encodeURIComponent(date)}`;
+  const returnUrl = () => `./school-recipe-auxiliary-attendance.html?mode=quantity${orderMode === 'legacy' ? '' : `&orderMode=${orderMode}`}&date=${encodeURIComponent(date)}`;
   const navigate = (url) => {
     if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(url);
     else window.location.href = url;
@@ -47,8 +52,8 @@
     const meals = demand.meals.map((meal) => ({ ...meal, rows: meal.rows.filter((row) => row.orderQty > 0) })).filter((meal) => meal.rows.length);
     const activeMeal = meals.find((meal) => meal.key === state.meal) || meals[0];
     state.meal = activeMeal?.key || '';
-    const tabs = `<div class="school-recipe-meal-tabs school-recipe-demand-meal-tabs school-recipe-direct-confirm-tabs" role="tablist" aria-label="切换餐次">${meals.map((meal) => `<button type="button" class="school-recipe-meal-tab${meal.key === state.meal ? ' is-active' : ''}" role="tab" aria-selected="${meal.key === state.meal}" data-aux-direct-confirm-meal="${escapeHtml(meal.key)}">${escapeHtml(meal.name)}</button>`).join('')}</div>`;
-    const byPerson = splitByPerson();
+    const tabs = orderMode === 'combined' ? '' : `<div class="school-recipe-meal-tabs school-recipe-demand-meal-tabs school-recipe-direct-confirm-tabs" role="tablist" aria-label="切换餐次">${meals.map((meal) => `<button type="button" class="school-recipe-meal-tab${meal.key === state.meal ? ' is-active' : ''}" role="tab" aria-selected="${meal.key === state.meal}" data-aux-direct-confirm-meal="${escapeHtml(meal.key)}">${escapeHtml(meal.name)}</button>`).join('')}</div>`;
+    const byPerson = orderMode !== 'combined' && splitByPerson();
     const participants = demand.participants || [];
     const quantityHeaders = byPerson
       ? participants.map((person) => `<th>${escapeHtml(`${person.label || person.tagName || person.key} - ${person.nutritious || '不区分'}`)}采购量</th>`).join('')
@@ -62,7 +67,9 @@
     }).join('');
     const mealAmount = (activeMeal?.rows || []).reduce((sum, row) => sum + row.orderPrice * row.orderQty, 0);
     const totalAmount = demand.selectedRows.reduce((sum, row) => sum + row.orderPrice * row.orderQty, 0);
-    const totals = `<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${5 + (byPerson ? participants.length : 1)}">${escapeHtml(activeMeal?.name || '当前餐次')}合计金额</td><td class="is-number">¥${money(mealAmount)}</td></tr><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="${5 + (byPerson ? participants.length : 1)}">所有餐次合计金额</td><td class="is-number">¥${money(totalAmount)}</td></tr></tfoot>`;
+    const totals = orderMode === 'combined'
+      ? `<tfoot><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="6">本次合并订单合计金额</td><td class="is-number">¥${money(totalAmount)}</td></tr></tfoot>`
+      : `<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${5 + (byPerson ? participants.length : 1)}">${escapeHtml(activeMeal?.name || '当前餐次')}合计金额</td><td class="is-number">¥${money(mealAmount)}</td></tr><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="${5 + (byPerson ? participants.length : 1)}">所有餐次合计金额</td><td class="is-number">¥${money(totalAmount)}</td></tr></tfoot>`;
     const table = rows ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-direct-confirm-table school-recipe-auxiliary-direct-confirm-table" style="min-width:${Math.max(900, 744 + (byPerson ? participants.length : 1) * 100)}px"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-price">${quantityCols}<col class="col-amount"></colgroup><thead><tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>单价</th>${quantityHeaders}<th>小计</th></tr></thead><tbody>${rows}</tbody>${totals}</table></div>` : '<div class="school-recipe-demand-empty">当前没有待确认的商品，请返回填写采购量</div>';
     const canSubmit = demand.canSubmit && Boolean(expectedAt(demand.dates)) && !state.submitting;
     return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliaryDirectConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-aux-direct-back>← <span>返回</span></button><h1>商品需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-direct-confirm-meta"><span>用料食堂：<strong>${escapeHtml(canteen.name || '第一食堂')}</strong></span><span>填报天数：<strong>${demand.dates.length}</strong></span>${renderDirectDates(demand.dates)}</div><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>${!demand.canSubmit ? `<div class="school-recipe-direct-confirm-warning">${escapeHtml(demand.message)}</div>` : ''}${tabs}${table}</section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-aux-direct-back>返回</button><button type="button" class="btn btn-primary btn-sm" data-aux-direct-submit${canSubmit ? '' : ' disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer></main></section>`;
@@ -94,8 +101,9 @@
       modal.querySelector('[data-modal-confirm]').disabled = true;
       modal.querySelector('[data-modal-confirm]').textContent = '提交中…';
       try {
-        await directService.submitDates(demand.dates, canteen, quantitiesByDate(), expectedAt(demand.dates));
-        demand.dates.forEach((filledDate) => directService.writeDraft(filledDate, canteen, {}));
+        await directService.submitDates(demand.dates, canteen, quantitiesByDate(), expectedAt(demand.dates), orderMode);
+        if (orderMode === 'combined') directService.writeCombinedDraft(canteen, null);
+        else demand.dates.forEach((filledDate) => directService.writeDraft(filledDate, canteen, {}));
         closeModal();
         showToast('操作成功');
         window.setTimeout(() => navigate(returnUrl()), 700);

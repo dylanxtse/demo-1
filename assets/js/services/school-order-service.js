@@ -448,6 +448,7 @@
       expectedAt: String(payload.expectedAt || '').trim(),
       supplement: String(payload.supplement || '否'),
       source: String(payload.source || '平台下单'),
+      orderMode: String(payload.orderMode || ''),
       remark: String(payload.remark ?? '--'),
       recipeDemandRecordId: String(payload.recipeDemandRecordId || '').trim(),
       recipeDemandRecordNo: String(payload.recipeDemandRecordNo || '').trim(),
