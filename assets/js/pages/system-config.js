@@ -202,7 +202,7 @@
           ${configSelect('printerType', 'printer-select')}
         </div>
         <div class="config-row permission-row">
-          <div class="config-label">分拣称自动发货${help('每件商品确认分拣后，立即按该商品的实际分拣数量发货')}</div>
+          <div class="config-label">分拣后自动发货${help('订单商品均完成分拣后，订单将自动发货')}</div>
           ${configCheckbox('autoShipAfterSorting', '分拣后按分拣数量自动发货')}
         </div>
 

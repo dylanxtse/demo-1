@@ -48,6 +48,15 @@
   white-space: nowrap;
 }
 
+.config-label .config-help::after {
+  left: 0;
+  transform: translateY(3px);
+}
+
+.config-label .config-help:is(:hover, :focus-visible)::after {
+  transform: translateY(0);
+}
+
 .product-permission-row { margin-bottom: 24px; }
 .market-price-row { margin-bottom: 24px; }
 
