@@ -46,11 +46,18 @@
     const parsed = typeof rawValue === 'string' ? Number.parseFloat(rawValue) : Number(rawValue);
     return Number.isFinite(parsed) ? parsed : 0;
   };
-  const auxiliaryProducts = [
-    { id: 'aux-oil', name: '金龙鱼5L桶装油', code: 'SP0300030', doseUnit: 'L', doseDisplay: '12 ml', packSize: 5, dose: 0.012, marketPrice: 55 },
-    { id: 'aux-salt', name: '食盐', code: 'SP0300031', doseUnit: 'kg', doseDisplay: '4 g', packSize: 0.5, dose: 0.004, marketPrice: 18.5 },
-    { id: 'aux-msg', name: '味精', code: 'SP0300032', doseUnit: 'kg', doseDisplay: '1 g', packSize: 0.25, dose: 0.001, marketPrice: 8 }
-  ];
+  const auxiliaryProducts = (auxiliaryDirectService?.attendanceProducts?.() || []).map((product) => ({
+    ...product,
+    id: String(product.id || product.code),
+    code: String(product.code || ''),
+    doseUnit: product.doseUnit || product.unit || '--',
+    doseDisplay: product.doseDisplay || (product.unit === 'L' ? '1 ml' : '1 g'),
+    dose: Number(product.dose || 0),
+    marketPrice: Number(product.marketPrice || 0)
+  }));
+  const auxiliaryDefaultProductsStorageKey = 'school-recipe-auxiliary-default-products-v1';
+  const auxiliarySelectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
+  const auxiliarySelectedProductsByMealStorageKey = 'school-recipe-auxiliary-selected-products-by-meal-v1';
   const dateText = (date) => {
     if (!date) return '--';
     const dateObject = new Date(String(date) + 'T00:00:00');
@@ -433,6 +440,8 @@
     directDates: [],
     auxiliarySearchInput: '',
     auxiliarySearchTerm: '',
+    auxiliaryDefaultProductIds: [],
+    auxiliarySelectedByMeal: {},
     attendanceValidationHighlightDate: '',
     sheet: null,
     toast: null,
@@ -500,6 +509,58 @@
 
   function serviceOptions() {
     return { canteen: currentCanteen(), participants: participants() };
+  }
+
+  function auxiliaryCanteenScope() {
+    const canteen = currentCanteen();
+    return String(canteen.id || canteen.name || state.canteen || '第一食堂');
+  }
+
+  function auxiliarySelectionKey(mealKey = '') {
+    if (!shouldSplitConfirmByMeal()) return 'all-meals';
+    const menu = menuFor(state.date);
+    return String(mealKey || state.attendanceMealKey || menu?.meals?.[0]?.key || 'all-meals');
+  }
+
+  function auxiliarySelectedProductsForMeal(mealKey = '') {
+    const key = auxiliarySelectionKey(mealKey);
+    const ids = state.auxiliarySelectedByMeal[key] || state.auxiliaryDefaultProductIds;
+    const selected = new Set(ids || []);
+    return auxiliaryProducts.filter((product) => selected.has(product.id));
+  }
+
+  function persistAuxiliaryProductSelections() {
+    const scope = auxiliaryCanteenScope();
+    const selection = Object.fromEntries(Object.entries(state.auxiliarySelectedByMeal).map(([mealKey, ids]) => [
+      mealKey, auxiliaryProducts.filter((product) => (ids || []).includes(product.id)).map((product) => product.id)
+    ]));
+    const byMeal = window.AppStorage?.read?.(auxiliarySelectedProductsByMealStorageKey, {}) || {};
+    byMeal[scope] = selection;
+    window.AppStorage?.write?.(auxiliarySelectedProductsByMealStorageKey, byMeal);
+    const allIds = new Set(Object.values(selection).flat());
+    const selected = window.AppStorage?.read?.(auxiliarySelectedProductsStorageKey, {}) || {};
+    selected[scope] = auxiliaryProducts.filter((product) => allIds.has(product.id)).map((product) => product.id);
+    window.AppStorage?.write?.(auxiliarySelectedProductsStorageKey, selected);
+  }
+
+  function initializeAuxiliaryProductSelections() {
+    const scope = auxiliaryCanteenScope();
+    const defaultsByCanteen = window.AppStorage?.read?.(auxiliaryDefaultProductsStorageKey, {}) || {};
+    const defaultIds = Array.isArray(defaultsByCanteen[scope]) ? defaultsByCanteen[scope] : [];
+    state.auxiliaryDefaultProductIds = auxiliaryProducts
+      .filter((product) => defaultIds.includes(product.id))
+      .map((product) => product.id);
+    const mealKeys = [...new Set(menus.flatMap((menu) => (menu.meals || []).map((meal) => String(meal.key || '')).filter(Boolean)))];
+    if (shouldSplitConfirmByMeal()) {
+      const currentMenu = menuFor(state.date);
+      state.attendanceMealKey = currentMenu?.meals?.some((meal) => String(meal.key) === String(state.attendanceMealKey))
+        ? state.attendanceMealKey : String(currentMenu?.meals?.[0]?.key || '');
+      state.auxiliarySelectedByMeal = Object.fromEntries((mealKeys.length ? mealKeys : ['all-meals'])
+        .map((mealKey) => [mealKey, [...state.auxiliaryDefaultProductIds]]));
+    } else {
+      state.auxiliarySelectedByMeal = { 'all-meals': [...state.auxiliaryDefaultProductIds] };
+    }
+    persistAuxiliaryProductSelections();
   }
 
   function attendanceDemandScope(date, mealKey) {
@@ -1792,6 +1853,7 @@
     const filledDays = currentFilledDateSummaries().length;
     const canContinue = state.tab === 'auxiliary'
       ? !validation.errors?.length && Number(validation.people || 0) > 0
+        && (state.demandEntryMode !== 'people' || auxiliarySelectedProductsForMeal().length > 0)
       : validation.canContinue;
     return '<div class="school-mobile-attendance-actions" aria-label="需求填报操作">'
       + '<div class="school-mobile-filled-days"><span>已填写</span><strong id="schoolMobileFilledDays">' + number(filledDays) + ' 天</strong></div>'
@@ -1964,21 +2026,51 @@
         || calculation.mealRows?.[0])
       : { key: 'all-meals', name: '合计', totalPeople: calculation.totalPeople };
     const totalPeople = Number(meal?.totalPeople || 0);
-    const rows = totalPeople > 0
-      ? auxiliaryProducts.map((product) => ({
-        ...product,
-        totalQty: totalPeople * Number(product.dose || 0),
-        purchaseQty: auxiliaryPurchaseQuantity(product, totalPeople * Number(product.dose || 0))
-      })).filter((row) => row.totalQty > 0)
-      : [];
-    if (!rows.length) return '<div class="school-mobile-demand-list"><div class="school-mobile-empty">填写人数后显示辅料需求</div></div>';
-    return '<div class="school-mobile-demand-list" role="list">' + rows.map((row) => (
-      '<button type="button" class="school-mobile-demand-row" data-action="open-auxiliary-demand-detail" data-menu-date="' + escapeHtml(menu.date) + '" data-auxiliary-id="' + escapeHtml(row.id) + '" data-auxiliary-meal-key="' + escapeHtml(meal?.key || '') + '" aria-label="查看' + escapeHtml(row.name) + '采购量明细">'
-        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.name) + '</strong><small>' + escapeHtml(row.code) + '</small></div>'
-        + '<span class="school-mobile-demand-qty">' + quantity(row.purchaseQty) + ' ' + escapeHtml(row.doseUnit) + '</span>'
-        + '<span class="school-mobile-demand-detail-arrow" aria-hidden="true">›</span>'
-      + '</button>'
-    )).join('') + '</div>';
+    const selectionMealKey = shouldSplitConfirmByMeal() ? meal?.key : 'all-meals';
+    const rows = auxiliarySelectedProductsForMeal(selectionMealKey).map((product) => ({
+      ...product,
+      totalQty: totalPeople * Number(product.dose || 0),
+      purchaseQty: auxiliaryPurchaseQuantity(product, totalPeople * Number(product.dose || 0))
+    }));
+    const toolbar = '<div class="school-mobile-demand-toolbar"><strong>需求测算</strong><button type="button" data-action="open-auxiliary-products"><span aria-hidden="true">＋</span>添加商品</button></div>';
+    if (!rows.length) return toolbar + '<div class="school-mobile-demand-list"><div class="school-mobile-empty">请添加商品</div></div>';
+    return toolbar + '<div class="school-mobile-demand-list school-mobile-auxiliary-demand-list" role="list">' + rows.map((row) => {
+      const identity = menu.date + '::' + String(selectionMealKey || 'all-meals') + '::' + row.id;
+      const isOpen = state.openAttendanceDemandSwipeKey === identity;
+      return '<div class="school-mobile-demand-swipe-item' + (isOpen ? ' is-swiped' : '') + '" data-demand-swipe-item data-demand-swipe-key="' + escapeHtml(identity) + '" role="listitem">'
+        + '<button type="button" class="school-mobile-demand-row" data-action="open-auxiliary-demand-detail" data-menu-date="' + escapeHtml(menu.date) + '" data-auxiliary-id="' + escapeHtml(row.id) + '" data-auxiliary-meal-key="' + escapeHtml(meal?.key || '') + '" aria-label="查看' + escapeHtml(row.name) + '采购量明细，左滑可移除">'
+          + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.name) + '</strong><small>' + escapeHtml(row.code) + '</small></div>'
+          + '<span class="school-mobile-demand-qty">' + quantity(row.purchaseQty) + ' ' + escapeHtml(row.doseUnit) + '</span>'
+          + '<span class="school-mobile-demand-detail-arrow" aria-hidden="true">›</span>'
+        + '</button>'
+        + '<button type="button" class="school-mobile-demand-remove" data-action="remove-auxiliary-product" data-auxiliary-id="' + escapeHtml(row.id) + '" data-auxiliary-meal-key="' + escapeHtml(selectionMealKey || '') + '" aria-label="移除' + escapeHtml(row.name) + '" aria-hidden="' + (isOpen ? 'false' : 'true') + '" tabindex="' + (isOpen ? '0' : '-1') + '">移除</button>'
+      + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function renderAuxiliaryProductPicker() {
+    const picker = state.sheet || {};
+    const mealKey = auxiliarySelectionKey(picker.mealKey || '');
+    const currentIds = new Set(auxiliarySelectedProductsForMeal(mealKey).map((product) => product.id));
+    const selectedIds = new Set((picker.selectedIds || []).filter((id) => !currentIds.has(id)));
+    const keyword = String(picker.keyword || '').trim().toLocaleLowerCase();
+    const rows = auxiliaryProducts.filter((product) => {
+      const search = [product.name, product.auxiliaryName, product.code, product.brand, product.spec].join(' ').toLocaleLowerCase();
+      return !keyword || search.includes(keyword);
+    }).map((product) => {
+      const isCurrent = currentIds.has(product.id);
+      const isSelected = selectedIds.has(product.id);
+      const searchText = [product.name, product.auxiliaryName, product.code, product.brand, product.spec].join(' ').toLocaleLowerCase();
+      return '<button type="button" class="school-mobile-demand-picker-option' + (isSelected ? ' is-selected' : '') + (isCurrent ? ' is-disabled' : '') + '" data-action="toggle-auxiliary-product-picker" data-auxiliary-id="' + escapeHtml(product.id) + '" data-search-text="' + escapeHtml(searchText) + '" aria-pressed="' + isSelected + '"' + (isCurrent ? ' disabled' : '') + '>'
+        + '<span class="school-mobile-demand-picker-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code + ' · ' + product.doseUnit + (isCurrent ? ' · 已添加' : '')) + '</small></span>'
+        + '<span class="school-mobile-demand-picker-indicator">' + (isCurrent ? '已添加' : isSelected ? '✓' : '＋') + '</span>'
+        + '</button>';
+    }).join('');
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-product-picker-sheet" role="dialog" aria-modal="true" aria-label="添加干调商品">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" data-action="cancel-auxiliary-products">取消</button><h2>添加商品</h2><button type="button" class="is-primary" data-action="confirm-auxiliary-products"' + (selectedIds.size ? '' : ' disabled') + '>添加' + (selectedIds.size ? '（' + number(selectedIds.size) + '）' : '') + '</button></header>'
+      + '<label class="school-mobile-demand-picker-search"><span aria-hidden="true">⌕</span><input type="search" data-action="auxiliary-product-search" value="' + escapeHtml(picker.keyword || '') + '" placeholder="搜索商品名称或编号" aria-label="搜索商品名称或编号"></label>'
+      + '<div class="school-mobile-demand-picker-list" role="list">' + rows + '<div class="school-mobile-demand-picker-empty" data-auxiliary-picker-empty' + (rows ? ' hidden' : '') + '>未找到匹配商品</div></div>'
+      + '</section></div>';
   }
 
   function auxiliaryDemandDetail(product, menu, record, activeMealKey = '') {
@@ -2017,15 +2109,26 @@
 
   function auxiliaryConfirmMealRows(preview, mealKey = 'all-meals') {
     const currentParticipants = preview?.participants || participants();
-    return auxiliaryProducts.map((product) => {
+    const previewMealKeys = [...new Set((preview?.dateSummaries || []).flatMap((summary) => (
+      (summary.calculation?.mealRows || []).map((meal) => String(meal.key || meal.name || '')).filter(Boolean)
+    )))];
+    const relevantMealKeys = mealKey && mealKey !== 'all-meals' ? [String(mealKey)] : previewMealKeys;
+    const selectedProductIds = new Set(relevantMealKeys.flatMap((key) => (
+      auxiliarySelectedProductsForMeal(key).map((product) => product.id)
+    )));
+    return auxiliaryProducts.filter((product) => selectedProductIds.has(product.id)).map((product) => {
       const participantQty = Object.fromEntries(currentParticipants.map((participant) => [participant.key, 0]));
       (preview?.dateSummaries || []).forEach((summary) => {
-        const meal = mealKey && mealKey !== 'all-meals'
-          ? (summary.calculation?.mealRows || []).find((item) => String(item.key || item.name || '') === String(mealKey))
-          : null;
-        const peopleByParticipant = meal?.participantPeople || summary.calculation?.participantPeople || {};
-        currentParticipants.forEach((participant) => {
-          participantQty[participant.key] += Number(peopleByParticipant[participant.key] || 0) * Number(product.dose || 0);
+        const summaryMeals = summary.calculation?.mealRows || [];
+        const meals = mealKey && mealKey !== 'all-meals'
+          ? summaryMeals.filter((item) => String(item.key || item.name || '') === String(mealKey))
+          : summaryMeals;
+        meals.forEach((meal) => {
+          if (!auxiliarySelectedProductsForMeal(meal.key || meal.name).some((item) => item.id === product.id)) return;
+          const peopleByParticipant = meal.participantPeople || {};
+          currentParticipants.forEach((participant) => {
+            participantQty[participant.key] += Number(peopleByParticipant[participant.key] || 0) * Number(product.dose || 0);
+          });
         });
       });
       const totalQty = currentParticipants.reduce((total, participant) => total + Number(participantQty[participant.key] || 0), 0);
@@ -2130,7 +2233,8 @@
     const dateSummaries = (preview.dateSummaries || []).map((summary) => {
       const mealRows = (summary.calculation?.mealRows || []).map((meal) => {
         const participantPeople = meal.participantPeople || {};
-        const rows = products.map((product) => {
+        const selectedIds = new Set(auxiliarySelectedProductsForMeal(meal.key || meal.name).map((product) => product.id));
+        const rows = products.filter((product) => selectedIds.has(product.id)).map((product) => {
           const participantQty = Object.fromEntries(currentParticipants.map((participant) => [
             participant.key,
             Number(participantPeople[participant.key] || 0) * Number(product.dose || 0)
@@ -2231,6 +2335,10 @@
 
   function enterAuxiliaryDemand() {
     if (state.attendanceInputMode === 'non-dining') return;
+    if (!auxiliarySelectedProductsForMeal().length) {
+      showToast('请先添加商品', true);
+      return;
+    }
     ensureDemoSession();
     saveAttendanceDraft();
     const menu = menuFor(state.date);
@@ -3654,6 +3762,8 @@
         ? renderProductPickerSheet()
       : state.sheet?.type === 'attendance-demand-product-picker'
         ? renderAttendanceDemandProductPicker()
+      : state.sheet?.type === 'auxiliary-product-picker'
+        ? renderAuxiliaryProductPicker()
       : state.sheet?.type === 'order-detail-picker'
         ? renderOrderDetailPickerSheet()
       : state.sheet?.type === 'product-checkout-date'
@@ -4015,7 +4125,7 @@
       return;
     }
     const swipedDemandItem = event.target.closest?.('.school-mobile-demand-swipe-item.is-swiped');
-    if (swipedDemandItem && !event.target.closest?.('[data-action="remove-attendance-demand-product"]')) {
+    if (swipedDemandItem && !event.target.closest?.('[data-action="remove-attendance-demand-product"], [data-action="remove-auxiliary-product"]')) {
       setAttendanceDemandSwipeItemOpen(swipedDemandItem, false);
       event.preventDefault();
       return;
@@ -4359,6 +4469,55 @@
       return;
     }
 
+    if (action === 'open-auxiliary-products') {
+      if (state.tab !== 'auxiliary' || state.demandEntryMode !== 'people' || state.attendanceInputMode === 'non-dining') return;
+      const menu = menuFor(state.date);
+      const mealKey = shouldSplitConfirmByMeal() ? (activeAttendanceMeal(menu)?.key || 'all-meals') : 'all-meals';
+      state.sheet = { type: 'auxiliary-product-picker', mealKey, keyword: '', selectedIds: [] };
+      render();
+      return;
+    }
+
+    if (action === 'toggle-auxiliary-product-picker' && state.sheet?.type === 'auxiliary-product-picker') {
+      const productId = String(target.dataset.auxiliaryId || '');
+      if (!auxiliaryProducts.some((product) => product.id === productId)
+        || auxiliarySelectedProductsForMeal(state.sheet.mealKey).some((product) => product.id === productId)) return;
+      const selectedIds = new Set(state.sheet.selectedIds || []);
+      if (selectedIds.has(productId)) selectedIds.delete(productId);
+      else selectedIds.add(productId);
+      state.sheet.selectedIds = [...selectedIds];
+      render();
+      return;
+    }
+
+    if (action === 'confirm-auxiliary-products' && state.sheet?.type === 'auxiliary-product-picker') {
+      const key = auxiliarySelectionKey(state.sheet.mealKey);
+      const existing = auxiliarySelectedProductsForMeal(key).map((product) => product.id);
+      const added = (state.sheet.selectedIds || []).filter((id) => auxiliaryProducts.some((product) => product.id === id));
+      state.auxiliarySelectedByMeal[key] = [...new Set([...existing, ...added])];
+      persistAuxiliaryProductSelections();
+      state.sheet = null;
+      renderAttendancePreservingScroll();
+      if (added.length) showToast(added.length + ' 种商品已添加');
+      return;
+    }
+
+    if (action === 'cancel-auxiliary-products' && state.sheet?.type === 'auxiliary-product-picker') {
+      state.sheet = null;
+      renderAttendancePreservingScroll();
+      return;
+    }
+
+    if (action === 'remove-auxiliary-product') {
+      const key = auxiliarySelectionKey(target.dataset.auxiliaryMealKey || '');
+      const currentIds = auxiliarySelectedProductsForMeal(key).map((product) => product.id);
+      state.auxiliarySelectedByMeal[key] = currentIds.filter((id) => id !== String(target.dataset.auxiliaryId || ''));
+      persistAuxiliaryProductSelections();
+      state.openAttendanceDemandSwipeKey = '';
+      renderAttendancePreservingScroll();
+      return;
+    }
+
     if (action === 'choose-entry-mode' && state.sheet?.type === 'entry-mode') {
       state.demandEntryMode = target.dataset.entryMode === 'quantity' ? 'quantity' : 'people';
       state.screen = 'main';
@@ -4374,6 +4533,7 @@
       if (state.demandEntryMode === 'people') {
         loadAttendance();
         fillDefaultsIfEmpty();
+        if (state.tab === 'auxiliary') initializeAuxiliaryProductSelections();
       } else {
         state.expectedAt = state.tab === 'auxiliary' ? readAuxiliarySimpleDraft().expectedAt : '';
       }
@@ -4668,6 +4828,7 @@
         state.canteen = nextCanteen;
         window.AppStorage?.write?.(canteenStorageKey, nextCanteen);
         loadAttendance();
+        if (state.tab === 'auxiliary' && state.demandEntryMode === 'people') initializeAuxiliaryProductSelections();
       }
       state.sheet = null;
       render();
@@ -5101,6 +5262,19 @@
       if (empty) empty.hidden = visibleCount > 0;
       return;
     }
+    if (action === 'auxiliary-product-search' && state.sheet?.type === 'auxiliary-product-picker') {
+      state.sheet.keyword = target.value || '';
+      const keyword = state.sheet.keyword.trim().toLocaleLowerCase();
+      let visibleCount = 0;
+      app.querySelectorAll('.school-mobile-demand-picker-option').forEach((option) => {
+        const visible = !keyword || String(option.dataset.searchText || '').includes(keyword);
+        option.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+      const empty = app.querySelector('[data-auxiliary-picker-empty]');
+      if (empty) empty.hidden = visibleCount > 0;
+      return;
+    }
     if (action === 'attendance-demand-quantity') {
       const edit = readAttendanceDemandEdit(target.dataset.menuDate || state.date, target.dataset.demandMealKey || 'all-meals');
       const entry = edit.addedProducts.find((item) => String(item.productCode) === String(target.dataset.productCode));
@@ -5341,7 +5515,7 @@
 
   app.addEventListener('pointerdown', (event) => {
     const item = event.target.closest?.('[data-demand-swipe-item]');
-    if (!item || !app.contains(item) || event.target.closest?.('[data-action="remove-attendance-demand-product"], [data-action="attendance-demand-quantity"]')
+    if (!item || !app.contains(item) || event.target.closest?.('[data-action="remove-attendance-demand-product"], [data-action="remove-auxiliary-product"], [data-action="attendance-demand-quantity"]')
       || (event.pointerType === 'mouse' && event.button !== 0)) return;
     attendanceDemandSwipeStart = { item, x: event.clientX, y: event.clientY };
   }, { passive: true });

@@ -5,8 +5,8 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { loadApp, root } = require('./helpers/app-context.cjs');
 
-function mobileApp() {
-  const context = loadApp({ services: [
+function mobileApp(options = {}) {
+  const context = loadApp({ storage: options.storage || {}, services: [
     'assets/js/data/school-reference-data.js',
     'assets/js/services/school-canteen-config-service.js',
     'assets/js/services/school-recipe-service.js',
@@ -193,8 +193,77 @@ test('移除最后一项干调商品后自动关闭明细弹层', () => {
   assert.match(app.innerHTML, new RegExp(`data-quantity-key="${product.code}"[^>]*value=""`));
 });
 
+test('手机端人数填报读取Web默认干调商品，支持左滑移除和添加商品', () => {
+  const canteen = 'canteen-004';
+  const { context, app, dispatch, listeners } = mobileApp({ storage: {
+    'school-recipe-auxiliary-default-products-v1': JSON.stringify({ [canteen]: ['aux-oil'] })
+  } });
+  const menu = context.SchoolRecipeService.getAll()[0];
+  const firstMeal = menu.meals[0].key;
+  dispatch('click', 'open-auxiliary-attendance');
+  dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
+
+  assert.match(app.innerHTML, /data-action="open-auxiliary-products"/);
+  assert.match(app.innerHTML, /data-auxiliary-id="aux-oil"/);
+  assert.doesNotMatch(app.innerHTML, /data-auxiliary-id="aux-salt"/);
+  assert.match(app.innerHTML, /aria-label="查看金龙鱼5L桶装油采购量明细，左滑可移除"/);
+  assert.match(app.innerHTML, /class="school-mobile-demand-remove"[^>]*data-action="remove-auxiliary-product"[^>]*aria-hidden="true" tabindex="-1"/);
+
+  const removeButtonAttributes = {};
+  const removeButton = {
+    setAttribute(name, value) { removeButtonAttributes[name] = value; },
+    set tabIndex(value) { removeButtonAttributes.tabIndex = value; }
+  };
+  const swipeItemClasses = new Set();
+  const swipeItem = {
+    dataset: { demandSwipeKey: `2026-09-07::${firstMeal}::aux-oil` },
+    classList: { toggle(name, enabled) { enabled ? swipeItemClasses.add(name) : swipeItemClasses.delete(name); } },
+    querySelector() { return removeButton; }
+  };
+  const swipeTarget = {
+    closest(selector) {
+      if (selector === '[data-demand-swipe-item]') return swipeItem;
+      return null;
+    }
+  };
+  (listeners.pointerdown || []).forEach((listener) => listener({
+    target: swipeTarget, pointerType: 'touch', clientX: 180, clientY: 24
+  }));
+  (listeners.pointerup || []).forEach((listener) => listener({ clientX: 120, clientY: 26 }));
+  assert.ok(swipeItemClasses.has('is-swiped'));
+  assert.equal(removeButtonAttributes['aria-hidden'], 'false');
+  assert.equal(removeButtonAttributes.tabIndex, 0);
+  dispatch('click', 'open-auxiliary-demand-detail', { auxiliaryId: 'aux-oil' });
+
+  dispatch('click', 'remove-auxiliary-product', { auxiliaryId: 'aux-oil', auxiliaryMealKey: firstMeal }, '', {
+    closest(selector) {
+      if (selector === '[data-action]' || selector.includes('remove-auxiliary-product')) return this;
+      if (selector === '.school-mobile-demand-swipe-item.is-swiped') return swipeItem;
+      return null;
+    }
+  });
+  assert.match(app.innerHTML, /请添加商品/);
+  assert.match(app.innerHTML, /data-action="continue" disabled/);
+
+  dispatch('click', 'open-auxiliary-products');
+  assert.match(app.innerHTML, /aria-label="添加干调商品"/);
+  assert.ok(app.innerHTML.includes('食盐'));
+  dispatch('click', 'toggle-auxiliary-product-picker', { auxiliaryId: 'aux-salt' });
+  dispatch('click', 'confirm-auxiliary-products');
+  assert.match(app.innerHTML, /data-auxiliary-id="aux-salt"/);
+  assert.doesNotMatch(app.innerHTML, /data-action="open-auxiliary-demand-detail"[^>]*data-auxiliary-id="aux-oil"/);
+
+  const storedByMeal = context.AppStorage.read('school-recipe-auxiliary-selected-products-by-meal-v1', {});
+  assert.deepEqual(Array.from(storedByMeal[canteen][firstMeal]), ['aux-salt']);
+  const otherMeal = menu.meals.find((meal) => meal.key !== firstMeal);
+  dispatch('click', 'select-attendance-meal', { mealKey: otherMeal.key });
+  assert.match(app.innerHTML, /data-auxiliary-id="aux-oil"/);
+});
+
 test('手机端人数填报确认页按企业配置计算送达时间并隐藏该字段', async () => {
-  const { context, app, dispatch } = mobileApp();
+  const { context, app, dispatch } = mobileApp({ storage: {
+    'school-recipe-auxiliary-default-products-v1': JSON.stringify({ 'canteen-004': ['aux-oil'] })
+  } });
   context.DemoStore.updateSettings({ recipeDeliveryAdvanceDays: '2', recipeDeliveryTime: '06:45' });
   dispatch('click', 'open-auxiliary-attendance');
   dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
