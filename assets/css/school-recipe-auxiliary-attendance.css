@@ -145,11 +145,10 @@
 .school-auxiliary-simple-table { min-width: 760px; }
 .school-auxiliary-simple-table thead th { position: sticky; top: 0; z-index: 2; background: #fafbfc; }
 .school-auxiliary-simple-table th:nth-child(1) { width: 7%; }
-.school-auxiliary-simple-table th:nth-child(2) { width: 10%; }
-.school-auxiliary-simple-table th:nth-child(3) { width: 33%; }
-.school-auxiliary-simple-table th:nth-child(4) { width: 15%; }
-.school-auxiliary-simple-table th:nth-child(5) { width: 10%; }
-.school-auxiliary-simple-table th:nth-child(6) { width: 25%; }
+.school-auxiliary-simple-table th:nth-child(2) { width: 43%; }
+.school-auxiliary-simple-table th:nth-child(3) { width: 15%; }
+.school-auxiliary-simple-table th:nth-child(4) { width: 10%; }
+.school-auxiliary-simple-table th:nth-child(5) { width: 25%; }
 .school-auxiliary-simple-table .school-recipe-direct-input-wrap { width: 130px; margin: 0 auto; }
 .school-auxiliary-simple-footer > div { display: flex; align-items: center; gap: 12px; }
 .school-auxiliary-simple-filled-count { padding: 4px 0; border: 0; color: var(--primary); background: transparent; font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }

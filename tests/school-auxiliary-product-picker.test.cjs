@@ -141,6 +141,9 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   const reopened = boot();
   assert.match(reopened.page.outerHTML, /data-remove-id="aux-salt"/);
   assert.doesNotMatch(reopened.page.outerHTML, /data-remove-id="aux-oil"/);
+  assert.match(reopened.page.outerHTML, /<th rowspan="2">序号<\/th><th rowspan="2">商品<\/th><th rowspan="2">人均用量<\/th><th rowspan="2">编号<\/th>/);
+  assert.doesNotMatch(reopened.page.outerHTML, /<th rowspan="2">干调<\/th>/);
+  assert.match(reopened.page.outerHTML, /<td class="product-cell"><span class="product-display-text">食盐（kg\/—\/500g\/袋）<\/span><\/td><td><span class="school-auxiliary-dose-value">4 g<\/span><\/td>/);
   reopened.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-salt' }) });
   assert.deepEqual(Array.from(context.AppStorage.read(defaultKey, {})[scope]), []);
   context.AppStorage.write(selectedKey, { [scope]: ['aux-oil'] });

@@ -154,6 +154,8 @@ test('干调数量填报只显示商品和确认入口，送达时间在确认�
   assert.doesNotMatch(page.outerHTML, /直接填写需要采购的干调数量/);
   assert.match(page.outerHTML, /data-aux-simple-confirm disabled/);
   assert.match(page.outerHTML, /data-aux-entry-mode="people"/);
+  assert.match(page.outerHTML, /<th>序号<\/th><th>商品名称（计量单位\/品牌\/规格）<\/th><th>商品编号<\/th><th>单位<\/th><th>采购数量<\/th>/);
+  assert.doesNotMatch(page.outerHTML, /<th>干调<\/th>/);
   assert.doesNotMatch(page.outerHTML, /school-auxiliary-calendar|data-aux-date=|data-aux-direct-meal=/);
 });
 
@@ -199,6 +201,7 @@ test('干调商品可按名称和编号搜索，底部可查看已填写商品',
   assert.match(body.innerHTML, /食盐/);
   click('[data-aux-simple-query]');
   assert.match(body.innerHTML, /未找到匹配的商品/);
+  assert.match(body.innerHTML, /colspan="5"/);
   click('[data-aux-simple-search-reset]');
   assert.equal(searchInput.value, '');
   assert.match(body.innerHTML, /金龙鱼5L桶装油/);
