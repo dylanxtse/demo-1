@@ -67,7 +67,8 @@
     const rows = visibleRows.map((row, index) => {
       const rawQuantity = quantities[row.productCode] ?? '';
       const orderQty = quantityFor(row.productCode);
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td><td class="is-number">¥${money(row.orderPrice)}</td><td class="is-number school-recipe-direct-confirm-quantity-cell"><input class="school-recipe-direct-confirm-quantity" type="number" min="0" step="0.01" inputmode="decimal" placeholder="请输入" aria-label="${escapeHtml(row.productName)}采购数量" data-aux-simple-confirm-quantity="${escapeHtml(row.productCode)}" value="${escapeHtml(rawQuantity)}"></td><td class="is-number" data-aux-simple-subtotal="${escapeHtml(row.productCode)}">¥${money(row.orderPrice * orderQty)}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-aux-simple-remove="${escapeHtml(row.productCode)}" aria-label="移除${escapeHtml(row.productName)}"${visibleRows.length <= 1 ? ' disabled' : ''}>移除</button></td></tr>`;
+      const quantityText = rawQuantity == null || rawQuantity === '' ? '0' : String(rawQuantity);
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td><td class="is-number">¥${money(row.orderPrice)}</td><td class="is-number school-recipe-direct-confirm-quantity-cell"><span class="school-recipe-direct-confirm-quantity-value" aria-label="${escapeHtml(row.productName)}采购数量">${escapeHtml(quantityText)}</span></td><td class="is-number" data-aux-simple-subtotal="${escapeHtml(row.productCode)}">¥${money(row.orderPrice * orderQty)}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-aux-simple-remove="${escapeHtml(row.productCode)}" aria-label="移除${escapeHtml(row.productName)}">移除</button></td></tr>`;
     }).join('');
     const total = visibleRows.reduce((sum, row) => sum + row.orderPrice * quantityFor(row.productCode), 0);
     const warning = warningFor(demand);
@@ -91,39 +92,6 @@
       state.error = '';
       rerender();
       return;
-    }
-    if (event.target.closest('[data-aux-simple-confirm-quantity]')) rerender();
-  });
-
-  root.addEventListener('input', (event) => {
-    const input = event.target.closest('[data-aux-simple-confirm-quantity]');
-    if (!input) return;
-    const code = input.dataset.auxSimpleConfirmQuantity;
-    if (input.value === '') delete quantities[code];
-    else quantities[code] = input.value;
-    saveDraft();
-    state.error = '';
-
-    const demand = preview();
-    const row = demand.rows.find((item) => String(item.productCode) === String(code));
-    const parsed = Number(input.value);
-    const orderQty = input.value !== '' && Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-    const subtotal = row ? row.orderPrice * orderQty : 0;
-    const subtotalCell = [...root.querySelectorAll('[data-aux-simple-subtotal]')]
-      .find((cell) => cell.dataset.auxSimpleSubtotal === String(code));
-    if (subtotalCell) subtotalCell.textContent = `¥${money(subtotal)}`;
-    const total = [...visibleCodes].reduce((sum, visibleCode) => {
-      const item = demand.rows.find((row) => String(row.productCode) === visibleCode);
-      return item ? sum + item.orderPrice * quantityFor(visibleCode) : sum;
-    }, 0);
-    const totalCell = root.querySelector('[data-aux-simple-total]');
-    if (totalCell) totalCell.textContent = `¥${money(total)}`;
-    const submitButton = root.querySelector('[data-aux-simple-submit]');
-    if (submitButton) submitButton.disabled = !demand.canSubmit || state.submitting;
-    const warning = root.querySelector('[data-aux-simple-warning]');
-    if (warning) {
-      warning.textContent = warningFor(demand);
-      warning.hidden = !warning.textContent;
     }
   });
 

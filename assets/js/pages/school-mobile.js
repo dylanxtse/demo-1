@@ -1304,7 +1304,9 @@
     const title = loginPage
       ? '登录'
         : state.screen === 'direct-confirm'
-        ? (state.tab === 'auxiliary' ? '商品需求确认' : '食材需求确认')
+        ? (state.tab === 'auxiliary'
+          ? state.demandEntryMode === 'quantity' ? '干调需求确认' : '商品需求确认'
+          : '食材需求确认')
         : state.screen === 'confirm'
         ? (state.confirmMode === 'auxiliary' ? '商品需求确认' : '食材需求确认')
         : state.screen === 'order-detail'
@@ -1649,7 +1651,7 @@
     const total = visibleRows.reduce((sum, row) => sum + row.amount, 0);
     return '<div class="school-mobile-confirm-page school-mobile-direct-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + preview.dates.map((date) => '<div class="school-mobile-confirm-date is-selected is-complete" aria-label="用料日期 ' + escapeHtml(date) + ' 已填报"><strong>' + escapeHtml(shortDate(date)) + '</strong><small class="school-mobile-confirm-date-weekday">星期' + escapeHtml(weekdayText(date)) + '</small><small>已填报</small></div>').join('') + '</div></section>'
-      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div></section>'
       + '<section class="school-mobile-confirm-card school-mobile-direct-confirm-products"><h2>商品需求汇总</h2>' + tabs + participantTabs + (rows || '<div class="school-mobile-empty">当前拆单类型暂无商品需求</div>') + '</section>'
       + (preview.message ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
       + '</div><div class="school-mobile-direct-total"><span>合计金额</span><strong>' + directMoney(total) + '</strong></div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回</button><button type="button" class="school-mobile-button is-primary" data-action="direct-submit"' + (preview.canSubmit && expectedAtIsAllowed(state.expectedAt) && !state.submitting ? '' : ' disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
@@ -1690,9 +1692,9 @@
     ensureDemoSession();
     const dates = [...state.directDates];
     const drafts = Object.fromEntries(dates.map((date) => [date, readDirectDraft(date)]));
-    const expectedAt = normalizeExpectedAt(state.expectedAt);
+    const expectedAt = normalizeExpectedAt(window.RecipeDeliveryRule?.expectedAt?.(dates));
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(expectedAt) || !expectedAtIsAllowed(expectedAt)) {
-      return showToast('请选择有效的期望送达时间', true);
+      return showToast('无法根据用料日期计算期望送达时间', true);
     }
     state.submitting = true;
     render();
@@ -4445,8 +4447,7 @@
         return;
       }
       state.directDates = dates;
-      const selected = parseExpectedAtValue(state.expectedAt);
-      state.expectedAt = expectedAtInputValue(selected.date && selected.date <= dates[0] ? selected.date : dates[0], selected.time);
+      state.expectedAt = String(window.RecipeDeliveryRule?.expectedAt?.(dates) || '').trim();
       state.directMealKey = '';
       state.screen = 'direct-confirm';
       render();
