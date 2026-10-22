@@ -8,7 +8,7 @@ const { loadApp, root } = require('./helpers/app-context.cjs');
 const date = '2026-09-11';
 const parseMoney = (value) => Number(String(value || '').replaceAll(',', ''));
 
-function renderConfirm(splitPerson = false, selectedIds) {
+function renderConfirm(splitPerson = false, selectedIds, selectedByMeal) {
   const context = loadApp({ services: [
     'assets/js/data/school-reference-data.js',
     'assets/js/services/school-canteen-config-service.js',
@@ -24,6 +24,7 @@ function renderConfirm(splitPerson = false, selectedIds) {
   const participant = context.SchoolRecipeAttendanceService.participantsFor(canteen)[0];
   const scope = String(canteen.id || canteen.name);
   if (selectedIds) context.AppStorage.write('school-recipe-auxiliary-selected-products-v1', { [scope]: selectedIds });
+  if (selectedByMeal) context.AppStorage.write('school-recipe-auxiliary-selected-products-by-meal-v1', { [scope]: selectedByMeal });
   context.AppStorage.write('school-recipe-auxiliary-attendance-drafts-v1', {
     [scope]: { [date]: {
       breakfast: { [participant.key]: 10 },
@@ -31,15 +32,27 @@ function renderConfirm(splitPerson = false, selectedIds) {
     } }
   });
   context.location = { search: `?mode=people&date=${date}&canteen=${canteen.id}` };
+  context.document = {
+    querySelector() { return null; },
+    createElement() { return { setAttribute() {}, remove() {} }; },
+    body: { appendChild() {} }
+  };
+  context.setTimeout = () => 0;
+  context.clearTimeout = () => {};
   const listeners = {};
   const cells = [{ textContent: '' }, { textContent: '' }];
   const mealTotalCell = { textContent: '' };
   const grandTotalCell = { textContent: '' };
   let html = '';
+  const page = {
+    get outerHTML() { return html; },
+    set outerHTML(value) { html = value; }
+  };
   context.AppShell = { mount({ content }) {
     html = content;
     return {
       querySelector(selector) {
+        if (selector === '#schoolRecipeAuxiliaryDemandConfirmPage') return page;
         if (selector === '[data-aux-meal-total]') return mealTotalCell;
         if (selector === '[data-aux-grand-total]') return grandTotalCell;
         return null;
@@ -49,7 +62,7 @@ function renderConfirm(splitPerson = false, selectedIds) {
     };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-demand-confirm.js'), 'utf8'), context);
-  return { html, listeners, cells, mealTotalCell, grandTotalCell };
+  return { get html() { return html; }, listeners, cells, mealTotalCell, grandTotalCell };
 }
 
 test('商品需求确认页的小计与两行合计按采购量计算，隐藏送达时间字段', () => {
@@ -99,4 +112,23 @@ test('人数填报新增的干调商品可进入需求确认并计算金额', ()
   assert.match(html, /藤椒油/);
   assert.match(html, /SP0390047/);
   assert.ok(parseMoney(html.match(/data-aux-grand-total>¥([\d,]+\.\d{2})/)?.[1]) > 0);
+});
+
+test('干调商品按餐次独立显示和移除，确认页当前餐次最后一项不可移除', () => {
+  const confirmation = renderConfirm(false, undefined, {
+    breakfast: ['aux-oil'],
+    lunch: ['aux-salt', 'aux-simple-47']
+  });
+  const { listeners } = confirmation;
+  assert.match(confirmation.html, /data-product-key="aux-salt"[^>]*>移除<\/button>/);
+  assert.match(confirmation.html, /data-product-key="aux-simple-47"[^>]*>移除<\/button>/);
+
+  const removeButton = { disabled: false, dataset: { productKey: 'aux-salt', productName: '盐' } };
+  listeners.click({ target: { closest(selector) { return selector === '[data-action="remove-product"]' ? removeButton : null; } } });
+  listeners.click({ target: { closest(selector) { return selector === '[data-meal]' ? { dataset: { meal: 'breakfast' } } : null; } } });
+  assert.match(confirmation.html, /data-product-key="aux-oil"/);
+  assert.doesNotMatch(confirmation.html, /data-product-key="aux-salt"/);
+  listeners.click({ target: { closest(selector) { return selector === '[data-meal]' ? { dataset: { meal: 'lunch' } } : null; } } });
+  assert.doesNotMatch(confirmation.html, /data-product-key="aux-salt"/);
+  assert.match(confirmation.html, /data-product-key="aux-simple-47"[^>]*disabled[^>]*>移除<\/button>/);
 });

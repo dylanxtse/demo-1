@@ -77,7 +77,7 @@ test('直接填量进入需求确认页，可核对数量并返回原日期修�
   let navigationTarget = '';
   context.AppNavigationGuard = { navigate(url) { navigationTarget = url; } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-confirm.js'), 'utf8'), context);
-  assert.match(body.innerHTML, /<h1>食材需求确认<\/h1>/);
+  assert.match(body.innerHTML, /<h1>菜谱需求确认<\/h1>/);
   assert.match(body.innerHTML, new RegExp(product.productCode));
   assert.match(body.innerHTML, /<td class="is-number">2<\/td>/);
   const mealAmount = Number(product.orderPrice) * 2;

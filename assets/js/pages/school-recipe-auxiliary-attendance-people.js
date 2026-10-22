@@ -107,6 +107,7 @@
   const firstDate = recipeDateList[0] || '2026-09-29';
   const draftStorageKey = 'school-recipe-auxiliary-attendance-drafts-v1';
   const selectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
+  const selectedProductsByMealStorageKey = 'school-recipe-auxiliary-selected-products-by-meal-v1';
   const defaultProductsStorageKey = 'school-recipe-auxiliary-default-products-v1';
   const viewStorageKey = 'school-recipe-auxiliary-attendance-view-v1';
   const defaultModeKey = 'school-recipe-auxiliary-default-mode-v1';
@@ -205,13 +206,42 @@
   const storedDefaultIds = Array.isArray(storedDefaultStorage[canteenScope]) ? storedDefaultStorage[canteenScope] : [];
   const defaultProductIds = new Set(products.filter((product) => storedDefaultIds.includes(product.id)).map((product) => product.id));
   const mealKeys = Object.keys(meals);
-  const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '',
+  const initialSelectedByMeal = Object.fromEntries(mealKeys.map((mealKey) => {
+    return [mealKey, products.filter((product) => defaultProductIds.has(product.id)).map((product) => product.id)];
+  }));
+  const state = {
+    meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '',
     mode: initialMode, orderMode: initialOrderMode, defaultMode, attendanceMode: 'dining',
-    highlightEmpty: false, selected: products.filter((product) => defaultProductIds.has(product.id)), defaultProductIds,
-    productModalOpen: false, modalPage: 1, modalPageSize: 10, modalSelected: new Set(), modalFilters: { keyword: '', category: '' } };
+    highlightEmpty: false, selectedByMeal: initialSelectedByMeal, defaultProductIds,
+    get selected() {
+      const ids = this.selectedByMeal[this.meal] || [...this.defaultProductIds];
+      return products.filter((product) => ids.includes(product.id));
+    },
+    set selected(selectedProducts) {
+      this.selectedByMeal[this.meal] = products.filter((product) => selectedProducts.some((item) => item.id === product.id)).map((product) => product.id);
+    },
+    productModalOpen: false, modalPage: 1, modalPageSize: 10, modalSelected: new Set(), modalFilters: { keyword: '', category: '' }
+  };
+  const selectedProductsForMeal = (mealKey) => {
+    const ids = state.selectedByMeal[mealKey] || [...state.defaultProductIds];
+    return products.filter((product) => ids.includes(product.id));
+  };
   const persistSelectedProducts = () => {
+    const selection = Object.fromEntries(Object.keys(state.selectedByMeal).map((mealKey) => [
+      mealKey, selectedProductsForMeal(mealKey).map((product) => product.id)
+    ]));
+    Object.keys(meals).forEach((mealKey) => {
+      if (!Object.prototype.hasOwnProperty.call(selection, mealKey)) {
+        selection[mealKey] = selectedProductsForMeal(mealKey).map((product) => product.id);
+      }
+    });
+    state.selectedByMeal = selection;
+    const byMeal = window.AppStorage?.read?.(selectedProductsByMealStorageKey, {}) || {};
+    byMeal[canteenScope] = selection;
+    window.AppStorage?.write?.(selectedProductsByMealStorageKey, byMeal);
+    const allSelectedIds = new Set(Object.values(selection).flat());
     const next = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
-    next[canteenScope] = state.selected.map((product) => product.id);
+    next[canteenScope] = products.filter((product) => allSelectedIds.has(product.id)).map((product) => product.id);
     window.AppStorage?.write?.(selectedProductsStorageKey, next);
   };
   const persistDefaultProducts = () => {
@@ -350,7 +380,7 @@
   }
 
   function renderRows() {
-    if (!state.selected.length) return '<div class="school-auxiliary-empty">暂无干调商品</div>';
+    if (!state.selected.length) return '<div class="school-auxiliary-empty">请添加商品</div>';
     const displayProduct = (product) => `${product.name}（${product.doseUnit || '--'}/${product.brand || '--'}/${product.spec || '--'}）`;
     const splitByPersonType = (() => {
       const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
@@ -365,7 +395,7 @@
       const quantities = splitByPersonType
         ? groups.flatMap((group) => { const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0); const purchase = product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity; return [`<td class="number">${amount(quantity)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(purchase)} ${escapeHtml(product.doseUnit)}</td>`]; })
         : [`<td class="number">${amount(data.totalQty)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(data.totalPurchaseQty)} ${escapeHtml(product.doseUnit)}</td>`];
-      return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(product.auxiliaryName || product.name)}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td>${escapeHtml(product.code)}</td><td>是</td>${quantities.join('')}<td><button class="school-auxiliary-remove${state.selected.length <= 1 ? ' is-disabled' : ''}" type="button" data-remove-id="${escapeHtml(product.id)}" ${state.selected.length <= 1 ? 'disabled' : ''}>移除</button></td></tr>`;
+      return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(product.auxiliaryName || product.name)}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td>${escapeHtml(product.code)}</td><td>是</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
     }).join('');
     return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:150px"><col style="width:118px"><col style="width:220px"><col style="width:100px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">干调</th><th rowspan="2">人均用量</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
   }
@@ -418,7 +448,7 @@
 
   function renderForm() {
     const mealTabs = shouldSplitOrderByMeal() ? `<div class="school-auxiliary-meal-tabs" role="tablist">${Object.entries(meals).map(([key, meal]) => `<button class="school-auxiliary-meal-tab ${key === state.meal ? 'is-active' : ''}" type="button" data-meal="${key}" role="tab" aria-selected="${key === state.meal}">${meal.name}</button>`).join('')}</div>` : '';
-    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm" type="button" data-aux-product-open>批量添加商品</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm" type="button" data-confirm-demand>确认需求</button></div></footer>`;
+    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm" type="button" data-aux-product-open>批量添加商品</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm${state.selected.length ? '' : ' btn-disabled'}" type="button" data-confirm-demand${state.selected.length ? '' : ' disabled'}>确认需求</button></div></footer>`;
   }
 
   function renderOrderModeSwitcher() {
@@ -486,7 +516,16 @@
     const page = root.querySelector('#schoolAuxiliaryPage');
     if (page) page.outerHTML = renderPage();
   };
-  const rerenderRows = () => { const rows = root.querySelector('#schoolAuxiliaryRows'); if (rows) rows.innerHTML = renderRows(); };
+  const rerenderRows = () => {
+    const rows = root.querySelector('#schoolAuxiliaryRows');
+    if (rows) rows.innerHTML = renderRows();
+    const confirmButton = root.querySelector('[data-confirm-demand]');
+    if (confirmButton) {
+      const disabled = !state.selected.length;
+      confirmButton.disabled = disabled;
+      confirmButton.classList.toggle('btn-disabled', disabled);
+    }
+  };
   const refreshPeopleTable = () => { const section = root.querySelector('.school-auxiliary-people-section'); if (section) section.outerHTML = renderPeopleTable(); };
   const refreshOverview = () => { const overview = root.querySelector('#schoolAuxiliaryOverview'); if (overview) overview.outerHTML = renderOverview(); };
   const refreshDatePanel = () => { const panel = root.querySelector('.school-auxiliary-recipe-date-panel'); if (panel) panel.outerHTML = renderDatePanel(); };
@@ -541,11 +580,13 @@
       } else {
         state.defaultProductIds.add(product.id);
         state.modalSelected.add(product.id);
-        if (!state.selected.some((item) => item.id === product.id)) {
-          state.selected = products.filter((item) => state.selected.some((selected) => selected.id === item.id) || item.id === product.id);
-          persistSelectedProducts();
-          rerenderRows();
-        }
+        const mealKeysToUpdate = new Set([...Object.keys(state.selectedByMeal), ...Object.keys(meals)]);
+        mealKeysToUpdate.forEach((mealKey) => {
+          const selectedIds = state.selectedByMeal[mealKey] || [...state.defaultProductIds];
+          state.selectedByMeal[mealKey] = [...new Set([...selectedIds, product.id])];
+        });
+        persistSelectedProducts();
+        rerenderRows();
       }
       persistDefaultProducts();
       refreshProductModal();
@@ -754,7 +795,7 @@
       return;
     }
     const remove = event.target.closest('[data-remove-id]');
-    if (remove && state.selected.length > 1) {
+    if (remove) {
       state.selected = state.selected.filter((product) => product.id !== remove.dataset.removeId);
       persistSelectedProducts();
       rerenderRows();

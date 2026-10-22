@@ -351,7 +351,13 @@
         }).join('') : (() => {
           const totalQty = participants.reduce((total, participant) => total + Number(row.participantQty?.[participant.key] || 0), 0);
           const totalPurchaseQty = aggregatePurchaseQuantity(meal, row, participants);
-          return `<td class="is-number">${quantity(totalQty)}</td><td class="is-number">${quantity(totalPurchaseQty)}</td>`;
+          const aggregateMeal = splitOrderByMeal() ? meal : { key: 'all-meals' };
+          const key = purchaseQuantityKey(null, aggregateMeal, row, 'all-participants');
+          const aggregateEditable = editable && totalQty > 0;
+          const overridden = aggregateEditable && hasPurchaseQuantityOverride(null, aggregateMeal, row, 'all-participants');
+          const readonlyTitle = aggregateEditable ? '' : ` title="${editable ? '暂无需求不可编辑' : '企业端已关闭学校修改采购量'}"`;
+          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${aggregateEditable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(totalPurchaseQty))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${row.productName || '商品'}采购量${aggregateEditable ? '' : '（不可编辑）'}`)}"${aggregateEditable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${row.productName || '商品'}采购量`)}" title="清空采购量"${aggregateEditable ? '' : ' disabled'}>×</button></div></td>`;
+          return `<td class="is-number">${quantity(totalQty)}</td>${purchaseCell}`;
         })();
         return `<tr class="school-recipe-demand-product-row${editable ? '' : ' is-readonly'}">
           <td>${index + 1}</td>
@@ -379,12 +385,12 @@
 
   function renderDetail(preview) {
     if (!preview.dates.length) {
-      return `<main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>食材需求确认</h1></header><div class="school-recipe-demand-empty-state"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg></div><p>请从上方或左侧选择已填报的日期</p></div></main>`;
+      return `<main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>菜谱需求确认</h1></header><div class="school-recipe-demand-empty-state"><div class="operation-empty-icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="9" x2="21" y2="9"></line></svg></div><p>请从上方或左侧选择已填报的日期</p></div></main>`;
     }
     const mealTabs = renderMealTabs(preview);
     const restoreDefaultButton = '<button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button>';
-    return `<main class="school-recipe-demand-detail-panel" aria-label="食材需求确认详情">
-      <header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>食材需求确认</h1></header>
+    return `<main class="school-recipe-demand-detail-panel" aria-label="菜谱需求确认详情">
+      <header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>菜谱需求确认</h1></header>
       <div class="school-recipe-demand-detail-scroll">
         <div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteenName)}</strong></div><div class="school-recipe-demand-days-summary"><span>填报天数：</span><strong>${preview.dates.length}</strong></div></div>
         <section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderDateSummaryTable(preview)}</section>
@@ -426,8 +432,8 @@
       : '<div class="school-recipe-demand-empty">当前没有待确认的商品，请返回填写采购量</div>';
     const expectedAt = calculatedExpectedAt(preview.dates);
     const canSubmit = preview.canSubmit && expectedAtIsAllowed(expectedAt, preview.dates) && !state.submitting;
-    return `<main class="school-recipe-demand-detail-panel" aria-label="食材需求确认详情">
-      <header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>食材需求确认</h1></header>
+    return `<main class="school-recipe-demand-detail-panel" aria-label="菜谱需求确认详情">
+      <header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path><path d="M19 12H9"></path></svg><span>返回</span></button><h1>菜谱需求确认</h1></header>
       <div class="school-recipe-demand-detail-scroll"><div class="school-recipe-direct-confirm-meta"><span>用料食堂：<strong>${escapeHtml(currentCanteenName)}</strong></span><span>填报天数：<strong>${preview.dates.length}</strong></span></div>
         <section class="school-recipe-demand-section school-recipe-demand-date-detail-section"><header><div><span class="section-title-mark">用料日期明细</span></div></header>${renderDirectDateTable(preview)}</section>
         <section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>
@@ -449,8 +455,8 @@
     return `<div class="school-recipe-demand-detail-table-wrap"><table class="processing-detail-table school-recipe-demand-detail-table school-recipe-direct-date-table"><thead><tr><th>用料日期</th><th>商品种数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
-  const content = `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeDemandConfirmPage" aria-label="食材需求确认"><div class="school-recipe-demand-confirm-body" id="schoolRecipeDemandConfirmBody"></div></section>`;
-  const root = window.AppShell.mount({ title: '食材需求确认', content, variant: 'school', companyName: '静安第一中学', emptyText: '食材需求确认' });
+  const content = `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeDemandConfirmPage" aria-label="菜谱需求确认"><div class="school-recipe-demand-confirm-body" id="schoolRecipeDemandConfirmBody"></div></section>`;
+  const root = window.AppShell.mount({ title: '菜谱需求确认', content, variant: 'school', companyName: '静安第一中学', emptyText: '菜谱需求确认' });
   const page = root.querySelector('#schoolRecipeDemandConfirmPage');
   const body = page.querySelector('#schoolRecipeDemandConfirmBody');
 

@@ -16,6 +16,8 @@
   const canteenScope = String(currentCanteen.id || currentCanteen.name || '第一食堂');
   const draftKey = 'school-recipe-auxiliary-attendance-drafts-v1';
   const selectedKey = 'school-recipe-auxiliary-selected-products-v1';
+  const selectedByMealKey = 'school-recipe-auxiliary-selected-products-by-meal-v1';
+  const legacySelectedIds = window.AppStorage?.read?.(selectedKey, {})?.[canteenScope];
   const readDrafts = () => window.AppStorage?.read?.(draftKey, {}) || {};
   const allMenus = (window.SchoolRecipeService?.getAll?.() || [])
     .map((menu) => ({ ...menu, date: normalizeRecipeDate(menu.date) }))
@@ -50,11 +52,6 @@
     if (!dateMeals.some((meal) => meal.key === 'afternoonSnack') || source.afternoonSnack || !source.snack) return source;
     return { ...source, afternoonSnack: source.snack };
   };
-  const selectedProductsFromAttendance = () => {
-    const selectedIds = window.AppStorage?.read?.(selectedKey, {})?.[canteenScope] || ['aux-oil', 'aux-salt'];
-    return products.filter((product) => selectedIds.includes(product.id));
-  };
-  let selected = selectedProductsFromAttendance();
   const settings = window.DemoStore?.getSettings?.() || {};
   const splitMeal = settings.splitOrderByMeal !== false && settings.splitOrderByMeal !== 'false' && settings.splitOrderByMeal !== 0 && settings.splitOrderByMeal !== '0';
   const splitPerson = settings.splitOrderByPersonType === true || settings.splitOrderByPersonType === 'true' || settings.splitOrderByPersonType === 1 || settings.splitOrderByPersonType === '1';
@@ -102,6 +99,21 @@
   const totalPeopleForDate = (targetDate) => Object.values(participantPersonTimes(targetDate)).reduce((sum, value) => sum + Number(value || 0), 0);
   const filledDates = () => allDates.filter((targetDate) => totalPeopleForDate(targetDate) > 0);
   const meals = [...new Map((filledDates().length ? filledDates() : [date]).flatMap(mealDefinitionsForDate).map((meal) => [meal.key, meal])).values()];
+  const fallbackSelectedIds = Array.isArray(legacySelectedIds) ? legacySelectedIds : ['aux-oil', 'aux-salt'];
+  const readSelectedByMeal = () => {
+    const stored = window.AppStorage?.read?.(selectedByMealKey, {})?.[canteenScope];
+    const hasStored = stored && typeof stored === 'object' && !Array.isArray(stored);
+    return Object.fromEntries(meals.map((meal) => {
+      const ids = hasStored && Array.isArray(stored[meal.key]) ? stored[meal.key] : fallbackSelectedIds;
+      return [meal.key, products.filter((product) => ids.includes(product.id)).map((product) => product.id)];
+    }));
+  };
+  let selectedByMeal = readSelectedByMeal();
+  const selectedForMeals = (mealList) => {
+    const ids = new Set((mealList || []).filter(Boolean).flatMap((meal) => selectedByMeal[meal.key] || []));
+    return products.filter((product) => ids.has(product.id));
+  };
+  const selectedAnywhere = (productId) => Object.values(selectedByMeal).some((ids) => ids.includes(productId));
   const purchase = (value, product) => product.packSize ? Math.ceil(value / product.packSize) * product.packSize : value;
   const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
   const productKey = (product) => String(product?.code || product?.id || '');
@@ -122,7 +134,7 @@
   const demandFor = (product, mealList, label) => [...state.selectedDates].reduce((sum, targetDate) => {
     const availableMealKeys = new Set(mealDefinitionsForDate(targetDate).map((meal) => meal.key));
     return sum + mealList
-      .filter((meal) => availableMealKeys.has(meal.key))
+      .filter((meal) => availableMealKeys.has(meal.key) && (selectedByMeal[meal.key] || []).includes(product.id))
       .reduce((mealTotal, meal) => mealTotal + people(draftForDate(targetDate)[meal.key], label) * product.dose, 0);
   }, 0);
   const productSubtotal = (product, mealList, groupKey) => {
@@ -134,7 +146,7 @@
   const allProductAmount = () => (splitMeal
     ? meals.map((meal) => ({ key: meal.key, mealList: [meal] }))
     : [{ key: 'all-meals', mealList: meals }]
-  ).reduce((total, group) => total + selected.reduce((sum, product) => sum + productSubtotal(product, group.mealList, group.key), 0), 0);
+  ).reduce((total, group) => total + selectedForMeals(group.mealList).reduce((sum, product) => sum + productSubtotal(product, group.mealList, group.key), 0), 0);
   const productDisplay = (product) => `${product.name}（${product.doseUnit}/${product.brand}/${product.spec}）`;
   const number = (value) => Number(value || 0);
   const timestamp = () => window.BusinessRules?.now?.()
@@ -184,29 +196,31 @@
     const participant = participantForKey(label) || {};
     return `${participant.label || participant.tagName || label} - ${participant.nutritious || '不区分'}`;
   };
-  const rowsForDate = (targetDate) => selected.map((product) => {
+  const rowsForDate = (targetDate) => {
     const targetDraft = draftForDate(targetDate);
     const dateMeals = mealDefinitionsForDate(targetDate);
-    const participantQty = Object.fromEntries(labels.map((label) => [
-      keyFor(label), dateMeals.reduce((sum, meal) => sum + people(targetDraft[meal.key], label) * product.dose, 0)
-    ]));
-    const totalQty = Object.values(participantQty).reduce((sum, value) => sum + number(value), 0);
-    return {
-      key: `${product.code}::${product.doseUnit}`,
-      mappingStatus: '已关联',
-      productCode: product.code,
-      productName: product.name,
-      unit: product.doseUnit,
-      brand: product.brand,
-      spec: product.spec,
-      isStandardProduct: false,
-      participantQty,
-      totalQty,
-      purchaseQty: purchase(totalQty, product),
-      unitPrice: unitPriceValue(product),
-      auxiliaryName: product.auxiliaryName
-    };
-  });
+    return selectedForMeals(dateMeals).map((product) => {
+      const participantQty = Object.fromEntries(labels.map((label) => [
+        keyFor(label), dateMeals.reduce((sum, meal) => sum + ((selectedByMeal[meal.key] || []).includes(product.id) ? people(targetDraft[meal.key], label) * product.dose : 0), 0)
+      ]));
+      const totalQty = Object.values(participantQty).reduce((sum, value) => sum + number(value), 0);
+      return {
+        key: `${product.code}::${product.doseUnit}`,
+        mappingStatus: '已关联',
+        productCode: product.code,
+        productName: product.name,
+        unit: product.doseUnit,
+        brand: product.brand,
+        spec: product.spec,
+        isStandardProduct: false,
+        participantQty,
+        totalQty,
+        purchaseQty: purchase(totalQty, product),
+        unitPrice: unitPriceValue(product),
+        auxiliaryName: product.auxiliaryName
+      };
+    });
+  };
   const dateSummaryFor = (targetDate) => {
     const participantTimes = participantPersonTimes(targetDate);
     const rows = rowsForDate(targetDate);
@@ -231,7 +245,8 @@
     const participantTimes = Object.fromEntries(labels.map((label) => [
       keyFor(label), dateSummaries.reduce((sum, summary) => sum + number(summary.participantPersonTimes[keyFor(label)]), 0)
     ]));
-    const rows = selected.map((product) => {
+    const previewProducts = selectedForMeals(meals);
+    const rows = previewProducts.map((product) => {
       const participantQty = Object.fromEntries(labels.map((label) => [keyFor(label), demandFor(product, meals, label)]));
       const totalQty = Object.values(participantQty).reduce((sum, value) => sum + number(value), 0);
       return {
@@ -251,7 +266,7 @@
       };
     });
     const totalPeople = Object.values(participantTimes).reduce((sum, value) => sum + number(value), 0);
-    const canSubmit = Boolean(dateSummaries.length && selected.length && totalPeople > 0 && rows.some((row) => row.totalQty > 0));
+    const canSubmit = Boolean(dateSummaries.length && previewProducts.length && totalPeople > 0 && rows.some((row) => row.totalQty > 0));
     return {
       dates: dateSummaries.map((summary) => summary.date),
       dateSummaries,
@@ -264,7 +279,7 @@
       rows,
       productCount: rows.filter((row) => row.totalQty > 0).length,
       canSubmit,
-      message: !selected.length ? '请先选择辅料商品' : totalPeople <= 0 ? '请先填写就餐人数' : canSubmit ? '' : '当前没有可下单的辅料需求'
+      message: !previewProducts.length ? '请先选择辅料商品' : totalPeople <= 0 ? '请先填写就餐人数' : canSubmit ? '' : '当前没有可下单的辅料需求'
     };
   };
   const mealGroups = () => splitMeal
@@ -274,7 +289,7 @@
     key: 'all-participants', label: '其他', tagName: '其他', nutritious: '不区分',
     orderTag: '其他-不区分', tagId: 'other-non-nutritious'
   };
-  const orderItemsFor = (group, label) => selected.map((product) => {
+  const orderItemsFor = (group, label) => selectedForMeals(group.meals).map((product) => {
     const demandQty = splitPerson
       ? demandFor(product, group.meals, label)
       : labels.reduce((sum, participantLabel) => sum + demandFor(product, group.meals, participantLabel), 0);
@@ -580,23 +595,25 @@
 
   function renderProducts() {
     const activeMeals = mealRows().filter(Boolean);
+    const activeProducts = selectedForMeals(activeMeals);
     const groupKey = splitMeal ? state.meal : 'all-meals';
     const columns = splitPerson
       ? labels.map((label) => `<th colspan="2">${escapeHtml(participantDisplayName(label))}</th>`).join('')
       : '<th colspan="2">合计</th>';
     const subColumns = splitPerson ? labels.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>采购量</th>';
     const colgroup = splitPerson ? labels.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-purchase">';
-    const rows = selected.map((product, index) => {
+    const rows = activeProducts.map((product, index) => {
       const cells = splitPerson
         ? labels.flatMap((label) => { const demand = demandFor(product, activeMeals, label); const key = purchaseKey(groupKey, product, label); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(groupKey, product, label, demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="${escapeHtml(`${participantDisplayName(label)}采购量`)}"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })
         : (() => { const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0); const key = purchaseKey(groupKey, product, '合计'); return [`<td class="is-number">${amount(demand)} ${product.doseUnit}</td>`, `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="${amount(purchaseValue(groupKey, product, '合计', demand))}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" aria-label="采购量"><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量">×</button></div></td>`]; })();
       const priceKey = unitPriceKey(product);
       const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell"><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${amount(unitPriceValue(product))}" data-aux-unit-price data-unit-price-key="${escapeHtml(priceKey)}"${canModifyUnitPrice() ? '' : ' disabled'} aria-label="${escapeHtml(`${product.name}单价`)}"></td>`;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}">移除</button></td></tr>`;
+      const cannotRemoveLast = activeProducts.length <= 1;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}" title="${cannotRemoveLast ? '至少保留一项商品' : '移除当前餐次商品'}"${cannotRemoveLast ? ' disabled' : ''}>移除</button></td></tr>`;
     }).join('');
     const activeMeal = splitMeal ? meals.find((meal) => meal.key === state.meal) : null;
     const labelColumns = 5 + (splitPerson ? labels.length * 2 : 2);
-    const mealAmount = selected.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0);
+    const mealAmount = activeProducts.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0);
     const totals = `<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${labelColumns}">${escapeHtml(activeMeal?.name || '本次商品')}合计金额</td><td class="is-number" data-aux-meal-total>¥${money(mealAmount)}</td><td aria-hidden="true"></td></tr><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="${labelColumns}">所有餐次合计金额</td><td class="is-number" data-aux-grand-total>¥${money(allProductAmount())}</td><td aria-hidden="true"></td></tr></tfoot>`;
     return rows ? `<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-demand-product-table school-recipe-demand-auxiliary-product-table" style="min-width:${Math.max(1210, 870 + (splitPerson ? labels.length : 1) * 228)}px"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-unit-price">${colgroup}<col class="col-subtotal"><col class="col-action"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">单位</th><th rowspan="2">单价</th>${columns}<th rowspan="2">小计</th><th rowspan="2">操作</th></tr><tr>${subColumns}</tr></thead><tbody>${rows}</tbody>${totals}</table></div>` : '<div class="school-recipe-demand-empty">暂无辅料商品</div>';
   }
@@ -615,12 +632,13 @@
   };
   const refreshProductAmounts = () => {
     const activeMeals = mealRows().filter(Boolean);
+    const activeProducts = selectedForMeals(activeMeals);
     const groupKey = splitMeal ? state.meal : 'all-meals';
     root.querySelectorAll?.('[data-aux-product-subtotal]').forEach((cell, index) => {
-      if (selected[index]) cell.textContent = `¥${money(productSubtotal(selected[index], activeMeals, groupKey))}`;
+      if (activeProducts[index]) cell.textContent = `¥${money(productSubtotal(activeProducts[index], activeMeals, groupKey))}`;
     });
     const mealTotalCell = root.querySelector('[data-aux-meal-total]');
-    if (mealTotalCell) mealTotalCell.textContent = `¥${money(selected.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0))}`;
+    if (mealTotalCell) mealTotalCell.textContent = `¥${money(activeProducts.reduce((sum, product) => sum + productSubtotal(product, activeMeals, groupKey), 0))}`;
     const grandTotalCell = root.querySelector('[data-aux-grand-total]');
     if (grandTotalCell) grandTotalCell.textContent = `¥${money(allProductAmount())}`;
     const submitButton = root.querySelector('[data-action="submit"]');
@@ -652,13 +670,22 @@
     }
     const removeProduct = event.target.closest('[data-action="remove-product"]');
     if (removeProduct) {
+      if (removeProduct.disabled) return;
       const removedId = removeProduct.dataset.productKey;
-      const removedProduct = selected.find((product) => product.id === removedId);
-      selected = selected.filter((product) => product.id !== removedId);
+      const activeMeals = mealRows().filter(Boolean);
+      const activeProducts = selectedForMeals(activeMeals);
+      if (activeProducts.length <= 1) return;
+      const removedProduct = activeProducts.find((product) => product.id === removedId);
+      const targetMealKeys = splitMeal ? activeMeals.map((meal) => meal.key) : meals.map((meal) => meal.key);
+      targetMealKeys.forEach((mealKey) => {
+        selectedByMeal[mealKey] = (selectedByMeal[mealKey] || []).filter((id) => id !== removedId);
+      });
       if (removedProduct) {
-        delete state.unitPriceOverrides[unitPriceKey(removedProduct)];
+        if (!selectedAnywhere(removedId)) delete state.unitPriceOverrides[unitPriceKey(removedProduct)];
         Object.keys(state.purchaseQtyOverrides).forEach((key) => {
-          if (key.includes(`::${productKey(removedProduct)}::`)) delete state.purchaseQtyOverrides[key];
+          if (targetMealKeys.some((mealKey) => key.startsWith(`${splitMeal ? mealKey : 'all-meals'}::${productKey(removedProduct)}::`))) {
+            delete state.purchaseQtyOverrides[key];
+          }
         });
       }
       rerender();
@@ -666,7 +693,7 @@
       return;
     }
     if (event.target.closest('[data-action="restore-default"]')) {
-      selected = selectedProductsFromAttendance();
+      selectedByMeal = readSelectedByMeal();
       state.purchaseQtyOverrides = {};
       state.unitPriceOverrides = {};
       rerender();

@@ -45,7 +45,8 @@ test('人数填报可批量添加商品，取消选择不保存', () => {
     matches() { return false; }
   });
   assert.match(page.outerHTML, /data-aux-product-open>批量添加商品/);
-  assert.match(page.outerHTML, /暂无干调商品/);
+  assert.match(page.outerHTML, /请添加商品/);
+  assert.match(page.outerHTML, /data-confirm-demand disabled/);
   assert.deepEqual(Array.from(context.AppStorage.read(storageKey, {})[scope]), []);
   assert.doesNotMatch(page.outerHTML, /data-restore-default|恢复默认/);
   listeners.click({ target: target('[data-aux-product-open]') });
@@ -129,7 +130,7 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   });
 
   const first = boot();
-  assert.match(first.page.outerHTML, /暂无干调商品/);
+  assert.match(first.page.outerHTML, /请添加商品/);
   first.listeners.click({ target: target('[data-aux-product-open]') });
   first.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-salt' }) });
   assert.deepEqual(Array.from(context.AppStorage.read(defaultKey, {})[scope]), ['aux-salt']);
@@ -143,5 +144,5 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   reopened.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-salt' }) });
   assert.deepEqual(Array.from(context.AppStorage.read(defaultKey, {})[scope]), []);
   context.AppStorage.write(selectedKey, { [scope]: ['aux-oil'] });
-  assert.match(boot().page.outerHTML, /暂无干调商品/);
+  assert.match(boot().page.outerHTML, /请添加商品/);
 });

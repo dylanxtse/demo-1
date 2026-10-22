@@ -49,7 +49,7 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
   context.AppShell = { mount() { return { querySelector() { return page; } }; } };
   context.location = { search: `?date=${menu.date}&canteen=${encodeURIComponent(canteen.id || canteen.name)}` };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-confirm.js'), 'utf8'), context);
-  assert.match(body.innerHTML, /<h1>食材需求确认<\/h1>/);
+  assert.match(body.innerHTML, /<h1>菜谱需求确认<\/h1>/);
   assert.doesNotMatch(body.innerHTML, /schoolRecipeExpectedAt|school-recipe-demand-delivery-field/);
   assert.match(body.innerHTML, /填报天数：<\/span><strong>1<\/strong>/);
   assert.match(body.innerHTML, /<th rowspan="2">小计<\/th>/);
