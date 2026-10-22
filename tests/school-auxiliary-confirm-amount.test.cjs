@@ -8,20 +8,22 @@ const { loadApp, root } = require('./helpers/app-context.cjs');
 const date = '2026-09-11';
 const parseMoney = (value) => Number(String(value || '').replaceAll(',', ''));
 
-function renderConfirm(splitPerson = false) {
+function renderConfirm(splitPerson = false, selectedIds) {
   const context = loadApp({ services: [
     'assets/js/data/school-reference-data.js',
     'assets/js/services/school-canteen-config-service.js',
     'assets/js/services/school-recipe-service.js',
     'assets/js/services/school-recipe-attendance-service.js',
     'assets/js/services/school-order-service.js',
-    'assets/js/services/operations-service.js'
+    'assets/js/services/operations-service.js',
+    'assets/js/services/school-recipe-auxiliary-direct-service.js'
   ] }).context;
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
   context.DemoStore.updateSettings({ splitOrderByMeal: true, splitOrderByPersonType: splitPerson, allowClientEditPrice: true });
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const participant = context.SchoolRecipeAttendanceService.participantsFor(canteen)[0];
   const scope = String(canteen.id || canteen.name);
+  if (selectedIds) context.AppStorage.write('school-recipe-auxiliary-selected-products-v1', { [scope]: selectedIds });
   context.AppStorage.write('school-recipe-auxiliary-attendance-drafts-v1', {
     [scope]: { [date]: {
       breakfast: { [participant.key]: 10 },
@@ -90,4 +92,11 @@ test('修改单价或采购量时，小计和两行合计立即更新', () => {
   assert.equal(cells[0].textContent, '¥0.00');
   assert.ok(parseMoney(mealTotalCell.textContent.slice(1)) < increasedMealTotal);
   assert.ok(parseMoney(grandTotalCell.textContent.slice(1)) > parseMoney(mealTotalCell.textContent.slice(1)));
+});
+
+test('人数填报新增的干调商品可进入需求确认并计算金额', () => {
+  const { html } = renderConfirm(false, ['aux-simple-47']);
+  assert.match(html, /藤椒油/);
+  assert.match(html, /SP0390047/);
+  assert.ok(parseMoney(html.match(/data-aux-grand-total>¥([\d,]+\.\d{2})/)?.[1]) > 0);
 });

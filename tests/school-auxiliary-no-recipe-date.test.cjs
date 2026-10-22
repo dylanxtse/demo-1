@@ -13,15 +13,18 @@ function app() {
     'assets/js/services/school-canteen-config-service.js',
     'assets/js/services/school-recipe-service.js',
     'assets/js/services/school-recipe-attendance-service.js',
-    'assets/js/services/school-order-service.js'
+    'assets/js/services/school-order-service.js',
+    'assets/js/services/school-recipe-auxiliary-direct-service.js'
   ] }).context;
   assert.equal(context.SchoolRecipeService.getAll().some((menu) => menu.date === noRecipeDate), false);
   context.AppStorage.write('school-recipe-auxiliary-current-canteen', '第一食堂');
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  context.AppStorage.write('school-recipe-auxiliary-default-products-v1', { [String(canteen.id || canteen.name)]: ['aux-oil'] });
   context.location = { search: `?date=${noRecipeDate}` };
   return context;
 }
 
-test('干料需求填报允许无食谱日期填写，并在确认页汇总该日期', () => {
+test('干调需求填报允许无食谱日期填写，并在确认页汇总该日期', () => {
   const context = app();
   let html = '';
   context.AppShell = { mount({ content }) {

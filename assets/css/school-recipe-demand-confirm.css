@@ -54,6 +54,16 @@
 .school-recipe-demand-meal-toolbar .school-recipe-demand-restore-default { margin-bottom: 12px; }
 .school-recipe-direct-confirm-meta { display: flex; flex-wrap: wrap; gap: 10px 32px; padding: 8px 0; color: #687486; font-size: 13px; }
 .school-recipe-direct-confirm-meta strong { color: #354052; font-weight: 500; }
+#schoolRecipeAuxiliarySimpleConfirmPage .school-recipe-direct-confirm-meta { align-items: center; }
+#schoolRecipeAuxiliarySimpleConfirmPage .school-recipe-direct-confirm-meta > span { display: inline-flex; min-height: 34px; align-items: center; }
+.school-recipe-simple-confirm-delivery { display: inline-flex; align-items: center; gap: 12px; }
+.school-recipe-simple-confirm-delivery label span { color: var(--danger); }
+.school-recipe-simple-confirm-date-field { position: relative; width: 220px; height: 34px; border: 1px solid var(--border-color); border-radius: 4px; background: #fff; }
+.school-recipe-simple-confirm-date-field:focus-within { border-color: var(--primary); outline: 2px solid rgba(23, 104, 229, .08); }
+.school-recipe-simple-confirm-date-display { display: flex; height: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; color: #354052; white-space: nowrap; pointer-events: none; }
+.school-recipe-simple-confirm-date-field.is-empty .school-recipe-simple-confirm-date-display { color: #a4acb8; }
+.school-recipe-simple-confirm-date-display svg { width: 16px; height: 16px; flex: 0 0 auto; color: #687486; }
+.school-recipe-simple-confirm-date-field input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .school-recipe-direct-confirm-date-summary { position: relative; display: inline-flex; align-items: center; gap: 7px; }
 .school-recipe-direct-confirm-date-summary details { position: relative; }
 .school-recipe-direct-confirm-date-summary summary { color: #477fca; cursor: pointer; list-style: none; white-space: nowrap; }
@@ -72,6 +82,14 @@
 .school-recipe-direct-confirm-table .col-price,
 .school-recipe-direct-confirm-table .col-quantity { width: 90px; }
 .school-recipe-direct-confirm-table .col-amount { width: 170px; }
+.school-recipe-auxiliary-direct-confirm-table { min-width: 980px; }
+.school-recipe-auxiliary-direct-confirm-table .col-quantity { width: 100px; }
+.school-recipe-auxiliary-direct-confirm-table .col-action { width: 72px; }
+.school-recipe-direct-confirm-quantity-cell { padding: 4px 6px !important; }
+.school-recipe-direct-confirm-quantity { display: block; width: 100%; max-width: 92px; height: 30px; box-sizing: border-box; margin: 0 auto; padding: 0 6px; border: 1px solid #dfe3e8; border-radius: 4px; color: #354052; background: #fff; font: inherit; text-align: center; font-variant-numeric: tabular-nums; outline: none; }
+.school-recipe-direct-confirm-quantity:focus { border-color: #7eabf7; box-shadow: 0 0 0 2px rgb(24 102 231 / 10%); }
+.school-recipe-direct-confirm-quantity::-webkit-inner-spin-button,
+.school-recipe-direct-confirm-quantity::-webkit-outer-spin-button { margin: 0; appearance: none; }
 .school-recipe-direct-confirm-table .school-recipe-demand-product-total-row td:first-child { text-align: right; }
 .school-recipe-direct-confirm-table .school-recipe-demand-product-total-row td.is-number { color: #222; text-align: center; white-space: nowrap; }
 
@@ -299,6 +317,7 @@
 }
 
 @media (max-width: 760px) {
+  .school-recipe-simple-confirm-delivery { align-items: flex-start; flex-direction: column; gap: 6px; }
   .school-recipe-demand-confirm-body { overflow: auto; }
   .school-recipe-demand-detail-panel { min-height: 760px; overflow: visible; }
   .school-recipe-demand-detail-scroll { overflow: visible; padding: 14px 16px 18px; }

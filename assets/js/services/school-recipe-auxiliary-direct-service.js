@@ -17,6 +17,80 @@
     { id: 'aux-salt', auxiliaryName: '盐', name: '食盐', brand: '—', code: 'SP0300031', spec: '500g/袋', unit: 'kg', marketPrice: 18.5 },
     { id: 'aux-msg', auxiliaryName: '味精', name: '味精', brand: '—', code: 'SP0300032', spec: '250g/袋', unit: 'kg', marketPrice: 8 }
   ];
+  const simpleDemoProducts = [
+    ['生抽', '金标生抽', '海天', '1.9L/桶', 'L', 19.8],
+    ['老抽', '草菇老抽', '海天', '1.9L/桶', 'L', 21.5],
+    ['香醋', '镇江香醋', '恒顺', '500ml/瓶', 'L', 9.8],
+    ['陈醋', '山西陈醋', '东湖', '500ml/瓶', 'L', 10.5],
+    ['料酒', '葱姜料酒', '王致和', '1.75L/桶', 'L', 15.8],
+    ['蚝油', '蚝油', '李锦记', '700g/瓶', 'kg', 16.8],
+    ['香油', '小磨香油', '金龙鱼', '400ml/瓶', 'L', 24.5],
+    ['辣椒油', '辣椒油', '演示品牌', '500ml/瓶', 'L', 18.5],
+    ['花椒油', '花椒油', '演示品牌', '500ml/瓶', 'L', 22.8],
+    ['豆瓣酱', '郫县豆瓣酱', '鹃城', '1kg/袋', 'kg', 17.8],
+    ['黄豆酱', '黄豆酱', '海天', '800g/瓶', 'kg', 13.8],
+    ['甜面酱', '甜面酱', '六必居', '500g/袋', 'kg', 8.5],
+    ['番茄酱', '番茄酱', '凤球唛', '850g/罐', 'kg', 12.8],
+    ['剁椒酱', '剁椒酱', '演示品牌', '500g/瓶', 'kg', 11.5],
+    ['辣椒酱', '香辣酱', '演示品牌', '500g/瓶', 'kg', 12.5],
+    ['芝麻酱', '纯芝麻酱', '六必居', '350g/瓶', 'kg', 19.8],
+    ['白砂糖', '白砂糖', '演示品牌', '1kg/袋', 'kg', 8.8],
+    ['冰糖', '单晶冰糖', '演示品牌', '500g/袋', 'kg', 7.8],
+    ['红糖', '红糖', '演示品牌', '500g/袋', 'kg', 9.5],
+    ['绵白糖', '绵白糖', '演示品牌', '1kg/袋', 'kg', 9.2],
+    ['鸡精', '鸡精调味料', '太太乐', '1kg/袋', 'kg', 31.8],
+    ['胡椒粉', '胡椒粉', '演示品牌', '500g/袋', 'kg', 23.5],
+    ['白胡椒粉', '白胡椒粉', '演示品牌', '500g/袋', 'kg', 29.8],
+    ['黑胡椒粉', '黑胡椒粉', '演示品牌', '500g/袋', 'kg', 27.8],
+    ['五香粉', '五香粉', '演示品牌', '500g/袋', 'kg', 18.5],
+    ['十三香', '十三香调味料', '王守义', '500g/袋', 'kg', 21.5],
+    ['孜然粉', '孜然粉', '演示品牌', '500g/袋', 'kg', 32.8],
+    ['辣椒粉', '辣椒粉', '演示品牌', '500g/袋', 'kg', 24.8],
+    ['花椒粉', '花椒粉', '演示品牌', '500g/袋', 'kg', 46.8],
+    ['咖喱粉', '咖喱粉', '演示品牌', '500g/袋', 'kg', 26.8],
+    ['淀粉', '食用淀粉', '演示品牌', '1kg/袋', 'kg', 8.5],
+    ['玉米淀粉', '玉米淀粉', '演示品牌', '1kg/袋', 'kg', 7.8],
+    ['小苏打', '食用小苏打', '演示品牌', '500g/袋', 'kg', 5.8],
+    ['泡打粉', '无铝泡打粉', '演示品牌', '500g/袋', 'kg', 12.8],
+    ['酵母粉', '高活性干酵母', '安琪', '500g/袋', 'kg', 19.8],
+    ['白芝麻', '熟白芝麻', '演示品牌', '500g/袋', 'kg', 23.8],
+    ['黑芝麻', '熟黑芝麻', '演示品牌', '500g/袋', 'kg', 27.8],
+    ['干辣椒', '干红辣椒', '演示品牌', '500g/袋', 'kg', 28.8],
+    ['花椒', '红花椒', '演示品牌', '500g/袋', 'kg', 68.8],
+    ['八角', '八角茴香', '演示品牌', '500g/袋', 'kg', 58.8],
+    ['桂皮', '桂皮', '演示品牌', '500g/袋', 'kg', 29.8],
+    ['香叶', '香叶', '演示品牌', '250g/袋', 'kg', 36.8],
+    ['丁香', '丁香', '演示品牌', '250g/袋', 'kg', 59.8],
+    ['小茴香', '小茴香', '演示品牌', '500g/袋', 'kg', 32.8],
+    ['豆豉', '风味豆豉', '演示品牌', '500g/袋', 'kg', 13.8],
+    ['豆腐乳', '红方腐乳', '王致和', '340g/瓶', 'kg', 15.8],
+    ['藤椒油', '藤椒油', '演示品牌', '500ml/瓶', 'L', 28.8]
+  ].map(([auxiliaryName, name, brand, spec, unit, marketPrice], index) => ({
+    id: `aux-simple-${index + 1}`, auxiliaryName, name, brand,
+    code: `SP039${String(index + 1).padStart(4, '0')}`, spec, unit, marketPrice
+  }));
+  const simpleProducts = [...products, ...simpleDemoProducts];
+  const attendanceProducts = () => simpleProducts.map((product) => {
+    const legacy = {
+      'aux-oil': { doseDisplay: '12 ml', dose: 0.012, packSize: 5, category: ['食用油', '植物油', '大豆油'] },
+      'aux-salt': { doseDisplay: '4 g', dose: 0.004, packSize: 0.5, category: ['调味品', '食盐', '精制盐'] },
+      'aux-msg': { doseDisplay: '1 g', dose: 0.001, packSize: 0.25, category: ['调味品', '香辛调味品', '味精'] }
+    }[product.id];
+    const spec = product.spec || '';
+    const size = spec.match(/^(\d+(?:\.\d+)?)(kg|g|L|ml)\//i);
+    const packSize = size ? Number(size[1]) * (/^(g|ml)$/i.test(size[2]) ? 0.001 : 1) : 0;
+    const category = /油$/.test(product.auxiliaryName) ? ['食用油', '调味油']
+      : /醋$/.test(product.auxiliaryName) ? ['调味品', '食醋']
+        : /酱$|腐乳|豆豉/.test(product.auxiliaryName) ? ['调味品', '酱料']
+          : /糖$/.test(product.auxiliaryName) ? ['调味品', '糖类']
+            : /粉$|花椒|八角|桂皮|香叶|丁香|小茴香|干辣椒/.test(product.auxiliaryName) ? ['调味品', '香辛料']
+              : ['调味品', '其他'];
+    return {
+      ...product, doseUnit: product.unit, doseDisplay: product.unit === 'L' ? '1 ml' : '1 g',
+      dose: 0.001, packSize, purchaseUnit: spec.split('/').at(-1) || product.unit,
+      category, ...legacy
+    };
+  });
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const roundQuantity = (value) => Number(Number(value || 0).toFixed(2));
   const timestamp = () => window.BusinessRules?.now?.() || new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -76,10 +150,11 @@
   };
   const combinedScope = (canteen) => canteenFor(canteen).id || canteenFor(canteen).name || '第一食堂';
   const selectedProductsKey = 'school-recipe-auxiliary-selected-products-v1';
-  const catalogProducts = (canteen) => {
+  const catalogProducts = (canteen, includeAll = false) => {
+    if (includeAll) return simpleProducts.map((product) => ({ ...product, isStandardProduct: false, currentSalesPrice: priceFor(product) }));
     const selectedIds = window.AppStorage?.read?.(selectedProductsKey, {})?.[combinedScope(canteen)];
     const configured = Array.isArray(selectedIds) && selectedIds.length
-      ? products.filter((product) => selectedIds.includes(product.id)) : products;
+      ? simpleProducts.filter((product) => selectedIds.includes(product.id)) : products;
     const maintained = configured.length ? configured : products;
     return maintained.map((product) => ({ ...product, isStandardProduct: false, currentSalesPrice: priceFor(product) }));
   };
@@ -101,9 +176,9 @@
     window.AppStorage?.write?.(combinedDraftKey, all);
   };
 
-  function buildCombinedPreview(canteen, draft = readCombinedDraft(canteen)) {
+  function buildCombinedPreview(canteen, draft = readCombinedDraft(canteen), requireDates = true, includeAll = false) {
     const dates = [...new Set(draft.dates || [])].filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
-    const rows = catalogProducts(canteen).map((product) => {
+    const rows = catalogProducts(canteen, includeAll).map((product) => {
       const code = String(product.code);
       const raw = draft.quantities?.[code];
       const orderQty = raw == null || raw === '' ? 0 : Number(raw);
@@ -120,7 +195,7 @@
     const selectedRows = rows.filter((row) => row.orderQty > 0);
     const invalid = rows.find((row) => !Number.isFinite(row.orderQty) || row.orderQty < 0
       || (row.isStandardProduct && !Number.isInteger(row.orderQty)));
-    const message = !dates.length ? '请先选择用料日期'
+    const message = requireDates && !dates.length ? '请先选择用料日期'
       : invalid ? '采购量需为非负数，标品数量需为整数'
         : !selectedRows.length ? '请至少填写一项大于 0 的采购量' : '';
     return {
@@ -134,8 +209,12 @@
   function buildSimplePreview(canteen, quantities = {}, expectedAt = '') {
     const date = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(expectedAt))
       ? expectedAt.slice(0, 10) : '';
-    const preview = buildCombinedPreview(canteen, { dates: date ? [date] : [], quantities });
+    const preview = buildCombinedPreview(canteen, { dates: date ? [date] : [], quantities }, true, true);
     return { ...preview, message: date ? preview.message : '请选择期望送达时间' };
+  }
+
+  function buildSimpleDraftPreview(canteen, quantities = {}) {
+    return buildCombinedPreview(canteen, { dates: [], quantities }, false, true);
   }
 
   function buildPreview(date, canteen, quantities = readDraft(date, canteen)) {
@@ -163,6 +242,69 @@
     const selectedRows = rows.filter((row) => row.orderQty > 0);
     const message = invalid ? '采购量需为非负数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
     return { date, canteen: canteenFor(canteen), participants, meals, rows, selectedRows, canSubmit: !message, message };
+  }
+
+  function readNoMealDraft(date, canteen) {
+    const saved = readDraft(date, canteen);
+    const participants = participantsFor(canteen);
+    const legacyRows = buildPreview(date, canteen, saved).rows;
+    const draft = {};
+    catalogProducts(canteen).forEach((product) => {
+      const code = String(product.code);
+      const personKeys = participants.map((person) => `${code}::${person.key}`);
+      if (Object.prototype.hasOwnProperty.call(saved, code) || personKeys.some((key) => Object.prototype.hasOwnProperty.call(saved, key))) {
+        if (Object.prototype.hasOwnProperty.call(saved, code)) draft[code] = saved[code];
+        personKeys.forEach((key) => {
+          if (Object.prototype.hasOwnProperty.call(saved, key)) draft[key] = saved[key];
+        });
+        return;
+      }
+      const rows = legacyRows.filter((row) => row.productCode === code);
+      if (splitByPerson()) {
+        participants.forEach((person) => {
+          const amount = roundQuantity(rows.reduce((sum, row) => sum + Number(row.participantQty?.[person.key] || 0), 0));
+          if (amount) draft[`${code}::${person.key}`] = String(amount);
+        });
+      } else {
+        const amount = roundQuantity(rows.reduce((sum, row) => sum + Number(row.orderQty || 0), 0));
+        if (amount) draft[code] = String(amount);
+      }
+    });
+    return draft;
+  }
+
+  function buildNoMealPreview(date, canteen, quantities = readNoMealDraft(date, canteen)) {
+    const participants = participantsFor(canteen);
+    const rows = catalogProducts(canteen).map((product) => {
+      const key = String(product.code);
+      const raw = quantities[key];
+      const participantQty = Object.fromEntries(participants.map((person, index) => [person.key,
+        Object.prototype.hasOwnProperty.call(quantities, `${key}::${person.key}`)
+          ? Number(quantities[`${key}::${person.key}`] || 0)
+          : index === 0 ? Number(raw || 0) : 0
+      ]));
+      const orderQty = splitByPerson() || raw == null
+        ? participants.reduce((sum, person) => sum + participantQty[person.key], 0)
+        : Number(raw || 0);
+      return {
+        key, productCode: key, productName: product.name, auxiliaryName: product.auxiliaryName,
+        unit: product.unit, brand: product.brand, spec: product.spec, isStandardProduct: false,
+        orderPrice: priceFor(product), participantQty, orderQty
+      };
+    });
+    const invalid = rows.find((row) => !Number.isFinite(row.orderQty) || row.orderQty < 0
+      || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key]) || row.participantQty[person.key] < 0)));
+    const selectedRows = rows.filter((row) => row.orderQty > 0);
+    const message = invalid ? '采购量需为非负数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
+    return { date, canteen: canteenFor(canteen), participants, meals: [], rows, selectedRows, canSubmit: !message, message };
+  }
+
+  function readNoMealFilledDates(canteen) {
+    const prefix = `${canteenFor(canteen).id || canteenFor(canteen).name || '第一食堂'}::`;
+    return Object.keys(readDrafts()).filter((key) => key.startsWith(prefix))
+      .map((key) => key.slice(prefix.length))
+      .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date) && buildNoMealPreview(date, canteen).selectedRows.length)
+      .sort();
   }
 
   function buildDatesPreview(dates, canteen, quantitiesByDate = {}) {
@@ -203,6 +345,36 @@
       meals, selectedRows, canSubmit: !message, message };
   }
 
+  function buildNoMealDatesPreview(dates, canteen, quantitiesByDate = {}) {
+    const normalizedDates = [...new Set((Array.isArray(dates) ? dates : [dates])
+      .map((date) => String(date || '').trim()).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)))].sort();
+    const summaries = normalizedDates.map((date) => buildNoMealPreview(date, canteen, quantitiesByDate[date] || {}));
+    const participants = participantsFor(canteen);
+    const rowMap = new Map();
+    summaries.forEach((summary) => summary.selectedRows.forEach((row) => {
+      const key = `${row.productCode}::${row.unit}`;
+      let aggregate = rowMap.get(key);
+      if (!aggregate) {
+        aggregate = { ...clone(row), sourceDates: [], participantDates: Object.fromEntries(participants.map((person) => [person.key, []])),
+          participantQty: Object.fromEntries(participants.map((person) => [person.key, 0])), orderQty: 0 };
+        rowMap.set(key, aggregate);
+      }
+      aggregate.orderQty = roundQuantity(aggregate.orderQty + row.orderQty);
+      aggregate.sourceDates.push(summary.date);
+      participants.forEach((person) => {
+        const amount = Number(row.participantQty?.[person.key] || 0);
+        aggregate.participantQty[person.key] = roundQuantity(aggregate.participantQty[person.key] + amount);
+        if (amount > 0) aggregate.participantDates[person.key].push(summary.date);
+      });
+    }));
+    const selectedRows = [...rowMap.values()];
+    const invalid = summaries.find((summary) => !summary.canSubmit);
+    const message = !normalizedDates.length ? '请至少填写一项大于 0 的采购量'
+      : invalid ? `${invalid.date} ${invalid.message}` : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
+    return { dates: normalizedDates, canteen: canteenFor(canteen), participants, dateSummaries: summaries,
+      meals: [], selectedRows, canSubmit: !message, message };
+  }
+
   function nextRecordNo(records, createdAt) {
     const prefix = `XQ${String(createdAt).slice(0, 10).replace(/-/g, '')}`;
     const existing = new Set(records.map((record) => String(record.recordNo || '')));
@@ -225,9 +397,11 @@
 
   async function submitDates(dates, canteen, quantitiesByDate, expectedAt, orderMode = 'legacy') {
     const combined = orderMode === 'combined' || orderMode === 'simple';
+    const noMeal = orderMode === 'no-meal';
     const preview = combined
-      ? buildCombinedPreview(canteen, quantitiesByDate)
-      : buildDatesPreview(dates, canteen, quantitiesByDate);
+      ? buildCombinedPreview(canteen, quantitiesByDate, true, orderMode === 'simple')
+      : noMeal ? buildNoMealDatesPreview(dates, canteen, quantitiesByDate)
+        : buildDatesPreview(dates, canteen, quantitiesByDate);
     if (!preview.canSubmit) throw new Error(preview.message);
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(expectedAt || ''))
       || expectedAt.slice(0, 10) > preview.dates[0]) {
@@ -280,7 +454,7 @@
         participantPersonTimes: Object.fromEntries(orderParticipants.map((person) => [person.key, 0])),
         studentPersonTimes: 0, teacherPersonTimes: 0, totalPersonTimes: 0,
         productCount: combined ? preview.selectedRows.length : items.length,
-        filledMeals: combined ? [] : summary.meals.filter((meal) => meal.rows.some((row) => row.orderQty > 0)).map((meal) => meal.name || meal.key),
+        filledMeals: combined || noMeal ? [] : summary.meals.filter((meal) => meal.rows.some((row) => row.orderQty > 0)).map((meal) => meal.name || meal.key),
         items };
     });
     const items = recordRows(preview.selectedRows);
@@ -291,7 +465,7 @@
       schoolName: orderService.SCHOOL_NAME || '静安第一中学',
       canteen: preview.canteen.name || '第一食堂', canteenId: preview.canteen.id || '',
       participants: clone(orderParticipants), dates: clone(preview.dates), expectedAt, recipeVersion: '',
-      source: orderMode === 'simple' ? '学校端干料需求下单' : '学校端商品需求下单', submittedBy: operator.name,
+      source: orderMode === 'simple' || noMeal ? '学校端干调需求下单' : '学校端商品需求下单', submittedBy: operator.name,
       submittedById: operator.id, submittedAt: createdAt,
       dateSummaries, items,
       participantPersonTimes: Object.fromEntries(orderParticipants.map((person) => [person.key, 0])),
@@ -299,13 +473,14 @@
       productCount: items.length, orders: [], enterpriseSyncWarnings: [],
       operationLogs: [{ action: '提交需求并下单', operator: operator.name, operatorId: operator.id,
         result: '提交成功', time: createdAt, description: orderMode === 'simple'
-          ? `提交期望送达时间 ${expectedAt} 的干料需求`
+          ? `提交期望送达时间 ${expectedAt} 的干调需求`
           : `提交 ${preview.dates.join('、')} 的商品需求` }]
     };
     const saveRecord = () => window.DemoStore?.replace?.(resource, [...records, record]);
     saveRecord();
     const groups = combined
       ? [{ key: 'combined', mealKey: '', name: '', date: '', rows: preview.selectedRows }]
+      : noMeal ? [{ key: 'no-meal', mealKey: '', name: '', date: '', rows: preview.selectedRows }]
       : orderMode === 'daily' ? preview.dateSummaries.flatMap((summary) => summary.meals.map((meal) => ({
         key: `${summary.date}-${meal.key}`, mealKey: meal.key, name: meal.name, date: summary.date,
         rows: meal.rows.filter((row) => row.orderQty > 0).map((row) => ({
@@ -334,7 +509,7 @@
             unit: row.unit, brand: row.brand, spec: row.spec, orderQty: amount,
             orderPrice: row.orderPrice, isNetVegetable: row.isNetVegetable === true,
             isStandardProduct: row.isStandardProduct === true,
-            remark: orderMode === 'simple' ? '干料需求'
+            remark: orderMode === 'simple' || noMeal ? '干调需求'
               : combined ? `商品${orderDates.join('、')}合并需求`
               : `商品${orderDates.join('、')}${group.name}需求` });
         });
@@ -391,9 +566,9 @@
   }
 
   window.SchoolRecipeAuxiliaryDirectService = {
-    products: clone(products), mealDefinitionsForDate, keyFor, catalogProducts,
-    readDraft, writeDraft, readFilledDates, readCombinedDraft, writeCombinedDraft,
-    participantsFor, buildPreview, buildDatesPreview, buildCombinedPreview, buildSimplePreview,
+    products: clone(products), attendanceProducts, mealDefinitionsForDate, keyFor, catalogProducts,
+    readDraft, writeDraft, readFilledDates, readNoMealDraft, readNoMealFilledDates, readCombinedDraft, writeCombinedDraft,
+    participantsFor, buildPreview, buildDatesPreview, buildNoMealPreview, buildNoMealDatesPreview, buildCombinedPreview, buildSimplePreview, buildSimpleDraftPreview,
     submit, submitDates, submitSimple
   };
 })();

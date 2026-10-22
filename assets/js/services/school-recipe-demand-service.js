@@ -262,6 +262,80 @@
     return aggregateMealRows(preview?.dateSummaries || [], mealKey, preview?.participants || []);
   }
 
+  function applyDemandEditsToSummary(summary, edits, participants) {
+    const calculation = summary?.calculation;
+    if (!calculation || !edits?.meals || !Object.keys(edits.meals).length) return summary;
+    const mealRows = calculation.mealRows || [];
+    if (!mealRows.length) return summary;
+    const productMap = getProductMap();
+    const allMealsEdit = edits.meals['all-meals'] || {};
+    const firstMealKey = String(mealRows[0]?.key || mealRows[0]?.name || '');
+    const nextMealRows = mealRows.map((meal) => {
+      const mealKey = String(meal.key || meal.name || '');
+      const mealEdit = edits.meals[mealKey] || {};
+      const removedKeys = new Set([
+        ...(Array.isArray(allMealsEdit.removedProductKeys) ? allMealsEdit.removedProductKeys : []),
+        ...(Array.isArray(mealEdit.removedProductKeys) ? mealEdit.removedProductKeys : [])
+      ].map(String));
+      const rows = (meal.rows || []).filter((row) => !removedKeys.has(purchaseRowKey(row))).map(clone);
+      const addedProducts = [
+        ...(mealKey === firstMealKey && Array.isArray(allMealsEdit.addedProducts) ? allMealsEdit.addedProducts : []),
+        ...(Array.isArray(mealEdit.addedProducts) ? mealEdit.addedProducts : [])
+      ];
+      addedProducts.forEach((entry) => {
+        const code = String(entry?.productCode || entry?.code || '').trim();
+        const product = productMap.get(code);
+        const amount = number(entry?.quantity, 0);
+        if (!code || !product || amount <= 0 || !Number.isFinite(amount) || !participants.length) return;
+        const unit = String(product.unit || entry.unit || '--');
+        const key = purchaseRowKey({ productCode: code, unit });
+        const existingIndex = rows.findIndex((row) => purchaseRowKey(row) === key);
+        if (existingIndex >= 0 && Number(rows[existingIndex].totalQty || 0) > 0) return;
+        const participantKey = participants.some((participant) => String(participant.key) === String(entry.participantKey))
+          ? String(entry.participantKey)
+          : String(participants[0].key);
+        const participantQty = Object.fromEntries(participants.map((participant) => [
+          participant.key,
+          String(participant.key) === participantKey ? quantity(amount) : 0
+        ]));
+        const manualRow = {
+          key,
+          productCode: code,
+          productName: product.name || entry.productName || entry.name || code,
+          unit,
+          brand: product.brand || '--',
+          spec: product.spec || '--',
+          isStandardProduct: isStandardProduct(product),
+          isNetVegetable: product.isNetVegetable === true,
+          mappingStatus: '已关联',
+          unitPrice: currentSalesPrice(product),
+          participantQty,
+          totalQty: quantity(amount),
+          studentQty: 0,
+          teacherQty: 0,
+          perCapitaQty: 0,
+          ingredientNames: ['手动添加'],
+          mealNames: [meal.name || mealKey],
+          dishNames: [],
+          isManuallyAdded: true
+        };
+        if (existingIndex >= 0) rows[existingIndex] = manualRow;
+        else rows.push(manualRow);
+      });
+      return { ...meal, rows };
+    });
+    const adjustedSummary = {
+      ...summary,
+      calculation: {
+        ...calculation,
+        mealRows: nextMealRows,
+        rows: nextMealRows.flatMap((meal) => meal.rows || [])
+      }
+    };
+    adjustedSummary.calculation.rows = aggregateRows([adjustedSummary], participants);
+    return adjustedSummary;
+  }
+
   function buildDemoRecord() {
     const demoCanteen = { id: '', name: CANTEEN_NAME };
     const dateSummaries = [buildDateSummary(DEMO_RECORD_DATE, DEMO_ATTENDANCE, {
@@ -338,7 +412,13 @@
     const normalizedDates = normalizeDates(dates);
     const canteen = currentCanteen(options.canteen);
     const participants = options.participants || participantsFor(canteen);
-    const dateSummaries = normalizedDates.map((date) => buildDateSummary(date, null, { canteen, participants }));
+    const demandEditsByDate = options.demandEditsByDate || {};
+    const attendanceByDate = options.attendanceByDate || {};
+    const dateSummaries = normalizedDates.map((date) => applyDemandEditsToSummary(
+      buildDateSummary(date, attendanceByDate[date] || null, { canteen, participants }),
+      demandEditsByDate[date],
+      participants
+    ));
     const rows = aggregateRows(dateSummaries, participants);
     const excludedProductKeys = toKeySet(options.excludedProductKeys);
     const participantPersonTimes = Object.fromEntries(participants.map((participant) => [participant.key, 0]));

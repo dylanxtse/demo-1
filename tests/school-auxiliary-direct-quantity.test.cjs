@@ -45,6 +45,52 @@ test('商品数量填报可在无食谱日期独立记录各餐次采购量', ()
   assert.equal(service.readDraft(date, canteen)[secondKey], '3');
 });
 
+test('手机端干调旧餐次草稿合并为每日商品总量，并生成无餐次订单', async () => {
+  const context = app();
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const meals = service.buildPreview(date, canteen).meals;
+  const code = meals[0].rows[0].productCode;
+  service.writeDraft(date, canteen, { [meals[0].rows[0].key]: '2.5', [meals[1].rows[0].key]: '3' });
+  const draft = service.readNoMealDraft(date, canteen);
+  assert.equal(draft[code], '5.5');
+  assert.deepEqual(Array.from(service.readNoMealFilledDates(canteen)), [date]);
+  const preview = service.buildNoMealPreview(date, canteen, draft);
+  assert.equal(preview.rows.length, 3);
+  assert.equal(preview.meals.length, 0);
+  assert.equal(preview.selectedRows[0].orderQty, 5.5);
+
+  const result = await service.submitDates([date], canteen, { [date]: draft }, `${date} 07:30:00`, 'no-meal');
+  assert.equal(result.record.orderMode, 'no-meal');
+  assert.deepEqual(Array.from(result.record.dateSummaries[0].filledMeals), []);
+  assert.equal(result.orders.length, 1);
+  assert.ok(!result.orders[0].mealKey);
+  const order = context.SchoolOrderService.get(result.orders[0].orderId);
+  assert.equal(order.items[0].orderQty, 5.5);
+});
+
+test('手机端干调按人员类型填写多日总量，订单仍不带餐次', async () => {
+  const context = app();
+  context.DemoStore.updateSettings({ splitOrderByPersonType: true, splitOrderByMeal: true });
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const [first, second] = service.participantsFor(canteen);
+  const code = service.buildNoMealPreview(date, canteen).rows[0].key;
+  const nextDate = '2026-09-17';
+  const drafts = {
+    [date]: { [`${code}::${first.key}`]: '2', [`${code}::${second.key}`]: '3' },
+    [nextDate]: { [`${code}::${first.key}`]: '4' }
+  };
+  const preview = service.buildNoMealDatesPreview([date, nextDate], canteen, drafts);
+  assert.equal(preview.selectedRows[0].orderQty, 9);
+  assert.equal(preview.meals.length, 0);
+  const result = await service.submitDates([date, nextDate], canteen, drafts, `${date} 07:30:00`, 'no-meal');
+  assert.equal(result.orders.length, 2);
+  assert.ok(result.orders.every((order) => !order.mealKey && !order.mealName));
+  assert.deepEqual(Array.from(result.orders.find((order) => order.participantType === first.label).dates), [date, nextDate]);
+  assert.deepEqual(Array.from(result.orders.find((order) => order.participantType === second.label).dates), [date]);
+});
+
 test('商品数量填报生成独立需求记录和订单', async () => {
   const context = app();
   const service = context.SchoolRecipeAuxiliaryDirectService;
@@ -80,7 +126,7 @@ test('关闭按餐次拆单时，同一商品的数量合并下单', async () =>
   assert.equal(order.items[0].orderQty, 5.5);
 });
 
-test('干料填报直接显示商品、送达时间和确认入口', () => {
+test('干调数量填报只显示商品和确认入口，送达时间在确认页选择', () => {
   const context = app();
   context.location = { search: '?mode=quantity' };
   const page = { outerHTML: '' };
@@ -93,15 +139,91 @@ test('干料填报直接显示商品、送达时间和确认入口', () => {
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
   assert.match(page.outerHTML, /data-aux-simple-quantity="SP0300030"/);
-  assert.match(page.outerHTML, /data-aux-simple-expected-at/);
-  assert.match(page.outerHTML, /data-aux-simple-date-field[^>]*><span class="school-auxiliary-simple-date-display"/);
-  assert.match(page.outerHTML, /data-aux-simple-date-label>请选择<\/span>/);
-  assert.doesNotMatch(page.outerHTML, /placeholder="年|placeholder="月|placeholder="日/);
-  assert.doesNotMatch(page.outerHTML, /填写采购数量|已填写 \d+ 种商品/);
-  assert.doesNotMatch(page.outerHTML, /直接填写需要采购的干料数量/);
+  assert.match(page.outerHTML, /data-aux-simple-search/);
+  assert.match(page.outerHTML, /<label for="schoolAuxiliaryProductSearch">商品名称<\/label>/);
+  assert.doesNotMatch(page.outerHTML, /school-recipe-entry-set-default|data-aux-entry-set-default|>设为默认</);
+  assert.match(page.outerHTML, /placeholder="请输入商品名称\/编号"/);
+  assert.match(page.outerHTML, /data-aux-simple-query>查询<\/button>/);
+  assert.match(page.outerHTML, /data-aux-simple-search-reset>重置<\/button>/);
+  assert.doesNotMatch(page.outerHTML, /data-aux-simple-clear|清空本次填报/);
+  assert.match(page.outerHTML, /查看已填写 0 种商品/);
+  assert.match(page.outerHTML, /data-aux-simple-filled-count[^>]* disabled/);
+  assert.doesNotMatch(page.outerHTML, /data-aux-simple-filled-filter/);
+  assert.doesNotMatch(page.outerHTML, /期望送达时间|data-aux-simple-expected-at/);
+  assert.doesNotMatch(page.outerHTML, /填写采购数量/);
+  assert.doesNotMatch(page.outerHTML, /直接填写需要采购的干调数量/);
   assert.match(page.outerHTML, /data-aux-simple-confirm disabled/);
   assert.match(page.outerHTML, /data-aux-entry-mode="people"/);
   assert.doesNotMatch(page.outerHTML, /school-auxiliary-calendar|data-aux-date=|data-aux-direct-meal=/);
+});
+
+test('干调商品可按名称和编号搜索，底部可查看已填写商品', () => {
+  const context = app();
+  context.location = { search: '?mode=quantity' };
+  const listeners = {};
+  let html = '';
+  const page = { get outerHTML() { return html; }, set outerHTML(value) { html = value; } };
+  const body = { innerHTML: '' };
+  const count = { textContent: '', disabled: true };
+  const button = { disabled: true, classList: { toggle() {} } };
+  const searchInput = { value: '' };
+  context.AppShell = { mount({ content }) {
+    html = content;
+    return {
+      querySelector(selector) { return {
+        '#schoolAuxiliaryPage': page,
+        '[data-aux-simple-table-body]': body,
+        '[data-aux-simple-filled-count]': count,
+        '[data-aux-simple-confirm]': button,
+        '[data-aux-simple-search]': searchInput
+      }[selector] || null; },
+      addEventListener(type, handler) { listeners[type] = handler; }
+    };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
+  const input = (selector, value, dataset = {}) => {
+    if (selector === '[data-aux-simple-search]') searchInput.value = value;
+    listeners.input({ target: {
+      value, dataset, closest(candidate) { return candidate === selector ? this : null; }
+    } });
+  };
+  const click = (selector) => listeners.click({ target: {
+    closest(candidate) { return candidate === selector ? {} : null; }
+  } });
+  input('[data-aux-simple-search]', 'SP0300031');
+  assert.equal(body.innerHTML, '');
+  click('[data-aux-simple-query]');
+  assert.match(body.innerHTML, /食盐/);
+  assert.doesNotMatch(body.innerHTML, /金龙鱼5L桶装油/);
+  input('[data-aux-simple-search]', '不存在');
+  assert.match(body.innerHTML, /食盐/);
+  click('[data-aux-simple-query]');
+  assert.match(body.innerHTML, /未找到匹配的商品/);
+  click('[data-aux-simple-search-reset]');
+  assert.equal(searchInput.value, '');
+  assert.match(body.innerHTML, /金龙鱼5L桶装油/);
+  input('[data-aux-simple-quantity]', '2.5', { auxSimpleQuantity: 'SP0300030' });
+  assert.equal(count.textContent, '查看已填写 1 种商品');
+  assert.equal(count.disabled, false);
+  input('[data-aux-simple-search]', 'SP0300031');
+  click('[data-aux-simple-query]');
+  click('[data-aux-simple-search-reset]');
+  assert.equal(count.textContent, '查看已填写 1 种商品');
+  assert.match(body.innerHTML, /value="2.5" data-aux-simple-quantity="SP0300030"/);
+  click('[data-aux-simple-filled-count]');
+  assert.match(html, /data-aux-simple-filled-count aria-pressed="true"/);
+  assert.match(html, />查看全部商品<\/button>/);
+  assert.match(html, /金龙鱼5L桶装油/);
+  assert.doesNotMatch(html, /SP0300031/);
+  input('[data-aux-simple-quantity]', '0', { auxSimpleQuantity: 'SP0300030' });
+  assert.equal(count.textContent, '查看全部商品');
+  listeners.change({ target: { closest(selector) {
+    return selector === '[data-aux-simple-quantity]' ? {} : null;
+  } } });
+  assert.match(body.innerHTML, /暂无已填写商品/);
+  click('[data-aux-simple-filled-count]');
+  assert.match(html, /SP0300031/);
+  assert.match(html, />查看已填写 0 种商品<\/button>/);
 });
 
 test('人数填报保留原有页面，两种方式可相互切换', () => {
@@ -119,6 +241,7 @@ test('人数填报保留原有页面，两种方式可相互切换', () => {
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
   assert.match(html, /data-person-type="[^\"]+" data-meal-key="breakfast"/);
   assert.match(html, /school-auxiliary-recipe-date-panel/);
+  assert.doesNotMatch(html, /school-recipe-entry-set-default|data-aux-entry-set-default|>设为默认</);
   assert.match(html, /data-confirm-demand/);
   listeners.click({ target: { closest(selector) {
     return selector === '[data-aux-entry-mode]' ? { dataset: { auxEntryMode: 'quantity' } } : null;
@@ -142,34 +265,23 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   const page = { get outerHTML() { return html; }, set outerHTML(value) { html = value; } };
   const button = { disabled: true, classList: { toggle() {} } };
   const error = { textContent: '' };
-  const dateLabel = { textContent: '' };
   context.AppShell = { mount({ content }) {
     html = content;
     return {
       querySelector(selector) { return {
         '#schoolAuxiliaryPage': page,
         '[data-aux-simple-confirm]': button,
-        '[data-aux-simple-date-label]': dateLabel,
         '[data-aux-simple-error]': error
       }[selector] || null; },
       addEventListener(type, handler) { listeners[type] = handler; }
     };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
-  let pickerOpened = false;
-  await listeners.click({ target: { closest(selector) {
-    return selector === '[data-aux-simple-expected-at]'
-      ? { showPicker() { pickerOpened = true; } } : null;
-  } } });
-  assert.equal(pickerOpened, true);
   const input = (selector, value, dataset = {}) => listeners.input({ target: {
     value, dataset, closest(candidate) { return candidate === selector ? this : null; }
   } });
   input('[data-aux-simple-quantity]', '2.5', { auxSimpleQuantity: 'SP0300030' });
-  assert.equal(button.disabled, true);
-  input('[data-aux-simple-expected-at]', `${date}T07:30`);
   assert.equal(button.disabled, false);
-  assert.equal(dateLabel.textContent, `${date} 07:30`);
   const recordsBeforeConfirm = context.DemoStore.get('recipeDemandRecords').length;
   await listeners.click({ target: { closest(selector) {
     return selector === '[data-aux-simple-confirm]' ? {} : null;
@@ -191,11 +303,26 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
     };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-simple-confirm.js'), 'utf8'), context);
-  assert.match(confirmHtml, /干料需求确认/);
-  assert.match(confirmHtml, /2026-09-16 07:30:00/);
+  assert.match(confirmHtml, /干调需求确认/);
+  assert.match(confirmHtml, /data-aux-simple-confirm-expected-at/);
+  assert.match(confirmHtml, /期望送达时间/);
+  assert.match(confirmHtml, /请选择/);
+  assert.match(confirmHtml, /data-aux-simple-submit disabled/);
   assert.match(confirmHtml, /SP0300030/);
-  assert.match(confirmHtml, /<td class="is-number">2\.5<\/td>/);
+  assert.match(confirmHtml, /data-aux-simple-confirm-quantity="SP0300030"[^>]*value="2\.5"/);
   assert.doesNotMatch(confirmHtml, /用料日期明细/);
+  let pickerOpened = false;
+  await confirmListeners.click({ target: { closest(selector) {
+    return selector === '[data-aux-simple-confirm-expected-at]'
+      ? { showPicker() { pickerOpened = true; } } : null;
+  } } });
+  assert.equal(pickerOpened, true);
+  confirmListeners.change({ target: {
+    value: `${date}T07:30`,
+    closest(selector) { return selector === '[data-aux-simple-confirm-expected-at]' ? this : null; }
+  } });
+  assert.match(confirmHtml, /data-aux-simple-submit>/);
+  assert.equal(context.AppStorage.read('school-recipe-auxiliary-simple-drafts-v1', {})[canteen.id].expectedAt, `${date}T07:30`);
   await confirmListeners.click({ target: { closest(selector) {
     return selector === '[data-aux-simple-submit]' ? {} : null;
   } } });
@@ -223,10 +350,10 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   assert.match(detailHtml, /2026-09-16 07:30:00/);
   detailRecord = { ...record, orderMode: 'combined' };
   renderDetail();
-  assert.doesNotMatch(detailHtml, /用料日期明细/, '干料商品数量记录不按下单方式判断');
+  assert.doesNotMatch(detailHtml, /用料日期明细/, '干调商品数量记录不按下单方式判断');
   detailRecord = { ...record, entryMode: 'people' };
   renderDetail();
-  assert.match(detailHtml, /用料日期明细/, '干料人数填报仍显示日期明细');
+  assert.match(detailHtml, /用料日期明细/, '干调人数填报仍显示日期明细');
   detailRecord = { ...record, demandType: 'ingredient', auxiliary: false };
   renderDetail();
   assert.match(detailHtml, /用料日期明细/, '食材商品数量填报仍显示日期明细');
@@ -444,7 +571,7 @@ test('分天分餐次明确按日期和餐次下单，不受全局餐次合并�
   assert.deepEqual(Array.from(result.orders, (order) => context.SchoolOrderService.get(order.orderId).items[0].orderQty).sort((a, b) => a - b), [1, 2, 3]);
 });
 
-test('干料填报页只显示已设置商品，历史确认页不显示餐次', () => {
+test('干调数量页显示全部商品，历史合并确认页仍按设置商品显示', () => {
   const context = app();
   const service = context.SchoolRecipeAuxiliaryDirectService;
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
@@ -462,7 +589,11 @@ test('干料填报页只显示已设置商品，历史确认页不显示餐次',
   assert.doesNotMatch(page.outerHTML, /填写采购数量/);
   assert.match(page.outerHTML, /食盐/);
   assert.match(page.outerHTML, /data-aux-simple-quantity="SP0300031"/);
-  assert.doesNotMatch(page.outerHTML, /金龙鱼5L桶装油/);
+  assert.match(page.outerHTML, /金龙鱼5L桶装油/);
+  assert.match(page.outerHTML, /SP0390047/);
+  assert.equal((page.outerHTML.match(/data-aux-simple-quantity="/g) || []).length, 50);
+  assert.equal(service.catalogProducts(canteen).length, 1);
+  assert.equal(service.catalogProducts(canteen, true).length, 50);
   assert.doesNotMatch(page.outerHTML, /school-auxiliary-calendar|data-aux-date=/);
   assert.doesNotMatch(page.outerHTML, /data-aux-direct-meal=/);
   const salt = service.catalogProducts(canteen)[0];
@@ -502,6 +633,22 @@ test('干料填报页只显示已设置商品，历史确认页不显示餐次',
   assert.doesNotMatch(confirmHtml, new RegExp(`<td>${date}</td>`));
   assert.match(confirmHtml, /data-aux-direct-delete-date="2026-09-18" title="至少保留一个填报日期" disabled/);
   assert.deepEqual(Array.from(service.readCombinedDraft(canteen).dates), [date, '2026-09-18']);
+});
+
+test('新增演示干调商品可在数量模式汇总并提交订单', async () => {
+  const context = app();
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  context.AppStorage.write('school-recipe-auxiliary-selected-products-v1', { [canteen.id]: ['aux-oil'] });
+  const product = service.catalogProducts(canteen, true).at(-1);
+  assert.equal(product.code, 'SP0390047');
+  const quantities = { [product.code]: '2.5' };
+  const preview = service.buildSimpleDraftPreview(canteen, quantities);
+  assert.equal(preview.canSubmit, true);
+  assert.deepEqual(Array.from(preview.selectedRows, (row) => row.productCode), [product.code]);
+  const result = await service.submitSimple(canteen, quantities, `${date} 07:30:00`);
+  assert.equal(result.record.items[0].productCode, product.code);
+  assert.equal(context.SchoolOrderService.get(result.orders[0].orderId).items[0].orderQty, 2.5);
 });
 
 test('分天分餐次确认只读取当前日期，不混入其他日期的草稿', () => {

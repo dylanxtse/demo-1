@@ -14,10 +14,10 @@
   const moneyValue = (value) => Math.round((Number(value) || 0) * 100) / 100;
   const money = (value) => `¥${moneyValue(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const isAuxiliaryRecord = record?.demandType === 'auxiliary'
-    || (!record?.demandType && (record?.auxiliary === true || /辅料|商品需求/.test(String(record?.source || ''))));
+    || (!record?.demandType && (record?.auxiliary === true || /辅料|干调|商品需求/.test(String(record?.source || ''))));
   const isDirectQuantityRecord = record?.entryMode === 'quantity';
   const isAuxiliaryQuantityRecord = isAuxiliaryRecord && isDirectQuantityRecord;
-  const demandType = isAuxiliaryRecord ? '干料需求填报' : '菜谱需求填报';
+  const demandType = isAuxiliaryRecord ? '干调需求填报' : '菜谱需求填报';
   const entryMethod = isDirectQuantityRecord ? '商品数量填报' : '就餐人数填报';
   const productDisplay = (item) => {
     if (isAuxiliaryRecord) {

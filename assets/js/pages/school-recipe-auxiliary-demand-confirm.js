@@ -43,11 +43,7 @@
   const mealDefinitionsForDate = (targetDate) => (allMenus.find((menu) => menu.date === targetDate)?.meals || mealsWithoutRecipe)
     .map((meal) => ({ key: String(meal.key || ''), name: meal.name || mealNameFallbacks[meal.key] || meal.key }))
     .filter((meal) => meal.key);
-  const products = [
-    { id: 'aux-oil', auxiliaryName: '油', name: '金龙鱼5L桶装油', brand: '金龙鱼', code: 'SP0300030', spec: '5L/桶', doseUnit: 'L', doseDisplay: '12 ml', purchaseUnit: '桶', packSize: 5, dose: 0.012, marketPrice: 55 },
-    { id: 'aux-salt', auxiliaryName: '盐', name: '食盐', brand: '—', code: 'SP0300031', spec: '500g/袋', doseUnit: 'kg', doseDisplay: '4 g', purchaseUnit: '袋', packSize: 0.5, dose: 0.004, marketPrice: 18.5 },
-    { id: 'aux-msg', auxiliaryName: '味精', name: '味精', brand: '—', code: 'SP0300032', spec: '250g/袋', doseUnit: 'kg', doseDisplay: '1 g', purchaseUnit: '袋', packSize: 0.25, dose: 0.001, marketPrice: 8 }
-  ];
+  const products = window.SchoolRecipeAuxiliaryDirectService.attendanceProducts();
   const draftForDate = (targetDate) => {
     const source = readDrafts()?.[canteenScope]?.[targetDate] || {};
     const dateMeals = mealDefinitionsForDate(targetDate);

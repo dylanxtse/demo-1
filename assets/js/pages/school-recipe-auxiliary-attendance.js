@@ -23,47 +23,43 @@
   const readDraft = (canteen) => window.AppStorage?.read?.(draftKey, {})?.[scopeFor(canteen)] || {};
   const state = {
     canteen: resolveCanteen(savedCanteen),
-    expectedAt: '',
-    quantities: {}
+    quantities: {},
+    search: '',
+    searchInput: '',
+    filledOnly: false
   };
 
   function loadDraft() {
     const saved = readDraft(state.canteen);
-    state.expectedAt = String(saved.expectedAt || '');
     state.quantities = { ...(saved.quantities || {}) };
   }
 
   function saveDraft() {
     const drafts = window.AppStorage?.read?.(draftKey, {}) || {};
     drafts[scopeFor(state.canteen)] = {
-      expectedAt: state.expectedAt,
+      ...drafts[scopeFor(state.canteen)],
       quantities: { ...state.quantities }
     };
     window.AppStorage?.write?.(draftKey, drafts);
   }
 
-  function clearDraft() {
-    const drafts = window.AppStorage?.read?.(draftKey, {}) || {};
-    delete drafts[scopeFor(state.canteen)];
-    window.AppStorage?.write?.(draftKey, drafts);
-    state.expectedAt = '';
-    state.quantities = {};
+  function isFilled(product) {
+    const value = String(state.quantities[String(product.code)] ?? '').trim();
+    return /^\d+(?:\.\d{1,2})?$/.test(value) && Number(value) > 0;
   }
 
-  function expectedAtValue() {
-    const match = state.expectedAt.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2})?$/);
-    if (!match) return '';
-    const parsed = new Date(`${match[1]}T${match[2]}:00`);
-    if (Number.isNaN(parsed.getTime()) || parsed.getFullYear() !== Number(match[1].slice(0, 4))
-      || parsed.getMonth() + 1 !== Number(match[1].slice(5, 7))
-      || parsed.getDate() !== Number(match[1].slice(8, 10))) return '';
-    return `${match[1]} ${match[2]}:00`;
+  function filledCount() {
+    return service.catalogProducts(state.canteen, true).filter(isFilled).length;
+  }
+
+  function filledToggleLabel(count = filledCount()) {
+    return state.filledOnly ? '查看全部商品' : `查看已填写 ${count} 种商品`;
   }
 
   function preview() {
     const invalidQuantity = Object.values(state.quantities).some((value) =>
       String(value).trim() !== '' && !/^\d+(?:\.\d{1,2})?$/.test(String(value).trim()));
-    const result = service.buildSimplePreview(state.canteen, state.quantities, expectedAtValue());
+    const result = service.buildSimpleDraftPreview(state.canteen, state.quantities);
     return invalidQuantity
       ? { ...result, canSubmit: false, message: '采购数量只能填写不超过两位小数的非负数' }
       : result;
@@ -79,39 +75,48 @@
   }
 
   function renderModeSwitcher() {
-    return `<div class="school-recipe-entry-switch" aria-label="干料需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
+    return `<div class="school-recipe-entry-switch" aria-label="干调需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
       ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
-    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${mode === 'quantity'}" class="school-recipe-entry-tab${mode === 'quantity' ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div><button type="button" class="school-recipe-entry-set-default" data-aux-entry-set-default${defaultMode === 'quantity' ? ' disabled' : ''}>设为默认</button></div>`;
+    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${mode === 'quantity'}" class="school-recipe-entry-tab${mode === 'quantity' ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div></div>`;
   }
 
   function renderRows() {
-    const products = service.catalogProducts(state.canteen);
-    return products.map((product, index) => {
+    const catalog = service.catalogProducts(state.canteen, true);
+    const keyword = state.search.trim().toLocaleLowerCase();
+    const products = catalog.map((product, index) => ({ product, index })).filter(({ product }) => {
+      if (state.filledOnly && !isFilled(product)) return false;
+      if (!keyword) return true;
+      return [product.auxiliaryName, product.name, product.code, product.brand, product.spec, product.unit]
+        .some((value) => String(value ?? '').toLocaleLowerCase().includes(keyword));
+    });
+    return products.map(({ product, index }) => {
       const code = String(product.code);
       const value = state.quantities[code] ?? '';
       const name = `${product.name}（${product.unit}/${product.brand}/${product.spec}）`;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(product.auxiliaryName)}</td><td class="product-cell">${escapeHtml(name)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(product.unit)}</td><td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" value="${escapeHtml(value)}" data-aux-simple-quantity="${escapeHtml(code)}" aria-label="${escapeHtml(product.name)}采购数量"></div></td></tr>`;
-    }).join('') || '<tr><td colspan="6" class="school-auxiliary-empty">暂无可填报商品</td></tr>';
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(product.auxiliaryName)}</td><td class="product-cell">${escapeHtml(name)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(product.unit)}</td><td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="请输入" value="${escapeHtml(value)}" data-aux-simple-quantity="${escapeHtml(code)}" aria-label="${escapeHtml(product.name)}采购数量"></div></td></tr>`;
+    }).join('') || `<tr><td colspan="6" class="school-auxiliary-empty">${!catalog.length ? '暂无可填报商品' : state.filledOnly && !filledCount() ? '暂无已填写商品' : '未找到匹配的商品'}</td></tr>`;
   }
 
   function renderPage() {
     const result = preview();
-    return `<section class="page-card school-auxiliary-page" id="schoolAuxiliaryPage" aria-label="干料需求填报">
+    const count = filledCount();
+    const toggleLabel = filledToggleLabel(count);
+    return `<section class="page-card school-auxiliary-page" id="schoolAuxiliaryPage" aria-label="干调需求填报">
       ${renderModeSwitcher()}
       <div class="school-auxiliary-simple-body"><main class="school-auxiliary-detail">
         ${renderCanteens()}
         <div class="school-auxiliary-simple-scroll">
-          <div class="school-auxiliary-simple-delivery"><label for="schoolAuxiliaryExpectedAt">期望送达时间 <span aria-hidden="true">*</span></label><div class="school-auxiliary-simple-date-field${state.expectedAt ? '' : ' is-empty'}" data-aux-simple-date-field><span class="school-auxiliary-simple-date-display" aria-hidden="true"><span data-aux-simple-date-label>${escapeHtml(state.expectedAt ? state.expectedAt.replace('T', ' ') : '请选择')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span><input id="schoolAuxiliaryExpectedAt" type="datetime-local" value="${escapeHtml(state.expectedAt)}" data-aux-simple-expected-at aria-label="期望送达时间"></div></div>
-          <div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-simple-table"><thead><tr><th>序号</th><th>干料</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>采购数量</th></tr></thead><tbody>${renderRows()}</tbody></table></div>
+          <div class="school-auxiliary-simple-search"><label for="schoolAuxiliaryProductSearch">商品名称</label><input id="schoolAuxiliaryProductSearch" type="search" value="${escapeHtml(state.searchInput)}" placeholder="请输入商品名称/编号" data-aux-simple-search><button type="button" class="btn btn-primary btn-sm" data-aux-simple-query>查询</button><button type="button" class="btn btn-sm" data-aux-simple-search-reset>重置</button></div>
+          <div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-simple-table"><thead><tr><th>序号</th><th>干调</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>采购数量</th></tr></thead><tbody data-aux-simple-table-body>${renderRows()}</tbody></table></div>
         </div>
-        <footer class="school-auxiliary-footer school-auxiliary-simple-footer"><div><button type="button" class="btn btn-sm" data-aux-simple-clear>清空本次填报</button></div><div class="school-auxiliary-simple-actions"><span class="school-auxiliary-simple-error" data-aux-simple-error role="alert"></span><button type="button" class="btn btn-primary btn-sm${result.canSubmit ? '' : ' btn-disabled'}" data-aux-simple-confirm${result.canSubmit ? '' : ' disabled'}>确认需求</button></div></footer>
+        <footer class="school-auxiliary-footer school-auxiliary-simple-footer"><div><button type="button" class="school-auxiliary-simple-filled-count" data-aux-simple-filled-count aria-pressed="${state.filledOnly}"${count || state.filledOnly ? '' : ' hidden disabled'}>${toggleLabel}</button></div><div class="school-auxiliary-simple-actions"><span class="school-auxiliary-simple-error" data-aux-simple-error role="alert"></span><button type="button" class="btn btn-primary btn-sm${result.canSubmit ? '' : ' btn-disabled'}" data-aux-simple-confirm${result.canSubmit ? '' : ' disabled'}>确认需求</button></div></footer>
       </main></div>
     </section>`;
   }
 
   loadDraft();
   const root = window.AppShell.mount({
-    title: '干料需求填报', variant: 'school', content: renderPage(), emptyText: '干料需求填报'
+    title: '干调需求填报', variant: 'school', content: renderPage(), emptyText: '干调需求填报'
   });
 
   function rerender() {
@@ -126,14 +131,22 @@
       button.disabled = !result.canSubmit;
       button.classList.toggle('btn-disabled', button.disabled);
     }
-    root.querySelector('[data-aux-simple-date-field]')?.classList.toggle('is-empty', !state.expectedAt);
-    const dateLabel = root.querySelector('[data-aux-simple-date-label]');
-    if (dateLabel) dateLabel.textContent = state.expectedAt ? state.expectedAt.replace('T', ' ') : '请选择';
+    const count = filledCount();
+    const countLabel = root.querySelector('[data-aux-simple-filled-count]');
+    if (countLabel) {
+      countLabel.textContent = filledToggleLabel(count);
+      countLabel.hidden = !count && !state.filledOnly;
+      countLabel.disabled = !count && !state.filledOnly;
+    }
     const error = root.querySelector('[data-aux-simple-error]');
     if (error) error.textContent = '';
   }
 
   root.addEventListener('input', (event) => {
+    if (event.target.closest('[data-aux-simple-search]')) {
+      state.searchInput = event.target.value;
+      return;
+    }
     const quantityInput = event.target.closest('[data-aux-simple-quantity]');
     if (quantityInput) {
       const code = quantityInput.dataset.auxSimpleQuantity;
@@ -143,23 +156,29 @@
       refreshValidation();
       return;
     }
-    if (event.target.closest('[data-aux-simple-expected-at]')) {
-      state.expectedAt = event.target.value;
-      saveDraft();
-      refreshValidation();
-    }
+  });
+
+  root.addEventListener('change', (event) => {
+    if (!event.target.closest('[data-aux-simple-quantity]')) return;
+    if (!state.filledOnly) return;
+    const body = root.querySelector('[data-aux-simple-table-body]');
+    if (body) body.innerHTML = renderRows();
   });
 
   root.addEventListener('click', (event) => {
-    const dateInput = event.target.closest('[data-aux-simple-expected-at]');
-    if (dateInput) {
-      try { dateInput.showPicker?.(); } catch (_) { dateInput.focus(); }
+    if (event.target.closest('[data-aux-simple-query]')) {
+      state.search = state.searchInput.trim();
+      const body = root.querySelector('[data-aux-simple-table-body]');
+      if (body) body.innerHTML = renderRows();
       return;
     }
-    if (event.target.closest('[data-aux-entry-set-default]')) {
-      defaultMode = 'quantity';
-      window.AppStorage?.write?.(defaultModeKey, defaultMode);
-      rerender();
+    if (event.target.closest('[data-aux-simple-search-reset]')) {
+      state.search = '';
+      state.searchInput = '';
+      const input = root.querySelector('[data-aux-simple-search]');
+      if (input) input.value = '';
+      const body = root.querySelector('[data-aux-simple-table-body]');
+      if (body) body.innerHTML = renderRows();
       return;
     }
     const modeButton = event.target.closest('[data-aux-entry-mode]');
@@ -172,13 +191,19 @@
     const canteenButton = event.target.closest('[data-aux-simple-canteen]');
     if (canteenButton) {
       state.canteen = resolveCanteen(canteenButton.dataset.auxSimpleCanteen);
+      state.search = '';
+      state.searchInput = '';
+      state.filledOnly = false;
       window.AppStorage?.write?.(canteenKey, scopeFor(state.canteen));
       loadDraft();
       rerender();
       return;
     }
-    if (event.target.closest('[data-aux-simple-clear]')) {
-      clearDraft();
+    if (event.target.closest('[data-aux-simple-filled-count]')) {
+      if (!state.filledOnly && !filledCount()) return;
+      state.filledOnly = !state.filledOnly;
+      state.search = '';
+      state.searchInput = '';
       rerender();
       return;
     }

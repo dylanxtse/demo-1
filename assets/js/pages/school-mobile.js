@@ -351,6 +351,7 @@
   ];
   const productOrderStorageKey = 'school-mobile-product-cart-v1';
   const productOrderOrdersStorageKey = 'school-mobile-product-orders-v1';
+  const attendanceDemandEditsStorageKey = 'school-mobile-attendance-demand-edits-v1';
   const nextProductOrderDate = () => {
     const date = new Date();
     date.setDate(date.getDate() + 1);
@@ -430,6 +431,8 @@
     directMealKey: '',
     directParticipantKey: '',
     directDates: [],
+    auxiliarySearchInput: '',
+    auxiliarySearchTerm: '',
     attendanceValidationHighlightDate: '',
     sheet: null,
     toast: null,
@@ -479,10 +482,13 @@
     productPickerDraft: '',
     productEditingOrderId: '',
     orderDetailProductAddMode: false,
-    orderDetailProductCartBackup: null
+    orderDetailProductCartBackup: null,
+    openAttendanceDemandSwipeKey: ''
   };
   let mealSwipeStart = null;
   let productSwipeStart = null;
+  let attendanceDemandSwipeStart = null;
+  let suppressDemandRowClick = false;
 
   function currentCanteen() {
     return canteenConfig?.getCanteen?.(state.canteen) || { id: '', name: state.canteen };
@@ -494,6 +500,67 @@
 
   function serviceOptions() {
     return { canteen: currentCanteen(), participants: participants() };
+  }
+
+  function attendanceDemandScope(date, mealKey) {
+    const canteen = currentCanteen();
+    return [canteen.id || canteen.name || state.canteen, date, mealKey || 'all-meals'].join('::');
+  }
+
+  function readAttendanceDemandEdit(date, mealKey) {
+    const all = window.AppStorage?.read?.(attendanceDemandEditsStorageKey, {}) || {};
+    const edit = all[attendanceDemandScope(date, mealKey)] || {};
+    return {
+      removedProductKeys: Array.isArray(edit.removedProductKeys) ? [...new Set(edit.removedProductKeys.map(String))] : [],
+      addedProducts: Array.isArray(edit.addedProducts) ? clone(edit.addedProducts) : []
+    };
+  }
+
+  function writeAttendanceDemandEdit(date, mealKey, edit) {
+    const all = window.AppStorage?.read?.(attendanceDemandEditsStorageKey, {}) || {};
+    const scope = attendanceDemandScope(date, mealKey);
+    const removedProductKeys = [...new Set((edit?.removedProductKeys || []).map(String))];
+    const addedProducts = Array.isArray(edit?.addedProducts) ? edit.addedProducts.filter((item) => item?.productCode) : [];
+    if (removedProductKeys.length || addedProducts.length) all[scope] = { removedProductKeys, addedProducts: clone(addedProducts) };
+    else delete all[scope];
+    window.AppStorage?.write?.(attendanceDemandEditsStorageKey, all);
+  }
+
+  function attendanceDemandEditsByDate(dates) {
+    const result = {};
+    (dates || []).forEach((date) => {
+      const menu = menuFor(date);
+      const keys = shouldSplitConfirmByMeal()
+        ? (menu?.meals || []).map((meal) => String(meal.key || meal.name || '')).filter(Boolean)
+        : ['all-meals'];
+      const meals = {};
+      keys.forEach((mealKey) => {
+        const edit = readAttendanceDemandEdit(date, mealKey);
+        if (edit.removedProductKeys.length || edit.addedProducts.length) meals[mealKey] = edit;
+      });
+      if (Object.keys(meals).length) result[date] = { meals };
+    });
+    return result;
+  }
+
+  function clearAttendanceDemandEditsForDate(date) {
+    const all = window.AppStorage?.read?.(attendanceDemandEditsStorageKey, {}) || {};
+    const canteen = currentCanteen();
+    const scope = [canteen.id || canteen.name || state.canteen, date].join('::') + '::';
+    Object.keys(all).forEach((key) => {
+      if (key.startsWith(scope)) delete all[key];
+    });
+    window.AppStorage?.write?.(attendanceDemandEditsStorageKey, all);
+  }
+
+  function clearAttendanceDemandEditsForCanteen() {
+    const canteen = currentCanteen();
+    const prefix = String(canteen.id || canteen.name || state.canteen) + '::';
+    const all = window.AppStorage?.read?.(attendanceDemandEditsStorageKey, {}) || {};
+    Object.keys(all).forEach((key) => {
+      if (key.startsWith(prefix)) delete all[key];
+    });
+    window.AppStorage?.write?.(attendanceDemandEditsStorageKey, all);
   }
 
   function shouldSplitConfirmByMeal() {
@@ -606,6 +673,7 @@
     if (state.date !== date) {
       state.mealKey = '';
       state.attendanceMealKey = '';
+      state.openAttendanceDemandSwipeKey = '';
     }
     state.date = date;
     state.monthKey = monthKeyOf(date);
@@ -1246,7 +1314,7 @@
         : state.tab === 'attendance'
           ? '菜谱需求填报'
         : state.tab === 'auxiliary'
-          ? '干料需求填报'
+          ? '干调需求填报'
           : state.tab === 'profile'
               ? (profileSubpage && state.profileView === 'orders' ? '订单列表' : profileSubpage ? '提交记录' : '个人中心')
               : state.tab === 'home'
@@ -1399,12 +1467,40 @@
     const disabled = !menuFor(state.date);
     return '<div class="school-mobile-recipe-demand-actions" aria-label="需求填报入口">'
       + '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>菜谱需求填报</button>'
-      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary' + (disabled ? ' is-disabled' : '') + '" data-action="open-auxiliary-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>干料需求填报</button>'
+      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary" data-action="open-auxiliary-attendance">干调需求填报</button>'
       + '</div>';
   }
 
   const directDraftKey = 'school-recipe-demand-direct-drafts-v1';
+  const auxiliarySimpleDraftKey = 'school-recipe-auxiliary-simple-drafts-v1';
   const directMoney = (value) => '¥' + Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function auxiliarySimpleScope() {
+    const canteen = currentCanteen();
+    return String(canteen.id || canteen.name || state.canteen);
+  }
+
+  function readAuxiliarySimpleDraft() {
+    const saved = window.AppStorage?.read?.(auxiliarySimpleDraftKey, {})?.[auxiliarySimpleScope()];
+    if (saved) return { expectedAt: String(saved.expectedAt || ''), quantities: { ...(saved.quantities || {}) } };
+    const quantities = {};
+    (auxiliaryDirectService?.readNoMealFilledDates(currentCanteen()) || []).forEach((date) => {
+      const legacy = auxiliaryDirectService.readNoMealDraft(date, currentCanteen());
+      Object.entries(legacy).forEach(([key, value]) => {
+        const code = key.split('::')[0];
+        const amount = Number(value);
+        if (Number.isFinite(amount) && amount > 0) quantities[code] = String(Number((Number(quantities[code] || 0) + amount).toFixed(6)));
+      });
+    });
+    return { expectedAt: '', quantities };
+  }
+
+  function writeAuxiliarySimpleDraft(draft) {
+    const all = window.AppStorage?.read?.(auxiliarySimpleDraftKey, {}) || {};
+    if (draft) all[auxiliarySimpleScope()] = { expectedAt: String(draft.expectedAt || ''), quantities: { ...(draft.quantities || {}) } };
+    else delete all[auxiliarySimpleScope()];
+    window.AppStorage?.write?.(auxiliarySimpleDraftKey, all);
+  }
 
   function directDraftScope(date) {
     const canteen = currentCanteen();
@@ -1412,15 +1508,10 @@
   }
 
   function readDirectDraft(date) {
-    if (state.tab === 'auxiliary') return auxiliaryDirectService?.readDraft(date, currentCanteen()) || {};
     return { ...(window.AppStorage?.read?.(directDraftKey, {})?.[directDraftScope(date)] || {}) };
   }
 
   function writeDirectDraft(date, values) {
-    if (state.tab === 'auxiliary') {
-      auxiliaryDirectService?.writeDraft(date, currentCanteen(), values);
-      return;
-    }
     const drafts = window.AppStorage?.read?.(directDraftKey, {}) || {};
     const scope = directDraftScope(date);
     if (Object.keys(values).length) drafts[scope] = values;
@@ -1429,13 +1520,10 @@
   }
 
   function directPreview(date, quantities = readDirectDraft(date)) {
-    return state.tab === 'auxiliary'
-      ? auxiliaryDirectService.buildPreview(date, currentCanteen(), quantities)
-      : demandService.buildDirectPreview(date, quantities, { canteen: currentCanteen() });
+    return demandService.buildDirectPreview(date, quantities, { canteen: currentCanteen() });
   }
 
   function directFilledDates() {
-    if (state.tab === 'auxiliary') return auxiliaryDirectService?.readFilledDates(currentCanteen()) || [];
     const prefix = directDraftScope('');
     const drafts = window.AppStorage?.read?.(directDraftKey, {}) || {};
     return Object.keys(drafts).filter((key) => key.startsWith(prefix))
@@ -1446,18 +1534,15 @@
 
   function directDatesPreview(dates = state.directDates) {
     const drafts = Object.fromEntries(dates.map((date) => [date, readDirectDraft(date)]));
-    return state.tab === 'auxiliary'
-      ? auxiliaryDirectService.buildDatesPreview(dates, currentCanteen(), drafts)
-      : demandService.buildDirectDatesPreview(dates, drafts, { canteen: currentCanteen() });
+    return demandService.buildDirectDatesPreview(dates, drafts, { canteen: currentCanteen() });
   }
 
   function renderEntryModeSheet() {
-    const type = state.sheet?.demandType === 'auxiliary' ? '商品' : '食材';
-    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-entry-mode-sheet" role="dialog" aria-modal="true" aria-label="选择填报方式">'
-      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>选择填报方式</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
-      + '<p class="school-mobile-entry-mode-intro">' + type + '需求填报</p>'
-      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="people"><strong>就餐人数填报</strong><small>填写各餐次就餐人数，自动计算采购需求</small><span aria-hidden="true">›</span></button>'
-      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>采购数量填报</strong><small>直接填写各商品的采购数量</small><span aria-hidden="true">›</span></button>'
+    const title = state.sheet?.demandType === 'auxiliary' ? '干料需求填报' : '菜谱需求填报';
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-entry-mode-sheet" role="dialog" aria-modal="true" aria-label="' + title + '">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + title + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
+      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="people"><strong>就餐人数填报</strong><span aria-hidden="true">›</span></button>'
+      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>采购数量填报</strong><span aria-hidden="true">›</span></button>'
       + '</section></div>';
   }
 
@@ -1468,7 +1553,8 @@
     state.directMealKey = active?.key || '';
     const draft = readDirectDraft(state.date);
     const split = shouldSplitConfirmByPersonType();
-    const tabs = meals.map((meal) => '<button type="button" class="school-mobile-meal-tag ' + (meal.key === state.directMealKey ? 'is-active' : '') + '" data-action="select-direct-meal" data-meal-key="' + escapeHtml(meal.key) + '" role="tab" aria-selected="' + (meal.key === state.directMealKey) + '">' + escapeHtml(meal.name) + '</button>').join('');
+    const tabs = '<div class="school-mobile-meal-tabs" role="tablist" aria-label="餐次切换">'
+      + meals.map((meal) => '<button type="button" class="school-mobile-meal-tag ' + (meal.key === state.directMealKey ? 'is-active' : '') + '" data-action="select-direct-meal" data-meal-key="' + escapeHtml(meal.key) + '" role="tab" aria-selected="' + (meal.key === state.directMealKey) + '">' + escapeHtml(meal.name) + '</button>').join('') + '</div>';
     const activeParticipant = split ? (preview.participants || []).find((person) => person.key === state.directParticipantKey) || preview.participants?.[0] : null;
     state.directParticipantKey = activeParticipant?.key || '';
     const participantTabs = split ? '<div class="school-mobile-direct-participant-tabs" role="tablist" aria-label="人员类型切换">'
@@ -1487,10 +1573,50 @@
     return '<div class="school-mobile-attendance-page school-mobile-direct-page"><div class="school-mobile-scroll school-mobile-attendance-scroll">'
       + renderDateStrip('quantity')
       + '<section class="school-mobile-summary-card school-mobile-direct-summary"><div><strong>' + escapeHtml(dateText(state.date)) + '</strong><small>' + escapeHtml(state.canteen) + '</small></div></section>'
-      + '<section class="school-mobile-demand-section"><div class="school-mobile-meal-tabs" role="tablist" aria-label="餐次切换">' + tabs + '</div>' + participantTabs
+      + '<section class="school-mobile-demand-section">' + tabs + participantTabs
       + (rows || '<div class="school-mobile-empty">当前餐次暂无可填报商品</div>') + '</section>'
       + (preview.missingMappings?.length ? '<div class="school-mobile-notice"><i>!</i><span>当前食谱有未关联商品，请先完善关联。</span></div>' : '')
       + '</div><div class="school-mobile-attendance-actions"><div class="school-mobile-filled-days"><span>已填写</span><strong>' + number(filledDays.length) + ' 天</strong></div><button type="button" class="school-mobile-button is-primary" data-action="direct-continue"' + (filledDays.length ? '' : ' disabled') + '>确认需求</button></div></div>';
+  }
+
+  function renderAuxiliarySimpleQuantity() {
+    const draft = readAuxiliarySimpleDraft();
+    const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), draft.quantities);
+    const keyword = state.auxiliarySearchTerm.trim().toLocaleLowerCase();
+    const visibleRows = preview.rows.filter((row) => !keyword || [row.productName, row.productCode, row.auxiliaryName]
+      .some((value) => String(value || '').toLocaleLowerCase().includes(keyword)));
+    const rows = visibleRows.map((row) => {
+      const value = draft.quantities[row.key] ?? '';
+      return '<article class="school-mobile-direct-row">'
+        + '<div class="school-mobile-direct-row-details"><strong class="school-mobile-direct-product-name">' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode) + ' · ' + (row.isStandardProduct ? '标品' : '非标品') + '</small><span>' + directMoney(row.orderPrice) + '/' + escapeHtml(row.unit) + '</span></div>'
+        + '<div class="school-mobile-direct-row-purchase"><div class="school-mobile-direct-field"><span class="school-mobile-direct-input-wrap"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="-1" aria-label="减少' + escapeHtml(row.productName) + '采购量">−</button><input type="number" inputmode="decimal" min="0" ' + (row.isStandardProduct ? 'step="1"' : 'step="any"') + ' data-action="direct-quantity-input" data-quantity-key="' + escapeHtml(row.key) + '" aria-label="' + escapeHtml(row.productName) + '采购量" value="' + escapeHtml(value) + '" placeholder="0"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="1" aria-label="增加' + escapeHtml(row.productName) + '采购量">+</button></span></div></div>'
+        + '</article>';
+    }).join('');
+    const filledCount = preview.selectedRows.length;
+    return '<div class="school-mobile-attendance-page school-mobile-direct-page school-mobile-auxiliary-simple-page"><div class="school-mobile-scroll school-mobile-attendance-scroll">'
+      + '<section class="school-mobile-auxiliary-products-panel"><form class="school-mobile-auxiliary-simple-search" data-auxiliary-search-form><span class="school-mobile-auxiliary-search-field"><input type="search" data-action="auxiliary-search-input" value="' + escapeHtml(state.auxiliarySearchInput) + '" placeholder="请输入商品名称/编号" aria-label="查询商品名称或编号"><button type="button" class="school-mobile-auxiliary-search-clear" data-action="auxiliary-search-clear" aria-label="清除查询"' + (state.auxiliarySearchInput || state.auxiliarySearchTerm ? '' : ' hidden') + '>×</button></span><button type="submit" class="is-primary">查询</button></form>'
+      + '<div class="school-mobile-demand-section" aria-label="干调商品采购数量">' + (rows || '<div class="school-mobile-empty">' + (keyword ? '未找到匹配的商品' : '暂无可填报商品') + '</div>') + '</div></section>'
+      + '</div><div class="school-mobile-attendance-actions"><button type="button" class="school-mobile-auxiliary-filled-trigger" data-action="auxiliary-filled-detail"' + (filledCount ? '' : ' disabled') + '><span>已填写</span><strong data-auxiliary-filled-count>' + number(filledCount) + ' 种商品</strong></button><button type="button" class="school-mobile-button is-primary" data-action="direct-continue"' + (preview.canSubmit ? '' : ' disabled') + '>确认需求</button></div></div>';
+  }
+
+  function renderAuxiliaryFilledSheet() {
+    const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), readAuxiliarySimpleDraft().quantities);
+    const rows = preview.selectedRows.map((row) => '<div class="school-mobile-direct-confirm-row school-mobile-auxiliary-filled-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode) + ' · ' + escapeHtml(row.unit) + '</small></div><div class="school-mobile-auxiliary-filled-amount"><strong>' + number(row.orderQty) + ' ' + escapeHtml(row.unit) + '</strong><small>' + directMoney(row.orderQty * row.orderPrice) + '</small></div><button type="button" class="school-mobile-auxiliary-filled-remove" data-action="remove-auxiliary-filled-product" data-product-code="' + escapeHtml(row.productCode) + '" aria-label="移除' + escapeHtml(row.productName) + '">移除</button></div>').join('');
+    return '<div class="school-mobile-sheet-backdrop school-mobile-auxiliary-filled-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-auxiliary-filled-sheet" role="dialog" aria-modal="false" aria-label="商品明细">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>商品明细</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
+      + (rows || '<div class="school-mobile-empty">暂无已填写商品</div>')
+      + '</section></div>';
+  }
+
+  function renderAuxiliarySimpleConfirm() {
+    const draft = readAuxiliarySimpleDraft();
+    const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), draft.quantities);
+    const rows = preview.selectedRows.map((row) => '<div class="school-mobile-direct-confirm-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode) + ' · ' + escapeHtml(row.unit) + '</small></div><div><strong>' + number(row.orderQty) + ' ' + escapeHtml(row.unit) + '</strong><small>' + directMoney(row.orderQty * row.orderPrice) + '</small></div></div>').join('');
+    const total = preview.selectedRows.reduce((sum, row) => sum + row.orderQty * row.orderPrice, 0);
+    return '<div class="school-mobile-confirm-page school-mobile-direct-confirm-page school-mobile-auxiliary-simple-confirm-page"><div class="school-mobile-scroll">'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
+      + '<section class="school-mobile-confirm-card school-mobile-direct-confirm-products"><h2>商品需求汇总</h2>' + (rows || '<div class="school-mobile-empty">暂无商品需求</div>') + '</section>'
+      + '</div><div class="school-mobile-direct-total"><span>合计金额</span><strong>' + directMoney(total) + '</strong></div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回</button><button type="button" class="school-mobile-button is-primary" data-action="direct-submit"' + (preview.canSubmit && expectedAtIsAllowed(state.expectedAt) && !state.submitting ? '' : ' disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
   }
 
   function renderDirectConfirm() {
@@ -1531,6 +1657,34 @@
 
   async function submitDirectDemand() {
     if (state.submitting) return;
+    if (state.tab === 'auxiliary' && state.demandEntryMode === 'quantity') {
+      const draft = readAuxiliarySimpleDraft();
+      const expectedAt = normalizeExpectedAt(state.expectedAt);
+      const preview = auxiliaryDirectService.buildSimplePreview(currentCanteen(), draft.quantities, expectedAt);
+      if (!preview.canSubmit) return showToast(preview.message || '当前需求不能提交', true);
+      state.submitting = true;
+      ensureDemoSession();
+      render();
+      try {
+        const result = await auxiliaryDirectService.submitSimple(currentCanteen(), draft.quantities, expectedAt);
+        writeAuxiliarySimpleDraft(null);
+        auxiliaryDirectService.readNoMealFilledDates(currentCanteen()).forEach((date) => auxiliaryDirectService.writeDraft(date, currentCanteen(), {}));
+        state.submitting = false;
+        state.screen = 'main';
+        state.tab = 'profile';
+        state.profileView = 'home';
+        state.profileSection = 'submissions';
+        state.record = result.record;
+        state.sheet = null;
+        render();
+        showToast('需求已提交并生成订单');
+      } catch (error) {
+        state.submitting = false;
+        render();
+        showToast(error?.message || '提交失败，请重试', true);
+      }
+      return;
+    }
     const preview = directDatesPreview();
     if (!preview.canSubmit) return showToast(preview.message || '当前需求不能提交', true);
     ensureDemoSession();
@@ -1543,9 +1697,7 @@
     state.submitting = true;
     render();
     try {
-      const result = state.tab === 'auxiliary'
-        ? await auxiliaryDirectService.submitDates(dates, currentCanteen(), drafts, expectedAt)
-        : await demandService.submitDirectDates(dates, drafts, { canteen: currentCanteen(), expectedAt });
+      const result = await demandService.submitDirectDates(dates, drafts, { canteen: currentCanteen(), expectedAt });
       dates.forEach((date) => writeDirectDraft(date, {}));
       state.submitting = false;
       state.screen = 'main';
@@ -1706,17 +1858,96 @@
       ? ((calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey))
         || calculation.mealRows?.[0])
       : { key: 'all-meals', name: '合计', rows: calculation.rows || [] };
-    const rows = (meal?.rows || []).filter((row) => Number(row.totalQty || 0) > 0);
-    if (!rows.length) return '<div class="school-mobile-demand-list"><div class="school-mobile-empty">填写人数后显示商品需求</div></div>';
-    return '<div class="school-mobile-demand-list">' + rows.map((row) => {
+    const mealKey = String(meal?.key || 'all-meals');
+    const edit = readAttendanceDemandEdit(menu.date, mealKey);
+    const removed = new Set(edit.removedProductKeys);
+    const rows = (meal?.rows || []).filter((row) => Number(row.totalQty || 0) > 0 && !removed.has(purchaseRowKey(row)));
+    const autoRows = rows.map((row) => {
       const unit = productUnit(row);
       const purchaseTotal = purchaseTotalQuantity(row, participants());
-      return '<button type="button" class="school-mobile-demand-row" data-action="open-demand-detail" data-menu-date="' + escapeHtml(menu.date) + '" data-demand-key="' + escapeHtml(purchaseRowKey(row)) + '" data-demand-meal-key="' + escapeHtml(meal?.key || '') + '" aria-label="查看' + escapeHtml(productName(row)) + '采购量明细">'
+      const rowKey = purchaseRowKey(row);
+      const identity = menu.date + '::' + mealKey + '::' + rowKey;
+      const isOpen = state.openAttendanceDemandSwipeKey === identity;
+      const content = '<button type="button" class="school-mobile-demand-row" data-action="open-demand-detail" data-menu-date="' + escapeHtml(menu.date) + '" data-demand-key="' + escapeHtml(rowKey) + '" data-demand-meal-key="' + escapeHtml(mealKey) + '" aria-label="查看' + escapeHtml(productName(row)) + '采购量明细，左滑可移除">'
         + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(productName(row)) + '</strong><small>' + escapeHtml(row.productCode || '--') + '</small></div>'
         + '<span class="school-mobile-demand-qty" aria-label="采购量：' + escapeHtml(quantity(purchaseTotal) + ' ' + unit) + '">' + quantity(purchaseTotal) + ' ' + escapeHtml(unit) + '</span>'
         + '<span class="school-mobile-demand-detail-arrow" aria-hidden="true">›</span>'
         + '</button>';
-    }).join('') + '</div>';
+      return renderAttendanceDemandSwipeItem(menu.date, mealKey, rowKey, productName(row), 'calculated', content, isOpen);
+    }).join('');
+    const catalog = attendanceDemandCatalog();
+    const manualRows = edit.addedProducts.map((entry) => {
+      const product = catalog.find((item) => String(item.code) === String(entry.productCode));
+      if (!product) return '';
+      const productKey = purchaseRowKey({ productCode: product.code, unit: product.unit });
+      const identity = menu.date + '::' + mealKey + '::' + productKey;
+      const isOpen = state.openAttendanceDemandSwipeKey === identity;
+      const participant = participants().find((item) => String(item.key) === String(entry.participantKey));
+      const participantLabel = shouldSplitConfirmByPersonType() && participant ? orderTagName(participant) : '';
+      const quantityValue = entry.quantity == null ? '' : String(entry.quantity);
+      const content = '<div class="school-mobile-demand-row school-mobile-demand-row-manual">'
+        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code) + ' · 手动添加' + (participantLabel ? ' · ' + escapeHtml(participantLabel) : '') + '</small></div>'
+        + '<label class="school-mobile-demand-manual-quantity"><span class="school-mobile-sr-only">采购量</span><input type="number" min="0" ' + (product.isStandardProduct ? 'step="1" inputmode="numeric"' : 'step="any" inputmode="decimal"') + ' value="' + escapeHtml(quantityValue) + '" placeholder="数量" data-action="attendance-demand-quantity" data-menu-date="' + escapeHtml(menu.date) + '" data-demand-meal-key="' + escapeHtml(mealKey) + '" data-product-code="' + escapeHtml(product.code) + '" aria-label="' + escapeHtml(product.name + '采购量') + '"><span>' + escapeHtml(product.unit) + '</span></label>'
+        + '</div>';
+      return renderAttendanceDemandSwipeItem(menu.date, mealKey, productKey, product.name, 'manual', content, isOpen, product.code);
+    }).join('');
+    const listRows = autoRows + manualRows;
+    return '<div class="school-mobile-demand-toolbar"><strong>采购商品</strong><button type="button" data-action="add-attendance-demand-products"><span aria-hidden="true">＋</span>添加商品</button></div>'
+      + '<div class="school-mobile-demand-list" role="list">' + (listRows || '<div class="school-mobile-empty">填写人数后显示商品需求</div>') + '</div>';
+  }
+
+  function attendanceDemandCatalog() {
+    return (orderService.getProductCatalog?.() || []).filter((product) => product?.code && product?.name)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-CN'));
+  }
+
+  function renderAttendanceDemandSwipeItem(date, mealKey, rowKey, name, source, content, isOpen, productCode = '') {
+    const identity = String(date) + '::' + String(mealKey) + '::' + String(rowKey);
+    return '<div class="school-mobile-demand-swipe-item' + (isOpen ? ' is-swiped' : '') + '" data-demand-swipe-item data-demand-swipe-key="' + escapeHtml(identity) + '">'
+      + content
+      + '<button type="button" class="school-mobile-demand-remove" data-action="remove-attendance-demand-product" data-demand-row-key="' + escapeHtml(rowKey) + '" data-demand-source="' + escapeHtml(source) + '" data-demand-meal-key="' + escapeHtml(mealKey) + '" data-menu-date="' + escapeHtml(date) + '" data-product-code="' + escapeHtml(productCode) + '" aria-label="移除' + escapeHtml(name) + '" aria-hidden="' + (isOpen ? 'false' : 'true') + '" tabindex="' + (isOpen ? '0' : '-1') + '">移除</button>'
+      + '</div>';
+  }
+
+  function renderAttendanceDemandProductPicker() {
+    const picker = state.sheet || {};
+    const menu = menuFor(state.date);
+    const mealKey = String(picker.mealKey || 'all-meals');
+    const calculation = menu ? attendanceService.calculate(menu, state.attendance, serviceOptions()) : { rows: [], mealRows: [] };
+    const meal = mealKey === 'all-meals'
+      ? { rows: calculation.rows || [] }
+      : (calculation.mealRows || []).find((item) => String(item.key) === mealKey) || { rows: [] };
+    const edit = readAttendanceDemandEdit(state.date, mealKey);
+    const removed = new Set(edit.removedProductKeys);
+    const manualCodes = new Set(edit.addedProducts.map((entry) => String(entry.productCode)));
+    const selected = new Set(picker.selectedCodes || []);
+    const keyword = String(picker.keyword || '').trim().toLocaleLowerCase();
+    const rows = attendanceDemandCatalog().filter((product) => !keyword || (product.name + ' ' + product.code).toLocaleLowerCase().includes(keyword)).map((product) => {
+      const productKey = purchaseRowKey({ productCode: product.code, unit: product.unit });
+      const calculated = (meal.rows || []).find((row) => purchaseRowKey(row) === productKey && Number(row.totalQty || 0) > 0);
+      const isRemoved = Boolean(calculated && removed.has(productKey));
+      const isPresent = Boolean(calculated && !isRemoved);
+      const isAdded = manualCodes.has(String(product.code));
+      const disabled = (isPresent || isAdded) && !isRemoved;
+      const isSelected = selected.has(String(product.code));
+      const status = isRemoved ? '已移除 · 可恢复' : isPresent ? '已在清单' : isAdded ? '已添加' : '';
+      const indicator = isSelected ? '✓' : isRemoved ? '恢复' : disabled ? '已添加' : '＋';
+      return '<button type="button" class="school-mobile-demand-picker-option' + (isSelected ? ' is-selected' : '') + (disabled ? ' is-disabled' : '') + '" data-action="toggle-attendance-demand-product" data-product-code="' + escapeHtml(product.code) + '" data-product-status="' + (isRemoved ? 'removed' : disabled ? 'present' : 'available') + '" data-search-text="' + escapeHtml((product.name + ' ' + product.code).toLocaleLowerCase()) + '" aria-pressed="' + isSelected + '"' + (disabled ? ' disabled' : '') + '>'
+        + '<span class="school-mobile-demand-picker-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code + ' · ' + product.unit) + (status ? ' · ' + status : '') + '</small></span><span class="school-mobile-demand-picker-indicator">' + indicator + '</span>'
+        + '</button>';
+    }).join('');
+    const participantOptions = shouldSplitConfirmByPersonType()
+      ? '<div class="school-mobile-demand-picker-participants" role="group" aria-label="商品归属人员类型">' + participants().map((participant) => {
+        const active = String(participant.key) === String(picker.participantKey || participants()[0]?.key || '');
+        return '<button type="button" data-action="select-attendance-demand-participant" data-participant-key="' + escapeHtml(participant.key) + '" class="' + (active ? 'is-active' : '') + '" aria-pressed="' + active + '">' + escapeHtml(orderTagName(participant)) + '</button>';
+      }).join('') + '</div>' : '';
+    const selectedCount = selected.size;
+    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-product-picker-sheet" role="dialog" aria-modal="true" aria-label="添加商品">'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" data-action="cancel-attendance-demand-products">取消</button><h2>添加商品</h2><button type="button" class="is-primary" data-action="confirm-attendance-demand-products"' + (selectedCount ? '' : ' disabled') + '>添加' + (selectedCount ? '（' + number(selectedCount) + '）' : '') + '</button></header>'
+      + '<label class="school-mobile-demand-picker-search"><span aria-hidden="true">⌕</span><input type="search" data-action="attendance-demand-product-search" value="' + escapeHtml(picker.keyword || '') + '" placeholder="搜索商品名称或编号" aria-label="搜索商品名称或编号"></label>'
+      + participantOptions
+      + '<div class="school-mobile-demand-picker-list" role="list">' + rows + '<div class="school-mobile-demand-picker-empty" data-demand-picker-empty' + (rows ? ' hidden' : '') + '>未找到匹配商品</div></div>'
+      + '</section></div>';
   }
 
   function auxiliaryPurchaseQuantity(product, demandQty) {
@@ -2039,7 +2270,7 @@
     state.unitPriceEditing = false;
     state.purchaseQtyOverrides = {};
     state.purchaseQuantityEditingKey = '';
-    state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30:00';
+    updateExpectedAtForConfirmDates(filledDates);
     state.screen = 'confirm';
     state.toast = null;
     render();
@@ -2077,7 +2308,6 @@
       showToast('人数保存失败，请重新填写后再确认', true);
       return;
     }
-    attendanceService.markResetOnReturn?.(currentCanteen());
     const summaries = currentFilledDateSummaries();
     const filledDates = summaries.map((summary) => summary.date);
     if (!filledDates.length) {
@@ -2088,6 +2318,16 @@
       showToast('人数保存失败，请重新填写后再确认', true);
       return;
     }
+    const preview = demandService.buildPreview(filledDates, {
+      ...serviceOptions(),
+      demandEditsByDate: attendanceDemandEditsByDate(filledDates),
+      attendanceByDate: Object.fromEntries(filledDates.map((date) => [date, attendanceFor(date)]))
+    });
+    if (!preview.canSubmit) {
+      showToast(preview.message || '当前没有可提交的商品需求', true);
+      return;
+    }
+    attendanceService.markResetOnReturn?.(currentCanteen());
     state.confirmDates = new Set(filledDates);
     state.confirmMode = 'ingredient';
     state.confirmMealKey = '';
@@ -2096,7 +2336,7 @@
     state.unitPriceEditing = false;
     state.purchaseQtyOverrides = {};
     state.purchaseQuantityEditingKey = '';
-    state.expectedAt = (state.confirmDates.values().next().value || state.date) + 'T07:30:00';
+    updateExpectedAtForConfirmDates(filledDates);
     state.screen = 'confirm';
     state.toast = null;
     render();
@@ -2104,11 +2344,16 @@
 
   function buildConfirmPreview() {
     return state.confirmDates.size
-      ? demandService.buildPreview([...state.confirmDates], serviceOptions())
+      ? demandService.buildPreview([...state.confirmDates], {
+        ...serviceOptions(),
+        demandEditsByDate: attendanceDemandEditsByDate([...state.confirmDates]),
+        attendanceByDate: Object.fromEntries([...state.confirmDates].map((date) => [date, attendanceFor(date)]))
+      })
       : { rows: [], participants: [], totalPersonTimes: 0, productCount: 0, canSubmit: false, message: '请选择已填报日期' };
   }
 
   function firstConfirmDate() {
+    if (state.tab === 'auxiliary' && state.demandEntryMode === 'quantity') return '';
     const dates = state.screen === 'direct-confirm' ? state.directDates : [...state.confirmDates];
     return [...dates].sort((a, b) => String(a).localeCompare(String(b)))[0] || '';
   }
@@ -2122,12 +2367,8 @@
     return expectedAtDateIsAllowed(parseExpectedAtValue(value).date);
   }
 
-  function alignExpectedAtToFirstDate() {
-    const firstDate = firstConfirmDate();
-    const current = parseExpectedAtValue(state.expectedAt);
-    if (firstDate && current.date && current.date > firstDate) {
-      state.expectedAt = expectedAtInputValue(firstDate, current.time);
-    }
+  function updateExpectedAtForConfirmDates(dates = [...state.confirmDates]) {
+    state.expectedAt = String(window.RecipeDeliveryRule?.expectedAt?.(dates) || '').trim();
   }
 
   function participantHasPurchaseDemand(preview, participant) {
@@ -2417,7 +2658,7 @@
       : '';
     return '<div class="school-mobile-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + dateOptions + '</div></section>'
-      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div></section>'
       + '<section class="school-mobile-confirm-card school-mobile-confirm-summary-card"><h2>需求汇总</h2><div class="school-mobile-confirm-summary"><div><span>总人次</span><strong>' + number(preview.totalPersonTimes) + '</strong></div><div><span>商品种数</span><strong>' + number(preview.productCount) + '</strong></div><div><span>需求天数</span><strong>' + number(preview.dates.length) + '</strong></div></div></section>'
       + orderTagSwitcher
       + '<section class="school-mobile-confirm-card school-mobile-purchase-card">'
@@ -2682,7 +2923,7 @@
     if (!rows.length) return '<div class="school-mobile-empty">暂无匹配的提交记录</div>';
     return rows.map((record) => '<article class="school-mobile-record-card">'
       + '<header><strong>' + escapeHtml(record.recordNo || '--') + '</strong><span class="school-mobile-record-kind">' + escapeHtml(recordDemandType(record) + '-' + recordEntryMode(record)) + '</span></header>'
-      + '<div class="school-mobile-record-date">用料日期：' + escapeHtml((record.dates || []).join('、') || '--') + '</div>'
+      + (record.orderMode === 'simple' ? '' : '<div class="school-mobile-record-date">用料日期：' + escapeHtml((record.dates || []).join('、') || '--') + '</div>')
       + '<div class="school-mobile-record-metrics' + (record.entryMode === 'quantity' ? ' is-quantity' : '') + '">' + (record.entryMode === 'quantity' ? '' : '<div><span>总人次</span><strong>' + number(record.totalPersonTimes) + '</strong></div>') + '<div><span>商品种数</span><strong>' + number(record.productCount) + '</strong></div><div><span>订单数</span><strong>' + number((record.orders || []).length) + '</strong></div></div>'
       + '<footer><small>' + escapeHtml(record.submittedAt || '--') + '</small><button type="button" class="school-mobile-button" data-action="record" data-record-id="' + escapeHtml(record.id) + '">查看详情</button></footer>'
       + '</article>').join('');
@@ -2744,7 +2985,7 @@
     const auxiliary = record?.demandType === 'auxiliary' || record?.auxiliary === true
       || /商品需求|辅料需求/.test(String(record?.source || ''))
       || (record?.items || []).some((item) => item.doseUnit && item.dose != null);
-    return auxiliary ? '干料需求填报' : '菜谱需求填报';
+    return auxiliary ? '干调需求填报' : '菜谱需求填报';
   }
 
   function recordEntryMode(record) {
@@ -3116,11 +3357,11 @@
     if (!record) return '<div class="school-mobile-scroll"><div class="school-mobile-empty">未找到该提交记录</div></div>';
     const summaries = (record.dateSummaries || []).map((summary) => {
       const filledMeals = recordFilledMealNames(summary, record);
-      const mealText = filledMeals.length ? filledMeals.join('、') : '未填写';
+      const mealText = record.orderMode === 'no-meal' ? '干调总量' : filledMeals.length ? filledMeals.join('、') : '未填写';
       const metrics = (record.entryMode === 'quantity' ? '' : number(summary.totalPersonTimes) + ' 人次 · ') + number(summary.productCount) + ' 种商品';
       return '<div class="school-mobile-detail-date"><div class="school-mobile-detail-date-main"><strong>' + escapeHtml(summary.date) + '</strong><span class="school-mobile-detail-date-meals">' + escapeHtml(mealText) + '</span></div><span>' + escapeHtml(metrics) + '</span></div>';
     }).join('');
-    const orders = (record.orders || []).map((order) => '<div class="school-mobile-order-row"><strong>' + escapeHtml(order.orderNo || order.id || '--') + '</strong><span class="school-mobile-order-meal">' + escapeHtml(recordOrderMealName(order)) + '</span><span class="school-mobile-record-order-tag">' + escapeHtml(order.orderTag || order.orderTagName || order.recipeParticipantType || '食谱需求') + '</span></div>').join('');
+    const orders = (record.orders || []).map((order) => '<div class="school-mobile-order-row"><strong>' + escapeHtml(order.orderNo || order.id || '--') + '</strong><span class="school-mobile-order-meal">' + escapeHtml(['no-meal', 'simple'].includes(record.orderMode) ? '干调总量' : recordOrderMealName(order)) + '</span><span class="school-mobile-record-order-tag">' + escapeHtml(order.orderTag || order.orderTagName || order.recipeParticipantType || '食谱需求') + '</span></div>').join('');
     return '<div class="school-mobile-scroll">'
       + '<section class="school-mobile-info-card"><h2>基本信息</h2><div class="school-mobile-info-grid">'
       + '<div><span>记录编号</span><strong>' + escapeHtml(record.recordNo || '--') + '</strong></div>'
@@ -3131,7 +3372,7 @@
       + '<div><span>期望送达时间</span><strong>' + escapeHtml(record.expectedAt || '--') + '</strong></div>'
       + '<div><span>提交时间</span><strong>' + escapeHtml(record.submittedAt || '--') + '</strong></div>'
       + '</div></section>'
-      + '<section class="school-mobile-info-card"><h2>用料日期</h2>' + (summaries || '<div class="school-mobile-empty">暂无日期明细</div>') + '</section>'
+      + (record.orderMode === 'simple' ? '' : '<section class="school-mobile-info-card"><h2>用料日期</h2>' + (summaries || '<div class="school-mobile-empty">暂无日期明细</div>') + '</section>')
       + '<section class="school-mobile-info-card"><h2>生成订单</h2>' + (orders || '<div class="school-mobile-empty">暂无关联订单</div>') + '</section>'
       + '</div>';
   }
@@ -3297,14 +3538,16 @@
   }
 
   function openExpectedAtSheet() {
-    const current = parseExpectedAtValue(state.expectedAt || expectedAtInputValue(state.date, '07:30:00'));
+    const simpleAuxiliary = state.tab === 'auxiliary' && state.demandEntryMode === 'quantity';
+    const defaultDate = simpleAuxiliary ? nextProductOrderDate() : state.date;
+    const current = parseExpectedAtValue(state.expectedAt || expectedAtInputValue(defaultDate, '07:30:00'));
     const firstDate = firstConfirmDate();
-    const date = expectedAtDateIsAllowed(current.date) ? current.date : firstDate || state.date;
-    state.expectedAt = expectedAtInputValue(date, current.time);
+    const date = expectedAtDateIsAllowed(current.date) ? current.date : firstDate || defaultDate;
+    if (!simpleAuxiliary) state.expectedAt = expectedAtInputValue(date, current.time);
     state.sheet = {
       type: 'expected-at',
       draftValue: expectedAtInputValue(date, current.time),
-      monthKey: monthKeyOf(date) || monthKeyOf(state.date) || anchorMonthKey
+      monthKey: monthKeyOf(date) || monthKeyOf(defaultDate) || anchorMonthKey
     };
     render();
   }
@@ -3375,7 +3618,7 @@
 
   function render() {
     const content = state.screen === 'direct-confirm'
-      ? renderDirectConfirm()
+      ? (state.tab === 'auxiliary' && state.demandEntryMode === 'quantity' ? renderAuxiliarySimpleConfirm() : renderDirectConfirm())
       : state.screen === 'confirm'
       ? (state.confirmMode === 'auxiliary' ? renderAuxiliaryConfirm() : renderConfirm())
       : state.screen === 'product-orders'
@@ -3389,7 +3632,7 @@
           : state.tab === 'attendance'
             ? state.demandEntryMode === 'quantity' ? renderDirectQuantity() : renderAttendance()
           : state.tab === 'auxiliary'
-            ? state.demandEntryMode === 'quantity' ? renderDirectQuantity() : renderAttendance()
+            ? state.demandEntryMode === 'quantity' ? renderAuxiliarySimpleQuantity() : renderAttendance()
           : state.tab === 'cart'
             ? renderProductCart()
           : state.tab === 'profile'
@@ -3407,6 +3650,8 @@
         ? renderProductCategorySheet()
       : state.sheet?.type === 'product-picker'
         ? renderProductPickerSheet()
+      : state.sheet?.type === 'attendance-demand-product-picker'
+        ? renderAttendanceDemandProductPicker()
       : state.sheet?.type === 'order-detail-picker'
         ? renderOrderDetailPickerSheet()
       : state.sheet?.type === 'product-checkout-date'
@@ -3419,6 +3664,8 @@
           ? renderDemandDetailSheet()
         : state.sheet?.type === 'expected-at'
           ? renderExpectedAtSheet()
+        : state.sheet?.type === 'auxiliary-filled'
+          ? renderAuxiliaryFilledSheet()
         : '';
     app.innerHTML = '<div class="school-mobile-app">'
       + renderHeader()
@@ -3429,6 +3676,40 @@
       + '</div>';
     syncDateMonthControls();
     syncExpectedAtTimeColumns();
+  }
+
+  function renderAttendancePreservingScroll() {
+    const previousScroll = app.querySelector('.school-mobile-attendance-scroll');
+    const scrollTop = previousScroll?.scrollTop || 0;
+    render();
+    const nextScroll = app.querySelector('.school-mobile-attendance-scroll');
+    if (nextScroll) nextScroll.scrollTop = scrollTop;
+  }
+
+  function refreshAttendanceDemandRows() {
+    const menu = menuFor(state.date);
+    const host = app.querySelector('#schoolMobileAttendanceDemand');
+    if (!menu || !host) return;
+    host.innerHTML = state.tab === 'auxiliary'
+      ? renderAuxiliaryDemandRows(menu, state.attendance, state.attendanceMealKey)
+      : renderDemandRows(menu, state.attendance, state.attendanceMealKey);
+  }
+
+  function setAttendanceDemandSwipeItemOpen(item, isOpen) {
+    if (!item) return;
+    item.classList.toggle('is-swiped', isOpen);
+    const removeButton = item.querySelector('.school-mobile-demand-remove');
+    if (removeButton) {
+      removeButton.setAttribute('aria-hidden', String(!isOpen));
+      removeButton.tabIndex = isOpen ? 0 : -1;
+    }
+    if (isOpen) state.openAttendanceDemandSwipeKey = item.dataset.demandSwipeKey || '';
+    else if (state.openAttendanceDemandSwipeKey === item.dataset.demandSwipeKey) state.openAttendanceDemandSwipeKey = '';
+  }
+
+  function closeAttendanceDemandSwipeItems() {
+    app.querySelectorAll('[data-demand-swipe-item].is-swiped').forEach((item) => setAttendanceDemandSwipeItemOpen(item, false));
+    state.openAttendanceDemandSwipeKey = '';
   }
 
   function updateAttendanceLive() {
@@ -3510,6 +3791,7 @@
 
   function resetAttendance() {
     attendanceService.remove(state.date, currentCanteen());
+    clearAttendanceDemandEditsForDate(state.date);
     state.attendance = attendanceService.emptyRecord(state.date, currentCanteen());
     state.attendance.meals = {};
     state.attendance.temporaryNonDining = {};
@@ -3542,6 +3824,7 @@
 
   function clearAttendanceAfterFlow() {
     attendanceService.clearForCanteen?.(currentCanteen());
+    clearAttendanceDemandEditsForCanteen();
     state.attendance = attendanceService.emptyRecord(state.date, currentCanteen());
     state.attendance.meals = {};
     state.confirmDates.clear();
@@ -3641,9 +3924,10 @@
       showToast('当前没有采购量，无法提交', true);
       return;
     }
+    updateExpectedAtForConfirmDates(dates);
     const expectedAt = normalizeExpectedAt(state.expectedAt);
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(expectedAt)) {
-      showToast('请选择期望送达时间', true);
+      showToast('无法按企业配置计算送达时间', true);
       return;
     }
     if (!expectedAtIsAllowed(expectedAt)) {
@@ -3692,6 +3976,21 @@
   }
 
   function updateDirectQuantity(input) {
+    if (state.tab === 'auxiliary' && state.demandEntryMode === 'quantity') {
+      const draft = readAuxiliarySimpleDraft();
+      if (input.value === '') delete draft.quantities[input.dataset.quantityKey];
+      else draft.quantities[input.dataset.quantityKey] = input.value;
+      writeAuxiliarySimpleDraft({ ...draft, expectedAt: state.expectedAt });
+      const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), draft.quantities);
+      const button = app.querySelector('[data-action="direct-continue"]');
+      if (button) button.disabled = !preview.canSubmit;
+      const filledCount = preview.selectedRows.length;
+      const count = app.querySelector('[data-auxiliary-filled-count]');
+      if (count) count.textContent = number(filledCount) + ' 种商品';
+      const filledButton = app.querySelector('[data-action="auxiliary-filled-detail"]');
+      if (filledButton) filledButton.disabled = !filledCount;
+      return;
+    }
     const draft = readDirectDraft(state.date);
     const key = input.dataset.quantityKey;
     if (input.value === '') {
@@ -3708,6 +4007,17 @@
   }
 
   app.addEventListener('click', (event) => {
+    if (suppressDemandRowClick) {
+      suppressDemandRowClick = false;
+      event.preventDefault();
+      return;
+    }
+    const swipedDemandItem = event.target.closest?.('.school-mobile-demand-swipe-item.is-swiped');
+    if (swipedDemandItem && !event.target.closest?.('[data-action="remove-attendance-demand-product"]')) {
+      setAttendanceDemandSwipeItemOpen(swipedDemandItem, false);
+      event.preventDefault();
+      return;
+    }
     if (event.target.matches?.('[data-sheet-backdrop]')) {
       if (state.sheet?.type === 'product-checkout-date') {
         state.productCheckoutDatePickerMonth = '';
@@ -4042,7 +4352,6 @@
     }
 
     if (action === 'open-auxiliary-attendance') {
-      if (!menuFor(state.date)) return;
       state.sheet = { type: 'entry-mode', demandType: 'auxiliary' };
       render();
       return;
@@ -4058,11 +4367,13 @@
       state.sheet = null;
       state.directMealKey = '';
       state.directParticipantKey = '';
+      state.auxiliarySearchInput = '';
+      state.auxiliarySearchTerm = '';
       if (state.demandEntryMode === 'people') {
         loadAttendance();
         fillDefaultsIfEmpty();
       } else {
-        state.expectedAt = '';
+        state.expectedAt = state.tab === 'auxiliary' ? readAuxiliarySimpleDraft().expectedAt : '';
       }
       render();
       return;
@@ -4070,6 +4381,32 @@
 
     if (action === 'select-direct-meal') {
       state.directMealKey = target.dataset.mealKey || '';
+      render();
+      return;
+    }
+
+    if (action === 'auxiliary-search-clear') {
+      state.auxiliarySearchInput = '';
+      state.auxiliarySearchTerm = '';
+      render();
+      app.querySelector('[data-action="auxiliary-search-input"]')?.focus({ preventScroll: true });
+      return;
+    }
+
+    if (action === 'auxiliary-filled-detail') {
+      const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), readAuxiliarySimpleDraft().quantities);
+      if (!preview.selectedRows.length) return;
+      state.sheet = { type: 'auxiliary-filled' };
+      render();
+      return;
+    }
+
+    if (action === 'remove-auxiliary-filled-product' && state.sheet?.type === 'auxiliary-filled') {
+      const draft = readAuxiliarySimpleDraft();
+      delete draft.quantities[target.dataset.productCode || ''];
+      writeAuxiliarySimpleDraft(draft);
+      const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), draft.quantities);
+      if (!preview.selectedRows.length) state.sheet = null;
       render();
       return;
     }
@@ -4092,6 +4429,15 @@
     }
 
     if (action === 'direct-continue') {
+      if (state.tab === 'auxiliary' && state.demandEntryMode === 'quantity') {
+        const draft = readAuxiliarySimpleDraft();
+        const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), draft.quantities);
+        if (!preview.canSubmit) return showToast(preview.message || '请先填写采购数量', true);
+        state.sheet = null;
+        state.screen = 'direct-confirm';
+        render();
+        return;
+      }
       const dates = directFilledDates();
       const preview = directDatesPreview(dates);
       if (!preview.canSubmit) {
@@ -4242,6 +4588,7 @@
       const meals = menuFor(state.date)?.meals || [];
       if (meals.some((meal) => meal.key === target.dataset.mealKey)) {
         state.attendanceMealKey = target.dataset.mealKey;
+        state.openAttendanceDemandSwipeKey = '';
         render();
       }
       return;
@@ -4307,6 +4654,9 @@
         return;
       }
       state.expectedAt = expectedAtInputValue(parts.date, parts.time);
+      if (state.tab === 'auxiliary' && state.demandEntryMode === 'quantity') {
+        writeAuxiliarySimpleDraft({ ...readAuxiliarySimpleDraft(), expectedAt: state.expectedAt });
+      }
       state.sheet = null;
       render();
       return;
@@ -4333,6 +4683,115 @@
     }
     if (action === 'open-demand-detail') {
       openDemandDetailSheet(target);
+      return;
+    }
+    if (action === 'add-attendance-demand-products') {
+      if (state.attendanceInputMode === 'non-dining' || state.tab !== 'attendance') return;
+      const menu = menuFor(state.date);
+      if (!menu) return;
+      const mealKey = shouldSplitConfirmByMeal() ? (activeAttendanceMeal(menu)?.key || 'all-meals') : 'all-meals';
+      state.sheet = {
+        type: 'attendance-demand-product-picker',
+        mealKey,
+        keyword: '',
+        selectedCodes: [],
+        participantKey: participants()[0]?.key || ''
+      };
+      renderAttendancePreservingScroll();
+      return;
+    }
+    if (action === 'toggle-attendance-demand-product' && state.sheet?.type === 'attendance-demand-product-picker') {
+      if (target.disabled || target.dataset.productStatus === 'present') return;
+      const code = String(target.dataset.productCode || '');
+      if (!code) return;
+      const selectedCodes = new Set(state.sheet.selectedCodes || []);
+      if (selectedCodes.has(code)) selectedCodes.delete(code);
+      else selectedCodes.add(code);
+      state.sheet.selectedCodes = [...selectedCodes];
+      target.classList.toggle('is-selected', selectedCodes.has(code));
+      target.setAttribute('aria-pressed', String(selectedCodes.has(code)));
+      const indicator = target.querySelector('.school-mobile-demand-picker-indicator');
+      if (indicator) indicator.textContent = selectedCodes.has(code)
+        ? '✓'
+        : target.dataset.productStatus === 'removed' ? '恢复' : '＋';
+      const confirmButton = app.querySelector('[data-action="confirm-attendance-demand-products"]');
+      if (confirmButton) {
+        confirmButton.disabled = !selectedCodes.size;
+        confirmButton.textContent = selectedCodes.size ? '添加（' + number(selectedCodes.size) + '）' : '添加';
+      }
+      return;
+    }
+    if (action === 'select-attendance-demand-participant' && state.sheet?.type === 'attendance-demand-product-picker') {
+      state.sheet.participantKey = target.dataset.participantKey || '';
+      app.querySelectorAll('[data-action="select-attendance-demand-participant"]').forEach((button) => {
+        const active = button.dataset.participantKey === state.sheet.participantKey;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      return;
+    }
+    if (action === 'confirm-attendance-demand-products' && state.sheet?.type === 'attendance-demand-product-picker') {
+      const menu = menuFor(state.date);
+      if (!menu) return;
+      const mealKey = String(state.sheet.mealKey || 'all-meals');
+      const edit = readAttendanceDemandEdit(state.date, mealKey);
+      const removed = new Set(edit.removedProductKeys);
+      const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
+      const meal = mealKey === 'all-meals'
+        ? { rows: calculation.rows || [] }
+        : (calculation.mealRows || []).find((item) => String(item.key) === mealKey) || { rows: [] };
+      const catalog = attendanceDemandCatalog();
+      const participantKey = participants().some((person) => String(person.key) === String(state.sheet.participantKey))
+        ? state.sheet.participantKey
+        : participants()[0]?.key || '';
+      let addedCount = 0;
+      (state.sheet.selectedCodes || []).forEach((code) => {
+        const product = catalog.find((item) => String(item.code) === String(code));
+        if (!product) return;
+        const key = purchaseRowKey({ productCode: product.code, unit: product.unit });
+        if (removed.has(key)) {
+          removed.delete(key);
+          edit.addedProducts = edit.addedProducts.filter((entry) => String(entry.productCode) !== String(product.code));
+          addedCount += 1;
+          return;
+        }
+        const alreadyCalculated = (meal.rows || []).some((row) => purchaseRowKey(row) === key && Number(row.totalQty || 0) > 0);
+        const alreadyAdded = edit.addedProducts.some((entry) => String(entry.productCode) === String(product.code));
+        if (alreadyCalculated || alreadyAdded) return;
+        edit.addedProducts.push({
+          productCode: product.code,
+          productName: product.name,
+          unit: product.unit,
+          quantity: '',
+          participantKey
+        });
+        addedCount += 1;
+      });
+      edit.removedProductKeys = [...removed];
+      writeAttendanceDemandEdit(state.date, mealKey, edit);
+      state.sheet = null;
+      state.openAttendanceDemandSwipeKey = '';
+      renderAttendancePreservingScroll();
+      if (addedCount) showToast(addedCount + ' 种商品已加入，请填写采购量');
+      return;
+    }
+    if (action === 'cancel-attendance-demand-products' && state.sheet?.type === 'attendance-demand-product-picker') {
+      state.sheet = null;
+      renderAttendancePreservingScroll();
+      return;
+    }
+    if (action === 'remove-attendance-demand-product') {
+      const date = target.dataset.menuDate || state.date;
+      const mealKey = target.dataset.demandMealKey || 'all-meals';
+      const edit = readAttendanceDemandEdit(date, mealKey);
+      if (target.dataset.demandSource === 'manual') {
+        edit.addedProducts = edit.addedProducts.filter((entry) => String(entry.productCode) !== String(target.dataset.productCode));
+      } else if (!edit.removedProductKeys.includes(target.dataset.demandRowKey)) {
+        edit.removedProductKeys.push(target.dataset.demandRowKey);
+      }
+      writeAttendanceDemandEdit(date, mealKey, edit);
+      state.openAttendanceDemandSwipeKey = '';
+      refreshAttendanceDemandRows();
       return;
     }
     if (action === 'open-auxiliary-demand-detail') {
@@ -4364,7 +4823,7 @@
       }
       if (state.confirmDates.has(date)) state.confirmDates.delete(date);
       else state.confirmDates.add(date);
-      alignExpectedAtToFirstDate();
+      updateExpectedAtForConfirmDates([...state.confirmDates]);
       render();
       return;
     }
@@ -4618,8 +5077,38 @@
     const target = event.target.closest('[data-action]');
     if (!target || !app.contains(target)) return;
     const action = target.dataset.action;
+    if (action === 'auxiliary-search-input') {
+      state.auxiliarySearchInput = target.value;
+      const clear = app.querySelector('[data-action="auxiliary-search-clear"]');
+      if (clear) clear.hidden = !state.auxiliarySearchInput && !state.auxiliarySearchTerm;
+      return;
+    }
     if (action === 'direct-quantity-input') {
       updateDirectQuantity(target);
+      return;
+    }
+    if (action === 'attendance-demand-product-search' && state.sheet?.type === 'attendance-demand-product-picker') {
+      state.sheet.keyword = target.value || '';
+      const keyword = state.sheet.keyword.trim().toLocaleLowerCase();
+      let visibleCount = 0;
+      app.querySelectorAll('.school-mobile-demand-picker-option').forEach((option) => {
+        const visible = !keyword || String(option.dataset.searchText || '').includes(keyword);
+        option.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+      const empty = app.querySelector('[data-demand-picker-empty]');
+      if (empty) empty.hidden = visibleCount > 0;
+      return;
+    }
+    if (action === 'attendance-demand-quantity') {
+      const edit = readAttendanceDemandEdit(target.dataset.menuDate || state.date, target.dataset.demandMealKey || 'all-meals');
+      const entry = edit.addedProducts.find((item) => String(item.productCode) === String(target.dataset.productCode));
+      if (!entry) return;
+      entry.quantity = target.value;
+      const parsed = Number(target.value);
+      const invalid = target.value !== '' && (!Number.isFinite(parsed) || parsed < 0 || (target.step === '1' && !Number.isInteger(parsed)));
+      target.toggleAttribute('aria-invalid', invalid);
+      writeAttendanceDemandEdit(target.dataset.menuDate || state.date, target.dataset.demandMealKey || 'all-meals', edit);
       return;
     }
     if ((action === 'order-detail-quantity' || action === 'order-detail-remark') && state.orderDetailEditing) {
@@ -4750,6 +5239,22 @@
         render();
         return;
       }
+      if (productAction === 'attendance-demand-quantity') {
+        const date = productTarget.dataset.menuDate || state.date;
+        const mealKey = productTarget.dataset.demandMealKey || 'all-meals';
+        const edit = readAttendanceDemandEdit(date, mealKey);
+        const entry = edit.addedProducts.find((item) => String(item.productCode) === String(productTarget.dataset.productCode));
+        if (!entry) return;
+        if (productTarget.value !== '') {
+          const parsed = Number(productTarget.value);
+          if (!Number.isFinite(parsed) || parsed < 0) productTarget.value = '0';
+          else if (productTarget.step === '1') productTarget.value = String(Math.ceil(parsed));
+          entry.quantity = productTarget.value;
+        } else entry.quantity = '';
+        productTarget.removeAttribute('aria-invalid');
+        writeAttendanceDemandEdit(date, mealKey, edit);
+        return;
+      }
       if (productAction === 'product-checkout-date') {
         state.productCheckout.expectedDate = productTarget.value;
         render();
@@ -4764,6 +5269,12 @@
   });
 
   app.addEventListener('submit', (event) => {
+    if (event.target.matches('[data-auxiliary-search-form]')) {
+      event.preventDefault();
+      state.auxiliarySearchTerm = state.auxiliarySearchInput.trim();
+      render();
+      return;
+    }
     if (event.target.matches('[data-product-search-form]')) {
       event.preventDefault();
       state.productKeyword = String(state.productSearchValue || '').trim();
@@ -4824,6 +5335,27 @@
   app.addEventListener('pointercancel', () => {
     mealSwipeStart = null;
     productSwipeStart = null;
+    attendanceDemandSwipeStart = null;
+  }, { passive: true });
+
+  app.addEventListener('pointerdown', (event) => {
+    const item = event.target.closest?.('[data-demand-swipe-item]');
+    if (!item || !app.contains(item) || event.target.closest?.('[data-action="remove-attendance-demand-product"], [data-action="attendance-demand-quantity"]')
+      || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    attendanceDemandSwipeStart = { item, x: event.clientX, y: event.clientY };
+  }, { passive: true });
+
+  app.addEventListener('pointerup', (event) => {
+    if (!attendanceDemandSwipeStart) return;
+    const start = attendanceDemandSwipeStart;
+    attendanceDemandSwipeStart = null;
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < 40 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    closeAttendanceDemandSwipeItems();
+    if (deltaX < 0) setAttendanceDemandSwipeItemOpen(start.item, true);
+    suppressDemandRowClick = true;
+    window.setTimeout(() => { suppressDemandRowClick = false; }, 400);
   }, { passive: true });
 
   app.addEventListener('pointerdown', (event) => {

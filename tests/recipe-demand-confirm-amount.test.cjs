@@ -81,3 +81,61 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
   } } });
   assert.equal(returnTarget, `./school-recipe-attendance.html?mode=people&date=${menu.date}`);
 });
+
+test('按日期和餐次移除测算商品，并把手动添加商品带入订单', async () => {
+  const { context } = loadApp({ services: [
+    'assets/js/data/school-reference-data.js',
+    'assets/js/services/school-canteen-config-service.js',
+    'assets/js/services/school-recipe-service.js',
+    'assets/js/services/school-recipe-attendance-service.js',
+    'assets/js/services/school-order-service.js',
+    'assets/js/services/operations-service.js',
+    'assets/js/services/school-recipe-demand-service.js'
+  ] });
+  const menu = context.SchoolRecipeService.getAll()[0];
+  const canteen = context.SchoolRecipeDemandService.currentCanteen('第一食堂');
+  const participants = context.SchoolRecipeAttendanceService.participantsFor(canteen);
+  const meals = Object.fromEntries(menu.meals.map((meal) => [meal.key, Object.fromEntries(participants.map((person) => [
+    person.key,
+    meal.key === menu.meals[0].key ? 1 : 0
+  ]))]));
+  context.SchoolRecipeAttendanceService.save(menu.date, meals, menu.version, canteen);
+
+  const baseline = context.SchoolRecipeDemandService.buildPreview([menu.date], { canteen });
+  const breakfast = baseline.dateSummaries[0].calculation.mealRows[0];
+  const removedRow = breakfast.rows.find((row) => row.mappingStatus === '已关联' && Number(row.totalQty) > 0);
+  const catalog = context.SchoolOrderService.getProductCatalog();
+  const manualProduct = catalog.find((product) => !breakfast.rows.some((row) => row.productCode === product.code));
+  assert.ok(removedRow);
+  assert.ok(manualProduct);
+
+  const options = {
+    canteen,
+    demandEditsByDate: {
+      [menu.date]: {
+        meals: {
+          [breakfast.key]: {
+            removedProductKeys: [removedRow.key],
+            addedProducts: [{ productCode: manualProduct.code, quantity: '2', participantKey: participants[0].key }]
+          }
+        }
+      }
+    }
+  };
+  const preview = context.SchoolRecipeDemandService.buildPreview([menu.date], options);
+  const breakfastRows = context.SchoolRecipeDemandService.aggregateMealRows(preview, breakfast.key);
+  assert.equal(breakfastRows.some((row) => row.key === removedRow.key), false);
+  assert.equal(breakfastRows.find((row) => row.productCode === manualProduct.code)?.totalQty, 2);
+  assert.equal(preview.canSubmit, true);
+
+  const result = await context.SchoolRecipeDemandService.submit([menu.date], {
+    ...options,
+    preview,
+    expectedAt: menu.date + ' 07:30:00'
+  });
+  const generatedOrders = context.SchoolOrderService.getAll().filter((order) => result.orders.some((summary) => summary.orderNo === order.orderNo));
+  const generatedLine = generatedOrders.flatMap((order) => order.items || []).find((item) => item.productCode === manualProduct.code);
+  assert.equal(generatedLine?.orderQty, 2);
+  const removedLine = generatedOrders.flatMap((order) => order.items || []).find((item) => item.productCode === removedRow.productCode && order.mealKey === breakfast.key);
+  assert.equal(removedLine, undefined);
+});

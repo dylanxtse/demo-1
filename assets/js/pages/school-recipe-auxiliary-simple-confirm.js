@@ -11,16 +11,20 @@
   const scope = String(canteen.id || canteen.name || '第一食堂');
   const draft = window.AppStorage?.read?.(draftKey, {})?.[scope] || {};
   const quantities = { ...(draft.quantities || {}) };
+  const initiallySelectedCodes = service.buildSimplePreview(canteen, quantities).selectedRows
+    .map((row) => String(row.productCode));
+  const visibleCodes = new Set(Array.isArray(draft.confirmProductCodes)
+    ? draft.confirmProductCodes.map(String) : initiallySelectedCodes);
+  initiallySelectedCodes.forEach((code) => visibleCodes.add(code));
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
   const money = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const quantity = (value) => Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
-  const state = { submitting: false, error: '' };
+  const state = { submitting: false, error: '', expectedAt: String(draft.expectedAt || '') };
   const backUrl = './school-recipe-auxiliary-attendance.html?mode=quantity';
 
   function expectedAtValue() {
-    const match = String(draft.expectedAt || '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2})?$/);
+    const match = state.expectedAt.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2})?$/);
     if (!match) return '';
     const parsed = new Date(`${match[1]}T${match[2]}:00`);
     if (Number.isNaN(parsed.getTime()) || parsed.getFullYear() !== Number(match[1].slice(0, 4))
@@ -37,15 +41,40 @@
       message: invalidQuantity ? '采购数量只能填写不超过两位小数的非负数' : demand.message };
   }
 
-  function render() {
-    const demand = preview();
-    const rows = demand.selectedRows.map((row, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td><td class="is-number">¥${money(row.orderPrice)}</td><td class="is-number">${quantity(row.orderQty)}</td><td class="is-number">¥${money(row.orderPrice * row.orderQty)}</td></tr>`).join('');
-    const total = demand.selectedRows.reduce((sum, row) => sum + row.orderPrice * row.orderQty, 0);
-    const warning = state.error || (!demand.canSubmit ? demand.message : '');
-    return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliarySimpleConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-aux-simple-back>← <span>返回</span></button><h1>干料需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-direct-confirm-meta"><span>用料食堂：<strong>${escapeHtml(canteen.name)}</strong></span><span>期望送达时间：<strong>${escapeHtml(expectedAtValue() || '--')}</strong></span></div><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header>${warning ? `<div class="school-recipe-direct-confirm-warning" role="alert">${escapeHtml(warning)}</div>` : ''}<div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-direct-confirm-table school-recipe-auxiliary-direct-confirm-table"><thead><tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>单价</th><th>采购量</th><th>小计</th></tr></thead><tbody>${rows || '<tr><td colspan="7">暂无待确认商品</td></tr>'}</tbody><tfoot><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="6">合计金额</td><td class="is-number">¥${money(total)}</td></tr></tfoot></table></div></section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-aux-simple-back>返回</button><button type="button" class="btn btn-primary btn-sm" data-aux-simple-submit${demand.canSubmit && !state.submitting ? '' : ' disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer></main></section>`;
+  function saveDraft() {
+    const drafts = window.AppStorage?.read?.(draftKey, {}) || {};
+    drafts[scope] = { ...(drafts[scope] || {}), quantities: { ...quantities }, confirmProductCodes: [...visibleCodes], expectedAt: state.expectedAt };
+    window.AppStorage?.write?.(draftKey, drafts);
   }
 
-  const root = window.AppShell.mount({ title: '干料需求确认', content: render(), variant: 'school', companyName: '静安第一中学', emptyText: '干料需求确认' });
+  function quantityFor(code) {
+    const raw = quantities[String(code)];
+    const value = raw == null || raw === '' ? 0 : Number(raw);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+
+  function warningFor(demand) {
+    if (state.error) return state.error;
+    if (demand.message === '请选择期望送达时间' || demand.message === '请至少填写一项大于 0 的采购量') return '';
+    return !demand.canSubmit ? demand.message : '';
+  }
+
+  function render() {
+    const demand = preview();
+    const visibleRows = [...visibleCodes]
+      .map((code) => demand.rows.find((row) => String(row.productCode) === code))
+      .filter(Boolean);
+    const rows = visibleRows.map((row, index) => {
+      const rawQuantity = quantities[row.productCode] ?? '';
+      const orderQty = quantityFor(row.productCode);
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td><td class="is-number">¥${money(row.orderPrice)}</td><td class="is-number school-recipe-direct-confirm-quantity-cell"><input class="school-recipe-direct-confirm-quantity" type="number" min="0" step="0.01" inputmode="decimal" placeholder="请输入" aria-label="${escapeHtml(row.productName)}采购数量" data-aux-simple-confirm-quantity="${escapeHtml(row.productCode)}" value="${escapeHtml(rawQuantity)}"></td><td class="is-number" data-aux-simple-subtotal="${escapeHtml(row.productCode)}">¥${money(row.orderPrice * orderQty)}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-aux-simple-remove="${escapeHtml(row.productCode)}" aria-label="移除${escapeHtml(row.productName)}"${visibleRows.length <= 1 ? ' disabled' : ''}>移除</button></td></tr>`;
+    }).join('');
+    const total = visibleRows.reduce((sum, row) => sum + row.orderPrice * quantityFor(row.productCode), 0);
+    const warning = warningFor(demand);
+    return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliarySimpleConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-aux-simple-back>← <span>返回</span></button><h1>干调需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-direct-confirm-meta"><span>用料食堂：<strong>${escapeHtml(canteen.name)}</strong></span><div class="school-recipe-simple-confirm-delivery"><label for="schoolAuxiliaryConfirmExpectedAt">期望送达时间 <span aria-hidden="true">*</span></label><div class="school-recipe-simple-confirm-date-field${state.expectedAt ? '' : ' is-empty'}"><span class="school-recipe-simple-confirm-date-display" aria-hidden="true">${escapeHtml(state.expectedAt ? state.expectedAt.replace('T', ' ') : '请选择')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span><input id="schoolAuxiliaryConfirmExpectedAt" type="datetime-local" value="${escapeHtml(state.expectedAt)}" data-aux-simple-confirm-expected-at aria-label="期望送达时间"></div></div></div><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div></header><div class="school-recipe-direct-confirm-warning" role="alert" data-aux-simple-warning${warning ? '' : ' hidden'}>${escapeHtml(warning)}</div><div class="school-recipe-demand-table-wrap"><table class="school-recipe-demand-table school-recipe-direct-confirm-table school-recipe-auxiliary-direct-confirm-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-code"><col class="col-unit"><col class="col-price"><col class="col-quantity"><col class="col-amount"><col class="col-action"></colgroup><thead><tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>单价</th><th>采购量</th><th>小计</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8">暂无待确认商品</td></tr>'}</tbody><tfoot><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="6">合计金额</td><td class="is-number" data-aux-simple-total>¥${money(total)}</td><td></td></tr></tfoot></table></div></section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-aux-simple-back>返回</button><button type="button" class="btn btn-primary btn-sm" data-aux-simple-submit${demand.canSubmit && !state.submitting ? '' : ' disabled'}>${state.submitting ? '提交中…' : '提交需求并下单'}</button></footer></main></section>`;
+  }
+
+  const root = window.AppShell.mount({ title: '干调需求确认', content: render(), variant: 'school', companyName: '静安第一中学', emptyText: '干调需求确认' });
   const rerender = () => {
     const page = root.querySelector('#schoolRecipeAuxiliarySimpleConfirmPage');
     if (page) page.outerHTML = render();
@@ -55,8 +84,66 @@
     else window.location.href = url;
   };
 
+  root.addEventListener('change', (event) => {
+    if (event.target.closest('[data-aux-simple-confirm-expected-at]')) {
+      state.expectedAt = event.target.value;
+      saveDraft();
+      state.error = '';
+      rerender();
+      return;
+    }
+    if (event.target.closest('[data-aux-simple-confirm-quantity]')) rerender();
+  });
+
+  root.addEventListener('input', (event) => {
+    const input = event.target.closest('[data-aux-simple-confirm-quantity]');
+    if (!input) return;
+    const code = input.dataset.auxSimpleConfirmQuantity;
+    if (input.value === '') delete quantities[code];
+    else quantities[code] = input.value;
+    saveDraft();
+    state.error = '';
+
+    const demand = preview();
+    const row = demand.rows.find((item) => String(item.productCode) === String(code));
+    const parsed = Number(input.value);
+    const orderQty = input.value !== '' && Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    const subtotal = row ? row.orderPrice * orderQty : 0;
+    const subtotalCell = [...root.querySelectorAll('[data-aux-simple-subtotal]')]
+      .find((cell) => cell.dataset.auxSimpleSubtotal === String(code));
+    if (subtotalCell) subtotalCell.textContent = `¥${money(subtotal)}`;
+    const total = [...visibleCodes].reduce((sum, visibleCode) => {
+      const item = demand.rows.find((row) => String(row.productCode) === visibleCode);
+      return item ? sum + item.orderPrice * quantityFor(visibleCode) : sum;
+    }, 0);
+    const totalCell = root.querySelector('[data-aux-simple-total]');
+    if (totalCell) totalCell.textContent = `¥${money(total)}`;
+    const submitButton = root.querySelector('[data-aux-simple-submit]');
+    if (submitButton) submitButton.disabled = !demand.canSubmit || state.submitting;
+    const warning = root.querySelector('[data-aux-simple-warning]');
+    if (warning) {
+      warning.textContent = warningFor(demand);
+      warning.hidden = !warning.textContent;
+    }
+  });
+
   root.addEventListener('click', async (event) => {
+    const dateInput = event.target.closest('[data-aux-simple-confirm-expected-at]');
+    if (dateInput) {
+      try { dateInput.showPicker?.(); } catch (_) { dateInput.focus(); }
+      return;
+    }
     if (event.target.closest('[data-aux-simple-back]')) { navigate(backUrl); return; }
+    const removeButton = event.target.closest('[data-aux-simple-remove]');
+    if (removeButton) {
+      const code = removeButton.dataset.auxSimpleRemove;
+      visibleCodes.delete(code);
+      delete quantities[code];
+      saveDraft();
+      state.error = '';
+      rerender();
+      return;
+    }
     if (!event.target.closest('[data-aux-simple-submit]') || state.submitting) return;
     const demand = preview();
     if (!demand.canSubmit) { state.error = demand.message; rerender(); return; }

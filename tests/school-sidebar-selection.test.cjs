@@ -32,7 +32,7 @@ test('食材填报和确认页带日期参数时仍展开并选中对应左侧�
   }
 });
 
-test('商品填报带日期参数时选中干料需求填报', () => {
+test('商品填报带日期参数时选中干调需求填报', () => {
   const html = selectedMenu('/school-recipe-auxiliary-attendance.html', '?mode=quantity&date=2026-09-07');
   assert.match(html, /class="menu-sub-item selected[^"]*"[^>]*data-menu-link="\.\/school-recipe-auxiliary-attendance\.html"/);
 });

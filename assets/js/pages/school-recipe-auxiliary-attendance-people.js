@@ -85,11 +85,7 @@
   );
   let meals = {};
 
-  const products = [
-    { id: 'aux-oil', auxiliaryName: '油', name: '金龙鱼5L桶装油', brand: '金龙鱼', code: 'SP0300030', spec: '5L/桶', doseUnit: 'L', doseDisplay: '12 ml', purchaseUnit: '桶', category: ['食用油', '植物油', '大豆油'], packSize: 5, dose: 0.012 },
-    { id: 'aux-salt', auxiliaryName: '盐', name: '食盐', brand: '—', code: 'SP0300031', spec: '500g/袋', doseUnit: 'kg', doseDisplay: '4 g', purchaseUnit: '袋', category: ['调味品', '食盐', '精制盐'], packSize: 0.5, dose: 0.004 },
-    { id: 'aux-msg', auxiliaryName: '味精', name: '味精', brand: '—', code: 'SP0300032', spec: '250g/袋', doseUnit: 'kg', doseDisplay: '1 g', purchaseUnit: '袋', category: ['调味品', '香辛调味品', '味精'], packSize: 0.25, dose: 0.001 }
-  ];
+  const products = directService.attendanceProducts();
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const amount = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
@@ -111,6 +107,7 @@
   const firstDate = recipeDateList[0] || '2026-09-29';
   const draftStorageKey = 'school-recipe-auxiliary-attendance-drafts-v1';
   const selectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
+  const defaultProductsStorageKey = 'school-recipe-auxiliary-default-products-v1';
   const viewStorageKey = 'school-recipe-auxiliary-attendance-view-v1';
   const defaultModeKey = 'school-recipe-auxiliary-default-mode-v1';
   const orderModeKey = 'school-recipe-auxiliary-quantity-order-mode-v1';
@@ -204,18 +201,23 @@
   loadDraft(dateState.selectedDate);
   if (initialMode === 'people') persistDraft();
 
-  const storedSelectedStorage = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
-  const storedSelectedIds = Array.isArray(storedSelectedStorage[canteenScope]) ? storedSelectedStorage[canteenScope] : [];
-  const initialSelectedIds = storedSelectedIds.length ? new Set(storedSelectedIds) : new Set(products.map((product) => product.id));
+  const storedDefaultStorage = window.AppStorage?.read?.(defaultProductsStorageKey, {}) || {};
+  const storedDefaultIds = Array.isArray(storedDefaultStorage[canteenScope]) ? storedDefaultStorage[canteenScope] : [];
+  const defaultProductIds = new Set(products.filter((product) => storedDefaultIds.includes(product.id)).map((product) => product.id));
   const mealKeys = Object.keys(meals);
   const state = { meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '',
     mode: initialMode, orderMode: initialOrderMode, defaultMode, attendanceMode: 'dining',
-    highlightEmpty: false, selected: products.filter((product) => initialSelectedIds.has(product.id)) };
-  if (!state.selected.length) state.selected = products.slice();
+    highlightEmpty: false, selected: products.filter((product) => defaultProductIds.has(product.id)), defaultProductIds,
+    productModalOpen: false, modalPage: 1, modalPageSize: 10, modalSelected: new Set(), modalFilters: { keyword: '', category: '' } };
   const persistSelectedProducts = () => {
     const next = window.AppStorage?.read?.(selectedProductsStorageKey, {}) || {};
     next[canteenScope] = state.selected.map((product) => product.id);
     window.AppStorage?.write?.(selectedProductsStorageKey, next);
+  };
+  const persistDefaultProducts = () => {
+    const next = window.AppStorage?.read?.(defaultProductsStorageKey, {}) || {};
+    next[canteenScope] = products.filter((product) => state.defaultProductIds.has(product.id)).map((product) => product.id);
+    window.AppStorage?.write?.(defaultProductsStorageKey, next);
   };
   persistSelectedProducts();
 
@@ -312,7 +314,7 @@
   function renderModeSwitcher() {
     return `<div class="school-recipe-entry-switch" aria-label="商品需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
       ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
-    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${state.mode === mode}" class="school-recipe-entry-tab${state.mode === mode ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${state.defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div><button type="button" class="school-recipe-entry-set-default" data-aux-entry-set-default${state.defaultMode === state.mode ? ' disabled' : ''}>设为默认</button></div>`;
+    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${state.mode === mode}" class="school-recipe-entry-tab${state.mode === mode ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${state.defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div></div>`;
   }
 
   function renderDatePanel() {
@@ -348,7 +350,7 @@
   }
 
   function renderRows() {
-    if (!state.selected.length) return '<div class="school-auxiliary-empty">暂无辅料商品</div>';
+    if (!state.selected.length) return '<div class="school-auxiliary-empty">暂无干调商品</div>';
     const displayProduct = (product) => `${product.name}（${product.doseUnit || '--'}/${product.brand || '--'}/${product.spec || '--'}）`;
     const splitByPersonType = (() => {
       const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
@@ -365,7 +367,7 @@
         : [`<td class="number">${amount(data.totalQty)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(data.totalPurchaseQty)} ${escapeHtml(product.doseUnit)}</td>`];
       return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(product.auxiliaryName || product.name)}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td>${escapeHtml(product.code)}</td><td>是</td>${quantities.join('')}<td><button class="school-auxiliary-remove${state.selected.length <= 1 ? ' is-disabled' : ''}" type="button" data-remove-id="${escapeHtml(product.id)}" ${state.selected.length <= 1 ? 'disabled' : ''}>移除</button></td></tr>`;
     }).join('');
-    return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:150px"><col style="width:118px"><col style="width:220px"><col style="width:100px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">辅料</th><th rowspan="2">人均用量</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
+    return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:150px"><col style="width:118px"><col style="width:220px"><col style="width:100px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">干调</th><th rowspan="2">人均用量</th><th rowspan="2">商品</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
   }
 
   function renderPeopleTable() {
@@ -389,9 +391,34 @@
     return `<div class="school-auxiliary-people-section"><div class="school-recipe-attendance-section-heading school-auxiliary-people-heading"><div><span class="section-title-mark">餐次总人数</span>${isNonDining ? '' : '<span class="school-recipe-attendance-count-tip">无人员就餐请填写为0</span>'}</div><button type="button" class="btn btn-sm school-recipe-attendance-mode-action${isNonDining ? ' btn-primary' : ''}" data-aux-attendance-mode-toggle>${isNonDining ? '保存' : '填写不就餐人数'}</button></div><div class="school-recipe-attendance-meal-table-wrap school-auxiliary-people-table-wrap"><table class="school-recipe-attendance-meal-table school-auxiliary-people-table"><colgroup><col class="col-meal">${groups.map(() => '<col class="col-person">').join('')}<col class="col-meal-total"></colgroup><thead><tr><th rowspan="2">餐次</th><th colspan="${Math.max(1, groups.length)}">总人数</th><th rowspan="2">本餐合计</th></tr><tr>${personHeaders}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }
 
+  function renderProductModal() {
+    if (!state.productModalOpen || state.mode !== 'people') return '';
+    const filters = state.modalFilters;
+    const categoryOptions = [...new Map(products.flatMap((product) => product.category.map((_, index) => product.category.slice(0, index + 1)))
+      .map((path) => [path.join('|'), path])).values()];
+    const categoryPath = filters.category ? filters.category.split('|') : [];
+    const keyword = filters.keyword.trim().toLowerCase();
+    const filtered = products.filter((product) =>
+      (!keyword || `${product.name} ${product.auxiliaryName} ${product.code}`.toLowerCase().includes(keyword))
+      && categoryPath.every((part, index) => product.category[index] === part));
+    const pageSize = state.modalPageSize;
+    const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+    state.modalPage = Math.min(state.modalPage, pageCount);
+    const visible = filtered.slice((state.modalPage - 1) * pageSize, state.modalPage * pageSize);
+    const allVisibleSelected = visible.length > 0 && visible.every((product) => state.modalSelected.has(product.id));
+    const categoryOptionsHtml = categoryOptions.map((path) => {
+      const value = path.join('|');
+      return `<option value="${escapeHtml(value)}"${value === filters.category ? ' selected' : ''}>${escapeHtml(`${'　'.repeat(path.length - 1)}${path[path.length - 1]}`)}</option>`;
+    }).join('');
+    const rows = visible.map((product) => `<tr><td><input type="checkbox" value="${escapeHtml(product.id)}" data-aux-product-checkbox aria-label="选择${escapeHtml(product.name)}"${state.modalSelected.has(product.id) ? ' checked' : ''}></td><td class="product-list-name">${escapeHtml(product.name)}</td><td class="product-list-category">${product.category.map(escapeHtml).join(' / ')}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.purchaseUnit)}</td><td><button type="button" class="school-auxiliary-product-default${state.defaultProductIds.has(product.id) ? ' is-default' : ''}" data-aux-product-default="${escapeHtml(product.id)}" aria-pressed="${state.defaultProductIds.has(product.id)}">${state.defaultProductIds.has(product.id) ? '取消默认' : '设为默认'}</button></td></tr>`).join('');
+    const pageButtons = Array.from({ length: pageCount }, (_, index) => index + 1)
+      .map((page) => `<button type="button" class="school-auxiliary-page-button${page === state.modalPage ? ' is-active' : ''}" data-aux-product-page="${page}"${page === state.modalPage ? ' aria-current="page"' : ''}>${page}</button>`).join('');
+    return `<div class="school-auxiliary-modal-backdrop" data-aux-product-modal><section class="school-auxiliary-modal" role="dialog" aria-modal="true" aria-label="添加商品"><header class="school-auxiliary-modal-header"><h3>添加商品</h3><button type="button" class="school-auxiliary-modal-close" data-aux-product-close aria-label="关闭">×</button></header><div class="school-auxiliary-modal-body"><div class="school-auxiliary-product-filters"><label><span>商品名称</span><input type="search" value="${escapeHtml(filters.keyword)}" placeholder="请输入商品名称/编号" data-aux-product-keyword></label><label><span>商品分类</span><select data-aux-product-category><option value="">全部</option>${categoryOptionsHtml}</select></label><div class="school-auxiliary-filter-actions"><button type="button" class="btn btn-primary btn-sm" data-aux-product-query>查询</button><button type="button" class="btn btn-sm" data-aux-product-reset>重置</button></div></div><div class="school-auxiliary-product-list-wrap"><table class="school-auxiliary-product-list"><colgroup><col class="col-select"><col class="col-name"><col class="col-category"><col class="col-code"><col class="col-unit"><col class="col-action"></colgroup><thead><tr><th><input type="checkbox" data-aux-product-select-all aria-label="全选当前页"${allVisibleSelected ? ' checked' : ''}></th><th>干调商品</th><th>商品分类</th><th>商品编号</th><th>计量单位</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="school-auxiliary-no-results">暂无符合条件的商品</td></tr>'}</tbody></table></div><div class="school-auxiliary-pagination"><span class="school-auxiliary-page-total">共 ${filtered.length} 条数据</span><select class="school-auxiliary-page-size" data-aux-product-page-size aria-label="每页条数">${[10, 20, 50].map((size) => `<option value="${size}"${pageSize === size ? ' selected' : ''}>${size} 条/页</option>`).join('')}</select><div class="school-auxiliary-page-buttons"><button type="button" class="school-auxiliary-page-button" data-aux-product-page="${state.modalPage - 1}"${state.modalPage === 1 ? ' disabled' : ''}>‹</button>${pageButtons}<button type="button" class="school-auxiliary-page-button" data-aux-product-page="${state.modalPage + 1}"${state.modalPage === pageCount ? ' disabled' : ''}>›</button></div><label class="school-auxiliary-page-jump">跳至 <input type="number" min="1" max="${pageCount}" step="1" value="${state.modalPage}" data-aux-product-jump aria-label="跳转页码"> / ${pageCount} 页</label></div></div><footer class="school-auxiliary-modal-footer"><button type="button" class="btn btn-sm" data-aux-product-close>取消</button><button type="button" class="btn btn-primary btn-sm" data-aux-product-confirm>确定</button></footer></section></div>`;
+  }
+
   function renderForm() {
     const mealTabs = shouldSplitOrderByMeal() ? `<div class="school-auxiliary-meal-tabs" role="tablist">${Object.entries(meals).map(([key, meal]) => `<button class="school-auxiliary-meal-tab ${key === state.meal ? 'is-active' : ''}" type="button" data-meal="${key}" role="tab" aria-selected="${key === state.meal}">${meal.name}</button>`).join('')}</div>` : '';
-    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm school-auxiliary-restore-default" type="button" data-restore-default>恢复默认</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm" type="button" data-confirm-demand>确认需求</button></div></footer>`;
+    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm" type="button" data-aux-product-open>批量添加商品</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm" type="button" data-confirm-demand>确认需求</button></div></footer>`;
   }
 
   function renderOrderModeSwitcher() {
@@ -410,7 +437,7 @@
       const value = draft.quantities[code] ?? '';
       return `<tr><td>${index + 1}</td><td class="product-cell">${escapeHtml(product.auxiliaryName)}</td><td class="product-cell">${escapeHtml(`${product.name}（${product.unit}/${product.brand}/${product.spec}）`)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(product.unit)}</td><td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="any" inputmode="decimal" placeholder="请输入" value="${escapeHtml(value)}" data-aux-combined-quantity="${escapeHtml(code)}" aria-label="${escapeHtml(product.name)}周期采购总量"></div></td></tr>`;
     }).join('');
-    const table = `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-combined-table"><thead><tr><th>序号</th><th>辅料</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>周期采购总量</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="school-auxiliary-combined-empty">暂无已设置的辅料商品</td></tr>'}</tbody></table></div>`;
+    const table = `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-combined-table"><thead><tr><th>序号</th><th>干调</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>周期采购总量</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="school-auxiliary-combined-empty">暂无已设置的干调商品</td></tr>'}</tbody></table></div>`;
     const hasDraft = draft.dates.length || Object.values(draft.quantities).some((value) => String(value).trim() !== '');
     return `<div class="school-auxiliary-scroll school-auxiliary-direct-scroll school-auxiliary-combined-scroll"><div class="school-recipe-attendance-section-heading school-recipe-direct-heading"><span class="section-title-mark">填写采购量</span></div>${table}</div><footer class="school-auxiliary-footer school-auxiliary-direct-footer"><div class="school-recipe-direct-footer-left"><button type="button" class="btn btn-sm" data-aux-combined-clear${hasDraft ? '' : ' disabled'}>清空本次填报</button><span data-aux-combined-summary>已选 ${draft.dates.length} 天、${preview.selectedRows.length} 种商品</span></div><button type="button" class="btn btn-primary btn-sm${preview.canSubmit ? '' : ' btn-disabled'}" data-aux-combined-confirm${preview.canSubmit ? '' : ' disabled'}>需求确认</button></footer>`;
   }
@@ -439,7 +466,7 @@
       return values.map(({ key, name, value }) => `<td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="any" inputmode="decimal" placeholder="0" value="${escapeHtml(value)}" data-aux-direct-quantity="${escapeHtml(key)}" aria-label="${escapeHtml(`${meal.name}${row.productName}${name}采购量`)}"></div></td>`).join('');
     };
     const rows = (activeMeal?.rows || []).map((row, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(row.auxiliaryName)}</td><td class="product-cell">${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td>${quantityCells(row, activeMeal)}</tr>`).join('');
-    const table = `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-recipe-direct-table school-auxiliary-direct-table" style="min-width:${Math.max(780, 668 + (directParticipants.length || 1) * 140)}px"><colgroup><col style="width:58px"><col style="width:110px"><col style="width:300px"><col style="width:120px"><col style="width:80px">${quantityCols}</colgroup><thead><tr><th>序号</th><th>辅料</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th>${quantityHeaders}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    const table = `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-recipe-direct-table school-auxiliary-direct-table" style="min-width:${Math.max(780, 668 + (directParticipants.length || 1) * 140)}px"><colgroup><col style="width:58px"><col style="width:110px"><col style="width:300px"><col style="width:120px"><col style="width:80px">${quantityCols}</colgroup><thead><tr><th>序号</th><th>干调</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th>${quantityHeaders}</tr></thead><tbody>${rows}</tbody></table></div>`;
     const clearMenu = `<div class="school-recipe-attendance-reset-dropdown${hasDateValues ? '' : ' is-disabled'}"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-direct-clear-toggle aria-expanded="false" aria-haspopup="menu"${hasDateValues ? '' : ' disabled'}>清空数量<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-direct-clear="meal"${hasMealValues ? '' : ' disabled'}>清空当前餐次数量</button><button type="button" role="menuitem" data-aux-direct-clear="date"${hasDateValues ? '' : ' disabled'}>清空当前日期数量</button></div></div>`;
     return `<div class="school-auxiliary-scroll school-auxiliary-direct-scroll"><div class="school-recipe-attendance-section-heading school-recipe-direct-heading"><span class="section-title-mark">填写采购量</span><p>无需采购时采购量填 0 或不填</p></div>${tabs}${table}</div><footer class="school-auxiliary-footer school-auxiliary-direct-footer"><div class="school-recipe-direct-footer-left">${clearMenu}<span data-aux-direct-summary>已填写 ${filledProducts} 种商品</span></div><button type="button" class="btn btn-primary btn-sm${preview.canSubmit ? '' : ' btn-disabled'}" data-aux-direct-confirm${preview.canSubmit ? '' : ' disabled'}>需求确认</button></footer>`;
   }
@@ -451,10 +478,10 @@
   }
 
   function renderPage() {
-    return `<section class="page-card school-auxiliary-page" id="schoolAuxiliaryPage">${renderModeSwitcher()}<div class="school-auxiliary-body">${renderDatePanel()}<main class="school-auxiliary-detail">${renderCanteenBar()}${renderOverview()}${renderDetail()}</main></div></section>`;
+    return `<section class="page-card school-auxiliary-page" id="schoolAuxiliaryPage">${renderModeSwitcher()}<div class="school-auxiliary-body">${renderDatePanel()}<main class="school-auxiliary-detail">${renderCanteenBar()}${renderOverview()}${renderDetail()}</main></div>${renderProductModal()}</section>`;
   }
 
-  const root = window.AppShell.mount({ title: '干料需求填报', variant: 'school', content: renderPage(), emptyText: '干料需求填报' });
+  const root = window.AppShell.mount({ title: '干调需求填报', variant: 'school', content: renderPage(), emptyText: '干调需求填报' });
   const rerenderPage = () => {
     const page = root.querySelector('#schoolAuxiliaryPage');
     if (page) page.outerHTML = renderPage();
@@ -463,13 +490,79 @@
   const refreshPeopleTable = () => { const section = root.querySelector('.school-auxiliary-people-section'); if (section) section.outerHTML = renderPeopleTable(); };
   const refreshOverview = () => { const overview = root.querySelector('#schoolAuxiliaryOverview'); if (overview) overview.outerHTML = renderOverview(); };
   const refreshDatePanel = () => { const panel = root.querySelector('.school-auxiliary-recipe-date-panel'); if (panel) panel.outerHTML = renderDatePanel(); };
+  const refreshProductModal = () => {
+    const modal = root.querySelector('[data-aux-product-modal]');
+    if (modal) modal.outerHTML = renderProductModal();
+  };
+  const jumpProductPage = (input) => {
+    const page = Number(input.value);
+    const max = Number(input.max) || 1;
+    state.modalPage = Number.isInteger(page) && page > 0 ? Math.min(page, max) : state.modalPage;
+    refreshProductModal();
+  };
+  const closeProductModal = () => {
+    state.productModalOpen = false;
+    state.modalSelected = new Set();
+    rerenderPage();
+    root.querySelector('[data-aux-product-open]')?.focus();
+  };
 
   root.addEventListener('click', (event) => {
-    if (event.target.closest('[data-aux-entry-set-default]')) {
-      state.defaultMode = state.mode;
-      window.AppStorage?.write?.(defaultModeKey, state.defaultMode);
+    if (event.target.closest('[data-aux-product-open]')) {
+      state.productModalOpen = true;
+      state.modalPage = 1;
+      state.modalSelected = new Set(state.selected.map((product) => product.id));
+      state.modalFilters = { keyword: '', category: '' };
       rerenderPage();
-      showToast('已设为默认填报方式');
+      root.querySelector('[data-aux-product-keyword]')?.focus();
+      return;
+    }
+    if (event.target.closest('[data-aux-product-close]') || event.target.matches?.('[data-aux-product-modal]')) {
+      closeProductModal();
+      return;
+    }
+    if (event.target.closest('[data-aux-product-query]')) {
+      state.modalPage = 1;
+      refreshProductModal();
+      return;
+    }
+    if (event.target.closest('[data-aux-product-reset]')) {
+      state.modalFilters = { keyword: '', category: '' };
+      state.modalPage = 1;
+      refreshProductModal();
+      return;
+    }
+    const defaultButton = event.target.closest('[data-aux-product-default]');
+    if (defaultButton) {
+      const product = products.find((item) => item.id === defaultButton.dataset.auxProductDefault);
+      if (!product) return;
+      if (state.defaultProductIds.has(product.id)) {
+        state.defaultProductIds.delete(product.id);
+      } else {
+        state.defaultProductIds.add(product.id);
+        state.modalSelected.add(product.id);
+        if (!state.selected.some((item) => item.id === product.id)) {
+          state.selected = products.filter((item) => state.selected.some((selected) => selected.id === item.id) || item.id === product.id);
+          persistSelectedProducts();
+          rerenderRows();
+        }
+      }
+      persistDefaultProducts();
+      refreshProductModal();
+      return;
+    }
+    const productPage = event.target.closest('[data-aux-product-page]');
+    if (productPage && !productPage.disabled) {
+      state.modalPage = Number(productPage.dataset.auxProductPage);
+      refreshProductModal();
+      return;
+    }
+    if (event.target.closest('[data-aux-product-confirm]')) {
+      const selected = products.filter((product) => state.modalSelected.has(product.id) || state.defaultProductIds.has(product.id));
+      if (!selected.length) { showToast('请至少选择一种商品', true); return; }
+      state.selected = selected;
+      persistSelectedProducts();
+      closeProductModal();
       return;
     }
     const entryButton = event.target.closest('[data-aux-entry-mode]');
@@ -660,12 +753,6 @@
       rerenderRows();
       return;
     }
-    if (event.target.closest('[data-restore-default]')) {
-      state.selected = products.slice();
-      persistSelectedProducts();
-      rerenderRows();
-      return;
-    }
     const remove = event.target.closest('[data-remove-id]');
     if (remove && state.selected.length > 1) {
       state.selected = state.selected.filter((product) => product.id !== remove.dataset.removeId);
@@ -674,6 +761,7 @@
       return;
     }
     if (event.target.closest('[data-confirm-demand]')) {
+      if (!state.selected.length) { showToast('请先添加商品', true); return; }
       persistDraft();
       const emptyField = firstEmptyAttendanceField();
       if (emptyField) {
@@ -692,7 +780,57 @@
     }
   });
 
+  root.addEventListener('change', (event) => {
+    const pageSize = event.target.closest('[data-aux-product-page-size]');
+    if (pageSize) {
+      const size = Number(pageSize.value);
+      if ([10, 20, 50].includes(size)) {
+        state.modalPageSize = size;
+        state.modalPage = 1;
+        refreshProductModal();
+      }
+      return;
+    }
+    const pageJump = event.target.closest('[data-aux-product-jump]');
+    if (pageJump) { jumpProductPage(pageJump); return; }
+    const category = event.target.closest('[data-aux-product-category]');
+    if (category) {
+      state.modalFilters.category = category.value;
+      state.modalPage = 1;
+      refreshProductModal();
+      return;
+    }
+    const selectAll = event.target.closest('[data-aux-product-select-all]');
+    if (selectAll) {
+      root.querySelectorAll('[data-aux-product-checkbox]').forEach((checkbox) => {
+        if (selectAll.checked) state.modalSelected.add(checkbox.value);
+        else state.modalSelected.delete(checkbox.value);
+      });
+      refreshProductModal();
+      return;
+    }
+    const checkbox = event.target.closest('[data-aux-product-checkbox]');
+    if (checkbox) {
+      if (checkbox.checked) state.modalSelected.add(checkbox.value);
+      else state.modalSelected.delete(checkbox.value);
+      const visible = [...root.querySelectorAll('[data-aux-product-checkbox]')];
+      const all = root.querySelector('[data-aux-product-select-all]');
+      if (all) all.checked = visible.length > 0 && visible.every((item) => item.checked);
+    }
+  });
+
+  root.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.productModalOpen) closeProductModal();
+    const pageJump = event.target.closest('[data-aux-product-jump]');
+    if (pageJump && event.key === 'Enter') {
+      event.preventDefault();
+      jumpProductPage(pageJump);
+    }
+  });
+
   root.addEventListener('input', (event) => {
+    const productKeyword = event.target.closest('[data-aux-product-keyword]');
+    if (productKeyword) { state.modalFilters.keyword = productKeyword.value; return; }
     const combinedInput = event.target.closest('[data-aux-combined-quantity]');
     if (combinedInput) {
       const draft = directService.readCombinedDraft(currentCanteen);
