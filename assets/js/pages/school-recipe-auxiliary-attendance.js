@@ -77,7 +77,7 @@
   function renderModeSwitcher() {
     return `<div class="school-recipe-entry-switch" aria-label="干调需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
       ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
-    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${mode === 'quantity'}" class="school-recipe-entry-tab${mode === 'quantity' ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div></div>`;
+    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${mode === 'quantity'}" class="school-recipe-entry-tab${mode === 'quantity' ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}</button>`).join('')}</div></div>`;
   }
 
   function renderRows() {

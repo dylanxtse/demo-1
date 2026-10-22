@@ -211,7 +211,7 @@
   }));
   const state = {
     meal: mealKeys.includes('lunch') ? 'lunch' : mealKeys[0] || '', directMeal: '',
-    mode: initialMode, orderMode: initialOrderMode, defaultMode, attendanceMode: 'dining',
+    mode: initialMode, orderMode: initialOrderMode, attendanceMode: 'dining',
     highlightEmpty: false, selectedByMeal: initialSelectedByMeal, defaultProductIds,
     get selected() {
       const ids = this.selectedByMeal[this.meal] || [...this.defaultProductIds];
@@ -344,7 +344,7 @@
   function renderModeSwitcher() {
     return `<div class="school-recipe-entry-switch" aria-label="商品需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
       ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
-    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${state.mode === mode}" class="school-recipe-entry-tab${state.mode === mode ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}${state.defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div></div>`;
+    ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${state.mode === mode}" class="school-recipe-entry-tab${state.mode === mode ? ' is-active' : ''}" data-aux-entry-mode="${mode}">${label}</button>`).join('')}</div></div>`;
   }
 
   function renderDatePanel() {

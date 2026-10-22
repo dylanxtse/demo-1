@@ -154,6 +154,7 @@ test('干调数量填报只显示商品和确认入口，送达时间在确认�
   assert.doesNotMatch(page.outerHTML, /直接填写需要采购的干调数量/);
   assert.match(page.outerHTML, /data-aux-simple-confirm disabled/);
   assert.match(page.outerHTML, /data-aux-entry-mode="people"/);
+  assert.doesNotMatch(page.outerHTML, /school-recipe-entry-default-mark/);
   assert.match(page.outerHTML, /<th>序号<\/th><th>商品名称（计量单位\/品牌\/规格）<\/th><th>商品编号<\/th><th>单位<\/th><th>采购数量<\/th>/);
   assert.doesNotMatch(page.outerHTML, /<th>干调<\/th>/);
   assert.doesNotMatch(page.outerHTML, /school-auxiliary-calendar|data-aux-date=|data-aux-direct-meal=/);
@@ -243,6 +244,7 @@ test('人数填报保留原有页面，两种方式可相互切换', () => {
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
   assert.match(html, /data-person-type="[^\"]+" data-meal-key="breakfast"/);
+  assert.doesNotMatch(html, /school-recipe-entry-default-mark/);
   assert.match(html, /school-auxiliary-recipe-date-panel/);
   assert.doesNotMatch(html, /school-recipe-entry-set-default|data-aux-entry-set-default|>设为默认</);
   assert.match(html, /data-confirm-demand/);
@@ -254,6 +256,7 @@ test('人数填报保留原有页面，两种方式可相互切换', () => {
   context.location = { search: '?mode=quantity' };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
   assert.match(html, /data-aux-simple-quantity=/);
+  assert.doesNotMatch(html, /school-recipe-entry-default-mark/);
   listeners.click({ target: { closest(selector) {
     return selector === '[data-aux-entry-mode]' ? { dataset: { auxEntryMode: 'people' } } : null;
   } } });
