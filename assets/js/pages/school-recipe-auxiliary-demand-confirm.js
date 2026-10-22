@@ -37,12 +37,8 @@
     eveningSnack: '晚点',
     snack: '午点'
   };
-  const mealsWithoutRecipe = [
-    { key: 'breakfast', name: '早餐' },
-    { key: 'lunch', name: '午餐' },
-    { key: 'dinner', name: '晚餐' }
-  ];
-  const mealDefinitionsForDate = (targetDate) => (allMenus.find((menu) => menu.date === targetDate)?.meals || mealsWithoutRecipe)
+  const recipeDates = new Set(allMenus.map((menu) => menu.date));
+  const mealDefinitionsForDate = (targetDate) => (allMenus.find((menu) => menu.date === targetDate)?.meals || [])
     .map((meal) => ({ key: String(meal.key || ''), name: meal.name || mealNameFallbacks[meal.key] || meal.key }))
     .filter((meal) => meal.key);
   const products = window.SchoolRecipeAuxiliaryDirectService.attendanceProducts();
@@ -97,7 +93,7 @@
     keyFor(label), mealDefinitionsForDate(targetDate).reduce((total, meal) => total + people(draftForDate(targetDate)[meal.key], label), 0)
   ]));
   const totalPeopleForDate = (targetDate) => Object.values(participantPersonTimes(targetDate)).reduce((sum, value) => sum + Number(value || 0), 0);
-  const filledDates = () => allDates.filter((targetDate) => totalPeopleForDate(targetDate) > 0);
+  const filledDates = () => allDates.filter((targetDate) => recipeDates.has(targetDate) && totalPeopleForDate(targetDate) > 0);
   const meals = [...new Map((filledDates().length ? filledDates() : [date]).flatMap(mealDefinitionsForDate).map((meal) => [meal.key, meal])).values()];
   const fallbackSelectedIds = Array.isArray(legacySelectedIds) ? legacySelectedIds : ['aux-oil', 'aux-salt'];
   const readSelectedByMeal = () => {
@@ -129,7 +125,10 @@
     const key = purchaseKey(groupKey, product, label);
     return hasOwn(state.purchaseQtyOverrides, key) ? number(state.purchaseQtyOverrides[key]) : purchase(demand, product);
   };
-  const state = { meal: meals.find((meal) => meal.key === 'lunch')?.key || meals[0]?.key || '', selectedDates: new Set(filledDates()), submitting: false, expectedAt: '', purchaseQtyOverrides: {}, unitPriceOverrides: {} };
+  const initialFilledDates = filledDates();
+  const initialSelectedDates = requestedDate && !recipeDates.has(requestedDate)
+    ? [] : initialFilledDates.length ? initialFilledDates : recipeDates.has(date) ? [date] : [];
+  const state = { meal: meals.find((meal) => meal.key === 'lunch')?.key || meals[0]?.key || '', selectedDates: new Set(initialSelectedDates), submitting: false, expectedAt: '', purchaseQtyOverrides: {}, unitPriceOverrides: {} };
   const mealRows = () => splitMeal ? [meals.find((meal) => meal.key === state.meal)] : meals;
   const demandFor = (product, mealList, label) => [...state.selectedDates].reduce((sum, targetDate) => {
     const availableMealKeys = new Set(mealDefinitionsForDate(targetDate).map((meal) => meal.key));
@@ -242,6 +241,8 @@
   const buildPreview = () => {
     const dates = [...state.selectedDates].filter((targetDate) => allDates.includes(targetDate)).sort();
     const dateSummaries = dates.map(dateSummaryFor).filter((summary) => summary.totalPersonTimes > 0);
+    const hasUnrecipeDate = dates.some((targetDate) => !recipeDates.has(targetDate))
+      || Boolean(requestedDate && !recipeDates.has(requestedDate) && state.selectedDates.size === 0);
     const participantTimes = Object.fromEntries(labels.map((label) => [
       keyFor(label), dateSummaries.reduce((sum, summary) => sum + number(summary.participantPersonTimes[keyFor(label)]), 0)
     ]));
@@ -266,7 +267,7 @@
       };
     });
     const totalPeople = Object.values(participantTimes).reduce((sum, value) => sum + number(value), 0);
-    const canSubmit = Boolean(dateSummaries.length && previewProducts.length && totalPeople > 0 && rows.some((row) => row.totalQty > 0));
+    const canSubmit = Boolean(!hasUnrecipeDate && dateSummaries.length && previewProducts.length && totalPeople > 0 && rows.some((row) => row.totalQty > 0));
     return {
       dates: dateSummaries.map((summary) => summary.date),
       dateSummaries,
@@ -279,7 +280,7 @@
       rows,
       productCount: rows.filter((row) => row.totalQty > 0).length,
       canSubmit,
-      message: !previewProducts.length ? '请先选择辅料商品' : totalPeople <= 0 ? '请先填写就餐人数' : canSubmit ? '' : '当前没有可下单的辅料需求'
+      message: hasUnrecipeDate ? '只能选择有菜谱的日期' : !previewProducts.length ? '请先选择辅料商品' : totalPeople <= 0 ? '请先填写就餐人数' : canSubmit ? '' : '当前没有可下单的辅料需求'
     };
   };
   const mealGroups = () => splitMeal
@@ -620,10 +621,10 @@
 
   function render(preview = buildPreview()) {
     const tabs = splitMeal ? `<div class="school-recipe-meal-tabs school-recipe-demand-meal-tabs" role="tablist">${meals.map((meal) => `<button type="button" class="school-recipe-meal-tab${meal.key === state.meal ? ' is-active' : ''}" data-meal="${meal.key}" role="tab">${meal.name}</button>`).join('')}</div>` : '';
-    return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliaryDemandConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back">← <span>返回</span></button><h1>商品需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteen.name || '第一食堂')}</strong></div><div class="school-recipe-demand-days-summary"><span>填报天数：</span><strong>${preview.dates.length}</strong></div></div><section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderAuxiliaryDateSummary(preview)}</section><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div><button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button></header><div class="school-recipe-demand-meal-toolbar">${tabs}</div>${renderProducts()}</section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit"${preview.canSubmit && allProductAmount() > 0 && !state.submitting ? '' : ' disabled'}>提交需求并下单</button></footer></main></section>`;
+    return `<section class="page-card school-recipe-demand-confirm-page" id="schoolRecipeAuxiliaryDemandConfirmPage"><main class="school-recipe-demand-detail-panel"><header class="school-recipe-demand-detail-header"><button type="button" class="back-link school-recipe-demand-back" data-action="back">← <span>返回</span></button><h1>干调需求确认</h1></header><div class="school-recipe-demand-detail-scroll"><div class="school-recipe-demand-meta"><div class="school-recipe-demand-canteen-summary"><span>用料食堂：</span><strong>${escapeHtml(currentCanteen.name || '第一食堂')}</strong></div><div class="school-recipe-demand-days-summary"><span>填报天数：</span><strong>${preview.dates.length}</strong></div></div>${!preview.canSubmit && preview.message ? `<div class="school-recipe-demand-empty" role="alert">${escapeHtml(preview.message)}</div>` : ''}<section class="school-recipe-demand-section school-recipe-demand-date-summary-section"><header><div><span class="section-title-mark">用料日期汇总</span></div></header>${renderAuxiliaryDateSummary(preview)}</section><section class="school-recipe-demand-section"><header><div><span class="section-title-mark">商品需求汇总</span></div><button type="button" class="btn btn-sm school-recipe-demand-restore-default" data-action="restore-default">恢复默认</button></header><div class="school-recipe-demand-meal-toolbar">${tabs}</div>${renderProducts()}</section></div><footer class="school-recipe-demand-actions"><button type="button" class="btn btn-sm" data-action="back">返回</button><button type="button" class="btn btn-primary btn-sm" data-action="submit"${preview.canSubmit && allProductAmount() > 0 && !state.submitting ? '' : ' disabled'}>提交需求并下单</button></footer></main></section>`;
   }
 
-  const root = window.AppShell.mount({ title: '商品需求确认', content: render(buildPreview()), variant: 'school', companyName: '静安第一中学', emptyText: '商品需求确认' });
+  const root = window.AppShell.mount({ title: '干调需求确认', content: render(buildPreview()), variant: 'school', companyName: '静安第一中学', emptyText: '干调需求确认' });
   window.SchoolRecipeConfirmStickyTotals?.mount(root);
   const rerender = () => {
     state.expectedAt = expectedAt();

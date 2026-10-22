@@ -24,7 +24,7 @@ function app() {
   return context;
 }
 
-test('干调需求填报允许无食谱日期填写，并在确认页汇总该日期', () => {
+test('干调人数填报和确认页禁止在无菜谱日期购买', () => {
   const context = app();
   let html = '';
   context.AppShell = { mount({ content }) {
@@ -39,19 +39,19 @@ test('干调需求填报允许无食谱日期填写，并在确认页汇总该�
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
   assert.match(html.html, new RegExp(`data-aux-date="${noRecipeDate}"`));
-  assert.match(html.html, /data-person-type="[^"]+" data-meal-key="breakfast"/);
-  assert.match(html.html, /data-person-type="[^"]+" data-meal-key="dinner"/);
-  assert.doesNotMatch(html.html, /data-person-type="[^"]+" data-meal-key="snack"/);
-  assert.doesNotMatch(html.html, /data-meal="snack"/);
-  assert.match(html.html, /data-confirm-demand/);
-  assert.doesNotMatch(html.html, /请选择有菜谱的日期/);
+  assert.match(html.html, /is-no-menu/);
+  assert.match(html.html, /title="无菜谱"/);
+  assert.doesNotMatch(html.html, /data-person-type=/);
+  assert.doesNotMatch(html.html, /data-confirm-demand/);
+  assert.match(html.html, /无法填报干调需求，请选择有菜谱的日期/);
 
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const scope = String(canteen.id || canteen.name);
   const participant = context.SchoolRecipeAttendanceService.participantsFor(canteen)[0];
   const participantKey = String(participant.key || participant.tagId || participant.id || participant.orderTag);
   const drafts = context.AppStorage.read('school-recipe-auxiliary-attendance-drafts-v1', {});
-  drafts[scope][noRecipeDate].breakfast[participantKey] = 10;
+  drafts[scope] ||= {};
+  drafts[scope][noRecipeDate] = { __manual: true, breakfast: { [participantKey]: 10 } };
   context.AppStorage.write('school-recipe-auxiliary-attendance-drafts-v1', drafts);
   context.location = { search: `?date=${noRecipeDate}&canteen=${encodeURIComponent(scope)}` };
   let confirmHtml = '';
@@ -60,8 +60,7 @@ test('干调需求填报允许无食谱日期填写，并在确认页汇总该�
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-demand-confirm.js'), 'utf8'), context);
-  assert.match(confirmHtml, /09月16日/);
-  assert.match(confirmHtml, /早餐/);
-  assert.doesNotMatch(confirmHtml, /data-meal="snack"/);
-  assert.match(confirmHtml, /data-action="submit">提交需求并下单/);
+  assert.match(confirmHtml, /只能选择有菜谱的日期/);
+  assert.match(confirmHtml, /data-action="submit" disabled>提交需求并下单/);
+  assert.doesNotMatch(confirmHtml, /09月16日/);
 });

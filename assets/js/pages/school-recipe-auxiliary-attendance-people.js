@@ -59,12 +59,7 @@
     eveningSnack: '晚点',
     snack: '午点'
   };
-  const mealsWithoutRecipe = [
-    { key: 'breakfast', name: '早餐' },
-    { key: 'lunch', name: '午餐' },
-    { key: 'dinner', name: '晚餐' }
-  ];
-  const mealDefinitionsForDate = (date) => (menuForDate(date)?.meals || mealsWithoutRecipe).map((meal) => ({
+  const mealDefinitionsForDate = (date) => (menuForDate(date)?.meals || []).map((meal) => ({
     key: String(meal.key || ''),
     name: meal.name || mealNameFallbacks[meal.key] || meal.key
   })).filter((meal) => meal.key);
@@ -146,6 +141,7 @@
   persistView();
 
   const persistDraft = () => {
+    if (!recipeDates.has(dateState.selectedDate)) return;
     const drafts = readDrafts();
     if (!drafts[canteenScope]) drafts[canteenScope] = {};
     drafts[canteenScope][dateState.selectedDate] = {
@@ -200,7 +196,7 @@
     return true;
   };
   loadDraft(dateState.selectedDate);
-  if (initialMode === 'people') persistDraft();
+  if (initialMode === 'people' && recipeDates.has(dateState.selectedDate)) persistDraft();
 
   const storedDefaultStorage = window.AppStorage?.read?.(defaultProductsStorageKey, {}) || {};
   const storedDefaultIds = Array.isArray(storedDefaultStorage[canteenScope]) ? storedDefaultStorage[canteenScope] : [];
@@ -315,13 +311,7 @@
       const preview = directPreview(date);
       return preview?.canSubmit ? 'complete' : preview?.selectedRows?.length ? 'partial' : 'empty';
     }
-    if (!recipeDates.has(date)) {
-      const draft = date === dateState.selectedDate ? meals : readDrafts()?.[canteenScope]?.[date];
-      if (!draft?.__manual && date !== dateState.selectedDate) return 'empty';
-      const values = mealDefinitionsForDate(date).flatMap((meal) => configuredGroups.map((participant) => valueForParticipant(draft?.[meal.key], participant)));
-      const filled = values.filter((value) => value !== '' && value != null).length;
-      return filled === 0 ? 'empty' : filled === values.length ? 'complete' : 'partial';
-    }
+    if (!recipeDates.has(date)) return 'no-menu';
     return attendanceService.status(menuForDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
   }
 
@@ -360,10 +350,10 @@
       if (!date) return '<span class="school-recipe-attendance-date-placeholder" aria-hidden="true"></span>';
       const hasRecipe = recipeDates.has(date);
       const status = dateStatus(date);
-      const week = status === 'empty' ? ' is-hidden' : '';
+      const week = status === 'empty' || status === 'no-menu' ? ' is-hidden' : '';
       const selected = state.mode === 'quantity' && state.orderMode === 'combined'
         ? directService.readCombinedDraft(currentCanteen).dates.includes(date) : date === dateState.selectedDate;
-      return `<button type="button" class="school-recipe-attendance-date-item ${selected ? 'is-selected' : ''} is-${status}" data-aux-date="${date}" aria-pressed="${selected}" title="${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择或取消此用料日期' : hasRecipe ? '有菜谱' : '可填报商品需求'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
+      return `<button type="button" class="school-recipe-attendance-date-item ${selected ? 'is-selected' : ''}${hasRecipe ? '' : ' is-empty'} is-${status}" data-aux-date="${date}" aria-pressed="${selected}" title="${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择或取消此用料日期' : hasRecipe ? '有菜谱' : '无菜谱'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
     }).join('');
     return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择用料日期（可多选）' : '本月日期'}</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
   }
@@ -502,6 +492,9 @@
   }
 
   function renderDetail() {
+    if (state.mode === 'people' && !recipeDates.has(dateState.selectedDate)) {
+      return `<div class="school-auxiliary-scroll"><div class="school-auxiliary-empty" role="status">该日期没有菜谱，无法填报干调需求，请选择有菜谱的日期。</div></div>`;
+    }
     return state.mode === 'quantity'
       ? `${renderOrderModeSwitcher()}${state.orderMode === 'combined' ? renderCombinedForm() : renderDirectForm()}`
       : renderForm();
@@ -803,6 +796,7 @@
     }
     if (event.target.closest('[data-confirm-demand]')) {
       if (!state.selected.length) { showToast('请先添加商品', true); return; }
+      if (!recipeDates.has(dateState.selectedDate)) { showToast('请选择有菜谱的日期', true); return; }
       persistDraft();
       const emptyField = firstEmptyAttendanceField();
       if (emptyField) {
