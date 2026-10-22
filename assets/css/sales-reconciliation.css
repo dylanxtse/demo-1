@@ -249,7 +249,7 @@
 
 .sales-detail-shell,
 .sales-statement-shell {
-  min-width: 1040px;
+  min-width: 0;
   padding: 16px;
 }
 
@@ -296,77 +296,79 @@
 .sales-detail-footer,
 .sales-statement-footer { display: flex; justify-content: center; gap: 10px; padding: 18px 0 4px; }
 
-.sales-statement-title { margin: 26px 0 18px; text-align: center; font-size: 20px; font-weight: 600; }
-.sales-statement-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 28px; margin-bottom: 26px; font-size: 14px; }
+.sales-statement-title { margin: 12px 0 32px; text-align: center; font-size: 20px; font-weight: 600; }
+.sales-statement-meta { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, .7fr); gap: 16px 34px; margin: 0 12px 34px; font-size: 13px; }
 .sales-statement-meta strong { margin-right: 6px; font-weight: 500; }
-.sales-statement-section-title { margin: 18px 0 12px; font-size: 15px; font-weight: 600; }
-.sales-statement-detail-link { float: right; color: var(--primary); border: 0; background: transparent; cursor: pointer; font: inherit; }
-.sales-statement-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sales-statement-section-title { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+.sales-statement-detail-link { color: var(--primary); border: 0; background: transparent; cursor: pointer; font: inherit; }
+.sales-statement-table-wrap { overflow-x: auto; }
+.sales-statement-table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
 .sales-statement-table th,
-.sales-statement-table td { height: 42px; padding: 7px 12px; border: 1px solid var(--border-color); text-align: center; }
-.sales-statement-table th { background: #f7f9fc; color: #4e5969; font-weight: 500; }
-.sales-statement-table .sales-statement-total td { font-weight: 500; }
-.sales-statement-summary { display: flex; gap: 32px; margin-top: 14px; padding: 14px 16px; border: 1px solid var(--border-color); background: #fff; font-size: 14px; }
-.sales-statement-summary strong { margin-right: 8px; font-weight: 500; }
+.sales-statement-table td { height: 35px; padding: 5px 10px; border: 1px solid #e8ebf1; text-align: center; white-space: nowrap; }
+.sales-statement-table th { background: #f1f4fa; color: #788195; font-weight: 500; }
+.sales-statement-table th:nth-child(1) { width: 6%; }
+.sales-statement-table th:nth-child(2) { width: 12%; }
+.sales-statement-table th:nth-child(3) { width: 28%; }
+.sales-statement-table th:nth-child(n + 4) { width: 10.8%; }
+.sales-statement-table .sales-statement-total td { background: #f1f4fa; font-weight: 600; }
+.sales-statement-summary { margin-top: 12px; border: 1px solid #e8ebf1; background: #fff; font-size: 12px; }
+.sales-statement-summary-main,
+.sales-statement-summary-confirm { display: flex; min-height: 44px; align-items: center; gap: 22px; padding: 8px 12px; }
+.sales-statement-summary-main { border-bottom: 1px solid #e8ebf1; }
+.sales-statement-summary strong { margin-right: 5px; font-weight: 500; }
+.sales-statement-summary label { display: inline-flex; align-items: center; white-space: nowrap; }
+.sales-statement-summary input { min-width: 0; border: 0; border-bottom: 1px solid #aeb8c7; border-radius: 0; padding: 3px 5px; background: transparent; color: inherit; font: inherit; outline: 0; }
+.sales-statement-summary input:focus { border-color: var(--primary); }
+.sales-statement-summary-main > span:nth-child(2) { flex: 1; }
+.sales-statement-summary-main label input { width: 104px; }
+.sales-statement-summary-confirm { gap: 8px; color: #515866; }
+.sales-statement-summary-confirm label { width: 240px; }
+.sales-statement-summary-confirm label input { width: 100%; text-align: center; }
+.sales-statement-summary-confirm > input { width: 120px; }
 
 .sales-statement-remark {
-  margin-top: 14px;
-  padding: 12px 16px 14px;
-  border: 1px solid var(--border-color);
+  display: flex;
+  min-height: 84px;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e8ebf1;
   background: #fff;
 }
 
-.sales-statement-remark h3 {
-  margin: 0 0 8px;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.sales-statement-remark p {
-  min-height: 24px;
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 24px;
-}
+.sales-statement-remark > label { flex: 0 0 auto; padding-top: 4px; font-size: 12px; }
+.sales-statement-remark-field { position: relative; min-width: 0; flex: 1; }
+.sales-statement-remark textarea { display: block; width: 100%; min-height: 56px; resize: vertical; border: 1px solid #edf0f5; border-radius: 3px; padding: 7px 9px 18px; color: var(--text-primary); font: inherit; outline: 0; }
+.sales-statement-remark textarea:focus { border-color: var(--primary); }
+.sales-statement-remark-field > span { position: absolute; right: 8px; bottom: 4px; color: #9aa1ad; font-size: 11px; }
 
 .sales-statement-signature {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px;
-  margin-top: 18px;
-  padding: 18px 16px 12px;
-  border: 1px solid var(--border-color);
+  min-height: 128px;
+  margin-top: 12px;
+  border: 1px solid #e8ebf1;
   background: #fff;
-}
-
-.sales-statement-signature h3 {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
 }
 
 .sales-statement-signature-item {
   display: flex;
   min-width: 0;
-  min-height: 32px;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 12px 12px;
   color: var(--text-secondary);
   font-size: 13px;
   white-space: nowrap;
 }
 
-.sales-statement-signature-item i {
-  display: block;
-  flex: 1;
-  min-width: 90px;
-  height: 24px;
-  border-bottom: 1px solid #aab3c2;
-}
+.sales-statement-signature-item + .sales-statement-signature-item { border-left: 1px solid #e8ebf1; }
+.sales-statement-signature-item h3 { margin: 0; font-size: 12px; font-weight: 500; }
+.sales-statement-signature-item span { color: #555c68; font-size: 12px; }
+.sales-statement-footer { min-height: 64px; flex: 0 0 auto; align-items: center; border-top: 1px solid #f0f2f6; padding: 8px 0; }
+.sales-statement-footer .btn { min-width: 80px; height: 28px; justify-content: center; padding: 0 12px; font-size: 12px; }
 
 .sales-toast {
   position: fixed;
@@ -688,11 +690,268 @@
 
 .sales-reconciliation-statement-page {
   padding: 16px;
-  overflow: auto;
+  overflow: hidden;
+  background: #f2f4f8;
 }
 
 .sales-reconciliation-statement-page .sales-statement-shell {
-  padding: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sales-reconciliation-statement-page .sales-statement-topbar {
+  min-height: 54px;
+  flex: 0 0 auto;
+  padding: 0 2px;
+}
+
+.sales-statement-content {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 24px 2px 18px;
+}
+
+.sales-reconciliation-statement-page .sales-statement-title {
+  margin-top: 10px;
+  margin-bottom: 30px;
+  font-size: 19px;
+}
+
+.sales-reconciliation-statement-page .sales-statement-meta {
+  line-height: 1.5;
+}
+
+.sales-reconciliation-statement-page .sales-statement-table {
+  min-width: 760px;
+}
+
+.sales-reconciliation-statement-page .sales-statement-footer {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1100px) {
+  .sales-reconciliation-statement-page { padding: 12px; }
+  .sales-reconciliation-statement-page .sales-statement-shell { padding: 0 12px; }
+  .sales-reconciliation-statement-page .sales-statement-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-right: 0; margin-left: 0; }
+  .sales-statement-summary-main { flex-wrap: wrap; gap: 12px 18px; }
+}
+
+@media (max-width: 720px) {
+  .sales-statement-content { padding: 18px 0 14px; }
+  .sales-reconciliation-statement-page .sales-statement-title { font-size: 17px; margin-bottom: 22px; }
+  .sales-reconciliation-statement-page .sales-statement-meta { grid-template-columns: 1fr; gap: 10px; }
+  .sales-statement-summary-main,
+  .sales-statement-summary-confirm { align-items: flex-start; flex-direction: column; }
+  .sales-statement-summary-confirm label { width: 100%; }
+  .sales-statement-signature-item { padding-right: 4px; padding-left: 4px; font-size: 11px; }
+  .sales-statement-signature-item h3,
+  .sales-statement-signature-item span { font-size: 10px; }
+}
+
+/* 对账单附件：商品明细表 */
+.sales-statement-products-backdrop {
+  z-index: 120;
+  padding: 0 24px;
+  background: rgba(0, 0, 0, .62);
+}
+
+.sales-statement-products-modal {
+  display: flex;
+  width: min(1640px, calc(100vw - 48px));
+  height: min(100vh, 1200px);
+  max-height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0;
+  color: #30343b;
+}
+
+.sales-statement-products-header {
+  display: flex;
+  min-height: 64px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+}
+
+.sales-statement-products-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.sales-statement-products-header button {
+  border: 0;
+  background: transparent;
+  color: #858a93;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sales-statement-products-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 8px 30px 18px;
+}
+
+.sales-statement-products-body h2 {
+  margin: 0 0 38px;
+  color: #74777d;
+  font-size: 23px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.sales-statement-products-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) auto;
+  gap: 28px 36px;
+  margin: 0 clamp(0px, 8vw, 160px) 46px;
+  color: #777b83;
+  font-size: 14px;
+}
+
+.sales-statement-products-meta span { white-space: nowrap; }
+.sales-statement-products-meta strong { font-weight: 500; }
+
+.sales-statement-products-section-title {
+  margin: 0 0 20px;
+  color: #73777e;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.sales-statement-products-table-wrap { overflow-x: auto; }
+
+.sales-statement-products-table {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+  text-align: center;
+}
+
+.sales-statement-products-table th,
+.sales-statement-products-table td {
+  height: 44px;
+  padding: 7px 10px;
+  border: 1px solid #e9edf2;
+  font-weight: 400;
+}
+
+.sales-statement-products-table thead th {
+  height: 46px;
+  background: #f3f5f9;
+  color: #8a92a3;
+}
+
+.sales-statement-products-table tfoot td {
+  background: #f3f5f9;
+  color: #343a45;
+}
+
+.sales-statement-products-signatures {
+  display: grid;
+  min-width: 940px;
+  min-height: 200px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-right: 1px solid #e9edf2;
+  border-bottom: 1px solid #e9edf2;
+}
+
+.sales-statement-products-signatures > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 12px 20px;
+  border-left: 1px solid #e9edf2;
+  color: #777b83;
+  font-size: 14px;
+}
+
+.sales-statement-products-footer {
+  display: flex;
+  min-height: 94px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 16px 30px;
+}
+
+.sales-statement-products-footer .btn {
+  min-width: 144px;
+  height: 34px;
+  justify-content: center;
+}
+
+@media (max-width: 1100px) {
+  .sales-statement-products-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-right: 0;
+    margin-left: 0;
+  }
+  .sales-statement-products-meta span { white-space: normal; }
+}
+
+@media (max-width: 680px) {
+  .sales-statement-products-backdrop { padding: 0; }
+  .sales-statement-products-modal { width: 100vw; height: 100vh; }
+  .sales-statement-products-header { min-height: 54px; padding: 0 16px; }
+  .sales-statement-products-body { padding: 8px 16px 16px; }
+  .sales-statement-products-body h2 { margin-bottom: 26px; font-size: 18px; }
+  .sales-statement-products-meta { grid-template-columns: 1fr; gap: 12px; margin-bottom: 28px; }
+  .sales-statement-products-footer { gap: 8px; padding: 10px 16px; }
+  .sales-statement-products-footer .btn { min-width: 0; flex: 1; }
+}
+
+@media print {
+  body.sales-statement-products-printing * { visibility: hidden !important; }
+  body.sales-statement-products-printing .app-layout { height: auto; }
+  body.sales-statement-products-printing .main-section,
+  body.sales-statement-products-printing .content-area,
+  body.sales-statement-products-printing .page-card { overflow: visible !important; }
+  body.sales-statement-products-printing .sales-statement-products-backdrop,
+  body.sales-statement-products-printing .sales-statement-products-modal,
+  body.sales-statement-products-printing .sales-statement-products-modal * { visibility: visible !important; }
+  body.sales-statement-products-printing .sales-statement-products-backdrop {
+    position: absolute;
+    inset: 0;
+    display: block;
+    padding: 0;
+    background: #fff;
+  }
+  body.sales-statement-products-printing .sales-statement-products-modal {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+  }
+  body.sales-statement-products-printing .sales-statement-products-body { overflow: visible; }
+  body.sales-statement-products-printing .sales-statement-products-meta { margin: 0 0 24px; font-size: 11px; }
+  body.sales-statement-products-printing .sales-statement-products-body h2 { margin-bottom: 24px; font-size: 18px; }
+  body.sales-statement-products-printing .sales-statement-products-table,
+  body.sales-statement-products-printing .sales-statement-products-signatures { min-width: 0; font-size: 10px; }
+  body.sales-statement-products-printing .sales-statement-products-table th,
+  body.sales-statement-products-printing .sales-statement-products-table td { height: 32px; padding: 4px; }
+  body.sales-statement-products-printing .sales-statement-products-signatures { min-height: 130px; }
+  body.sales-statement-products-printing .sales-statement-products-header button,
+  body.sales-statement-products-printing .sales-statement-products-footer { display: none; }
 }
 
 /* 销售对账明细：按企业端对账工作台的宽表节奏收敛布局。 */
