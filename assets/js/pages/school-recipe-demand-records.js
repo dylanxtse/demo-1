@@ -50,7 +50,7 @@
     const body = page.querySelector('#schoolRecipeDemandRecordsBody');
     body.innerHTML = pageRecords.length ? pageRecords.map((record) => `<tr>
       <td><button type="button" class="school-recipe-demand-record-number" data-action="detail" data-id="${escapeHtml(record.id)}"><strong>${escapeHtml(record.recordNo || '--')}</strong></button></td>
-      <td>${record.auxiliary === true || /辅料|商品需求/.test(String(record.source || '')) ? '商品需求填报' : '食材需求填报'}</td>
+      <td>${record.auxiliary === true || /辅料|商品需求/.test(String(record.source || '')) ? '干料需求填报' : '菜谱需求填报'}</td>
       <td class="school-recipe-demand-record-dates">${escapeHtml(dateText(record.dates))}</td>
       <td>${escapeHtml(record.canteen || '--')}</td>
       <td class="is-number is-total">${record.entryMode === 'quantity' ? '--' : number(record.totalPersonTimes)}</td>

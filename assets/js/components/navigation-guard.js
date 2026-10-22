@@ -53,6 +53,7 @@
     'school-order-accept.html': 'school',
     'school-recipe-center.html': 'school',
     'school-recipe-attendance.html': 'school',
+    'school-recipe-attendance-legacy.html': 'school',
     'school-recipe-auxiliary-attendance.html': 'school',
     'school-recipe-auxiliary-demand-confirm.html': 'school',
     'school-recipe-demand-confirm.html': 'school',

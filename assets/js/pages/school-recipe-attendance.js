@@ -134,7 +134,7 @@
   }
 
   function renderModeSwitcher() {
-    return `<div class="school-recipe-entry-switch" aria-label="食材需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
+    return `<div class="school-recipe-entry-switch" aria-label="菜谱需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
       ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
     ].map(([mode, label]) => `<button type="button" role="tab" aria-selected="${state.mode === mode}" class="school-recipe-entry-tab${state.mode === mode ? ' is-active' : ''}" data-entry-mode="${mode}">${label}${state.defaultMode === mode ? '<span class="school-recipe-entry-default-mark">默认</span>' : ''}</button>`).join('')}</div><button type="button" class="school-recipe-entry-set-default" data-entry-set-default="${state.mode}"${state.defaultMode === state.mode ? ' disabled' : ''}>设为默认</button></div>`;
   }
@@ -303,7 +303,7 @@
         <span class="school-recipe-attendance-date-week${hideWeekday ? ' is-hidden' : ''}">${escapeHtml(weekday(date))}</span>
       </button>`;
     }).join('');
-    return `<aside class="school-recipe-attendance-date-panel" aria-label="食材需求填报日期">
+    return `<aside class="school-recipe-attendance-date-panel" aria-label="菜谱需求填报日期">
       <div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-attendance-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${escapeHtml(monthLabel(state.monthStart))}</span><button type="button" data-attendance-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div>
       <div class="school-recipe-attendance-calendar-caption"><span>本月菜谱</span></div>
       <div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${escapeHtml(name)}</span>`).join('')}</div>
@@ -685,8 +685,8 @@
     renderBody(root);
   }
 
-  const content = `<section class="page-card school-recipe-attendance-page" id="schoolRecipeAttendancePage" aria-label="食材需求填报"><div id="schoolRecipeEntrySwitch"></div><div class="school-recipe-attendance-body" id="schoolRecipeAttendanceBody"></div></section>`;
-  const root = window.AppShell.mount({ title: '食材需求填报', content, variant: 'school', emptyText: '食材需求填报' });
+  const content = `<section class="page-card school-recipe-attendance-page" id="schoolRecipeAttendancePage" aria-label="菜谱需求填报"><div id="schoolRecipeEntrySwitch"></div><div class="school-recipe-attendance-body" id="schoolRecipeAttendanceBody"></div></section>`;
+  const root = window.AppShell.mount({ title: '菜谱需求填报', content, variant: 'school', emptyText: '菜谱需求填报' });
   const page = root.querySelector('#schoolRecipeAttendancePage');
   renderBody(root);
 

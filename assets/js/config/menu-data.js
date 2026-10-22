@@ -93,6 +93,7 @@
     ] },
     { name: '系统管理', icon: 'settings', children: [
       { name: '系统配置', expanded: true, children: [{ name: '审核配置', href: './audit-config.html' }, { name: '业务配置', href: './system-config.html' }] },
+      { name: '打印模版', href: './shipping-print-template-design.html' },
       { name: '下属单位管理', href: './lower-units.html' },
       '用户管理', '角色管理', { name: '基础信息', href: './basic-info.html' }, '个人中心'
     ] }

@@ -1,6 +1,6 @@
 (function () {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('mode') !== 'quantity') return;
+  if (params.get('mode') !== 'quantity' || params.get('orderMode') === 'simple') return;
   const directService = window.SchoolRecipeAuxiliaryDirectService;
   const canteenConfig = window.SchoolCanteenConfigService;
   if (!directService) return;

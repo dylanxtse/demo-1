@@ -79,8 +79,8 @@
   function renderInfo(row) {
     return `<div class="shipping-print-info">
       <span>期望送达时间：${text(row.expectedAt || '--')}</span>
-      <span>客户名称：${text(row.customerName)}${row.customerCode ? `　学校编码：${text(row.customerCode)}` : ''}</span>
-      <span></span>
+      <span>客户名称：${text(row.customerName)}</span>
+      <span>学校编码：${text(row.customerCode)}</span>
       <span>食堂：${text(row.canteen)}</span>
       <span>收货人：${text(row.receiver || '--')}（${text(row.phone || '00000000000')}）</span>
       <span>订单号：${text(row.orderNo || '--')}</span>
@@ -109,6 +109,6 @@
   const grouped = [];
   expandedRows.forEach((row) => { const key = `${row.customerName || ''}|${row.canteen || ''}|${row.orderNo || ''}`; let group = grouped.find((item) => item.key === key); if (!group) { group = { key, row, rows: [] }; grouped.push(group); } group.rows.push(row); });
   const pages = grouped.length ? grouped : [{ row: {}, rows: [] }];
-  root.innerHTML = `<main class="shipping-print-page">${pages.map((group, index) => `<section class="shipping-print-paper"><div class="shipping-print-heading"><h1 class="shipping-print-title">${text(payload.companyName, '赣州客家新源供应链有限公司')}配送单</h1>${qrCode(group.row.orderNo || group.row.customerCode || index)}</div>${renderInfo(group.row)}${renderTable(group.rows)}<div class="shipping-print-signature"><span>经手人或单位：${text(group.row.receiver || '--')}</span><span>送货人：</span><span>验收人或单位：</span></div><footer class="shipping-print-footer"><span>${text(payload.sourceUrl)}</span><span>${index + 1}/${pages.length}</span></footer></section>`).join('')}<nav class="shipping-print-actions"><a href="./shipping-management.html">返回发货管理</a></nav></main>`;
+  root.innerHTML = `<main class="shipping-print-page">${pages.map((group, index) => `<section class="shipping-print-paper"><div class="shipping-print-heading"><h1 class="shipping-print-title">${text(payload.companyName, '赣州客家新源供应链有限公司')}配送单</h1>${qrCode(group.row.orderNo || group.row.customerCode || index)}</div>${renderInfo(group.row)}${renderTable(group.rows)}<div class="shipping-print-signature"><span>经手人或单位：${text(group.row.receiver || '--')}</span><span>送货人：</span><span>验收人或单位：</span></div><footer class="shipping-print-footer"><span>${index + 1}/${pages.length}</span></footer></section>`).join('')}<nav class="shipping-print-actions"><a href="./shipping-management.html">返回发货管理</a></nav></main>`;
   if (params.get('printKey')) { try { window.sessionStorage?.removeItem(params.get('printKey')); window.localStorage?.removeItem(params.get('printKey')); } catch (error) { /* 忽略清理失败。 */ } }
 })();

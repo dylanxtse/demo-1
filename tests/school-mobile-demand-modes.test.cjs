@@ -90,7 +90,7 @@ test('两个手机入口先选择填报方式，人数流程与数量流程均�
   dispatch('click', 'back');
 
   dispatch('click', 'open-auxiliary-attendance');
-  assert.match(app.innerHTML, /商品需求填报/);
+  assert.match(app.innerHTML, /干料需求填报/);
   dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
   assert.match(app.innerHTML, /餐次就餐人数/);
   dispatch('click', 'back');
@@ -207,6 +207,17 @@ test('手机端商品采购数量确认后生成需求记录与订单', async ()
   dispatch('click', 'choose-entry-mode', { entryMode: 'quantity' });
   dispatch('input', 'direct-quantity-input', { quantityKey: row.key }, '2.5');
   dispatch('click', 'direct-continue');
+  assert.match(app.innerHTML, /<span>食堂<\/span><strong>第一食堂<\/strong><\/div><div class="school-mobile-field"><span>期望送达时间<\/span>/);
+  assert.match(app.innerHTML, /data-action="open-expected-at"/);
+  dispatch('click', 'open-expected-at');
+  assert.match(app.innerHTML, /选择期望送达时间/);
+  const laterDate = new Date(`${date}T00:00:00Z`);
+  laterDate.setUTCDate(laterDate.getUTCDate() + 1);
+  dispatch('click', 'expected-at-date', { date: laterDate.toISOString().slice(0, 10) });
+  assert.ok(app.innerHTML.includes(`${date.replace(/-/g, '/')} 07:30:00`));
+  dispatch('click', 'expected-at-time-value', { timePart: 'hour', timeValue: '09' });
+  dispatch('click', 'confirm-expected-at');
+  assert.ok(app.innerHTML.includes(`${date.replace(/-/g, '/')} 09:30:00`));
   dispatch('click', 'direct-submit');
   await new Promise((resolve) => setTimeout(resolve, 20));
   const records = context.DemoStore.get('recipeDemandRecords');
@@ -214,6 +225,7 @@ test('手机端商品采购数量确认后生成需求记录与订单', async ()
   assert.equal(records.at(-1).entryMode, 'quantity');
   assert.equal(records.at(-1).demandType, 'auxiliary');
   assert.equal(records.at(-1).auxiliary, true);
+  assert.equal(records.at(-1).expectedAt, `${date} 09:30:00`);
   assert.deepEqual(Array.from(records.at(-1).dateSummaries[0].filledMeals), ['早餐']);
   assert.ok(records.at(-1).orders.length);
   assert.match(app.innerHTML, /需求已提交并生成订单/);
@@ -221,11 +233,11 @@ test('手机端商品采购数量确认后生成需求记录与订单', async ()
   const record = records.at(-1);
   const cardStart = app.innerHTML.indexOf(record.recordNo);
   const card = app.innerHTML.slice(cardStart, app.innerHTML.indexOf('</article>', cardStart));
-  assert.match(card, /商品需求填报-采购数量填报/);
+  assert.match(card, /干料需求填报-采购数量填报/);
   assert.match(card, /school-mobile-record-metrics is-quantity/);
   assert.doesNotMatch(card, /总人次/);
   dispatch('click', 'record', { recordId: record.id });
-  assert.match(app.innerHTML, /<span>填报类型<\/span><strong>商品需求填报<\/strong>/);
+  assert.match(app.innerHTML, /<span>填报类型<\/span><strong>干料需求填报<\/strong>/);
   assert.match(app.innerHTML, /<span>填报方式<\/span><strong>采购数量填报<\/strong>/);
   assert.match(app.innerHTML, /school-mobile-detail-date-meals">早餐<\/span>/);
   assert.doesNotMatch(app.innerHTML, /人次 ·/);

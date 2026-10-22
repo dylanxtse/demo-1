@@ -132,7 +132,10 @@
   const currentCanteenName = currentCanteenScope.name || currentCanteen;
   const directDate = params.get('date') || '';
   const peopleReturnDate = params.get('date') || filledDateSummaries[0]?.date || fallbackDate;
-  const attendanceReturnUrl = () => `./school-recipe-attendance.html?mode=${isDirectMode ? 'quantity' : 'people'}&date=${encodeURIComponent(isDirectMode ? directDate : peopleReturnDate)}`;
+  const legacyReturn = params.get('returnTo') === 'legacy' && !isDirectMode;
+  const attendanceReturnUrl = () => legacyReturn
+    ? `./school-recipe-attendance-legacy.html?date=${encodeURIComponent(peopleReturnDate)}`
+    : `./school-recipe-attendance.html?mode=${isDirectMode ? 'quantity' : 'people'}&date=${encodeURIComponent(isDirectMode ? directDate : peopleReturnDate)}`;
   const directDraftKey = 'school-recipe-demand-direct-drafts-v1';
   const directDrafts = isDirectMode ? window.AppStorage?.read?.(directDraftKey, {}) || {} : {};
   const directScopePrefix = `${currentCanteenScope.id || currentCanteenName}::`;
@@ -656,7 +659,7 @@
         }
         closeSubmitConfirm();
         showToast('操作成功');
-        window.setTimeout(() => navigate(isDirectMode
+        window.setTimeout(() => navigate(isDirectMode || legacyReturn
           ? attendanceReturnUrl()
           : './school-recipe-attendance.html'), 700);
       })

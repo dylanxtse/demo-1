@@ -48,7 +48,12 @@
       'supplier-form': 'supplier-editor.html',
       'notice-management': 'notice-management.html'
     };
-    const targetPath = pageAliases[pageKey] || pageKey || currentPath;
+    const [currentFile, currentQuery = ''] = currentPath.split('?');
+    const legacyConfirm = currentFile === 'school-recipe-demand-confirm.html'
+      && new URLSearchParams(currentQuery).get('returnTo') === 'legacy';
+    const targetPath = legacyConfirm
+      ? 'school-recipe-attendance-legacy.html'
+      : pageAliases[pageKey] || pageKey || currentPath;
     const [targetFileName] = targetPath.split('?');
     const aliasedPath = routeAliases[targetPath] || routeAliases[targetFileName] || targetPath;
     const [targetFile, targetQuery = ''] = aliasedPath.split('?');

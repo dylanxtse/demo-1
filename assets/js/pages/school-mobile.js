@@ -1244,9 +1244,9 @@
         : state.screen === 'detail'
           ? '提交记录详情'
         : state.tab === 'attendance'
-          ? '食材需求填报'
+          ? '菜谱需求填报'
         : state.tab === 'auxiliary'
-          ? '商品需求填报'
+          ? '干料需求填报'
           : state.tab === 'profile'
               ? (profileSubpage && state.profileView === 'orders' ? '订单列表' : profileSubpage ? '提交记录' : '个人中心')
               : state.tab === 'home'
@@ -1398,8 +1398,8 @@
   function renderRecipeDemandButton() {
     const disabled = !menuFor(state.date);
     return '<div class="school-mobile-recipe-demand-actions" aria-label="需求填报入口">'
-      + '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>食材需求填报</button>'
-      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary' + (disabled ? ' is-disabled' : '') + '" data-action="open-auxiliary-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>商品需求填报</button>'
+      + '<button type="button" class="school-mobile-recipe-demand-float' + (disabled ? ' is-disabled' : '') + '" data-action="open-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>菜谱需求填报</button>'
+      + '<button type="button" class="school-mobile-recipe-demand-float school-mobile-recipe-demand-auxiliary' + (disabled ? ' is-disabled' : '') + '" data-action="open-auxiliary-attendance"' + (disabled ? ' disabled aria-disabled="true"' : '') + '>干料需求填报</button>'
       + '</div>';
   }
 
@@ -1523,10 +1523,10 @@
     const total = visibleRows.reduce((sum, row) => sum + row.amount, 0);
     return '<div class="school-mobile-confirm-page school-mobile-direct-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + preview.dates.map((date) => '<div class="school-mobile-confirm-date is-selected is-complete" aria-label="用料日期 ' + escapeHtml(date) + ' 已填报"><strong>' + escapeHtml(shortDate(date)) + '</strong><small class="school-mobile-confirm-date-weekday">星期' + escapeHtml(weekdayText(date)) + '</small><small>已填报</small></div>').join('') + '</div></section>'
-      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div></section>'
+      + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
       + '<section class="school-mobile-confirm-card school-mobile-direct-confirm-products"><h2>商品需求汇总</h2>' + tabs + participantTabs + (rows || '<div class="school-mobile-empty">当前拆单类型暂无商品需求</div>') + '</section>'
       + (preview.message ? '<div class="school-mobile-notice"><i>!</i><span>' + escapeHtml(preview.message) + '</span></div>' : '')
-      + '</div><div class="school-mobile-direct-total"><span>合计金额</span><strong>' + directMoney(total) + '</strong></div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回</button><button type="button" class="school-mobile-button is-primary" data-action="direct-submit"' + (preview.canSubmit && !state.submitting ? '' : ' disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
+      + '</div><div class="school-mobile-direct-total"><span>合计金额</span><strong>' + directMoney(total) + '</strong></div><div class="school-mobile-sticky-actions"><button type="button" class="school-mobile-button" data-action="back">返回</button><button type="button" class="school-mobile-button is-primary" data-action="direct-submit"' + (preview.canSubmit && expectedAtIsAllowed(state.expectedAt) && !state.submitting ? '' : ' disabled') + '>' + (state.submitting ? '提交中…' : '提交需求并下单') + '</button></div></div>';
   }
 
   async function submitDirectDemand() {
@@ -1536,7 +1536,10 @@
     ensureDemoSession();
     const dates = [...state.directDates];
     const drafts = Object.fromEntries(dates.map((date) => [date, readDirectDraft(date)]));
-    const expectedAt = dates[0] + ' 07:30:00';
+    const expectedAt = normalizeExpectedAt(state.expectedAt);
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(expectedAt) || !expectedAtIsAllowed(expectedAt)) {
+      return showToast('请选择有效的期望送达时间', true);
+    }
     state.submitting = true;
     render();
     try {
@@ -2106,7 +2109,8 @@
   }
 
   function firstConfirmDate() {
-    return [...state.confirmDates].sort((a, b) => String(a).localeCompare(String(b)))[0] || '';
+    const dates = state.screen === 'direct-confirm' ? state.directDates : [...state.confirmDates];
+    return [...dates].sort((a, b) => String(a).localeCompare(String(b)))[0] || '';
   }
 
   function expectedAtDateIsAllowed(date) {
@@ -2740,7 +2744,7 @@
     const auxiliary = record?.demandType === 'auxiliary' || record?.auxiliary === true
       || /商品需求|辅料需求/.test(String(record?.source || ''))
       || (record?.items || []).some((item) => item.doseUnit && item.dose != null);
-    return auxiliary ? '商品需求填报' : '食材需求填报';
+    return auxiliary ? '干料需求填报' : '菜谱需求填报';
   }
 
   function recordEntryMode(record) {
@@ -4057,6 +4061,8 @@
       if (state.demandEntryMode === 'people') {
         loadAttendance();
         fillDefaultsIfEmpty();
+      } else {
+        state.expectedAt = '';
       }
       render();
       return;
@@ -4093,6 +4099,8 @@
         return;
       }
       state.directDates = dates;
+      const selected = parseExpectedAtValue(state.expectedAt);
+      state.expectedAt = expectedAtInputValue(selected.date && selected.date <= dates[0] ? selected.date : dates[0], selected.time);
       state.directMealKey = '';
       state.screen = 'direct-confirm';
       render();

@@ -21,7 +21,7 @@ function app() {
   return context;
 }
 
-test('商品需求填报允许无食谱日期填写，并在确认页汇总该日期', () => {
+test('干料需求填报允许无食谱日期填写，并在确认页汇总该日期', () => {
   const context = app();
   let html = '';
   context.AppShell = { mount({ content }) {
@@ -34,7 +34,7 @@ test('商品需求填报允许无食谱日期填写，并在确认页汇总该�
     html = element;
     return element;
   } };
-  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
   assert.match(html.html, new RegExp(`data-aux-date="${noRecipeDate}"`));
   assert.match(html.html, /data-person-type="[^"]+" data-meal-key="breakfast"/);
   assert.match(html.html, /data-person-type="[^"]+" data-meal-key="dinner"/);

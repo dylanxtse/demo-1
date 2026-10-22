@@ -134,6 +134,7 @@
       'school-order-accept.html',
       'school-recipe-center.html',
       'school-recipe-attendance.html',
+      'school-recipe-attendance-legacy.html',
       'school-recipe-auxiliary-attendance.html',
       'school-recipe-auxiliary-demand-confirm.html',
       'school-recipe-demand-confirm.html',

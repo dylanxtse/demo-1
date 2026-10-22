@@ -131,6 +131,13 @@
     };
   }
 
+  function buildSimplePreview(canteen, quantities = {}, expectedAt = '') {
+    const date = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(expectedAt))
+      ? expectedAt.slice(0, 10) : '';
+    const preview = buildCombinedPreview(canteen, { dates: date ? [date] : [], quantities });
+    return { ...preview, message: date ? preview.message : '请选择期望送达时间' };
+  }
+
   function buildPreview(date, canteen, quantities = readDraft(date, canteen)) {
     const participants = participantsFor(canteen);
     const meals = mealDefinitionsForDate(date).map((meal) => ({ ...meal, rows: catalogProducts(canteen).map((product) => {
@@ -209,8 +216,15 @@
     return submitDates([date], canteen, { [date]: quantities }, expectedAt);
   }
 
+  async function submitSimple(canteen, quantities, expectedAt) {
+    const preview = buildSimplePreview(canteen, quantities, expectedAt);
+    if (!preview.canSubmit) throw new Error(preview.message);
+    const date = preview.dates[0];
+    return submitDates([date], canteen, { dates: [date], quantities }, expectedAt, 'simple');
+  }
+
   async function submitDates(dates, canteen, quantitiesByDate, expectedAt, orderMode = 'legacy') {
-    const combined = orderMode === 'combined';
+    const combined = orderMode === 'combined' || orderMode === 'simple';
     const preview = combined
       ? buildCombinedPreview(canteen, quantitiesByDate)
       : buildDatesPreview(dates, canteen, quantitiesByDate);
@@ -277,14 +291,16 @@
       schoolName: orderService.SCHOOL_NAME || '静安第一中学',
       canteen: preview.canteen.name || '第一食堂', canteenId: preview.canteen.id || '',
       participants: clone(orderParticipants), dates: clone(preview.dates), expectedAt, recipeVersion: '',
-      source: '学校端商品需求下单', submittedBy: operator.name,
+      source: orderMode === 'simple' ? '学校端干料需求下单' : '学校端商品需求下单', submittedBy: operator.name,
       submittedById: operator.id, submittedAt: createdAt,
       dateSummaries, items,
       participantPersonTimes: Object.fromEntries(orderParticipants.map((person) => [person.key, 0])),
       studentPersonTimes: 0, teacherPersonTimes: 0, totalPersonTimes: 0,
       productCount: items.length, orders: [], enterpriseSyncWarnings: [],
       operationLogs: [{ action: '提交需求并下单', operator: operator.name, operatorId: operator.id,
-        result: '提交成功', time: createdAt, description: `提交 ${preview.dates.join('、')} 的商品需求` }]
+        result: '提交成功', time: createdAt, description: orderMode === 'simple'
+          ? `提交期望送达时间 ${expectedAt} 的干料需求`
+          : `提交 ${preview.dates.join('、')} 的商品需求` }]
     };
     const saveRecord = () => window.DemoStore?.replace?.(resource, [...records, record]);
     saveRecord();
@@ -318,7 +334,8 @@
             unit: row.unit, brand: row.brand, spec: row.spec, orderQty: amount,
             orderPrice: row.orderPrice, isNetVegetable: row.isNetVegetable === true,
             isStandardProduct: row.isStandardProduct === true,
-            remark: combined ? `商品${orderDates.join('、')}合并需求`
+            remark: orderMode === 'simple' ? '干料需求'
+              : combined ? `商品${orderDates.join('、')}合并需求`
               : `商品${orderDates.join('、')}${group.name}需求` });
         });
         const order = orderService.create({
@@ -376,6 +393,7 @@
   window.SchoolRecipeAuxiliaryDirectService = {
     products: clone(products), mealDefinitionsForDate, keyFor, catalogProducts,
     readDraft, writeDraft, readFilledDates, readCombinedDraft, writeCombinedDraft,
-    participantsFor, buildPreview, buildDatesPreview, buildCombinedPreview, submit, submitDates
+    participantsFor, buildPreview, buildDatesPreview, buildCombinedPreview, buildSimplePreview,
+    submit, submitDates, submitSimple
   };
 })();

@@ -17,7 +17,7 @@ body { margin: 0; background: #eef0f3; color: var(--shipping-print-ink); font-fa
 .shipping-print-table td:nth-child(3), .shipping-print-table td:nth-child(n+4), .shipping-print-table th:nth-child(n+3) { text-align: center; }
 .shipping-print-summary td { height: 29px; font-weight: 600; }
 .shipping-print-signature { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-top: 2mm; font-size: 12px; font-weight: 600; }
-.shipping-print-footer { position: absolute; right: 10mm; bottom: 5mm; left: 10mm; display: flex; justify-content: space-between; font-size: 10px; }
+.shipping-print-footer { position: absolute; right: 10mm; bottom: 5mm; left: 10mm; display: flex; justify-content: flex-end; font-size: 10px; }
 .shipping-print-actions { position: fixed; right: 0; bottom: 0; left: 0; z-index: 20; display: flex; justify-content: center; gap: 12px; min-height: 68px; padding: 14px; background: rgba(255,255,255,.96); border-top: 1px solid #dfe3e9; }
 .shipping-print-actions a { min-width: 112px; height: 36px; padding: 0 18px; border: 1px solid #cbd3df; border-radius: 4px; background: #fff; color: #242a32; font: inherit; line-height: 34px; text-align: center; text-decoration: none; cursor: pointer; }
 @media print { @page { size: A4 landscape; margin: 0; } html, body { background: #fff; } .shipping-print-page { padding: 0; } .shipping-print-paper { width: 297mm; min-height: 210mm; margin: 0; padding: 8mm 10mm 12mm; box-shadow: none; } .shipping-print-actions { display: none; } .shipping-print-table tr { break-inside: avoid; } }
