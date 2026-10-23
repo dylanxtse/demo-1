@@ -441,7 +441,7 @@
     const dynamicColumns = byPersonType ? participants.map((participant) => demandParticipantHeader(participants, participant)).join('') : '<th colspan="2">合计</th>';
     const dynamicSubColumns = byPersonType ? participants.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>采购量</th>';
     const dynamicColgroup = byPersonType ? participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-purchase">';
-    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
+    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前菜谱暂无关联商品</div>';
   }
 
   function renderDetail(menu) {
@@ -513,7 +513,7 @@
     return `<main class="school-recipe-attendance-detail-panel school-recipe-direct-panel" aria-label="填写采购量">
       ${renderCanteenTabs()}
       <div class="school-recipe-attendance-overview"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span>用料日期：</span><strong>${escapeHtml(longDate(state.selectedDate))}</strong></div></div></div>
-      <div class="school-recipe-attendance-detail-scroll"><div class="school-recipe-attendance-section-heading school-recipe-direct-heading"><span class="section-title-mark">填写采购量</span><p>以下为当日食谱包含的食材商品，无需采购时采购量填0或不填</p></div>${notice}${mealTabs}${rows || '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>'}</div>
+      <div class="school-recipe-attendance-detail-scroll"><div class="school-recipe-attendance-section-heading school-recipe-direct-heading"><span class="section-title-mark">填写采购量</span><p>以下为当日菜谱包含的食材商品，无需采购时采购量填0或不填</p></div>${notice}${mealTabs}${rows || '<div class="school-recipe-attendance-empty">当前菜谱暂无关联商品</div>'}</div>
       ${footer}
     </main>`;
   }
