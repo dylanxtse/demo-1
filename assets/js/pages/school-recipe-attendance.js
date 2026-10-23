@@ -278,7 +278,12 @@
     return next;
   }
 
-  function renderMealTabs(meals, calculation) {
+  function mealsWithActualPeople(meals, calculation) {
+    const actualPeopleByMeal = new Map((calculation?.mealRows || []).map((meal) => [String(meal.key), Number(meal.totalPeople || 0)]));
+    return meals.filter((meal) => actualPeopleByMeal.get(String(meal.key)) > 0);
+  }
+
+  function renderMealTabs(meals) {
     if (!meals.length || !splitOrderByMeal()) return '';
     return `<div class="school-recipe-meal-tabs school-recipe-attendance-meal-tabs" role="tablist" aria-label="切换餐次">${meals.map((meal) => {
       const active = String(meal.key) === String(state.activeMealKey);
@@ -418,7 +423,10 @@
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
     const byMeal = splitOrderByMeal();
     const byPersonType = splitOrderByPersonType();
-    const meal = byMeal ? ((calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey)) || calculation.mealRows?.[0]) : null;
+    const meal = byMeal ? (calculation.mealRows || []).find((item) => String(item.key) === String(activeMealKey)) : null;
+    if (byMeal && (!meal || Number(meal.totalPeople || 0) <= 0)) {
+      return '<div class="school-recipe-attendance-empty">当前没有实际就餐人数</div>';
+    }
     const sourceRows = byMeal ? (meal?.rows || []) : (calculation.rows || []);
     const rows = sourceRows
       .filter((row) => Number(row.totalQty || 0) > 0)
@@ -443,7 +451,8 @@
     if (!menu) return `<main class="school-recipe-attendance-detail-panel">${renderOverview(menu)}${renderNoMenuEmpty()}</main>`;
     const isNonDiningMode = attendanceInputMode === 'non-dining';
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
-    const activeMeal = activeMealFor(meals);
+    const demandMeals = splitOrderByMeal() ? mealsWithActualPeople(meals, calculation) : meals;
+    const activeMeal = activeMealFor(demandMeals);
     const canSaveNonDiningMode = canSaveNonDining(validation, calculation);
     const canContinueAttempt = canAttemptContinue(menu, validation);
     const footer = isNonDiningMode
@@ -455,7 +464,7 @@
         <div class="school-recipe-attendance-section-heading"><div><span class="section-title-mark">餐次总人数</span>${isNonDiningMode ? '<p class="school-recipe-attendance-mode-hint">当前为不就餐人数填写模式，总人数已锁定</p>' : '<span class="school-recipe-attendance-count-tip">无人员就餐请填写为0</span>'}</div><button type="button" class="btn btn-sm school-recipe-attendance-mode-action${isNonDiningMode ? ' btn-primary' : ''}${isNonDiningMode && !canSaveNonDiningMode ? ' btn-disabled' : ''}" data-attendance-mode-toggle${isNonDiningMode && !canSaveNonDiningMode ? ' disabled' : ''}>${isNonDiningMode ? '保存' : '填写不就餐人数'}</button></div>
         ${renderNotice(menu, record)}
         ${renderMealTable(meals, record)}
-        <section class="school-recipe-attendance-demand-section" aria-label="商品需求测算"><header><div><span class="section-title-mark">商品需求测算</span></div></header>${renderMealTabs(meals, calculation)}<div id="schoolRecipeAttendanceDemand">${renderDemand(menu, record, activeMeal?.key)}</div></section>
+        <section class="school-recipe-attendance-demand-section" aria-label="商品需求测算"><header><div><span class="section-title-mark">商品需求测算</span></div></header><div id="schoolRecipeAttendanceMealTabs">${renderMealTabs(demandMeals)}</div><div id="schoolRecipeAttendanceDemand">${renderDemand(menu, record, activeMeal?.key)}</div></section>
       </div>
       <footer class="school-recipe-attendance-actions">${footer}</footer>
     </main>`;
@@ -578,8 +587,12 @@
     const calculation = attendanceService.calculate(menu, record, serviceOptions());
     const validation = attendanceService.validate(menu, record, serviceOptions());
     const isNonDiningMode = attendanceInputMode === 'non-dining';
+    const meals = menu.meals || [];
+    const demandMeals = splitOrderByMeal() ? mealsWithActualPeople(meals, calculation) : meals;
+    const activeMeal = activeMealFor(demandMeals);
+    const mealTabs = page.querySelector('#schoolRecipeAttendanceMealTabs');
+    if (mealTabs) mealTabs.innerHTML = renderMealTabs(demandMeals);
     const demand = page.querySelector('#schoolRecipeAttendanceDemand');
-    const activeMeal = activeMealFor(menu.meals || []);
     if (demand) demand.innerHTML = renderDemand(menu, record, activeMeal?.key);
     const overviewTotal = page.querySelector('#schoolRecipeAttendanceOverviewTotal');
     const overviewNonDining = page.querySelector('[data-attendance-overview-non-dining]');

@@ -304,6 +304,18 @@
     return record;
   };
   const auxiliaryServiceOptions = () => ({ canteen: currentCanteen, participants: auxiliaryParticipants() });
+  const demandMeals = () => {
+    const entries = Object.entries(meals);
+    if (!shouldSplitOrderByMeal()) return entries;
+    const menu = menuForDate(dateState.selectedDate);
+    const calculation = menu && attendanceService?.calculate?.(menu, auxiliaryRecordFor(dateState.selectedDate), auxiliaryServiceOptions());
+    const actualMealKeys = new Set((calculation?.mealRows || [])
+      .filter((meal) => Number(meal.totalPeople || 0) > 0)
+      .map((meal) => String(meal.key)));
+    const visibleMeals = entries.filter(([key]) => actualMealKeys.has(String(key)));
+    if (!visibleMeals.some(([key]) => key === state.meal)) state.meal = visibleMeals[0]?.[0] || '';
+    return visibleMeals;
+  };
 
   function dateStatus(date) {
     if (state.mode === 'quantity') {
@@ -370,6 +382,9 @@
   }
 
   function renderRows() {
+    if (shouldSplitOrderByMeal() && !demandMeals().length) {
+      return '<div class="school-auxiliary-empty" role="status">当前没有实际就餐人数</div>';
+    }
     if (!state.selected.length) return '<div class="school-auxiliary-empty">请添加商品</div>';
     const displayProduct = (product) => `${product.name}（${product.doseUnit || '--'}/${product.brand || '--'}/${product.spec || '--'}）`;
     const splitByPersonType = (() => {
@@ -437,8 +452,11 @@
   }
 
   function renderForm() {
-    const mealTabs = shouldSplitOrderByMeal() ? `<div class="school-auxiliary-meal-tabs" role="tablist">${Object.entries(meals).map(([key, meal]) => `<button class="school-auxiliary-meal-tab ${key === state.meal ? 'is-active' : ''}" type="button" data-meal="${key}" role="tab" aria-selected="${key === state.meal}">${meal.name}</button>`).join('')}</div>` : '';
-    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm" type="button" data-aux-product-open>批量添加商品</button></div>${mealTabs}<div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm${state.selected.length ? '' : ' btn-disabled'}" type="button" data-confirm-demand${state.selected.length ? '' : ' disabled'}>确认需求</button></div></footer>`;
+    const visibleMeals = demandMeals();
+    const mealTabs = shouldSplitOrderByMeal() && visibleMeals.length
+      ? `<div class="school-auxiliary-meal-tabs" role="tablist">${visibleMeals.map(([key, meal]) => `<button class="school-auxiliary-meal-tab ${key === state.meal ? 'is-active' : ''}" type="button" data-meal="${key}" role="tab" aria-selected="${key === state.meal}">${meal.name}</button>`).join('')}</div>`
+      : '';
+    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm" type="button" data-aux-product-open>批量添加商品</button></div><div id="schoolAuxiliaryMealTabs">${mealTabs}</div><div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm${state.selected.length ? '' : ' btn-disabled'}" type="button" data-confirm-demand${state.selected.length ? '' : ' disabled'}>确认需求</button></div></footer>`;
   }
 
   function renderOrderModeSwitcher() {
@@ -518,6 +536,14 @@
       confirmButton.disabled = disabled;
       confirmButton.classList.toggle('btn-disabled', disabled);
     }
+  };
+  const refreshMealTabs = () => {
+    const tabs = root.querySelector('#schoolAuxiliaryMealTabs');
+    if (!tabs) return;
+    const visibleMeals = shouldSplitOrderByMeal() ? demandMeals() : [];
+    tabs.innerHTML = visibleMeals.length
+      ? `<div class="school-auxiliary-meal-tabs" role="tablist">${visibleMeals.map(([key, meal]) => `<button class="school-auxiliary-meal-tab ${key === state.meal ? 'is-active' : ''}" type="button" data-meal="${key}" role="tab" aria-selected="${key === state.meal}">${meal.name}</button>`).join('')}</div>`
+      : '';
   };
   const refreshPeopleTable = () => { const section = root.querySelector('.school-auxiliary-people-section'); if (section) section.outerHTML = renderPeopleTable(); };
   const refreshOverview = () => { const overview = root.querySelector('#schoolAuxiliaryOverview'); if (overview) overview.outerHTML = renderOverview(); };
@@ -928,11 +954,10 @@
     }
     persistDraft();
     refreshDatePanel();
+    refreshMealTabs();
     const total = input.closest('tr')?.querySelector('[data-people-total]');
     if (total) total.innerHTML = `${configuredGroups.reduce((sum, participant) => sum + Number(valueForParticipant(meal, participant) || 0), 0)}`;
-    if (!input.dataset.personType.startsWith('nonDining_')) {
-      rerenderRows();
-      refreshOverview();
-    }
+    rerenderRows();
+    if (!input.dataset.personType.startsWith('nonDining_')) refreshOverview();
   });
 })();

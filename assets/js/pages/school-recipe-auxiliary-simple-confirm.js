@@ -84,6 +84,41 @@
     if (window.AppNavigationGuard?.navigate) window.AppNavigationGuard.navigate(url);
     else window.location.href = url;
   };
+  const closeSubmitModal = () => document.querySelector('#schoolRecipeAuxiliarySimpleSubmitModal')?.remove();
+
+  function openSubmitModal() {
+    closeSubmitModal();
+    const backdrop = document.createElement('div');
+    backdrop.id = 'schoolRecipeAuxiliarySimpleSubmitModal';
+    backdrop.className = 'operations-modal-backdrop';
+    backdrop.innerHTML = `<section class="operations-modal is-confirm school-recipe-demand-submit-modal" role="dialog" aria-modal="true" aria-label="提示"><header class="operations-modal-header"><h3>提示</h3><button type="button" data-modal-close aria-label="关闭">×</button></header><div class="operations-modal-body"><div class="school-recipe-demand-submit-confirm"><p>确认生成订单吗？</p><div class="processing-detail-info school-recipe-demand-submit-info"><div class="info-item"><span class="info-label">食堂：</span><span class="info-value">${escapeHtml(canteen.name || '第一食堂')}</span></div><div class="info-item"><span class="info-label">期望送达时间：</span><span class="info-value">${escapeHtml(state.expectedAt.replace('T', ' '))}</span></div></div></div></div><footer class="operations-modal-footer"><button type="button" class="btn" data-modal-cancel>取消</button><button type="button" class="btn btn-primary" data-modal-confirm>确定</button></footer></section>`;
+    document.body.appendChild(backdrop);
+    const modal = backdrop.querySelector('.school-recipe-demand-submit-modal');
+    backdrop.addEventListener('click', (event) => {
+      if (!state.submitting && (event.target === backdrop || event.target.closest('[data-modal-close], [data-modal-cancel]'))) closeSubmitModal();
+    });
+    modal.querySelector('[data-modal-confirm]')?.addEventListener('click', async () => {
+      if (state.submitting) return;
+      state.submitting = true;
+      const confirmButton = modal.querySelector('[data-modal-confirm]');
+      confirmButton.disabled = true;
+      confirmButton.textContent = '提交中…';
+      try {
+        await service.submitSimple(canteen, quantities, expectedAtValue());
+        const drafts = window.AppStorage?.read?.(draftKey, {}) || {};
+        delete drafts[scope];
+        window.AppStorage?.write?.(draftKey, drafts);
+        closeSubmitModal();
+        navigate(backUrl);
+      } catch (error) {
+        state.error = error.message || '提交失败，请稍后重试';
+        state.submitting = false;
+        closeSubmitModal();
+        rerender();
+      }
+    });
+    modal.querySelector('[data-modal-confirm]')?.focus();
+  }
 
   root.addEventListener('change', (event) => {
     if (event.target.closest('[data-aux-simple-confirm-expected-at]')) {
@@ -116,18 +151,6 @@
     const demand = preview();
     if (!demand.canSubmit) { state.error = demand.message; rerender(); return; }
     state.error = '';
-    state.submitting = true;
-    rerender();
-    try {
-      await service.submitSimple(canteen, quantities, expectedAtValue());
-      const drafts = window.AppStorage?.read?.(draftKey, {}) || {};
-      delete drafts[scope];
-      window.AppStorage?.write?.(draftKey, drafts);
-      navigate(backUrl);
-    } catch (error) {
-      state.error = error.message || '提交失败，请稍后重试';
-      state.submitting = false;
-      rerender();
-    }
+    openSubmitModal();
   });
 })();

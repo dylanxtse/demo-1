@@ -301,6 +301,30 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   let confirmHtml = '';
   const confirmListeners = {};
   const confirmPage = { get outerHTML() { return confirmHtml; }, set outerHTML(value) { confirmHtml = value; } };
+  let activeModal = null;
+  let latestModal = null;
+  context.document = {
+    querySelector(selector) { return selector === '#schoolRecipeAuxiliarySimpleSubmitModal' ? activeModal : null; },
+    createElement() {
+      const modalState = { confirmClick: null, backdropClick: null };
+      const confirmButton = {
+        disabled: false,
+        textContent: '',
+        addEventListener(type, handler) { if (type === 'click') modalState.confirmClick = handler; },
+        focus() {}
+      };
+      const modal = { querySelector(selector) { return selector === '[data-modal-confirm]' ? confirmButton : null; } };
+      const backdrop = {
+        id: '', className: '', innerHTML: '', removed: false,
+        querySelector(selector) { return selector === '.school-recipe-demand-submit-modal' ? modal : null; },
+        addEventListener(type, handler) { if (type === 'click') modalState.backdropClick = handler; },
+        remove() { this.removed = true; if (activeModal === this) activeModal = null; }
+      };
+      latestModal = { backdrop, modalState, confirmButton };
+      return backdrop;
+    },
+    body: { appendChild(backdrop) { activeModal = backdrop; } }
+  };
   context.AppShell = { mount({ content }) {
     confirmHtml = content;
     return {
@@ -335,6 +359,17 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   await confirmListeners.click({ target: { closest(selector) {
     return selector === '[data-aux-simple-submit]' ? {} : null;
   } } });
+  assert.ok(activeModal, '提交需求前打开确认弹窗');
+  assert.match(activeModal.innerHTML, /期望送达时间：[\s\S]*2026-09-16 07:30/);
+  assert.doesNotMatch(activeModal.innerHTML, /用料日期/);
+  assert.equal(context.DemoStore.get('recipeDemandRecords').length, recordsBeforeConfirm);
+  latestModal.modalState.backdropClick({ target: activeModal, targetClosest: null });
+  assert.equal(activeModal, null, '取消确认后关闭弹窗');
+  assert.equal(context.DemoStore.get('recipeDemandRecords').length, recordsBeforeConfirm);
+  await confirmListeners.click({ target: { closest(selector) {
+    return selector === '[data-aux-simple-submit]' ? {} : null;
+  } } });
+  await latestModal.modalState.confirmClick();
   assert.equal(context.location.href, './school-recipe-auxiliary-attendance.html?mode=quantity');
   assert.equal(context.AppStorage.read('school-recipe-auxiliary-simple-drafts-v1', {})[canteen.id], undefined);
   const record = context.DemoStore.get('recipeDemandRecords').at(-1);
