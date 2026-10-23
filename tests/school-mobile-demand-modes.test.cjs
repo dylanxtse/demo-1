@@ -48,7 +48,7 @@ test('两个手机入口先选择填报方式，干调数量填写和确认分�
   dispatch('click', 'open-attendance');
   assert.match(app.innerHTML, /<h2>菜谱需求填报<\/h2>/);
   assert.match(app.innerHTML, /<strong>就餐人数填报<\/strong>/);
-  assert.match(app.innerHTML, /<strong>采购数量填报<\/strong>/);
+  assert.match(app.innerHTML, /<strong>商品数量填报<\/strong>/);
   assert.doesNotMatch(app.innerHTML, /school-mobile-entry-mode-intro|填写各餐次就餐人数|直接填写各商品的采购数量/);
   dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
   assert.match(app.innerHTML, /餐次就餐人数/);
@@ -79,9 +79,9 @@ test('两个手机入口先选择填报方式，干调数量填写和确认分�
   dispatch('click', 'select-direct-meal', { mealKey: secondMeal.key });
   dispatch('input', 'direct-quantity-input', { quantityKey: secondMeal.rows[0].key }, '2');
   dispatch('click', 'direct-continue');
-  assert.match(app.innerHTML, /食材需求确认/);
+  assert.match(app.innerHTML, /菜谱需求确认/);
   assert.match(app.innerHTML, /<h2>用料日期<\/h2><div class="school-mobile-confirm-date-list">/);
-  assert.doesNotMatch(app.innerHTML, /<span>填报方式<\/span><strong>采购数量填报<\/strong>/);
+  assert.doesNotMatch(app.innerHTML, /<span>填报方式<\/span><strong>商品数量填报<\/strong>/);
   assert.match(app.innerHTML, /data-action="back">返回<\/button>/);
   const mealTotal = (row, quantity) => '¥' + (row.orderPrice * quantity).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   assert.ok(app.innerHTML.includes(`<span>合计金额</span><strong>${mealTotal(ingredient, 3)}</strong>`));
@@ -270,6 +270,7 @@ test('手机端人数填报确认页按企业配置计算送达时间并隐藏�
   dispatch('click', 'continue');
 
   assert.match(app.innerHTML, /school-mobile-confirm-page/);
+  assert.match(app.innerHTML, /school-mobile-topbar-title">干调需求确认<\/strong>/);
   assert.doesNotMatch(app.innerHTML, /<span>期望送达时间<\/span>|data-action="open-expected-at"/);
   const selectedDates = Array.from(app.innerHTML.matchAll(/class="school-mobile-confirm-date[^\"]*is-selected[^\"]*" data-action="confirm-date" data-date="([^"]+)"/g), (match) => match[1]);
   assert.ok(selectedDates.length > 0);
@@ -279,6 +280,15 @@ test('手机端人数填报确认页按企业配置计算送达时间并隐藏�
   await new Promise((resolve) => setTimeout(resolve, 20));
   const record = context.DemoStore.get('recipeDemandRecords').at(-1);
   assert.equal(record.expectedAt, expectedAt);
+});
+
+test('菜谱人数填报确认页标题显示菜谱需求确认', () => {
+  const { app, dispatch } = mobileApp();
+  dispatch('click', 'open-attendance');
+  dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
+  dispatch('click', 'fill-defaults');
+  dispatch('click', 'continue');
+  assert.match(app.innerHTML, /school-mobile-topbar-title">菜谱需求确认<\/strong>/);
 });
 
 test('按人员类型拆单时在餐次下切换数量输入，并保留各类型的填写值', () => {
@@ -415,13 +425,13 @@ test('手机端干调商品数量不选用料日期，直接生成需求记录�
   const record = records.at(-1);
   const cardStart = app.innerHTML.indexOf(record.recordNo);
   const card = app.innerHTML.slice(cardStart, app.innerHTML.indexOf('</article>', cardStart));
-  assert.match(card, /干调需求填报-采购数量填报/);
+  assert.match(card, /干调需求填报-商品数量填报/);
   assert.doesNotMatch(card, /用料日期/);
   assert.match(card, /school-mobile-record-metrics is-quantity/);
   assert.doesNotMatch(card, /总人次/);
   dispatch('click', 'record', { recordId: record.id });
   assert.match(app.innerHTML, /<span>填报类型<\/span><strong>干调需求填报<\/strong>/);
-  assert.match(app.innerHTML, /<span>填报方式<\/span><strong>采购数量填报<\/strong>/);
+  assert.match(app.innerHTML, /<span>填报方式<\/span><strong>商品数量填报<\/strong>/);
   assert.doesNotMatch(app.innerHTML, /<h2>用料日期<\/h2>/);
   assert.match(app.innerHTML, /school-mobile-order-meal">干调总量<\/span>/);
   assert.doesNotMatch(app.innerHTML, /人次 ·/);
@@ -462,8 +472,8 @@ test('手机端干调旧日期与餐次草稿汇成商品总量，提交后清�
   assert.equal(order.items.find((item) => item.productCode === code).orderQty, 9);
 });
 
-test('人数填报商品列表支持左滑删除、搜索添加和手动采购量', () => {
-  const { context, app, dispatch, listeners } = mobileApp();
+test('菜谱人数填报只展示食谱关联商品，不提供手动添加商品', () => {
+  const { context, app, dispatch } = mobileApp();
   const menu = context.SchoolRecipeService.getAll()[0];
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const participants = context.SchoolRecipeAttendanceService.participantsFor(canteen);
@@ -478,68 +488,26 @@ test('人数填报商品列表支持左滑删除、搜索添加和手动采购�
   const calculation = context.SchoolRecipeAttendanceService.calculate(menu, context.SchoolRecipeAttendanceService.get(menu.date, canteen), { canteen, participants });
   const meal = calculation.mealRows[0];
   const calculatedRow = meal.rows.find((row) => row.mappingStatus === '已关联' && Number(row.totalQty) > 0);
-  const catalog = context.SchoolOrderService.getProductCatalog();
-  const manualProduct = catalog.find((product) => !meal.rows.some((row) => row.productCode === product.code));
+  const unrelatedProduct = context.SchoolOrderService.getProductCatalog().find((product) => !meal.rows.some((row) => row.productCode === product.code));
   assert.ok(calculatedRow);
-  assert.ok(manualProduct);
+  assert.ok(unrelatedProduct);
   assert.match(app.innerHTML, /school-mobile-demand-toolbar/);
-  assert.match(app.innerHTML, /data-action="add-attendance-demand-products">/);
   assert.match(app.innerHTML, /data-demand-swipe-item/);
   assert.match(app.innerHTML, /data-action="remove-attendance-demand-product"/);
-
-  const swipeClasses = new Set();
-  const removeButton = { setAttribute() {}, tabIndex: -1 };
-  const swipeItem = {
-    dataset: { demandSwipeKey: menu.date + '::' + meal.key + '::' + calculatedRow.key },
-    classList: { toggle(name, active) { if (active) swipeClasses.add(name); else swipeClasses.delete(name); } },
-    querySelector(selector) { return selector === '.school-mobile-demand-remove' ? removeButton : null; }
-  };
-  const swipeTarget = {
-    closest(selector) {
-      if (selector === '[data-demand-swipe-item]') return swipeItem;
-      return null;
-    }
-  };
-  listeners.pointerdown.forEach((listener) => listener({ target: swipeTarget, clientX: 180, clientY: 120, pointerType: 'touch', button: 0 }));
-  listeners.pointerup.forEach((listener) => listener({ target: swipeTarget, clientX: 90, clientY: 122, pointerType: 'touch', button: 0 }));
-  assert.equal(swipeClasses.has('is-swiped'), true);
-  dispatch('click', 'open-demand-detail', { menuDate: menu.date, demandKey: calculatedRow.key, demandMealKey: meal.key });
-  assert.doesNotMatch(app.innerHTML, /school-mobile-demand-detail-sheet/);
+  assert.match(app.innerHTML, new RegExp(`data-demand-key="${calculatedRow.key}"`));
+  assert.doesNotMatch(app.innerHTML, /data-action="add-attendance-demand-products"|attendance-demand-quantity|school-mobile-demand-row-manual|添加商品/);
+  assert.equal(app.innerHTML.includes(`data-product-code="${unrelatedProduct.code}"`), false);
 
   dispatch('click', 'add-attendance-demand-products');
-  assert.match(app.innerHTML, /role="dialog" aria-modal="true" aria-label="添加商品"/);
-  assert.match(app.innerHTML, /placeholder="搜索商品名称或编号"/);
-  assert.ok(app.innerHTML.includes('data-product-code="' + manualProduct.code + '"'));
-  dispatch('click', 'toggle-attendance-demand-product', { productCode: manualProduct.code, productStatus: 'available' }, '', {
-    classList: { toggle() {} },
-    querySelector() { return { textContent: '' }; },
-    setAttribute() {}
-  });
-  context.document.querySelector = () => null;
-  context.document.createElement = () => ({ setAttribute() {}, remove() {} });
-  context.document.body = { appendChild() {} };
-  context.clearTimeout = () => {};
-  context.setTimeout = () => 0;
-  dispatch('click', 'confirm-attendance-demand-products');
-  assert.match(app.innerHTML, /data-action="attendance-demand-quantity"/);
-  assert.ok(app.innerHTML.includes('data-product-code="' + manualProduct.code + '"'));
+  assert.doesNotMatch(app.innerHTML, /school-mobile-demand-product-picker-sheet|aria-label="添加商品"/);
 
-  dispatch('input', 'attendance-demand-quantity', {
-    menuDate: menu.date,
-    demandMealKey: meal.key,
-    productCode: manualProduct.code
-  }, '2', { toggleAttribute() {} });
-  const storageKey = 'school-mobile-attendance-demand-edits-v1';
   const scope = [canteen.id || canteen.name, menu.date, meal.key].join('::');
-  const edit = context.AppStorage.read(storageKey, {})[scope];
-  assert.equal(edit.addedProducts[0].quantity, '2');
-
   dispatch('click', 'remove-attendance-demand-product', {
     menuDate: menu.date,
     demandMealKey: meal.key,
-    demandRowKey: manualProduct.code + '::' + manualProduct.unit,
-    demandSource: 'manual',
-    productCode: manualProduct.code
+    demandRowKey: calculatedRow.key
   });
-  assert.equal(context.AppStorage.read(storageKey, {})[scope], undefined);
+  const edit = context.AppStorage.read('school-mobile-attendance-demand-edits-v1', {})[scope];
+  assert.deepEqual(Array.from(edit.removedProductKeys), [calculatedRow.key]);
+  assert.equal(edit.addedProducts, undefined);
 });

@@ -572,8 +572,7 @@
     const all = window.AppStorage?.read?.(attendanceDemandEditsStorageKey, {}) || {};
     const edit = all[attendanceDemandScope(date, mealKey)] || {};
     return {
-      removedProductKeys: Array.isArray(edit.removedProductKeys) ? [...new Set(edit.removedProductKeys.map(String))] : [],
-      addedProducts: Array.isArray(edit.addedProducts) ? clone(edit.addedProducts) : []
+      removedProductKeys: Array.isArray(edit.removedProductKeys) ? [...new Set(edit.removedProductKeys.map(String))] : []
     };
   }
 
@@ -581,8 +580,7 @@
     const all = window.AppStorage?.read?.(attendanceDemandEditsStorageKey, {}) || {};
     const scope = attendanceDemandScope(date, mealKey);
     const removedProductKeys = [...new Set((edit?.removedProductKeys || []).map(String))];
-    const addedProducts = Array.isArray(edit?.addedProducts) ? edit.addedProducts.filter((item) => item?.productCode) : [];
-    if (removedProductKeys.length || addedProducts.length) all[scope] = { removedProductKeys, addedProducts: clone(addedProducts) };
+    if (removedProductKeys.length) all[scope] = { removedProductKeys };
     else delete all[scope];
     window.AppStorage?.write?.(attendanceDemandEditsStorageKey, all);
   }
@@ -597,7 +595,7 @@
       const meals = {};
       keys.forEach((mealKey) => {
         const edit = readAttendanceDemandEdit(date, mealKey);
-        if (edit.removedProductKeys.length || edit.addedProducts.length) meals[mealKey] = edit;
+        if (edit.removedProductKeys.length) meals[mealKey] = edit;
       });
       if (Object.keys(meals).length) result[date] = { meals };
     });
@@ -1366,10 +1364,10 @@
       ? '登录'
         : state.screen === 'direct-confirm'
         ? (state.tab === 'auxiliary'
-          ? state.demandEntryMode === 'quantity' ? '干调需求确认' : '商品需求确认'
-          : '食材需求确认')
+          ? '干调需求确认'
+          : '菜谱需求确认')
         : state.screen === 'confirm'
-        ? (state.confirmMode === 'auxiliary' ? '商品需求确认' : '食材需求确认')
+        ? (state.confirmMode === 'auxiliary' ? '干调需求确认' : '菜谱需求确认')
         : state.screen === 'order-detail'
           ? '订单详情'
         : state.screen === 'detail'
@@ -1605,7 +1603,7 @@
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-entry-mode-sheet" role="dialog" aria-modal="true" aria-label="' + title + '">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + title + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="people"><strong>就餐人数填报</strong><span aria-hidden="true">›</span></button>'
-      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>采购数量填报</strong><span aria-hidden="true">›</span></button>'
+      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>商品数量填报</strong><span aria-hidden="true">›</span></button>'
       + '</section></div>';
   }
 
@@ -1937,81 +1935,18 @@
         + '<span class="school-mobile-demand-qty" aria-label="采购量：' + escapeHtml(quantity(purchaseTotal) + ' ' + unit) + '">' + quantity(purchaseTotal) + ' ' + escapeHtml(unit) + '</span>'
         + '<span class="school-mobile-demand-detail-arrow" aria-hidden="true">›</span>'
         + '</button>';
-      return renderAttendanceDemandSwipeItem(menu.date, mealKey, rowKey, productName(row), 'calculated', content, isOpen);
+      return renderAttendanceDemandSwipeItem(menu.date, mealKey, rowKey, productName(row), content, isOpen);
     }).join('');
-    const catalog = attendanceDemandCatalog();
-    const manualRows = edit.addedProducts.map((entry) => {
-      const product = catalog.find((item) => String(item.code) === String(entry.productCode));
-      if (!product) return '';
-      const productKey = purchaseRowKey({ productCode: product.code, unit: product.unit });
-      const identity = menu.date + '::' + mealKey + '::' + productKey;
-      const isOpen = state.openAttendanceDemandSwipeKey === identity;
-      const participant = participants().find((item) => String(item.key) === String(entry.participantKey));
-      const participantLabel = shouldSplitConfirmByPersonType() && participant ? orderTagName(participant) : '';
-      const quantityValue = entry.quantity == null ? '' : String(entry.quantity);
-      const content = '<div class="school-mobile-demand-row school-mobile-demand-row-manual">'
-        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code) + ' · 手动添加' + (participantLabel ? ' · ' + escapeHtml(participantLabel) : '') + '</small></div>'
-        + '<label class="school-mobile-demand-manual-quantity"><span class="school-mobile-sr-only">采购量</span><input type="number" min="0" ' + (product.isStandardProduct ? 'step="1" inputmode="numeric"' : 'step="any" inputmode="decimal"') + ' value="' + escapeHtml(quantityValue) + '" placeholder="数量" data-action="attendance-demand-quantity" data-menu-date="' + escapeHtml(menu.date) + '" data-demand-meal-key="' + escapeHtml(mealKey) + '" data-product-code="' + escapeHtml(product.code) + '" aria-label="' + escapeHtml(product.name + '采购量') + '"><span>' + escapeHtml(product.unit) + '</span></label>'
-        + '</div>';
-      return renderAttendanceDemandSwipeItem(menu.date, mealKey, productKey, product.name, 'manual', content, isOpen, product.code);
-    }).join('');
-    const listRows = autoRows + manualRows;
-    return '<div class="school-mobile-demand-toolbar"><strong>采购商品</strong><button type="button" data-action="add-attendance-demand-products"><span aria-hidden="true">＋</span>添加商品</button></div>'
-      + '<div class="school-mobile-demand-list" role="list">' + (listRows || '<div class="school-mobile-empty">填写人数后显示商品需求</div>') + '</div>';
+    return '<div class="school-mobile-demand-toolbar"><strong>采购商品</strong></div>'
+      + '<div class="school-mobile-demand-list" role="list">' + (autoRows || '<div class="school-mobile-empty">填写人数后显示商品需求</div>') + '</div>';
   }
 
-  function attendanceDemandCatalog() {
-    return (orderService.getProductCatalog?.() || []).filter((product) => product?.code && product?.name)
-      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-CN'));
-  }
-
-  function renderAttendanceDemandSwipeItem(date, mealKey, rowKey, name, source, content, isOpen, productCode = '') {
+  function renderAttendanceDemandSwipeItem(date, mealKey, rowKey, name, content, isOpen) {
     const identity = String(date) + '::' + String(mealKey) + '::' + String(rowKey);
     return '<div class="school-mobile-demand-swipe-item' + (isOpen ? ' is-swiped' : '') + '" data-demand-swipe-item data-demand-swipe-key="' + escapeHtml(identity) + '">'
       + content
-      + '<button type="button" class="school-mobile-demand-remove" data-action="remove-attendance-demand-product" data-demand-row-key="' + escapeHtml(rowKey) + '" data-demand-source="' + escapeHtml(source) + '" data-demand-meal-key="' + escapeHtml(mealKey) + '" data-menu-date="' + escapeHtml(date) + '" data-product-code="' + escapeHtml(productCode) + '" aria-label="移除' + escapeHtml(name) + '" aria-hidden="' + (isOpen ? 'false' : 'true') + '" tabindex="' + (isOpen ? '0' : '-1') + '">移除</button>'
+      + '<button type="button" class="school-mobile-demand-remove" data-action="remove-attendance-demand-product" data-demand-row-key="' + escapeHtml(rowKey) + '" data-demand-meal-key="' + escapeHtml(mealKey) + '" data-menu-date="' + escapeHtml(date) + '" aria-label="移除' + escapeHtml(name) + '" aria-hidden="' + (isOpen ? 'false' : 'true') + '" tabindex="' + (isOpen ? '0' : '-1') + '">移除</button>'
       + '</div>';
-  }
-
-  function renderAttendanceDemandProductPicker() {
-    const picker = state.sheet || {};
-    const menu = menuFor(state.date);
-    const mealKey = String(picker.mealKey || 'all-meals');
-    const calculation = menu ? attendanceService.calculate(menu, state.attendance, serviceOptions()) : { rows: [], mealRows: [] };
-    const meal = mealKey === 'all-meals'
-      ? { rows: calculation.rows || [] }
-      : (calculation.mealRows || []).find((item) => String(item.key) === mealKey) || { rows: [] };
-    const edit = readAttendanceDemandEdit(state.date, mealKey);
-    const removed = new Set(edit.removedProductKeys);
-    const manualCodes = new Set(edit.addedProducts.map((entry) => String(entry.productCode)));
-    const selected = new Set(picker.selectedCodes || []);
-    const keyword = String(picker.keyword || '').trim().toLocaleLowerCase();
-    const rows = attendanceDemandCatalog().filter((product) => !keyword || (product.name + ' ' + product.code).toLocaleLowerCase().includes(keyword)).map((product) => {
-      const productKey = purchaseRowKey({ productCode: product.code, unit: product.unit });
-      const calculated = (meal.rows || []).find((row) => purchaseRowKey(row) === productKey && Number(row.totalQty || 0) > 0);
-      const isRemoved = Boolean(calculated && removed.has(productKey));
-      const isPresent = Boolean(calculated && !isRemoved);
-      const isAdded = manualCodes.has(String(product.code));
-      const disabled = (isPresent || isAdded) && !isRemoved;
-      const isSelected = selected.has(String(product.code));
-      const status = isRemoved ? '已移除 · 可恢复' : isPresent ? '已在清单' : isAdded ? '已添加' : '';
-      const indicator = isSelected ? '✓' : isRemoved ? '恢复' : disabled ? '已添加' : '＋';
-      return '<button type="button" class="school-mobile-demand-picker-option' + (isSelected ? ' is-selected' : '') + (disabled ? ' is-disabled' : '') + '" data-action="toggle-attendance-demand-product" data-product-code="' + escapeHtml(product.code) + '" data-product-status="' + (isRemoved ? 'removed' : disabled ? 'present' : 'available') + '" data-search-text="' + escapeHtml((product.name + ' ' + product.code).toLocaleLowerCase()) + '" aria-pressed="' + isSelected + '"' + (disabled ? ' disabled' : '') + '>'
-        + '<span class="school-mobile-demand-picker-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code + ' · ' + product.unit) + (status ? ' · ' + status : '') + '</small></span><span class="school-mobile-demand-picker-indicator">' + indicator + '</span>'
-        + '</button>';
-    }).join('');
-    const participantOptions = shouldSplitConfirmByPersonType()
-      ? '<div class="school-mobile-demand-picker-participants" role="group" aria-label="商品归属人员类型">' + participants().map((participant) => {
-        const active = String(participant.key) === String(picker.participantKey || participants()[0]?.key || '');
-        return '<button type="button" data-action="select-attendance-demand-participant" data-participant-key="' + escapeHtml(participant.key) + '" class="' + (active ? 'is-active' : '') + '" aria-pressed="' + active + '">' + escapeHtml(orderTagName(participant)) + '</button>';
-      }).join('') + '</div>' : '';
-    const selectedCount = selected.size;
-    return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-product-picker-sheet" role="dialog" aria-modal="true" aria-label="添加商品">'
-      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" data-action="cancel-attendance-demand-products">取消</button><h2>添加商品</h2><button type="button" class="is-primary" data-action="confirm-attendance-demand-products"' + (selectedCount ? '' : ' disabled') + '>添加' + (selectedCount ? '（' + number(selectedCount) + '）' : '') + '</button></header>'
-      + '<label class="school-mobile-demand-picker-search"><span aria-hidden="true">⌕</span><input type="search" data-action="attendance-demand-product-search" value="' + escapeHtml(picker.keyword || '') + '" placeholder="搜索商品名称或编号" aria-label="搜索商品名称或编号"></label>'
-      + participantOptions
-      + '<div class="school-mobile-demand-picker-list" role="list">' + rows + '<div class="school-mobile-demand-picker-empty" data-demand-picker-empty' + (rows ? ' hidden' : '') + '>未找到匹配商品</div></div>'
-      + '</section></div>';
   }
 
   function auxiliaryPurchaseQuantity(product, demandQty) {
@@ -3099,7 +3034,7 @@
   }
 
   function recordEntryMode(record) {
-    return record?.entryMode === 'quantity' ? '采购数量填报' : '就餐人数填报';
+    return record?.entryMode === 'quantity' ? '商品数量填报' : '就餐人数填报';
   }
 
   function recordOrderMealName(order) {
@@ -3760,8 +3695,6 @@
         ? renderProductCategorySheet()
       : state.sheet?.type === 'product-picker'
         ? renderProductPickerSheet()
-      : state.sheet?.type === 'attendance-demand-product-picker'
-        ? renderAttendanceDemandProductPicker()
       : state.sheet?.type === 'auxiliary-product-picker'
         ? renderAuxiliaryProductPicker()
       : state.sheet?.type === 'order-detail-picker'
@@ -4847,110 +4780,13 @@
       openDemandDetailSheet(target);
       return;
     }
-    if (action === 'add-attendance-demand-products') {
-      if (state.attendanceInputMode === 'non-dining' || state.tab !== 'attendance') return;
-      const menu = menuFor(state.date);
-      if (!menu) return;
-      const mealKey = shouldSplitConfirmByMeal() ? (activeAttendanceMeal(menu)?.key || 'all-meals') : 'all-meals';
-      state.sheet = {
-        type: 'attendance-demand-product-picker',
-        mealKey,
-        keyword: '',
-        selectedCodes: [],
-        participantKey: participants()[0]?.key || ''
-      };
-      renderAttendancePreservingScroll();
-      return;
-    }
-    if (action === 'toggle-attendance-demand-product' && state.sheet?.type === 'attendance-demand-product-picker') {
-      if (target.disabled || target.dataset.productStatus === 'present') return;
-      const code = String(target.dataset.productCode || '');
-      if (!code) return;
-      const selectedCodes = new Set(state.sheet.selectedCodes || []);
-      if (selectedCodes.has(code)) selectedCodes.delete(code);
-      else selectedCodes.add(code);
-      state.sheet.selectedCodes = [...selectedCodes];
-      target.classList.toggle('is-selected', selectedCodes.has(code));
-      target.setAttribute('aria-pressed', String(selectedCodes.has(code)));
-      const indicator = target.querySelector('.school-mobile-demand-picker-indicator');
-      if (indicator) indicator.textContent = selectedCodes.has(code)
-        ? '✓'
-        : target.dataset.productStatus === 'removed' ? '恢复' : '＋';
-      const confirmButton = app.querySelector('[data-action="confirm-attendance-demand-products"]');
-      if (confirmButton) {
-        confirmButton.disabled = !selectedCodes.size;
-        confirmButton.textContent = selectedCodes.size ? '添加（' + number(selectedCodes.size) + '）' : '添加';
-      }
-      return;
-    }
-    if (action === 'select-attendance-demand-participant' && state.sheet?.type === 'attendance-demand-product-picker') {
-      state.sheet.participantKey = target.dataset.participantKey || '';
-      app.querySelectorAll('[data-action="select-attendance-demand-participant"]').forEach((button) => {
-        const active = button.dataset.participantKey === state.sheet.participantKey;
-        button.classList.toggle('is-active', active);
-        button.setAttribute('aria-pressed', String(active));
-      });
-      return;
-    }
-    if (action === 'confirm-attendance-demand-products' && state.sheet?.type === 'attendance-demand-product-picker') {
-      const menu = menuFor(state.date);
-      if (!menu) return;
-      const mealKey = String(state.sheet.mealKey || 'all-meals');
-      const edit = readAttendanceDemandEdit(state.date, mealKey);
-      const removed = new Set(edit.removedProductKeys);
-      const calculation = attendanceService.calculate(menu, state.attendance, serviceOptions());
-      const meal = mealKey === 'all-meals'
-        ? { rows: calculation.rows || [] }
-        : (calculation.mealRows || []).find((item) => String(item.key) === mealKey) || { rows: [] };
-      const catalog = attendanceDemandCatalog();
-      const participantKey = participants().some((person) => String(person.key) === String(state.sheet.participantKey))
-        ? state.sheet.participantKey
-        : participants()[0]?.key || '';
-      let addedCount = 0;
-      (state.sheet.selectedCodes || []).forEach((code) => {
-        const product = catalog.find((item) => String(item.code) === String(code));
-        if (!product) return;
-        const key = purchaseRowKey({ productCode: product.code, unit: product.unit });
-        if (removed.has(key)) {
-          removed.delete(key);
-          edit.addedProducts = edit.addedProducts.filter((entry) => String(entry.productCode) !== String(product.code));
-          addedCount += 1;
-          return;
-        }
-        const alreadyCalculated = (meal.rows || []).some((row) => purchaseRowKey(row) === key && Number(row.totalQty || 0) > 0);
-        const alreadyAdded = edit.addedProducts.some((entry) => String(entry.productCode) === String(product.code));
-        if (alreadyCalculated || alreadyAdded) return;
-        edit.addedProducts.push({
-          productCode: product.code,
-          productName: product.name,
-          unit: product.unit,
-          quantity: '',
-          participantKey
-        });
-        addedCount += 1;
-      });
-      edit.removedProductKeys = [...removed];
-      writeAttendanceDemandEdit(state.date, mealKey, edit);
-      state.sheet = null;
-      state.openAttendanceDemandSwipeKey = '';
-      renderAttendancePreservingScroll();
-      if (addedCount) showToast(addedCount + ' 种商品已加入，请填写采购量');
-      return;
-    }
-    if (action === 'cancel-attendance-demand-products' && state.sheet?.type === 'attendance-demand-product-picker') {
-      state.sheet = null;
-      renderAttendancePreservingScroll();
-      return;
-    }
     if (action === 'remove-attendance-demand-product') {
       const date = target.dataset.menuDate || state.date;
       const mealKey = target.dataset.demandMealKey || 'all-meals';
+      const rowKey = String(target.dataset.demandRowKey || '');
+      if (!rowKey) return;
       const edit = readAttendanceDemandEdit(date, mealKey);
-      if (target.dataset.demandSource === 'manual') {
-        edit.addedProducts = edit.addedProducts.filter((entry) => String(entry.productCode) !== String(target.dataset.productCode));
-      } else if (!edit.removedProductKeys.includes(target.dataset.demandRowKey)) {
-        edit.removedProductKeys.push(target.dataset.demandRowKey);
-      }
+      if (!edit.removedProductKeys.includes(rowKey)) edit.removedProductKeys.push(rowKey);
       writeAttendanceDemandEdit(date, mealKey, edit);
       state.openAttendanceDemandSwipeKey = '';
       refreshAttendanceDemandRows();
@@ -5249,19 +5085,6 @@
       updateDirectQuantity(target);
       return;
     }
-    if (action === 'attendance-demand-product-search' && state.sheet?.type === 'attendance-demand-product-picker') {
-      state.sheet.keyword = target.value || '';
-      const keyword = state.sheet.keyword.trim().toLocaleLowerCase();
-      let visibleCount = 0;
-      app.querySelectorAll('.school-mobile-demand-picker-option').forEach((option) => {
-        const visible = !keyword || String(option.dataset.searchText || '').includes(keyword);
-        option.hidden = !visible;
-        if (visible) visibleCount += 1;
-      });
-      const empty = app.querySelector('[data-demand-picker-empty]');
-      if (empty) empty.hidden = visibleCount > 0;
-      return;
-    }
     if (action === 'auxiliary-product-search' && state.sheet?.type === 'auxiliary-product-picker') {
       state.sheet.keyword = target.value || '';
       const keyword = state.sheet.keyword.trim().toLocaleLowerCase();
@@ -5273,17 +5096,6 @@
       });
       const empty = app.querySelector('[data-auxiliary-picker-empty]');
       if (empty) empty.hidden = visibleCount > 0;
-      return;
-    }
-    if (action === 'attendance-demand-quantity') {
-      const edit = readAttendanceDemandEdit(target.dataset.menuDate || state.date, target.dataset.demandMealKey || 'all-meals');
-      const entry = edit.addedProducts.find((item) => String(item.productCode) === String(target.dataset.productCode));
-      if (!entry) return;
-      entry.quantity = target.value;
-      const parsed = Number(target.value);
-      const invalid = target.value !== '' && (!Number.isFinite(parsed) || parsed < 0 || (target.step === '1' && !Number.isInteger(parsed)));
-      target.toggleAttribute('aria-invalid', invalid);
-      writeAttendanceDemandEdit(target.dataset.menuDate || state.date, target.dataset.demandMealKey || 'all-meals', edit);
       return;
     }
     if ((action === 'order-detail-quantity' || action === 'order-detail-remark') && state.orderDetailEditing) {
@@ -5414,22 +5226,6 @@
         render();
         return;
       }
-      if (productAction === 'attendance-demand-quantity') {
-        const date = productTarget.dataset.menuDate || state.date;
-        const mealKey = productTarget.dataset.demandMealKey || 'all-meals';
-        const edit = readAttendanceDemandEdit(date, mealKey);
-        const entry = edit.addedProducts.find((item) => String(item.productCode) === String(productTarget.dataset.productCode));
-        if (!entry) return;
-        if (productTarget.value !== '') {
-          const parsed = Number(productTarget.value);
-          if (!Number.isFinite(parsed) || parsed < 0) productTarget.value = '0';
-          else if (productTarget.step === '1') productTarget.value = String(Math.ceil(parsed));
-          entry.quantity = productTarget.value;
-        } else entry.quantity = '';
-        productTarget.removeAttribute('aria-invalid');
-        writeAttendanceDemandEdit(date, mealKey, edit);
-        return;
-      }
       if (productAction === 'product-checkout-date') {
         state.productCheckout.expectedDate = productTarget.value;
         render();
@@ -5515,7 +5311,7 @@
 
   app.addEventListener('pointerdown', (event) => {
     const item = event.target.closest?.('[data-demand-swipe-item]');
-    if (!item || !app.contains(item) || event.target.closest?.('[data-action="remove-attendance-demand-product"], [data-action="remove-auxiliary-product"], [data-action="attendance-demand-quantity"]')
+    if (!item || !app.contains(item) || event.target.closest?.('[data-action="remove-attendance-demand-product"], [data-action="remove-auxiliary-product"]')
       || (event.pointerType === 'mouse' && event.button !== 0)) return;
     attendanceDemandSwipeStart = { item, x: event.clientX, y: event.clientY };
   }, { passive: true });
