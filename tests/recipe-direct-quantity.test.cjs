@@ -30,6 +30,46 @@ test('直接填量无需人数记录，标品数量必须为整数', () => {
   assert.equal(service.buildDirectPreview(date, { [standard.key]: 2 }, { canteen: '第一食堂' }).canSubmit, true);
 });
 
+test('直接填量底部已填写商品数只统计当前餐次', () => {
+  const context = app();
+  const service = context.SchoolRecipeDemandService;
+  const canteen = service.currentCanteen('第一食堂');
+  const menu = context.SchoolRecipeService.getAll().find((item) =>
+    service.buildDirectPreview(item.date, {}, { canteen }).meals.filter((meal) => meal.rows.length).length >= 2);
+  assert.ok(menu);
+  const meals = service.buildDirectPreview(menu.date, {}, { canteen }).meals.filter((meal) => meal.rows.length);
+  const [firstMeal, secondMeal] = meals;
+  const scope = `${canteen.id || canteen.name}::${menu.date}`;
+  context.AppStorage.write('school-recipe-demand-direct-drafts-v1', {
+    [scope]: { [firstMeal.rows[0].key]: '2', [secondMeal.rows[0].key]: '3' }
+  });
+  context.location = { search: `?mode=quantity&date=${menu.date}&canteen=${encodeURIComponent(canteen.id || canteen.name)}` };
+  context.addEventListener = () => {};
+  context.document = { querySelector: () => null, createElement: () => ({ remove() {} }), body: { appendChild() {} } };
+  const body = { innerHTML: '' };
+  const switcher = { innerHTML: '' };
+  const listeners = {};
+  const page = { addEventListener(type, handler) { listeners[type] = handler; } };
+  const rootElement = { querySelector(selector) {
+    if (selector === '#schoolRecipeAttendancePage') return page;
+    if (selector === '#schoolRecipeAttendanceBody') return body;
+    if (selector === '#schoolRecipeEntrySwitch') return switcher;
+    return null;
+  } };
+  context.AppShell = { mount() { return rootElement; } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-attendance.js'), 'utf8'), context);
+
+  const summary = () => body.innerHTML.match(/data-direct-summary>已填写 (\d+) 种商品/)?.[1];
+  const tableHead = body.innerHTML.match(/<thead>([\s\S]*?)<\/thead>/)?.[1] || '';
+  assert.match(tableHead, /<th>计量单位<\/th><th>采购量<\/th>/, '未拆单时使用单层采购量表头');
+  assert.doesNotMatch(tableHead, /rowspan="2"|colspan="\d+">采购量/, '未拆单时不显示人员类型分组表头');
+  assert.equal(summary(), '1', '默认餐次的商品数不包含其他餐次');
+  listeners.click({ target: { closest(selector) {
+    return selector === '[data-direct-meal-tab]' ? { dataset: { directMealTab: secondMeal.key } } : null;
+  } } });
+  assert.equal(summary(), '1', '切换餐次后按新餐次重新统计');
+});
+
 test('直接填量生成学校订单、企业订单和独立需求记录', async () => {
   const context = app();
   context.DemoStore.updateSettings({ splitOrderByMeal: false });
@@ -350,8 +390,11 @@ test('直接填量在按人员类型拆单时显示各类型输入，清空餐�
   } };
   context.AppShell = { mount() { return rootElement; } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-attendance.js'), 'utf8'), context);
-  assert.match(body.innerHTML, new RegExp(`${participants[0].label}[^<]*采购量`));
-  assert.match(body.innerHTML, new RegExp(`${participants[1].label}[^<]*采购量`));
+  const tableHead = body.innerHTML.match(/<thead>([\s\S]*?)<\/thead>/)?.[1] || '';
+  assert.match(tableHead, new RegExp(`<th colspan="${participants.length}">采购量<\/th>`));
+  const participantLabels = participants.map((participant) => context.SchoolRecipeAttendanceService.participantDisplayName(participant, participants));
+  participantLabels.forEach((label) => assert.ok(tableHead.includes(`<th>${label}</th>`)));
+  assert.doesNotMatch(tableHead, /学生[^<]*采购量|非营养餐采购量/, '采购量由上层分组表头统一标示');
   assert.ok(body.innerHTML.includes(`data-direct-quantity="${firstRow.key}::${participants[0].key}"`));
   assert.ok(body.innerHTML.includes(`data-direct-quantity="${firstRow.key}::${participants[1].key}"`));
   listeners.click({ target: { closest(selector) {

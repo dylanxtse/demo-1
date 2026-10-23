@@ -88,12 +88,12 @@
 .school-auxiliary-actions { display: flex; gap: 8px; }
 .school-auxiliary-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(25, 40, 70, .28); }
 .school-auxiliary-modal-backdrop[hidden] { display: none; }
-.school-auxiliary-modal { width: 900px; max-width: calc(100vw - 40px); max-height: min(700px, calc(100vh - 80px)); overflow: hidden; border-radius: 6px; background: #fff; box-shadow: 0 12px 36px rgba(25, 40, 70, .2); }
-.school-auxiliary-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+.school-auxiliary-modal { display: flex; width: 900px; max-width: calc(100vw - 40px); max-height: min(700px, calc(100vh - 80px)); flex-direction: column; overflow: hidden; border-radius: 6px; background: #fff; box-shadow: 0 12px 36px rgba(25, 40, 70, .2); }
+.school-auxiliary-modal-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
 .school-auxiliary-modal-header h3 { margin: 0; color: #354052; font-size: 16px; font-weight: 600; }
 .school-auxiliary-modal-close { border: 0; color: #8994a4; background: transparent; font-size: 22px; cursor: pointer; }
-.school-auxiliary-modal-body { max-height: 440px; overflow: auto; padding: 14px 20px; }
-.school-auxiliary-product-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border-light); }
+.school-auxiliary-modal-body { display: flex; min-height: 0; max-height: min(540px, calc(100vh - 200px)); flex: 0 1 auto; flex-direction: column; overflow: hidden; padding: 14px 20px; }
+.school-auxiliary-product-filters { display: grid; flex: 0 0 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border-light); }
 .school-auxiliary-product-filters label { display: flex; min-width: 0; align-items: center; gap: 8px; color: #687486; font-size: 12px; }
 .school-auxiliary-product-filters label > span { flex: 0 0 auto; white-space: nowrap; }
 .school-auxiliary-product-filters input, .school-auxiliary-product-filters select { width: auto; min-width: 0; flex: 1 1 auto; height: 32px; box-sizing: border-box; padding: 0 8px; border: 1px solid #d8dee8; border-radius: 3px; color: #354052; background: #fff; font-size: 12px; }
@@ -102,7 +102,7 @@
 .school-auxiliary-select-all-label { display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-weight: 400; }
 .school-auxiliary-select-all-label input { width: 15px; height: 15px; margin: 0; accent-color: var(--primary); }
 .school-auxiliary-select-all small { color: #8994a4; font-size: 12px; }
-.school-auxiliary-product-list-wrap { overflow: auto; border: 1px solid var(--border-light); border-radius: 4px; }
+.school-auxiliary-product-list-wrap { min-height: 0; flex: 1 1 auto; overflow: auto; border: 1px solid var(--border-light); border-radius: 4px; }
 .school-auxiliary-product-list { width: 100%; border-collapse: collapse; table-layout: fixed; color: #526073; font-size: 13px; }
 .school-auxiliary-product-list th, .school-auxiliary-product-list td { height: 42px; padding: 7px 10px; border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); text-align: center; vertical-align: middle; }
 .school-auxiliary-product-list th { height: 36px; color: #687486; background: #fafbfc; font-weight: 500; white-space: nowrap; }
@@ -111,7 +111,7 @@
 .school-auxiliary-product-list tbody tr:hover td { background: #f8fbff; }
 .school-auxiliary-product-list input { width: 16px; height: 16px; accent-color: var(--primary); vertical-align: middle; }
 .school-auxiliary-product-list .col-select { width: 64px; }
-.school-auxiliary-product-list .col-name { width: 180px; }
+.school-auxiliary-product-list .col-name { width: 250px; }
 .school-auxiliary-product-list .col-category { width: 190px; }
 .school-auxiliary-product-list .col-code { width: 125px; }
 .school-auxiliary-product-list .col-unit { width: 90px; }
@@ -122,7 +122,7 @@
 .school-auxiliary-product-default.is-default { color: #687486; }
 .school-auxiliary-product-default:hover { text-decoration: underline; }
 .school-auxiliary-product-list .school-auxiliary-no-results { height: 120px; color: #9aa4b2; text-align: center; }
-.school-auxiliary-pagination { display: flex; align-items: center; min-height: 48px; gap: 14px; color: #8994a4; font-size: 12px; }
+.school-auxiliary-pagination { display: flex; flex: 0 0 auto; align-items: center; min-height: 48px; gap: 14px; color: #8994a4; font-size: 12px; }
 .school-auxiliary-page-total { margin-right: auto; white-space: nowrap; }
 .school-auxiliary-page-size { height: 28px; min-width: 88px; padding: 0 6px; border: 1px solid var(--border-light); border-radius: 3px; color: #526073; background: #fff; font: inherit; }
 .school-auxiliary-page-buttons { display: flex; align-items: center; gap: 4px; }
@@ -132,7 +132,7 @@
 .school-auxiliary-page-jump { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .school-auxiliary-page-jump input { width: 42px; height: 28px; box-sizing: border-box; padding: 0 4px; border: 1px solid var(--border-light); border-radius: 3px; color: #526073; text-align: center; background: #fff; font: inherit; }
 .school-auxiliary-page-jump input::-webkit-inner-spin-button, .school-auxiliary-page-jump input::-webkit-outer-spin-button { margin: 0; appearance: none; }
-.school-auxiliary-modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border-light); }
+.school-auxiliary-modal-footer { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border-light); }
 .school-auxiliary-simple-body { display: flex; min-width: 0; min-height: 0; flex: 1; padding: 12px; }
 .school-auxiliary-simple-body .school-auxiliary-detail { flex: 1; }
 .school-auxiliary-simple-scroll { display: flex; min-height: 0; flex: 1; flex-direction: column; overflow: hidden; padding: 20px 22px; }

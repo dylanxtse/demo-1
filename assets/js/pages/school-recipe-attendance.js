@@ -133,6 +133,11 @@
     return demandService?.buildDirectPreview(date, directQuantities(date), { canteen: currentCanteen() });
   }
 
+  function selectedDirectRowsForMeal(preview) {
+    const meal = (preview?.meals || []).find((item) => String(item.key) === String(state.directActiveMealKey));
+    return (meal?.rows || []).filter((row) => Number(row.orderQty || 0) > 0);
+  }
+
   function renderModeSwitcher() {
     return `<div class="school-recipe-entry-switch" aria-label="菜谱需求填报方式"><div class="school-recipe-entry-options" role="tablist" aria-label="填报方式">${[
       ['people', '按就餐人数填报'], ['quantity', '按商品数量填报']
@@ -487,8 +492,8 @@
     }).join('')}</div>` : '';
     const directParticipants = splitOrderByPersonType() ? participantsForState() : [];
     const directQuantityHeaders = directParticipants.length
-      ? directParticipants.map((participant) => `<th>${escapeHtml(attendanceService.participantDisplayName?.(participant, directParticipants) || participant.label || participant.tagName || participant.key)}采购量</th>`).join('')
-      : '<th>采购量</th>';
+      ? `<tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">计量单位</th><th colspan="${directParticipants.length}">采购量</th></tr><tr>${directParticipants.map((participant) => `<th>${escapeHtml(attendanceService.participantDisplayName?.(participant, directParticipants) || participant.label || participant.tagName || participant.key)}</th>`).join('')}</tr>`
+      : '<tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>是否标品</th><th>商品编号</th><th>计量单位</th><th>采购量</th></tr>';
     const directQuantityCols = directParticipants.length
       ? directParticipants.map(() => '<col class="col-purchase">').join('') : '<col class="col-purchase">';
     const directRowInputs = (row, meal) => {
@@ -497,10 +502,10 @@
         const key = `${row.key}::${participant.key}`;
         const name = attendanceService.participantDisplayName?.(participant, directParticipants) || participant.label || participant.tagName || participant.key;
         return { key, name, value: draft[key] ?? (index === 0 ? draft[row.key] : '') };
-      }) : [{ key: row.key, name: '', value: draft[row.key] ?? (row.orderQty > 0 ? row.orderQty : '') }];
-      return values.map(({ key, name, value }) => `<td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="${row.isStandardProduct ? '1' : 'any'}" inputmode="${row.isStandardProduct ? 'numeric' : 'decimal'}" placeholder="0" value="${escapeHtml(value)}" data-direct-quantity="${escapeHtml(key)}" aria-label="${escapeHtml(`${meal.name}${row.productName}${name}采购量`)}"></div></td>`).join('');
+      }) : [{ key: row.key, name: '', value: draft[row.key] ?? '' }];
+      return values.map(({ key, name, value }) => `<td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="${row.isStandardProduct ? '1' : 'any'}" inputmode="${row.isStandardProduct ? 'numeric' : 'decimal'}" placeholder="请输入" value="${escapeHtml(value)}" data-direct-quantity="${escapeHtml(key)}" aria-label="${escapeHtml(`${meal.name}${row.productName}${name}采购量`)}"></div></td>`).join('');
     };
-    const rows = activeMeal ? `<div class="school-recipe-direct-meal"><div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table school-recipe-direct-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${directQuantityCols}</colgroup><thead><tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>是否标品</th><th>商品编号</th><th>单位</th>${directQuantityHeaders}</tr></thead><tbody>${activeMeal.rows.map((row, index) => `<tr><td>${index + 1}</td><td class="school-recipe-attendance-product-name">${renderProductName(row, productDisplay(row))}</td><td>${row.isStandardProduct ? '是' : '否'}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td>${directRowInputs(row, activeMeal)}</tr>`).join('')}</tbody></table></div></div>` : '';
+    const rows = activeMeal ? `<div class="school-recipe-direct-meal"><div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table school-recipe-direct-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${directQuantityCols}</colgroup><thead>${directQuantityHeaders}</thead><tbody>${activeMeal.rows.map((row, index) => `<tr><td>${index + 1}</td><td class="school-recipe-attendance-product-name">${renderProductName(row, productDisplay(row))}</td><td>${row.isStandardProduct ? '是' : '否'}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td>${directRowInputs(row, activeMeal)}</tr>`).join('')}</tbody></table></div></div>` : '';
     const notice = preview?.missingMappings?.length
       ? `<div class="school-recipe-attendance-notice is-warning"><span class="school-recipe-attendance-notice-icon">!</span><div><strong>存在未关联商品</strong><p>${escapeHtml(preview.missingMappings.join('、'))}尚未关联采购商品，请先完成关联。</p></div></div>`
       : '';
@@ -508,8 +513,9 @@
     const draftQuantities = directQuantities();
     const hasDateQuantities = Object.values(draftQuantities).some((value) => String(value).trim() !== '');
     const hasMealQuantities = (activeMeal?.rows || []).some((row) => hasDirectRowDraft(draftQuantities, row));
+    const activeMealProductCount = selectedDirectRowsForMeal(preview).length;
     const clearMenu = `<div class="school-recipe-attendance-reset-dropdown${hasDateQuantities ? '' : ' is-disabled'}"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-direct-clear-toggle aria-expanded="false" aria-haspopup="menu"${hasDateQuantities ? '' : ' disabled'}>清空数量<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-direct-action="clear-meal"${hasMealQuantities ? '' : ' disabled'}>清空当前餐次数量</button><button type="button" role="menuitem" data-direct-action="clear-date"${hasDateQuantities ? '' : ' disabled'}>清空当前日期数量</button></div></div>`;
-    const footer = menu ? `<footer class="school-recipe-attendance-actions school-recipe-direct-actions"><div class="school-recipe-direct-footer-left">${clearMenu}<span data-direct-summary>已填写 ${preview?.selectedRows?.length || 0} 种商品</span></div><button type="button" class="btn btn-primary btn-sm${canConfirm ? '' : ' btn-disabled'}" data-direct-action="submit"${canConfirm ? '' : ' disabled'}>需求确认</button></footer>` : '';
+    const footer = menu ? `<footer class="school-recipe-attendance-actions school-recipe-direct-actions"><div class="school-recipe-direct-footer-left">${clearMenu}<span data-direct-summary>已填写 ${activeMealProductCount} 种商品</span></div><button type="button" class="btn btn-primary btn-sm${canConfirm ? '' : ' btn-disabled'}" data-direct-action="submit"${canConfirm ? '' : ' disabled'}>需求确认</button></footer>` : '';
     return `<main class="school-recipe-attendance-detail-panel school-recipe-direct-panel" aria-label="填写采购量">
       ${renderCanteenTabs()}
       <div class="school-recipe-attendance-overview"><div class="school-recipe-attendance-overview-fields"><div class="school-recipe-attendance-overview-item school-recipe-attendance-date"><span>用料日期：</span><strong>${escapeHtml(longDate(state.selectedDate))}</strong></div></div></div>
@@ -750,7 +756,7 @@
         submit.classList.toggle('btn-disabled', submit.disabled);
       }
       const summary = page.querySelector('[data-direct-summary]');
-      if (summary) summary.textContent = `已填写 ${preview?.selectedRows?.length || 0} 种商品`;
+      if (summary) summary.textContent = `已填写 ${selectedDirectRowsForMeal(preview).length} 种商品`;
       const draftQuantities = directQuantities();
       const clearToggle = page.querySelector('[data-direct-clear-toggle]');
       if (clearToggle) clearToggle.disabled = !Object.values(draftQuantities).some((value) => String(value).trim() !== '');

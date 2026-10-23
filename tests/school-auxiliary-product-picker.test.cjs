@@ -66,6 +66,8 @@ test('人数填报可批量添加商品，取消选择不保存', () => {
   assert.match(modal.outerHTML, /data-aux-product-default="aux-simple-47"/);
   assert.match(modal.outerHTML, /value="3" data-aux-product-jump/);
   assert.match(page.outerHTML, /<h3>添加商品<\/h3>/);
+  assert.match(page.outerHTML, /<th>商品名称<\/th>/);
+  assert.match(page.outerHTML, /金龙鱼5L桶装油（L\/金龙鱼\/5L\/桶）/);
   assert.match(page.outerHTML, /<th>计量单位<\/th>/);
   assert.match(page.outerHTML, /<th>操作<\/th>/);
   assert.match(page.outerHTML, /data-aux-product-default="aux-oil"[^>]*>设为默认<\/button>/);
