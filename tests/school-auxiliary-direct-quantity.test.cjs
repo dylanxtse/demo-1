@@ -342,7 +342,7 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   assert.match(confirmHtml, /<td class="is-number school-recipe-direct-confirm-quantity-cell"><span[^>]*>2\.5<\/span><\/td>/);
   assert.doesNotMatch(confirmHtml, /data-aux-simple-confirm-quantity/);
   assert.match(confirmHtml, /data-aux-simple-remove="SP0300030"[^>]*>移除<\/button>/);
-  assert.doesNotMatch(confirmHtml, /data-aux-simple-remove="SP0300030"[^>]*disabled/);
+  assert.match(confirmHtml, /data-aux-simple-remove="SP0300030"[^>]*title="至少保留一项商品" disabled/);
   assert.doesNotMatch(confirmHtml, /用料日期明细/);
   let pickerOpened = false;
   await confirmListeners.click({ target: { closest(selector) {
@@ -435,14 +435,14 @@ test('干调数量确认页只移除商品，不允许编辑采购量', () => {
     return selector === '[data-aux-simple-remove]' ? { dataset: { auxSimpleRemove: first.code } } : null;
   } } });
   assert.doesNotMatch(html, /data-aux-simple-remove="SP0300030"/);
-  assert.match(html, /data-aux-simple-remove="SP0300031"[^>]*>移除<\/button>/);
+  assert.match(html, /data-aux-simple-remove="SP0300031"[^>]*title="至少保留一项商品" disabled>移除<\/button>/);
   assert.equal(context.AppStorage.read(draftKey, {})[canteen.id].quantities[first.code], undefined);
 
   listeners.click({ target: { closest(selector) {
-    return selector === '[data-aux-simple-remove]' ? { dataset: { auxSimpleRemove: second.code } } : null;
+    return selector === '[data-aux-simple-remove]' ? { dataset: { auxSimpleRemove: second.code }, disabled: true } : null;
   } } });
-  assert.match(html, /暂无待确认商品/);
-  assert.doesNotMatch(html, /data-aux-simple-remove/);
+  assert.match(html, /data-aux-simple-remove="SP0300031"[^>]*disabled>移除<\/button>/);
+  assert.equal(context.AppStorage.read(draftKey, {})[canteen.id].quantities[second.code], '3');
 });
 
 test('历史商品数量确认页显示金额并返回原日期', () => {

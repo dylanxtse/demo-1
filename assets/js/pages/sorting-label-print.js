@@ -99,7 +99,7 @@
       <span class="sorting-label-page-number" aria-hidden="true">第${sequence}/${total}张</span>
       <dl class="sorting-label-fields">
         <div class="sorting-label-field sorting-label-field-customer"><dt class="sorting-label-sr-only">客户名称</dt><dd>${text(row.customerName)}</dd></div>
-        <div class="sorting-label-field"><dt>食堂名称</dt><dd>${text(row.canteen)}</dd></div>
+        <div class="sorting-label-field"><dt>食堂</dt><dd>${text(row.canteen)}</dd></div>
         <div class="sorting-label-field"><dt>线路</dt><dd>${text(row.route)}</dd></div>
         <div class="sorting-label-field sorting-label-field-meal"><dt>餐次</dt><dd>${text(row.mealName)}</dd></div>
         <div class="sorting-label-field sorting-label-field-goods"><dt class="sorting-label-sr-only">商品名称</dt><dd>${text(goodsName)}</dd>${sortingQr}</div>

@@ -59,16 +59,21 @@
     return !demand.canSubmit ? demand.message : '';
   }
 
-  function render() {
-    const demand = preview();
-    const visibleRows = [...visibleCodes]
+  function visibleRowsFor(demand = preview()) {
+    return [...visibleCodes]
       .map((code) => demand.rows.find((row) => String(row.productCode) === code))
       .filter(Boolean);
+  }
+
+  function render() {
+    const demand = preview();
+    const visibleRows = visibleRowsFor(demand);
+    const cannotRemoveLast = visibleRows.length <= 1;
     const rows = visibleRows.map((row, index) => {
       const rawQuantity = quantities[row.productCode] ?? '';
       const orderQty = quantityFor(row.productCode);
       const quantityText = rawQuantity == null || rawQuantity === '' ? '0' : String(rawQuantity);
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td><td class="is-number">¥${money(row.orderPrice)}</td><td class="is-number school-recipe-direct-confirm-quantity-cell"><span class="school-recipe-direct-confirm-quantity-value" aria-label="${escapeHtml(row.productName)}采购数量">${escapeHtml(quantityText)}</span></td><td class="is-number" data-aux-simple-subtotal="${escapeHtml(row.productCode)}">¥${money(row.orderPrice * orderQty)}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-aux-simple-remove="${escapeHtml(row.productCode)}" aria-label="移除${escapeHtml(row.productName)}">移除</button></td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(`${row.productName}（${row.unit}/${row.brand}/${row.spec}）`)}</td><td>${escapeHtml(row.productCode)}</td><td>${escapeHtml(row.unit)}</td><td class="is-number">¥${money(row.orderPrice)}</td><td class="is-number school-recipe-direct-confirm-quantity-cell"><span class="school-recipe-direct-confirm-quantity-value" aria-label="${escapeHtml(row.productName)}采购数量">${escapeHtml(quantityText)}</span></td><td class="is-number" data-aux-simple-subtotal="${escapeHtml(row.productCode)}">¥${money(row.orderPrice * orderQty)}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-aux-simple-remove="${escapeHtml(row.productCode)}" aria-label="移除${escapeHtml(row.productName)}" title="${cannotRemoveLast ? '至少保留一项商品' : '移除商品'}"${cannotRemoveLast ? ' disabled' : ''}>移除</button></td></tr>`;
     }).join('');
     const total = visibleRows.reduce((sum, row) => sum + row.orderPrice * quantityFor(row.productCode), 0);
     const warning = warningFor(demand);
@@ -139,6 +144,7 @@
     if (event.target.closest('[data-aux-simple-back]')) { navigate(backUrl); return; }
     const removeButton = event.target.closest('[data-aux-simple-remove]');
     if (removeButton) {
+      if (removeButton.disabled || visibleRowsFor().length <= 1) return;
       const code = removeButton.dataset.auxSimpleRemove;
       visibleCodes.delete(code);
       delete quantities[code];

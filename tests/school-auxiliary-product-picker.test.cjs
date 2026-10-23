@@ -88,6 +88,74 @@ test('人数填报可批量添加商品，取消选择不保存', () => {
 
 });
 
+test('没有实际就餐人数时禁用批量添加商品，有人数后启用', () => {
+  const context = loadApp({ services: [
+    'assets/js/data/school-reference-data.js',
+    'assets/js/services/school-canteen-config-service.js',
+    'assets/js/services/school-recipe-service.js',
+    'assets/js/services/school-recipe-attendance-service.js',
+    'assets/js/services/school-order-service.js',
+    'assets/js/services/school-recipe-auxiliary-direct-service.js'
+  ] }).context;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const scope = String(canteen.id || canteen.name);
+  const menu = context.SchoolRecipeService.getAll()[0];
+  const participants = context.SchoolRecipeAttendanceService.participantsFor(canteen);
+  const date = String(menu.date).slice(0, 10);
+  const mealDraft = Object.fromEntries(menu.meals.map((meal) => [meal.key,
+    Object.fromEntries(participants.map((participant) => [participant.key, 0]))
+  ]));
+  context.AppStorage.write('school-recipe-auxiliary-current-canteen', '第一食堂');
+  context.AppStorage.write('school-recipe-auxiliary-attendance-drafts-v1', {
+    [scope]: { [date]: { __manual: true, ...mealDraft } }
+  });
+  context.location = { search: `?mode=people&date=${date}&canteen=${encodeURIComponent(scope)}` };
+
+  const page = { outerHTML: '' };
+  const modal = { outerHTML: '' };
+  const button = { disabled: false, classList: { toggle(_name, disabled) { button.disabled = disabled; } } };
+  const listeners = {};
+  const focusTarget = { focus() {} };
+  context.AppShell = { mount({ content }) {
+    page.outerHTML = content;
+    return {
+      querySelector(selector) {
+        if (selector === '#schoolAuxiliaryPage') return page;
+        if (selector === '[data-aux-product-modal]') return modal;
+        if (selector === '[data-aux-product-open]') return button;
+        if (selector === '[data-aux-product-keyword]') return focusTarget;
+        return null;
+      },
+      addEventListener(type, handler) { listeners[type] = handler; }
+    };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
+
+  const target = (selector, values = {}) => ({
+    closest(candidate) { return candidate === selector ? values : null; },
+    matches() { return false; }
+  });
+  assert.match(page.outerHTML, /class="btn btn-blue btn-sm btn-disabled" type="button" data-aux-product-open disabled/);
+  listeners.click({ target: target('[data-aux-product-open]') });
+  assert.doesNotMatch(page.outerHTML, /role="dialog" aria-modal="true" aria-label="添加商品"/);
+
+  const participant = participants[0];
+  const meal = menu.meals[0];
+  const count = { innerHTML: '0' };
+  const input = {
+    value: '1',
+    dataset: { mealKey: meal.key, personType: participant.key },
+    classList: { toggle() {} },
+    closest(selector) { return selector === 'tr' ? { querySelector: () => count } : null; },
+    toggleAttribute() {},
+    setAttribute() {}
+  };
+  listeners.input({ target: target('[data-person-type]', input) });
+  assert.equal(button.disabled, false);
+  listeners.click({ target: target('[data-aux-product-open]') });
+  assert.match(page.outerHTML, /role="dialog" aria-modal="true" aria-label="添加商品"/);
+});
+
 test('设为默认的干调商品按食堂保存，并在再次打开填报页时自动显示', () => {
   const context = loadApp({ services: [
     'assets/js/data/school-reference-data.js',

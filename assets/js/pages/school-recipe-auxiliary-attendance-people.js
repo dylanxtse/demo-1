@@ -459,7 +459,8 @@
     const mealTabs = shouldSplitOrderByMeal() && visibleMeals.length
       ? `<div class="school-auxiliary-meal-tabs" role="tablist">${visibleMeals.map(([key, meal]) => `<button class="school-auxiliary-meal-tab ${key === state.meal ? 'is-active' : ''}" type="button" data-meal="${key}" role="tab" aria-selected="${key === state.meal}">${meal.name}</button>`).join('')}</div>`
       : '';
-    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm" type="button" data-aux-product-open>批量添加商品</button></div><div id="schoolAuxiliaryMealTabs">${mealTabs}</div><div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm${state.selected.length ? '' : ' btn-disabled'}" type="button" data-confirm-demand${state.selected.length ? '' : ' disabled'}>确认需求</button></div></footer>`;
+    const productPickerDisabled = totalDiningPeople() <= 0;
+    return `<div class="school-auxiliary-scroll">${renderPeopleTable()}<div class="school-auxiliary-section-title"><span class="section-title-mark">需求测算</span><button class="btn btn-blue btn-sm${productPickerDisabled ? ' btn-disabled' : ''}" type="button" data-aux-product-open${productPickerDisabled ? ' disabled' : ''}>批量添加商品</button></div><div id="schoolAuxiliaryMealTabs">${mealTabs}</div><div id="schoolAuxiliaryRows">${renderRows()}</div></div><footer class="school-auxiliary-footer"><div class="school-recipe-attendance-draft-actions"><div class="school-recipe-attendance-reset-dropdown"><button type="button" class="btn btn-sm school-recipe-attendance-reset-trigger" data-aux-reset-toggle aria-expanded="false" aria-haspopup="menu">重置<svg class="school-recipe-attendance-reset-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="school-recipe-attendance-reset-menu" role="menu"><button type="button" role="menuitem" data-aux-reset="current">重置当前人数</button><button type="button" role="menuitem" data-aux-reset="all">重置全部人数</button></div></div><button type="button" class="btn btn-sm" data-fill-defaults>填写默认人数</button></div><div class="school-auxiliary-actions"><button class="btn btn-primary btn-sm${state.selected.length ? '' : ' btn-disabled'}" type="button" data-confirm-demand${state.selected.length ? '' : ' disabled'}>确认需求</button></div></footer>`;
   }
 
   function renderOrderModeSwitcher() {
@@ -530,6 +531,13 @@
     const page = root.querySelector('#schoolAuxiliaryPage');
     if (page) page.outerHTML = renderPage();
   };
+  const refreshProductPickerButton = () => {
+    const button = root.querySelector('[data-aux-product-open]');
+    if (!button) return;
+    const disabled = totalDiningPeople() <= 0;
+    button.disabled = disabled;
+    button.classList.toggle('btn-disabled', disabled);
+  };
   const rerenderRows = () => {
     const rows = root.querySelector('#schoolAuxiliaryRows');
     if (rows) rows.innerHTML = renderRows();
@@ -570,6 +578,7 @@
 
   root.addEventListener('click', (event) => {
     if (event.target.closest('[data-aux-product-open]')) {
+      if (totalDiningPeople() <= 0) return;
       state.productModalOpen = true;
       state.modalPage = 1;
       state.modalSelected = new Set(state.selected.map((product) => product.id));
@@ -958,6 +967,7 @@
     persistDraft();
     refreshDatePanel();
     refreshMealTabs();
+    refreshProductPickerButton();
     const total = input.closest('tr')?.querySelector('[data-people-total]');
     if (total) total.innerHTML = `${configuredGroups.reduce((sum, participant) => sum + Number(valueForParticipant(meal, participant) || 0), 0)}`;
     rerenderRows();
