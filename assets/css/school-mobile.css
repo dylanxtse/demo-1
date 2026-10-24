@@ -5457,6 +5457,27 @@ button.school-mobile-demand-row:active {
   font-size: 12px;
 }
 
+.school-mobile-demand-picker-select-all {
+  display: flex;
+  min-height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.school-mobile-demand-picker-select-all button {
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  color: var(--mobile-blue);
+  background: transparent;
+  font-size: 12px;
+}
+
+.school-mobile-demand-picker-select-all button:disabled {
+  color: #b7c0cc;
+}
+
 .school-mobile-demand-picker-participants {
   display: flex;
   flex: 0 0 auto;
