@@ -2032,16 +2032,22 @@
     });
   }
 
+  function applyAuxiliaryProductPickerSearch(keyword) {
+    const normalizedKeyword = String(keyword || '').trim();
+    state.sheet.keyword = normalizedKeyword;
+    state.sheet.draftKeyword = normalizedKeyword;
+    render();
+  }
+
   function renderAuxiliaryProductPicker() {
     const picker = state.sheet || {};
     const mealKey = auxiliarySelectionKey(picker.mealKey || '');
     const currentIds = new Set(auxiliarySelectedProductsForMeal(mealKey).map((product) => product.id));
     const selectedIds = new Set((picker.selectedIds || []).filter((id) => auxiliaryProducts.some((product) => product.id === id)));
-    const filteredProducts = auxiliaryProductPickerResults(picker);
+    const filteredProducts = auxiliaryProductPickerResults(picker).filter((product) => !currentIds.has(product.id));
     const allSelectableSelected = filteredProducts.length > 0 && filteredProducts.every((product) => selectedIds.has(product.id));
     const addedCount = [...selectedIds].filter((id) => !currentIds.has(id)).length;
-    const removedCount = [...currentIds].filter((id) => !selectedIds.has(id)).length;
-    const isDirty = addedCount > 0 || removedCount > 0;
+    const isDirty = addedCount > 0;
     const rows = filteredProducts.map((product) => {
       const isSelected = selectedIds.has(product.id);
       const searchText = [product.name, product.auxiliaryName, product.code, product.brand, product.spec].join(' ').toLocaleLowerCase();
@@ -2051,9 +2057,10 @@
         + '</button>';
     }).join('');
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-product-picker-sheet" role="dialog" aria-modal="true" aria-label="添加干调商品">'
-      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" data-action="cancel-auxiliary-products">取消</button><h2>添加商品</h2><button type="button" class="is-primary" data-action="confirm-auxiliary-products"' + (isDirty ? '' : ' disabled') + '>' + (addedCount && !removedCount ? '添加（' + number(addedCount) + '）' : removedCount ? '保存' : '添加') + '</button></header>'
-      + '<label class="school-mobile-demand-picker-search"><span aria-hidden="true">⌕</span><input type="search" data-action="auxiliary-product-search" value="' + escapeHtml(picker.keyword || '') + '" placeholder="搜索商品名称或编号" aria-label="搜索商品名称或编号"></label>'
-      + '<div class="school-mobile-demand-picker-select-all"><button type="button" data-action="toggle-all-auxiliary-product-picker" aria-pressed="' + allSelectableSelected + '"' + (filteredProducts.length ? '' : ' disabled') + '>' + (allSelectableSelected ? '取消全选' : '全选') + '</button></div>'
+      + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><button type="button" data-action="cancel-auxiliary-products">取消</button><h2>添加商品</h2><button type="button" class="is-primary" data-action="confirm-auxiliary-products"' + (isDirty ? '' : ' disabled') + '>' + (addedCount ? '添加（' + number(addedCount) + '）' : '添加') + '</button></header>'
+      + '<div class="school-mobile-demand-picker-toolbar"><div class="school-mobile-demand-picker-select-all"><button type="button" data-action="toggle-all-auxiliary-product-picker" aria-pressed="' + allSelectableSelected + '"' + (filteredProducts.length ? '' : ' disabled') + '>' + (allSelectableSelected ? '取消全选' : '全选') + '</button></div>'
+      + '<label class="school-mobile-demand-picker-search"><span aria-hidden="true">⌕</span><input type="search" data-action="auxiliary-product-search" value="' + escapeHtml(picker.draftKeyword ?? picker.keyword ?? '') + '" placeholder="商品名称或编号" aria-label="商品名称或编号"></label>'
+      + '<button type="button" class="school-mobile-demand-picker-search-submit" data-action="search-auxiliary-product-picker">查询</button></div>'
       + '<div class="school-mobile-demand-picker-list" role="list">' + rows + '<div class="school-mobile-demand-picker-empty" data-auxiliary-picker-empty' + (rows ? ' hidden' : '') + '>未找到匹配商品</div></div>'
       + '</section></div>';
   }
@@ -4474,14 +4481,22 @@
       if (state.tab !== 'auxiliary' || state.demandEntryMode !== 'people' || state.attendanceInputMode === 'non-dining') return;
       const menu = menuFor(state.date);
       const mealKey = shouldSplitConfirmByMeal() ? (activeAttendanceMeal(menu)?.key || 'all-meals') : 'all-meals';
-      state.sheet = { type: 'auxiliary-product-picker', mealKey, keyword: '', selectedIds: auxiliarySelectedProductsForMeal(mealKey).map((product) => product.id) };
+      state.sheet = { type: 'auxiliary-product-picker', mealKey, keyword: '', draftKeyword: '', selectedIds: [] };
       render();
+      return;
+    }
+
+    if (action === 'search-auxiliary-product-picker' && state.sheet?.type === 'auxiliary-product-picker') {
+      const input = app.querySelector('[data-action="auxiliary-product-search"]');
+      input?.blur();
+      applyAuxiliaryProductPickerSearch(input?.value ?? state.sheet.draftKeyword ?? '');
       return;
     }
 
     if (action === 'toggle-auxiliary-product-picker' && state.sheet?.type === 'auxiliary-product-picker') {
       const productId = String(target.dataset.auxiliaryId || '');
       if (!auxiliaryProducts.some((product) => product.id === productId)) return;
+      if (auxiliarySelectedProductsForMeal(state.sheet.mealKey).some((product) => product.id === productId)) return;
       const selectedIds = new Set(state.sheet.selectedIds || []);
       if (selectedIds.has(productId)) selectedIds.delete(productId);
       else selectedIds.add(productId);
@@ -4491,7 +4506,8 @@
     }
 
     if (action === 'toggle-all-auxiliary-product-picker' && state.sheet?.type === 'auxiliary-product-picker') {
-      const filteredProducts = auxiliaryProductPickerResults(state.sheet);
+      const existingIds = new Set(auxiliarySelectedProductsForMeal(state.sheet.mealKey).map((product) => product.id));
+      const filteredProducts = auxiliaryProductPickerResults(state.sheet).filter((product) => !existingIds.has(product.id));
       if (!filteredProducts.length) return;
       const selectedIds = new Set(state.sheet.selectedIds || []);
       const allSelected = filteredProducts.every((product) => selectedIds.has(product.id));
@@ -4506,18 +4522,16 @@
 
     if (action === 'confirm-auxiliary-products' && state.sheet?.type === 'auxiliary-product-picker') {
       const key = auxiliarySelectionKey(state.sheet.mealKey);
-      const existing = new Set(auxiliarySelectedProductsForMeal(key).map((product) => product.id));
-      const selected = [...new Set(state.sheet.selectedIds || [])].filter((id) => auxiliaryProducts.some((product) => product.id === id));
-      const selectedSet = new Set(selected);
-      const added = selected.filter((id) => !existing.has(id));
-      const removed = [...existing].filter((id) => !selectedSet.has(id));
-      if (!added.length && !removed.length) return;
-      state.auxiliarySelectedByMeal[key] = selected;
+      const existing = [...new Set(auxiliarySelectedProductsForMeal(key).map((product) => product.id))];
+      const existingSet = new Set(existing);
+      const added = [...new Set(state.sheet.selectedIds || [])]
+        .filter((id) => auxiliaryProducts.some((product) => product.id === id) && !existingSet.has(id));
+      if (!added.length) return;
+      state.auxiliarySelectedByMeal[key] = [...existing, ...added];
       persistAuxiliaryProductSelections();
       state.sheet = null;
       renderAttendancePreservingScroll();
-      if (removed.length) showToast('商品已更新');
-      else if (added.length) showToast(added.length + ' 种商品已添加');
+      showToast(added.length + ' 种商品已添加');
       return;
     }
 
@@ -5171,6 +5185,14 @@
     }
   });
 
+  app.addEventListener('keydown', (event) => {
+    const target = event.target.closest?.('[data-action="auxiliary-product-search"]');
+    if (!target || state.sheet?.type !== 'auxiliary-product-picker' || event.key !== 'Enter') return;
+    event.preventDefault();
+    target.blur();
+    applyAuxiliaryProductPickerSearch(target.value);
+  });
+
   app.addEventListener('input', (event) => {
     const target = event.target.closest('[data-action]');
     if (!target || !app.contains(target)) return;
@@ -5186,31 +5208,8 @@
       return;
     }
     if (action === 'auxiliary-product-search' && state.sheet?.type === 'auxiliary-product-picker') {
-      state.sheet.keyword = target.value || '';
-      const keyword = state.sheet.keyword.trim().toLocaleLowerCase();
-      let visibleCount = 0;
-      let selectableCount = 0;
-      let selectedCount = 0;
-      app.querySelectorAll('.school-mobile-demand-picker-option').forEach((option) => {
-        const visible = !keyword || String(option.dataset.searchText || '').includes(keyword);
-        option.hidden = !visible;
-        if (visible) {
-          visibleCount += 1;
-          if (!option.disabled) {
-            selectableCount += 1;
-            if (option.getAttribute('aria-pressed') === 'true') selectedCount += 1;
-          }
-        }
-      });
-      const selectAll = app.querySelector('[data-action="toggle-all-auxiliary-product-picker"]');
-      if (selectAll) {
-        const allSelected = selectableCount > 0 && selectedCount === selectableCount;
-        selectAll.textContent = allSelected ? '取消全选' : '全选';
-        selectAll.disabled = selectableCount === 0;
-        selectAll.setAttribute('aria-pressed', String(allSelected));
-      }
-      const empty = app.querySelector('[data-auxiliary-picker-empty]');
-      if (empty) empty.hidden = visibleCount > 0;
+      state.sheet.draftKeyword = target.value || '';
+      if (!state.sheet.draftKeyword.trim()) applyAuxiliaryProductPickerSearch('');
       return;
     }
     if ((action === 'order-detail-quantity' || action === 'order-detail-remark') && state.orderDetailEditing) {

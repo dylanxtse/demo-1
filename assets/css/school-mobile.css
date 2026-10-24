@@ -5429,13 +5429,23 @@ button.school-mobile-demand-row:active {
   color: #b7c0cc;
 }
 
+.school-mobile-demand-picker-toolbar {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 36px;
+  align-items: center;
+  gap: 6px;
+  margin: 11px 0 12px;
+}
+
 .school-mobile-demand-picker-search {
   display: flex;
   height: 36px;
-  flex: 0 0 36px;
+  min-width: 0;
+  flex: 1 1 auto;
   align-items: center;
   gap: 7px;
-  margin: 11px 0 8px;
+  margin: 0;
   padding: 0 10px;
   border: 1px solid #dfe7f0;
   border-radius: 9px;
@@ -5459,23 +5469,36 @@ button.school-mobile-demand-row:active {
 
 .school-mobile-demand-picker-select-all {
   display: flex;
-  min-height: 32px;
-  flex: 0 0 32px;
+  min-height: 36px;
+  flex: 0 0 auto;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .school-mobile-demand-picker-select-all button {
-  min-height: 28px;
-  padding: 0 6px;
+  min-height: 36px;
+  padding: 0 5px;
   border: 0;
   color: var(--mobile-blue);
   background: transparent;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .school-mobile-demand-picker-select-all button:disabled {
   color: #b7c0cc;
+}
+
+.school-mobile-demand-picker-search-submit {
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--mobile-blue);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .school-mobile-demand-picker-participants {
@@ -5524,6 +5547,11 @@ button.school-mobile-demand-row:active {
   color: #24324a;
   background: #fff;
   text-align: left;
+}
+
+.school-mobile-demand-picker-option[hidden],
+.school-mobile-demand-picker-empty[hidden] {
+  display: none;
 }
 
 .school-mobile-demand-picker-option.is-selected {

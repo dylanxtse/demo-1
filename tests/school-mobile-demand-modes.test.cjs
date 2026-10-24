@@ -303,14 +303,10 @@ test('手机端人数填报读取Web默认干调商品，支持左滑移除和�
   assert.match(app.innerHTML, /class="school-mobile-demand-remove"[^>]*data-action="remove-auxiliary-product"[^>]*aria-hidden="true" tabindex="-1"/);
 
   dispatch('click', 'open-auxiliary-products');
-  assert.match(app.innerHTML, /class="school-mobile-demand-picker-option is-selected"[^>]*data-action="toggle-auxiliary-product-picker"[^>]*data-auxiliary-id="aux-oil"[^>]*aria-pressed="true"/);
-  assert.doesNotMatch(app.innerHTML, /data-auxiliary-id="aux-oil"[^>]* disabled/);
-  dispatch('click', 'toggle-auxiliary-product-picker', { auxiliaryId: 'aux-oil' });
-  assert.match(app.innerHTML, /data-action="toggle-auxiliary-product-picker"[^>]*data-auxiliary-id="aux-oil"[^>]*aria-pressed="false"/);
-  assert.match(app.innerHTML, /data-action="confirm-auxiliary-products">保存<\/button>/);
-  dispatch('click', 'toggle-auxiliary-product-picker', { auxiliaryId: 'aux-oil' });
+  assert.doesNotMatch(app.innerHTML, /data-action="toggle-auxiliary-product-picker"[^>]*data-auxiliary-id="aux-oil"/);
   assert.match(app.innerHTML, /data-action="confirm-auxiliary-products" disabled>添加<\/button>/);
   dispatch('click', 'cancel-auxiliary-products');
+  assert.match(app.innerHTML, /data-action="open-auxiliary-demand-detail"[^>]*data-auxiliary-id="aux-oil"/);
 
   const removeButtonAttributes = {};
   const removeButton = {
