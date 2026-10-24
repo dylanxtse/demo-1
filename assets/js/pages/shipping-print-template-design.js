@@ -25,9 +25,9 @@
     { code: 'SP0300017', name: '金龙鱼豆油（斤/--/--）', unit: '斤', orderQty: '6.80', unitPrice: '--', shippingQty: '0.00', subtotal: '0.00', packageQty: '--', packageUnit: '--', accepted: '', productionDate: '' }
   ];
   const presets = [
-    { id: 'order-standard', type: 'order', name: '订单配送单（标准）', note: '包含订单信息、商品明细、二维码和签收区', isDefault: true },
-    { id: 'order-compact', type: 'order', name: '订单配送单（简洁）', note: '保留核心字段，适合较多商品的订单', isDefault: false },
-    { id: 'shipping-standard', type: 'shipping', name: '发货配送单（标准）', note: '按客户与食堂汇总发货明细', isDefault: true }
+    { id: 'order-standard', type: 'order', name: '订单配送单（标准）', note: '包含订单信息、商品明细、二维码和签收区' },
+    { id: 'order-compact', type: 'order', name: '订单配送单（简洁）', note: '保留核心字段，适合较多商品的订单' },
+    { id: 'shipping-standard', type: 'shipping', name: '发货配送单（标准）', note: '按客户与食堂汇总发货明细' }
   ];
   const pageOptions = [
     { value: 'order', label: '订单发货出库' },
@@ -51,17 +51,31 @@
     type: 'order',
     view: 'list',
     current: null,
-    config: null
+    config: null,
+    expandedTypes: new Set()
   };
   const root = window.AppShell.mount({ title: '打印模版', content: '<div id="shippingTemplateDesignRoot"></div>' });
   const host = root.querySelector('#shippingTemplateDesignRoot');
 
-  function typeName(type) { return pageOptions.find((item) => item.value === type)?.label || type || '其他页面'; }
-
   function renderList() {
+    const rows = pageOptions.map((page) => {
+      const pagePresets = presets.filter((item) => item.type === page.value);
+      if (!pagePresets.length) return '';
+      const canExpand = pagePresets.length > 1;
+      const expanded = state.expandedTypes.has(page.value);
+      const pageCell = `<div class="shipping-template-page-name"><strong>${escapeHtml(page.label)}</strong>${!canExpand ? `<span>${escapeHtml(pagePresets[0].name)}</span>` : ''}</div>`;
+      const action = canExpand
+        ? `<button type="button" class="shipping-template-outline shipping-template-expand" data-template-toggle="${escapeHtml(page.value)}" aria-expanded="${expanded}" aria-controls="shippingTemplateChildren-${escapeHtml(page.value)}"><span class="shipping-template-expand-icon" aria-hidden="true">›</span>${expanded ? '收起' : `展开 ${pagePresets.length} 个模版`}</button>`
+        : `<button type="button" class="shipping-template-outline" data-template-open="${escapeHtml(pagePresets[0].id)}">查看设计</button>`;
+      const parent = `<tr class="shipping-template-page-row" data-template-page-row="${escapeHtml(page.value)}"><td>${pageCell}</td><td>${pagePresets.length} 个模版</td><td>A4 横向</td><td>${action}</td></tr>`;
+      const children = canExpand && expanded
+        ? pagePresets.map((item) => `<tr class="shipping-template-child-row" data-template-child-row="${escapeHtml(page.value)}"><td><span class="shipping-template-child-marker" aria-hidden="true">└</span><strong>${escapeHtml(item.name)}</strong></td><td>—</td><td>A4 横向</td><td><button type="button" class="shipping-template-outline" data-template-open="${escapeHtml(item.id)}">查看设计</button></td></tr>`).join('')
+        : '';
+      return `<tbody id="shippingTemplateChildren-${escapeHtml(page.value)}">${parent}${children}</tbody>`;
+    }).join('');
     return `<section class="shipping-template-page shipping-template-list-page">
       <header class="shipping-template-page-header shipping-template-list-toolbar"><button type="button" class="shipping-template-primary" data-template-action="new">＋ 新增</button></header>
-      <div class="shipping-template-table-wrap"><table class="shipping-template-table"><thead><tr><th>模版名称</th><th>适用页面</th><th>纸张</th><th>状态</th><th>操作</th></tr></thead><tbody>${presets.map((item) => `<tr data-template-row="${escapeHtml(item.id)}"><td><strong>${escapeHtml(item.name)}</strong></td><td>${escapeHtml(typeName(item.type))}</td><td>A4 横向</td><td>${item.isDefault ? '<span class="shipping-template-default">默认模版</span>' : '<span class="shipping-template-draft">示例模版</span>'}</td><td><button type="button" class="shipping-template-outline" data-template-open="${escapeHtml(item.id)}">查看设计</button></td></tr>`).join('')}</tbody></table></div>
+      <div class="shipping-template-table-wrap"><table class="shipping-template-table"><thead><tr><th>适用页面</th><th>模版数量</th><th>纸张</th><th>操作</th></tr></thead>${rows}</table></div>
     </section>`;
   }
 
@@ -96,6 +110,14 @@
   function updatePreview() { const preview = host.querySelector('#shippingTemplatePreview'); if (preview) preview.innerHTML = renderPreview(); }
 
   host.addEventListener('click', (event) => {
+    const toggleButton = event.target.closest('[data-template-toggle]');
+    if (toggleButton) {
+      const type = toggleButton.dataset.templateToggle;
+      if (state.expandedTypes.has(type)) state.expandedTypes.delete(type);
+      else state.expandedTypes.add(type);
+      render();
+      return;
+    }
     const openButton = event.target.closest('[data-template-open]');
     if (openButton) {
       const preset = presets.find((item) => item.id === openButton.dataset.templateOpen);
