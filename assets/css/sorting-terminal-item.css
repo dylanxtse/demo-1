@@ -156,6 +156,5 @@ button { cursor: pointer; }
   .sorting-terminal-item-main { padding: 0; background: #fff; }
   .sorting-terminal-item-panel { overflow: visible; }
   .sorting-terminal-item-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  body[data-print-customer] .sorting-terminal-item-card:not(.is-print-target) { display: none; }
   .sorting-terminal-item-card { break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }

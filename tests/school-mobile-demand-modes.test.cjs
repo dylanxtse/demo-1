@@ -156,6 +156,7 @@ test('两个手机入口先选择填报方式，干调数量填写和确认分�
   dispatch('click', 'direct-continue');
   assert.match(app.innerHTML, /school-mobile-auxiliary-simple-confirm-page/);
   assert.match(app.innerHTML, /商品需求汇总|期望送达时间/);
+  assert.match(app.innerHTML, /<small>共¥[\d,]+\.\d{2}<\/small>/);
   assert.doesNotMatch(app.innerHTML, /用料日期|餐次切换/);
   assert.match(app.innerHTML, /data-action="direct-submit" disabled/);
   dispatch('click', 'open-expected-at');
@@ -465,6 +466,7 @@ for (const splitOrderByMeal of [true, false]) {
 
     assert.match(app.innerHTML, /school-mobile-direct-confirm-page/);
     assert.match(app.innerHTML, /aria-label="人员类型切换"/);
+  assert.match(app.innerHTML, /<small>共¥[\d,]+\.\d{2}<\/small>/);
     assert.equal(app.innerHTML.includes('aria-label="餐次切换"'), splitOrderByMeal);
     expectTotal(firstRow.orderPrice * 2 + (splitOrderByMeal ? 0 : secondRow.orderPrice * 4));
     dispatch('click', 'select-direct-participant', { participantKey: secondPerson.key });

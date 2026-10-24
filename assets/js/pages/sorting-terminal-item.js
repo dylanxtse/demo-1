@@ -192,7 +192,6 @@
     printButton.type = 'button';
     printButton.dataset.action = 'print';
     printButton.textContent = '打印';
-    printButton.disabled = !task.done;
     printButton.setAttribute('aria-label', `打印${task.name}的分拣单`);
     actions.append(sortButton, printButton);
     card.append(body, actions);
@@ -364,9 +363,23 @@
     const task = tasks[Number(card.dataset.id)];
     const button = event.target.closest('[data-action]');
     if (button?.dataset.action === 'print') {
-      document.body.dataset.printCustomer = String(task.id);
-      card.classList.add('is-print-target');
-      window.print();
+      const payload = {
+        version: '20261019-sorting-label-print-1',
+        mode: 'product',
+        source: 'sorting-terminal-item-order',
+        returnSearch: window.location.search,
+        printedAt: new Date().toISOString(),
+        rows: [{
+          id: `SORT-TERMINAL-PRODUCT-${productCode || taskId || 'ITEM'}-${task.id}-ORDER`,
+          goodsCode: productCode,
+          goodsName: productName,
+          customerName: task.name,
+          canteen: task.canteen,
+          unit,
+          orderQty: task.amount
+        }]
+      };
+      window.location.href = `./sorting-label-print.html?printData=${encodeURIComponent(JSON.stringify(payload))}`;
       return;
     }
     if (task.done) {
@@ -375,10 +388,6 @@
     }
     if (!button) return;
     openTaskDialog(task);
-  });
-  window.addEventListener('afterprint', () => {
-    delete document.body.dataset.printCustomer;
-    grid.querySelectorAll('.is-print-target').forEach((card) => card.classList.remove('is-print-target'));
   });
   render();
   const returnDialogParam = params.get('returnDialog');

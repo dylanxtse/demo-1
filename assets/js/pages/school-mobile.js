@@ -1713,7 +1713,7 @@
   function renderAuxiliarySimpleConfirm() {
     const draft = readAuxiliarySimpleDraft();
     const preview = auxiliaryDirectService.buildSimpleDraftPreview(currentCanteen(), draft.quantities);
-    const rows = preview.selectedRows.map((row) => '<div class="school-mobile-direct-confirm-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode) + ' · ' + escapeHtml(row.unit) + '</small></div><div><strong>' + number(row.orderQty) + ' ' + escapeHtml(row.unit) + '</strong><small>' + directMoney(row.orderQty * row.orderPrice) + '</small></div></div>').join('');
+    const rows = preview.selectedRows.map((row) => '<div class="school-mobile-direct-confirm-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode) + ' · ' + escapeHtml(row.unit) + '</small></div><div><strong>' + number(row.orderQty) + ' ' + escapeHtml(row.unit) + '</strong><small>共' + directMoney(row.orderQty * row.orderPrice) + '</small></div></div>').join('');
     const total = preview.selectedRows.reduce((sum, row) => sum + row.orderQty * row.orderPrice, 0);
     return '<div class="school-mobile-confirm-page school-mobile-direct-confirm-page school-mobile-auxiliary-simple-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><div class="school-mobile-field"><span>食堂</span><strong>' + escapeHtml(state.canteen) + '</strong></div><div class="school-mobile-field"><span>期望送达时间</span><button type="button" class="school-mobile-date-picker-trigger" data-action="open-expected-at" aria-label="期望送达时间：' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '"><span>' + escapeHtml(expectedAtDisplayValue(state.expectedAt)) + '</span><span aria-hidden="true">›</span></button></div></section>'
@@ -1747,7 +1747,7 @@
       }
     });
     const visibleRows = [...groupedRows.values()];
-    const rows = visibleRows.map(({ row, quantity, amount }) => '<div class="school-mobile-direct-confirm-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode || '') + ' · ' + escapeHtml(row.unit || '') + '</small></div><div><strong>' + number(quantity) + ' ' + escapeHtml(row.unit || '') + '</strong><small>' + directMoney(amount) + '</small></div></div>').join('');
+    const rows = visibleRows.map(({ row, quantity, amount }) => '<div class="school-mobile-direct-confirm-row"><div><strong>' + escapeHtml(row.productName) + '</strong><small>' + escapeHtml(row.productCode || '') + ' · ' + escapeHtml(row.unit || '') + '</small></div><div><strong>' + number(quantity) + ' ' + escapeHtml(row.unit || '') + '</strong><small>共' + directMoney(amount) + '</small></div></div>').join('');
     const total = visibleRows.reduce((sum, row) => sum + row.amount, 0);
     return '<div class="school-mobile-confirm-page school-mobile-direct-confirm-page"><div class="school-mobile-scroll">'
       + '<section class="school-mobile-confirm-card"><h2>用料日期</h2><div class="school-mobile-confirm-date-list">' + preview.dates.map((date) => '<div class="school-mobile-confirm-date is-selected is-complete" aria-label="用料日期 ' + escapeHtml(date) + '"><strong>' + escapeHtml(shortDate(date)) + '</strong><small class="school-mobile-confirm-date-weekday">星期' + escapeHtml(weekdayText(date)) + '</small></div>').join('') + '</div></section>'

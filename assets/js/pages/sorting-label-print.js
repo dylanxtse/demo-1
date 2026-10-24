@@ -60,11 +60,10 @@
       const rawOrderQty = Number(row.orderQty);
       const orderQty = Number.isFinite(rawOrderQty) && rawOrderQty > 0 ? rawOrderQty : 0;
       const packageLabelQuantity = Number(row.packageLabelQuantity);
-      if (Number.isFinite(packageLabelQuantity) && packageLabelQuantity > 0) {
-        return [{ row, sequence: 1, total: 1, quantity: packageLabelQuantity, orderQty }];
-      }
-      const breakdown = window.SortingPackageBreakdown?.calculate(row, orderQty);
-      if (!breakdown) return [{ row, sequence: 1, total: 1, quantity: orderQty, orderQty, kind: 'unpacked', packageUnit: '', coefficient: 0 }];
+      const labelQuantity = Number.isFinite(packageLabelQuantity) && packageLabelQuantity > 0
+        ? packageLabelQuantity : orderQty;
+      const breakdown = window.SortingPackageBreakdown?.calculate(row, labelQuantity);
+      if (!breakdown) return [{ row, sequence: 1, total: 1, quantity: labelQuantity, orderQty, kind: 'unpacked', packageUnit: '', coefficient: 0 }];
 
       const fullCount = Math.max(0, Math.floor(Number(breakdown.packageCount) || 0));
       const remainder = Number(breakdown.packageRemainder) || 0;
@@ -114,14 +113,19 @@
   const payload = readPayload();
   const labels = expandLabels(enrichRows(payload?.rows || []));
   const previewTitle = payload?.mode === 'customer' ? '客户分拣标签' : '商品分拣标签';
-  const terminalSource = payload?.source === 'sorting-terminal-customer-item' || payload?.source === 'sorting-terminal-item';
-  const returnHref = payload?.source === 'sorting-terminal-customer-item'
+  const productOrderLabelSource = payload?.source === 'sorting-terminal-item-order';
+  const customerOrderLabelSource = payload?.source === 'sorting-terminal-customer-item-order';
+  const orderLabelSource = productOrderLabelSource || customerOrderLabelSource;
+  const terminalSource = payload?.source === 'sorting-terminal-customer-item'
+    || payload?.source === 'sorting-terminal-item' || orderLabelSource;
+  const customerTerminalSource = payload?.source === 'sorting-terminal-customer-item' || customerOrderLabelSource;
+  const returnHref = customerTerminalSource
     ? `./sorting-terminal-customer-item.html?customer=${encodeURIComponent(payload.customerCode || '')}`
-    : payload?.source === 'sorting-terminal-item'
+    : payload?.source === 'sorting-terminal-item' || productOrderLabelSource
       ? `./sorting-terminal-item.html${String(payload.returnSearch || '').startsWith('?') ? payload.returnSearch : ''}`
       : './sorting-management.html';
   const returnUrl = new URL(returnHref, window.location.href);
-  if (terminalSource) {
+  if (terminalSource && !orderLabelSource) {
     const rowId = String(payload.rows[0]?.id || '');
     const inferredId = Number(rowId.match(/-(\d+)$/)?.[1]);
     const returnDialog = payload.returnDialog || (Number.isInteger(inferredId) ? { taskId: inferredId } : null);
@@ -129,7 +133,9 @@
       returnUrl.searchParams.set('returnDialog', JSON.stringify(returnDialog));
     }
   }
-  const returnText = terminalSource ? '返回分拣弹窗' : '返回分拣管理';
+  const returnText = productOrderLabelSource ? '返回商品分拣'
+    : customerOrderLabelSource ? '返回客户分拣'
+      : terminalSource ? '返回分拣弹窗' : '返回分拣管理';
   document.title = `${previewTitle}打印预览 - 企业端`;
   root.innerHTML = `<main class="sorting-label-page">
     ${labels.length ? labels.map(renderLabel).join('') : '<p class="sorting-label-empty">暂无可打印的分拣标签</p>'}
