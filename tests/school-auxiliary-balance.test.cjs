@@ -75,9 +75,9 @@ test('结余只在干调确认页抵扣和显示，单日填报页保持原有�
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
-  assert.match(entryHtml, /<th>需求量<\/th><th>采购量<\/th>/);
+  assert.match(entryHtml, /<th>需求总量<\/th><th>采购量<\/th>/);
   assert.doesNotMatch(entryHtml, /上次结余/);
-  assert.match(entryHtml, /<td class="number">6\.00<\/td><td class="number">10\.00<\/td>/);
+  assert.match(entryHtml, /<td class="number">6\.00<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2桶，每桶5L"><strong>2桶<\/strong><small>每桶5L<\/small><\/span><\/td>/);
 
   let confirmHtml = '';
   context.AppShell = { mount({ content }) {

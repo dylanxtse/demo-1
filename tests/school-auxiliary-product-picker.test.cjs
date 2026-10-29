@@ -217,7 +217,7 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   assert.match(reopened.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th><th colspan="2">合计<\/th>/);
   assert.doesNotMatch(reopened.page.outerHTML, /<th rowspan="2">干调<\/th>/);
   assert.match(reopened.page.outerHTML, /<td class="product-cell"><span class="product-display-text">食盐（kg\/—\/500g\/袋）<\/span><\/td><td><span class="school-auxiliary-dose-value">4 g<\/span><\/td>/);
-  assert.match(reopened.page.outerHTML, /<td>是<\/td><td>kg<\/td><td class="number">[\d,.]+<\/td><td class="number">[\d,.]+<\/td>/);
+  assert.match(reopened.page.outerHTML, /<td>是<\/td><td>kg<\/td><td class="number">[\d,.]+<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="\d+袋，每袋0\.5kg"><strong>\d+袋<\/strong><small>每袋0\.5kg<\/small><\/span><\/td>/);
   reopened.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-salt' }) });
   assert.deepEqual(Array.from(context.AppStorage.read(defaultKey, {})[scope]), []);
   context.AppStorage.write(selectedKey, { [scope]: ['aux-oil'] });
@@ -268,7 +268,7 @@ test('干调商品首次全部设为默认，取消默认后再次打开保持�
   assert.equal(context.AppStorage.read(defaultKey, {})[scope].length, 50);
   assert.equal(context.AppStorage.read(selectedKey, {})[scope].length, 50);
   assert.match(first.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th>/);
-  assert.match(first.page.outerHTML, /<td>是<\/td><td>L<\/td><td class="number">[\d,.]+<\/td><td class="number">[\d,.]+<\/td>/);
+  assert.match(first.page.outerHTML, /<td>是<\/td><td>L<\/td><td class="number">[\d,.]+<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="\d+桶，每桶5L"><strong>\d+桶<\/strong><small>每桶5L<\/small><\/span><\/td>/);
   first.listeners.click({ target: target('[data-aux-product-open]') });
   assert.match(first.page.outerHTML, /data-aux-product-default="aux-oil"[^>]*>取消默认<\/button>/);
   first.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-oil' }) });

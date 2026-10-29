@@ -84,6 +84,8 @@
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const amount = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
+  const compactAmount = (value) => Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 2, useGrouping: false });
+  const wholeAmount = (value) => Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0, useGrouping: false });
   const normalizeRecipeDate = (value) => {
     const match = String(value || '').trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
     return match ? `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}` : '';
@@ -380,13 +382,22 @@
 
   function rowData(product) {
     const currentPeople = people();
-    const purchaseInProductUnit = (quantity) => product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity;
     const participantRows = configuredGroups.map((participant) => {
       const demandQty = Number(valueForParticipant(currentPeople, participant) || 0) * Number(product.dose || 0);
-      return { demandQty, purchaseQty: purchaseInProductUnit(demandQty) };
+      return demandQty;
     });
-    const totalQty = participantRows.reduce((sum, row) => sum + row.demandQty, 0);
-    return { totalQty, totalPurchaseQty: purchaseInProductUnit(totalQty) };
+    return { totalQty: participantRows.reduce((sum, quantity) => sum + quantity, 0) };
+  }
+
+  function renderPurchaseQuantity(product, quantity) {
+    if (Number(product.packSize) > 0) {
+      const unit = product.purchaseUnit || product.unit || product.doseUnit || '';
+      const packCount = Math.ceil(Math.max(0, Number(quantity) - 1e-9) / Number(product.packSize));
+      const perPack = `每${unit}${compactAmount(product.packSize)}${product.doseUnit || product.unit || ''}`;
+      return `<span class="school-auxiliary-purchase-quantity" title="${escapeHtml(`${wholeAmount(packCount)}${unit}，${perPack}`)}"><strong>${wholeAmount(packCount)}${escapeHtml(unit)}</strong><small>${escapeHtml(perPack)}</small></span>`;
+    }
+    const unit = product.doseUnit || product.unit || '';
+    return `<span class="school-auxiliary-purchase-quantity">${amount(quantity)}${unit ? ` ${escapeHtml(unit)}` : ''}</span>`;
   }
 
   function renderRows() {
@@ -401,13 +412,16 @@
     })();
     const groups = configuredGroups.map((participant) => ({ participant, label: participantDisplayName(participant), key: participant.key }));
     const demandColumns = splitByPersonType ? groups.map((group) => `<th colspan="2">${participantHeader(group.participant)}</th>`).join('') : '<th colspan="2">合计</th>';
-    const demandSubColumns = splitByPersonType ? groups.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>采购量</th>';
+    const demandSubColumns = splitByPersonType ? groups.map(() => '<th>需求总量</th><th>采购量</th>').join('') : '<th>需求总量</th><th>采购量</th>';
     const demandColgroup = (splitByPersonType ? groups : [{}]).map(() => '<col style="width:126px"><col style="width:112px">').join('');
     const bodyRows = state.selected.map((product, index) => {
       const data = rowData(product);
       const quantities = splitByPersonType
-        ? groups.flatMap((group) => { const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0); const purchase = product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity; return [`<td class="number">${amount(quantity)}</td>`, `<td class="number">${amount(purchase)}</td>`]; })
-        : [`<td class="number">${amount(data.totalQty)}</td>`, `<td class="number">${amount(data.totalPurchaseQty)}</td>`];
+        ? groups.flatMap((group) => {
+          const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0);
+          return [`<td class="number">${amount(quantity)}</td>`, `<td class="number">${renderPurchaseQuantity(product, quantity)}</td>`];
+        })
+        : [`<td class="number">${amount(data.totalQty)}</td>`, `<td class="number">${renderPurchaseQuantity(product, data.totalQty)}</td>`];
       return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td>${escapeHtml(product.code)}</td><td>是</td><td>${escapeHtml(product.unit || product.doseUnit || '--')}</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
     }).join('');
     return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:370px"><col style="width:118px"><col style="width:100px"><col style="width:88px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">人均用量</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th><th rowspan="2">计量单位</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;

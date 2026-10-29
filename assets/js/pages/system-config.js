@@ -191,12 +191,12 @@
                 <div class="config-inline-fields recipe-purchase-limit-bound-row">
                   <span class="recipe-purchase-limit-bound-label">最小数量：采购量 −</span>
                   <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeLowerLimitValue" aria-label="最小采购量减去的数量或比例" placeholder="不限">
-                  <span data-recipe-purchase-limit-unit>商品单位</span>
+                  <span data-recipe-purchase-limit-unit>计量单位</span>
                 </div>
                 <div class="config-inline-fields recipe-purchase-limit-bound-row">
                   <span class="recipe-purchase-limit-bound-label">最大数量：采购量 +</span>
                   <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeUpperLimitValue" aria-label="最大采购量增加的数量或比例" placeholder="不限">
-                  <span data-recipe-purchase-limit-unit>商品单位</span>
+                  <span data-recipe-purchase-limit-unit>计量单位</span>
                 </div>
               </div>
             </div>
@@ -363,7 +363,7 @@
   function updateRecipePurchaseLimitUnit() {
     const mode = root.querySelector('[data-config="recipePurchaseQtyChangeThresholdMode"]')?.value;
     root.querySelectorAll('[data-recipe-purchase-limit-unit]').forEach((unit) => {
-      unit.textContent = mode === 'percentage' ? '%' : '商品单位';
+      unit.textContent = mode === 'percentage' ? '%' : '计量单位';
     });
   }
 
