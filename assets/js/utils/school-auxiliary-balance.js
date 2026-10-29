@@ -11,6 +11,8 @@
     const records = (window.DemoStore?.get?.('recipeDemandRecords') || [])
       .filter((record) => (record.auxiliary === true || record.demandType === 'auxiliary')
         && record.entryMode !== 'quantity'
+        && (Array.isArray(record.balanceRows) || (record.orders || []).length > 0
+          || schoolOrders.some((order) => String(order.recipeDemandRecordId || '') === String(record.id || '')))
         && [record.canteenId, record.canteen].some((key) => canteenKeys.has(String(key || '')))
         && (!beforeDate || recordDate(record) <= beforeDate))
       .sort((a, b) => recordDate(a).localeCompare(recordDate(b))
@@ -21,19 +23,20 @@
       const matching = rows.filter((row) => String(row.productCode || '') === code);
       if (!matching.length) return;
       const linkedOrders = schoolOrders.filter((order) => String(order.recipeDemandRecordId || '') === String(record.id || ''));
-      const ordered = linkedOrders.flatMap((order) => order.items || [])
-        .filter((line) => String(line.productCode || line.goodsCode || '') === code)
-        .reduce((sum, line) => sum + Number(line.orderQty || 0), 0);
+      const matchingLines = linkedOrders.flatMap((order) => order.items || [])
+        .filter((line) => String(line.productCode || line.goodsCode || '') === code);
+      const lineInBaseUnits = (line, value) => Number(value || 0)
+        * (matching.some((row) => row.purchaseUnit && row.purchaseUnit === line.unit && row.purchaseUnit !== row.unit)
+          ? Number(matching.find((row) => row.purchaseUnit === line.unit)?.packSize || 1) : 1);
+      const ordered = matchingLines.reduce((sum, line) => sum + lineInBaseUnits(line, line.orderQty), 0);
       const received = linkedOrders.length && linkedOrders.every((order) =>
         order.receiptStatus === '已收货' || order.receiptStatus === '部分收货')
-        ? linkedOrders.flatMap((order) => order.items || [])
-          .filter((line) => String(line.productCode || line.goodsCode || '') === code)
-          .reduce((sum, line) => sum + Number(line.reconciledQty ??
+        ? matchingLines.reduce((sum, line) => sum + lineInBaseUnits(line, line.reconciledQty ??
             Math.max(0, Number(line.acceptedQty || 0) - Number(line.returnQty || 0))), 0)
         : null;
       const demand = matching.reduce((sum, row) => sum + Number(row.demandQty ?? row.totalQty ?? 0), 0);
       const purchase = received !== null ? received : record.balanceRows
-        ? matching.reduce((sum, row) => sum + Number(row.purchaseQty || 0), 0)
+        ? matching.reduce((sum, row) => sum + Number(row.purchaseBaseQty ?? row.purchaseQty ?? 0), 0)
         : linkedOrders.length ? ordered : matching.reduce((sum, row) => sum + Number(row.purchaseQty || 0), 0);
       balance = nonNegative(balance + purchase - demand);
     });

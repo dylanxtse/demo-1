@@ -85,8 +85,25 @@ test('结余只在干调确认页抵扣和显示，单日填报页保持原有�
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-demand-confirm.js'), 'utf8'), context);
-  assert.match(confirmHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
-  assert.match(confirmHtml, /<td class="is-number">6\.00<\/td><td class="is-number">2\.00 L<\/td>/);
-  assert.match(confirmHtml, /value="5\.00" data-aux-purchase-quantity/);
-  assert.match(confirmHtml, /data-purchase-base-quantity="5\.00"/);
+  assert.match(confirmHtml, /<th>需求总量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
+  assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
+  assert.match(confirmHtml, /<td class="is-number">6\.00 L<\/td><td class="is-number">2\.00 L<\/td>/);
+  assert.match(confirmHtml, /value="1\.00" data-aux-purchase-quantity/);
+  assert.match(confirmHtml, /data-purchase-base-quantity="1\.00"/);
+  assert.match(confirmHtml, /data-aux-product-subtotal>¥55\.00<\/td>/);
+});
+
+test('标品按商品单位收货后，结余仍按基础计量单位结转', () => {
+  const context = app();
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  context.DemoStore.replace('recipeDemandRecords', [{
+    id: 'AUX-PACKED-1', auxiliary: true, entryMode: 'people',
+    canteenId: canteen.id, canteen: canteen.name, dates: ['2026-09-01'],
+    balanceRows: [{ productCode: 'SP0300030', unit: 'L', demandQty: 3,
+      purchaseQty: 5, purchaseBaseQty: 5, purchaseUnit: '桶', packSize: 5 }]
+  }]);
+  context.SchoolOrderService.getAll = () => [{ recipeDemandRecordId: 'AUX-PACKED-1',
+    receiptStatus: '已收货', items: [{ productCode: 'SP0300030', unit: '桶', orderQty: 1,
+      acceptedQty: 1, returnQty: 0 }] }];
+  assert.equal(context.SchoolAuxiliaryBalance.openingBalance(canteen, 'SP0300030', '2026-09-08'), 2);
 });

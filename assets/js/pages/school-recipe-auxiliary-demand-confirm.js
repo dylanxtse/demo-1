@@ -113,7 +113,11 @@
     return products.filter((product) => ids.has(product.id));
   };
   const selectedAnywhere = (productId) => Object.values(selectedByMeal).some((ids) => ids.includes(productId));
-  const purchase = (value, product) => product.packSize ? Math.ceil(value / product.packSize) * product.packSize : value;
+  const packSizeFor = (product) => Number(product.packSize) > 0 ? Number(product.packSize) : 1;
+  const isPackaged = (product) => Number(product.packSize) > 0;
+  const purchase = (value, product) => isPackaged(product)
+    ? Math.ceil(Math.max(0, Number(value) - 1e-9) / packSizeFor(product)) : Number(value);
+  const purchaseBaseQuantity = (quantity, product) => Number(quantity) * packSizeFor(product);
   const purchaseQuantityThreshold = (baseQuantity, nextQuantity) => window.RecipePurchaseQuantityThreshold?.evaluate(baseQuantity, nextQuantity)
     || { valid: true, enabled: false };
   const purchaseQuantityThresholdMessage = (result) => window.RecipePurchaseQuantityThreshold?.message(result)
@@ -136,13 +140,14 @@
   const validatePurchaseQuantityInput = (input) => {
     if (!input) return true;
     const result = purchaseQuantityThreshold(input.dataset.purchaseBaseQuantity, input.value);
-    if (input.classList?.toggle) input.classList.toggle('is-invalid', !result.valid);
-    else if (result.valid) input.classList?.remove?.('is-invalid');
+    const valid = result.valid && (input.dataset.packaged !== 'true' || Number.isInteger(Number(input.value)));
+    if (input.classList?.toggle) input.classList.toggle('is-invalid', !valid);
+    else if (valid) input.classList?.remove?.('is-invalid');
     else input.classList?.add?.('is-invalid');
-    input.setAttribute?.('aria-invalid', String(!result.valid));
-    if (!result.valid) input.title = purchaseQuantityThresholdMessage(result);
+    input.setAttribute?.('aria-invalid', String(!valid));
+    if (!valid) input.title = result.valid ? '标品采购量必须为整数' : purchaseQuantityThresholdMessage(result);
     else input.removeAttribute?.('title');
-    return result.valid;
+    return valid;
   };
   const initialFilledDates = filledDates();
   const initialSelectedDates = requestedDate && !recipeDates.has(requestedDate)
@@ -228,9 +233,10 @@
         productCode: product.code,
         productName: product.name,
         unit: product.doseUnit,
+        purchaseUnit: isPackaged(product) ? product.purchaseUnit : product.doseUnit,
         brand: product.brand,
         spec: product.spec,
-        isStandardProduct: false,
+        isStandardProduct: isPackaged(product),
         participantQty,
         totalQty,
         purchaseQty: purchase(totalQty, product),
@@ -275,13 +281,16 @@
         productCode: product.code,
         productName: product.name,
         unit: product.doseUnit,
+        purchaseUnit: isPackaged(product) ? product.purchaseUnit : product.doseUnit,
         brand: product.brand,
         spec: product.spec,
-        isStandardProduct: false,
+        isStandardProduct: isPackaged(product),
         participantQty,
         totalQty,
-        purchaseQty: splitPerson ? purchaseValue('all-meals', product, '合计', totalQty)
-          : mealGroups().reduce((sum, group) => sum + (purchasePlanFor(product)[group.key]?.purchaseQty || 0), 0),
+        purchaseQty: mealGroups().reduce((sum, group) => sum + (splitPerson
+          ? labels.reduce((participantSum, label) => participantSum + purchaseValue(group.key, product, label,
+            demandFor(product, group.meals, label)), 0)
+          : purchasePlanFor(product)[group.key]?.purchaseQty || 0), 0),
         unitPrice: unitPriceValue(product),
         auxiliaryName: product.auxiliaryName
       };
@@ -314,13 +323,13 @@
     mealGroups().forEach((group) => {
       const demand = labels.reduce((sum, label) => sum + demandFor(product, group.meals, label), 0);
       const calculated = balanceRule?.calculate?.(demand, available, product.packSize)
-        || { previousBalance: 0, purchaseQty: purchase(demand, product) };
+        || { previousBalance: 0, purchaseQty: purchaseBaseQuantity(purchase(demand, product), product) };
       const key = purchaseKey(group.key, product, '合计');
       const purchaseQty = canEditRecipePurchaseQuantity && hasOwn(state.purchaseQtyOverrides, key)
-        ? number(state.purchaseQtyOverrides[key]) : calculated.purchaseQty;
+        ? number(state.purchaseQtyOverrides[key]) : Number((calculated.purchaseQty / packSizeFor(product)).toFixed(4));
       result[group.key] = { previousBalance: calculated.previousBalance,
-        baseQuantity: calculated.purchaseQty, purchaseQty };
-      available = Math.max(0, Number((available + purchaseQty - demand).toFixed(4)));
+        baseQuantity: Number((calculated.purchaseQty / packSizeFor(product)).toFixed(4)), purchaseQty };
+      available = Math.max(0, Number((available + purchaseBaseQuantity(purchaseQty, product) - demand).toFixed(4)));
     });
     return result;
   };
@@ -338,13 +347,13 @@
     return {
       productCode: product.code,
       productName: product.name,
-      unit: product.doseUnit,
+      unit: isPackaged(product) ? product.purchaseUnit : product.doseUnit,
       brand: product.brand,
       spec: product.spec,
       orderQty: quantity,
       orderPrice,
       isNetVegetable: false,
-      isStandardProduct: false,
+      isStandardProduct: isPackaged(product),
       remark: `辅料${[...state.selectedDates].sort().join('、')}${group.name}${label}需求`
     };
   }).filter(Boolean);
@@ -457,7 +466,9 @@
         });
         order.items.forEach((line) => {
           const key = String(line.productCode || '');
-          orderedQuantities.set(key, (orderedQuantities.get(key) || 0) + Number(line.orderQty || 0));
+          const product = products.find((item) => String(item.code) === key);
+          orderedQuantities.set(key, (orderedQuantities.get(key) || 0)
+            + purchaseBaseQuantity(line.orderQty || 0, product || {}));
         });
         let enterpriseOrder = null;
         try {
@@ -493,7 +504,7 @@
               orderQty: line.orderQty,
               subtotal: line.orderQty * line.orderPrice,
               isNetVegetable: false,
-              isStandardProduct: false,
+              isStandardProduct: line.isStandardProduct === true,
               brand: line.brand,
               spec: line.spec
             })),
@@ -533,12 +544,19 @@
       time: timestamp(),
       description: record.orders.length ? `已生成辅料订单：${record.orders.map((item) => item.orderNo).join('、')}` : '没有生成可下单商品'
     });
-    record.balanceRows = preview.rows.map((row) => ({
-      productCode: row.productCode,
-      unit: row.unit,
-      demandQty: Number(row.totalQty || 0),
-      purchaseQty: Number((orderedQuantities.get(String(row.productCode)) || 0).toFixed(4))
-    }));
+    record.balanceRows = preview.rows.map((row) => {
+      const product = products.find((item) => item.code === row.productCode) || {};
+      const purchaseBaseQty = Number((orderedQuantities.get(String(row.productCode)) || 0).toFixed(4));
+      return {
+        productCode: row.productCode,
+        unit: row.unit,
+        demandQty: Number(row.totalQty || 0),
+        purchaseQty: Number((purchaseBaseQty / packSizeFor(product)).toFixed(4)),
+        purchaseBaseQty,
+        purchaseUnit: row.purchaseUnit || row.unit,
+        packSize: product.packSize || 0
+      };
+    });
     writeDemandRecords([...records, record]);
     return { record, orders: record.orders, preview };
   }
@@ -636,12 +654,13 @@
       if (!canEditRecipePurchaseQuantity) return;
       const value = Number(input.value);
       const threshold = purchaseQuantityThreshold(input.dataset.purchaseBaseQuantity, input.value);
-      const valid = Number.isFinite(value) && value >= 0 && threshold.valid;
-      validatePurchaseQuantityInput(input);
+      const valid = Number.isFinite(value) && value >= 0 && validatePurchaseQuantityInput(input);
       if (!valid && !firstInvalid) {
         firstInvalid = input;
         firstInvalidMessage = Number.isFinite(value) && value >= 0
-          ? purchaseQuantityThresholdMessage(threshold) : '采购量不能小于0';
+          ? input.dataset.packaged === 'true' && !Number.isInteger(value)
+            ? '标品采购量必须为整数' : purchaseQuantityThresholdMessage(threshold)
+          : '采购量不能小于0';
       }
       if (valid) state.purchaseQtyOverrides[input.dataset.purchaseKey] = input.value;
     });
@@ -660,7 +679,7 @@
     const columns = splitPerson
       ? labels.map((label) => `<th colspan="2">${escapeHtml(participantDisplayName(label))}</th>`).join('')
       : '<th colspan="3">合计</th>';
-    const subColumns = splitPerson ? labels.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>上次结余</th><th>采购量</th>';
+    const subColumns = splitPerson ? labels.map(() => '<th>需求总量</th><th>采购量</th>').join('') : '<th>需求总量</th><th>上次结余</th><th>采购量</th>';
     const colgroup = splitPerson ? labels.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-quantity"><col class="col-purchase">';
     const rows = activeProducts.map((product, index) => {
       const renderPurchaseCell = (label, demand) => {
@@ -669,22 +688,22 @@
         const value = purchaseValue(groupKey, product, label, demand);
         const threshold = canEditRecipePurchaseQuantity ? purchaseQuantityThreshold(baseQuantity, value) : { valid: true };
         const disabled = canEditRecipePurchaseQuantity ? '' : ' disabled';
-        return `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input${threshold.valid ? '' : ' is-invalid'}" type="number" min="0" step="any" inputmode="decimal" value="${amount(value)}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-base-quantity="${escapeHtml(amount(baseQuantity))}" aria-invalid="${!threshold.valid}" aria-label="${escapeHtml(label === '合计' ? '采购量' : `${participantDisplayName(label)}采购量`)}"${disabled}${threshold.valid ? '' : ` title="${escapeHtml(purchaseQuantityThresholdMessage(threshold))}"`}><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量"${disabled}>×</button></div></td>`;
+        return `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input${threshold.valid ? '' : ' is-invalid'}" type="number" min="0" step="${isPackaged(product) ? 1 : 'any'}" inputmode="decimal" value="${amount(value)}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-base-quantity="${escapeHtml(amount(baseQuantity))}" data-packaged="${isPackaged(product)}" aria-invalid="${!threshold.valid}" aria-label="${escapeHtml(label === '合计' ? '采购量' : `${participantDisplayName(label)}采购量`)}"${disabled}${threshold.valid ? '' : ` title="${escapeHtml(purchaseQuantityThresholdMessage(threshold))}"`}><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量"${disabled}>×</button></div></td>`;
       };
       const cells = splitPerson
         ? labels.flatMap((label) => {
           const demand = demandFor(product, activeMeals, label);
-          return [`<td class="is-number">${amount(demand)}</td>`, renderPurchaseCell(label, demand)];
+          return [`<td class="is-number">${amount(demand)} ${escapeHtml(product.doseUnit || '')}</td>`, renderPurchaseCell(label, demand)];
         })
         : (() => {
           const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0);
           const balance = purchasePlanFor(product)[groupKey]?.previousBalance || 0;
-          return [`<td class="is-number">${amount(demand)}</td>`, `<td class="is-number">${amount(balance)} ${escapeHtml(product.doseUnit || '')}</td>`, renderPurchaseCell('合计', demand)];
+          return [`<td class="is-number">${amount(demand)} ${escapeHtml(product.doseUnit || '')}</td>`, `<td class="is-number">${amount(balance)} ${escapeHtml(product.doseUnit || '')}</td>`, renderPurchaseCell('合计', demand)];
         })();
       const priceKey = unitPriceKey(product);
       const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell"><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${amount(unitPriceValue(product))}" data-aux-unit-price data-unit-price-key="${escapeHtml(priceKey)}"${canModifyUnitPrice() ? '' : ' disabled'} aria-label="${escapeHtml(`${product.name}单价`)}"></td>`;
       const cannotRemoveLast = activeProducts.length <= 1;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${Number(product.packSize) > 0 ? '是' : '否'}</td><td>${escapeHtml(product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}" title="${cannotRemoveLast ? '至少保留一项商品' : '移除当前餐次商品'}"${cannotRemoveLast ? ' disabled' : ''}>移除</button></td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${isPackaged(product) ? '是' : '否'}</td><td>${escapeHtml(isPackaged(product) ? product.purchaseUnit : product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}" title="${cannotRemoveLast ? '至少保留一项商品' : '移除当前餐次商品'}"${cannotRemoveLast ? ' disabled' : ''}>移除</button></td></tr>`;
     }).join('');
     const activeMeal = splitMeal ? meals.find((meal) => meal.key === state.meal) : null;
     const labelColumns = 6 + (splitPerson ? labels.length * 2 : 3);
@@ -837,7 +856,9 @@
         input.setAttribute('aria-invalid', 'true');
         showToast('采购量不能小于0', true);
       } else if (!validatePurchaseQuantityInput(input)) {
-        showToast(purchaseQuantityThresholdMessage(purchaseQuantityThreshold(input.dataset.purchaseBaseQuantity, input.value)), true);
+        showToast(input.dataset.packaged === 'true' && !Number.isInteger(value)
+          ? '标品采购量必须为整数'
+          : purchaseQuantityThresholdMessage(purchaseQuantityThreshold(input.dataset.purchaseBaseQuantity, input.value)), true);
       }
       state.purchaseQtyOverrides[input.dataset.purchaseKey] = input.value;
     }
