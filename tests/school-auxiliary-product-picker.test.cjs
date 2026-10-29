@@ -19,6 +19,7 @@ test('人数填报可批量添加商品，取消选择不保存', () => {
   const storageKey = 'school-recipe-auxiliary-selected-products-v1';
   context.AppStorage.write('school-recipe-auxiliary-current-canteen', '第一食堂');
   context.AppStorage.write(storageKey, { [scope]: ['aux-oil'] });
+  context.AppStorage.write('school-recipe-auxiliary-all-default-products-v1', { [scope]: true });
   context.location = { search: '?mode=people' };
 
   const page = { outerHTML: '' };
@@ -171,6 +172,7 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   const defaultKey = 'school-recipe-auxiliary-default-products-v1';
   context.AppStorage.write('school-recipe-auxiliary-current-canteen', '第一食堂');
   context.AppStorage.write(selectedKey, { [scope]: ['aux-oil'] });
+  context.AppStorage.write('school-recipe-auxiliary-all-default-products-v1', { [scope]: true });
   context.location = { search: '?mode=people' };
 
   const boot = () => {
@@ -212,10 +214,68 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   assert.match(reopened.page.outerHTML, /data-remove-id="aux-salt"/);
   assert.doesNotMatch(reopened.page.outerHTML, /data-remove-id="aux-oil"/);
   assert.match(reopened.page.outerHTML, /<th rowspan="2">序号<\/th><th rowspan="2">商品<\/th><th rowspan="2">人均用量<\/th><th rowspan="2">编号<\/th>/);
+  assert.match(reopened.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th><th colspan="2">合计<\/th>/);
   assert.doesNotMatch(reopened.page.outerHTML, /<th rowspan="2">干调<\/th>/);
   assert.match(reopened.page.outerHTML, /<td class="product-cell"><span class="product-display-text">食盐（kg\/—\/500g\/袋）<\/span><\/td><td><span class="school-auxiliary-dose-value">4 g<\/span><\/td>/);
+  assert.match(reopened.page.outerHTML, /<td>是<\/td><td>kg<\/td><td class="number">[\d,.]+<\/td><td class="number">[\d,.]+<\/td>/);
   reopened.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-salt' }) });
   assert.deepEqual(Array.from(context.AppStorage.read(defaultKey, {})[scope]), []);
   context.AppStorage.write(selectedKey, { [scope]: ['aux-oil'] });
   assert.match(boot().page.outerHTML, /请添加商品/);
+});
+
+test('干调商品首次全部设为默认，取消默认后再次打开保持设置', () => {
+  const context = loadApp({ services: [
+    'assets/js/data/school-reference-data.js',
+    'assets/js/services/school-canteen-config-service.js',
+    'assets/js/services/school-recipe-service.js',
+    'assets/js/services/school-recipe-attendance-service.js',
+    'assets/js/services/school-order-service.js',
+    'assets/js/services/school-recipe-auxiliary-direct-service.js'
+  ] }).context;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const scope = String(canteen.id || canteen.name);
+  const defaultKey = 'school-recipe-auxiliary-default-products-v1';
+  const selectedKey = 'school-recipe-auxiliary-selected-products-v1';
+  context.AppStorage.write('school-recipe-auxiliary-current-canteen', '第一食堂');
+  context.location = { search: '?mode=people' };
+
+  const boot = () => {
+    const page = { outerHTML: '' };
+    const modal = { outerHTML: '' };
+    const listeners = {};
+    context.AppShell = { mount({ content }) {
+      page.outerHTML = content;
+      return {
+        querySelector(selector) {
+          if (selector === '#schoolAuxiliaryPage') return page;
+          if (selector === '[data-aux-product-modal]') return modal;
+          if (selector === '[data-aux-product-keyword]' || selector === '[data-aux-product-open]') return { focus() {} };
+          return null;
+        },
+        addEventListener(type, handler) { listeners[type] = handler; }
+      };
+    } };
+    vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
+    return { page, modal, listeners };
+  };
+  const target = (selector, values = {}) => ({
+    closest(candidate) { return candidate === selector ? { dataset: values } : null; },
+    matches() { return false; }
+  });
+
+  const first = boot();
+  assert.equal(context.AppStorage.read(defaultKey, {})[scope].length, 50);
+  assert.equal(context.AppStorage.read(selectedKey, {})[scope].length, 50);
+  assert.match(first.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th>/);
+  assert.match(first.page.outerHTML, /<td>是<\/td><td>L<\/td><td class="number">[\d,.]+<\/td><td class="number">[\d,.]+<\/td>/);
+  first.listeners.click({ target: target('[data-aux-product-open]') });
+  assert.match(first.page.outerHTML, /data-aux-product-default="aux-oil"[^>]*>取消默认<\/button>/);
+  first.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-oil' }) });
+  assert.equal(context.AppStorage.read(defaultKey, {})[scope].length, 49);
+  assert.doesNotMatch(Array.from(context.AppStorage.read(defaultKey, {})[scope]).join(','), /aux-oil/);
+
+  boot();
+  assert.equal(context.AppStorage.read(defaultKey, {})[scope].length, 49);
+  assert.equal(context.AppStorage.read(selectedKey, {})[scope].length, 49);
 });

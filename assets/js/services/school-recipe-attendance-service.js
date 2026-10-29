@@ -393,14 +393,18 @@
         if (participant.legacyKey === 'teacher' || participant.tagName === '教师' || participant.tagName === '教职工') totalTeacherPeople += people;
       });
 
-      const addRow = (targetRows, item, dish) => {
+      const addRow = (targetRows, item, dish, dishIndex) => {
         const mapped = Boolean(item.productCode) && item.mappingStatus === '已关联';
         const quantityContext = mapped ? productQuantityContext(item) : { factor: 1, unit: item.unit || '--', quantityUnit: 'recipe' };
         const unit = quantityContext.unit;
         const code = mapped ? item.productCode : `UNMAPPED-${item.name}`;
-        const key = `${code}::${unit}`;
+        const productKey = `${code}::${unit}`;
+        const key = options.groupMealRowsByDish && targetRows === mealRowsMap
+          ? `${dish.id || `dish-${dishIndex}`}::${productKey}` : productKey;
         const current = targetRows.get(key) || {
           key,
+          dishId: dish.id || '',
+          dishName: dish.name || '',
           productCode: mapped ? item.productCode : '',
           productName: mapped ? (item.productName || item.name) : '未关联采购商品',
           ingredientNames: [],
@@ -431,10 +435,10 @@
         targetRows.set(key, current);
       };
 
-      (meal.dishes || []).forEach((dish) => {
+      (meal.dishes || []).forEach((dish, dishIndex) => {
         (dish.ingredients || []).forEach((item) => {
-          addRow(rows, item, dish);
-          addRow(mealRowsMap, item, dish);
+          addRow(rows, item, dish, dishIndex);
+          addRow(mealRowsMap, item, dish, dishIndex);
         });
       });
       mealRows.push({

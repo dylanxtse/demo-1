@@ -95,7 +95,7 @@
       { name: '系统配置', expanded: true, children: [{ name: '审核配置', href: './audit-config.html' }, { name: '业务配置', href: './system-config.html' }] },
       { name: '打印模版', href: './shipping-print-template-design.html' },
       { name: '下属单位管理', href: './lower-units.html' },
-      '用户管理', '角色管理', { name: '基础信息', href: './basic-info.html' }, '个人中心'
+      { name: '用户管理', href: './user-management.html' }, '角色管理', { name: '基础信息', href: './basic-info.html' }, '个人中心'
     ] }
   ].map((item) => {
     const normalize = (entry) => {

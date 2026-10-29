@@ -24,6 +24,27 @@
     return `${current.getFullYear()}-${pad(current.getMonth() + 1)}-${pad(current.getDate())} ${pad(current.getHours())}:${pad(current.getMinutes())}:${pad(current.getSeconds())}`;
   }
 
+  function formatMaterialDates(value) {
+    const values = Array.isArray(value) ? value : String(value || '').split(/[、,，;；\n]+/);
+    const dates = [...new Set(values.map((item) => {
+      const match = String(item || '').trim().match(/^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})(?:日)?/);
+      if (!match) return '';
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const check = new Date(Date.UTC(year, month - 1, day));
+      if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) return '';
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }).filter(Boolean))].sort();
+    let previousYear = '';
+    return dates.map((date) => {
+      const [year, month, day] = date.split('-');
+      const yearPrefix = previousYear && year !== previousYear ? `${year.slice(-2)}.` : '';
+      previousYear = year;
+      return `${yearPrefix}${month}.${day}`;
+    }).join('、');
+  }
+
   function productName(item) { return window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || item.productName || '--'; }
   function mealText(row) {
     const meals = row.mealCounts;
@@ -77,6 +98,7 @@
     return `<svg class="shipping-print-qrcode" viewBox="0 0 25 25" role="img" aria-label="订单二维码"><rect width="25" height="25" fill="#fff"/>${cells.join('')}</svg>`;
   }
   function renderInfo(row) {
+    const materialDates = formatMaterialDates(row.recipeDemandDates?.length ? row.recipeDemandDates : row.recipeDemandDate);
     return `<div class="shipping-print-info">
       <span>期望送达时间：${text(row.expectedAt || '--')}</span>
       <span>客户名称：${text(row.customerName)}</span>
@@ -89,6 +111,7 @@
       <span>餐次：${text(row.mealName || row.meal || '早餐')}</span>
       <span>配送人：${text(row.deliveryPerson || '--')}</span>
       <span class="shipping-print-address">收货地址：${text(row.address || '默认收货地址')}</span>
+      ${materialDates ? `<span class="shipping-print-material-dates">用料日期：${escapeHtml(materialDates)}</span>` : ''}
     </div>`;
   }
   function renderTable(rows) {

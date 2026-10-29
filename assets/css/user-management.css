@@ -1,0 +1,66 @@
+.user-management-page { min-width: 0; padding: 20px 22px; border-radius: 0; }
+.user-management-filters { display: grid; grid-template-columns: minmax(270px, 426px) minmax(270px, 426px) 1fr; align-items: center; gap: 24px 34px; min-height: 38px; }
+.user-management-field { display: flex; min-width: 0; align-items: center; gap: 18px; color: #333; font-size: 14px; white-space: nowrap; }
+.user-management-field > span { flex: 0 0 64px; text-align: right; }
+.user-management-field input { width: 100%; min-width: 0; height: 30px; padding: 0 9px; border: 1px solid #dce1e9; border-radius: 2px; background: #fff; color: #333; font: inherit; outline: none; }
+.user-management-field input::placeholder { color: #a1a6af; }
+.user-management-field input:focus { border-color: var(--primary); }
+.user-management-filter-actions { display: flex; justify-content: flex-end; gap: 14px; }
+.user-management-primary, .user-management-secondary { min-width: 68px; height: 30px; padding: 0 14px; border: 1px solid var(--primary); border-radius: 2px; background: var(--primary); color: #fff; font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.user-management-secondary { border-color: #dce1e9; background: #fff; color: #333; }
+.user-management-primary:focus-visible, .user-management-secondary:focus-visible, .user-management-link:focus-visible, .user-management-row-actions button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.user-management-toolbar { margin: 8px 0 7px; }
+.user-management-table-scroll { min-width: 0; overflow-x: auto; }
+.user-management-table { width: 100%; min-width: 1050px; border-collapse: collapse; table-layout: fixed; color: #333; font-size: 13px; }
+.user-management-table .col-index { width: 7%; }
+.user-management-table .col-username, .user-management-table .col-role, .user-management-table .col-name, .user-management-table .col-status { width: 17%; }
+.user-management-table .col-actions { width: 25%; }
+.user-management-table th, .user-management-table td { height: 51px; padding: 8px 10px; border: 1px solid #dce1e9; text-align: center; vertical-align: middle; }
+.user-management-table th { height: 43px; background: #f2f4f8; color: #78839a; font-weight: 500; }
+.user-management-table tbody tr:hover td { background: #f8fbff; }
+.user-management-link, .user-management-row-actions button { padding: 0; border: 0; background: transparent; color: var(--primary); font: inherit; white-space: nowrap; cursor: pointer; }
+.user-management-status { display: inline-block; padding: 3px 8px; border-radius: 2px; background: #eff8eb; color: #64b44a; font-size: 12px; }
+.user-management-row-actions { display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+.user-management-row-actions button { padding: 0 12px; border-right: 1px solid #e4e8ee; }
+.user-management-row-actions button:last-child { border-right: 0; }
+.user-management-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 50px; color: #666; font-size: 13px; }
+.user-management-pages { display: flex; align-items: center; gap: 17px; }
+.user-management-pages select { height: 30px; padding: 0 8px; border: 1px solid #dce1e9; border-radius: 2px; background: #fff; color: #333; font: inherit; }
+.user-management-page-arrow { width: 18px; height: 28px; border: 0; background: transparent; color: #bac0cb; font-size: 20px; line-height: 1; }
+.user-management-current-page { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 2px; background: var(--primary); color: #fff; }
+.user-management-pages label { white-space: nowrap; }
+.user-management-pages input { width: 50px; height: 28px; margin: 0 4px; border: 1px solid #dce1e9; border-radius: 2px; color: #333; font: inherit; text-align: center; }
+.user-management-page.is-form-view { padding: 0; border-radius: 14px; }
+.user-management-form-header { display: flex; height: 54px; flex: 0 0 54px; align-items: center; gap: 16px; padding: 0 36px; border-bottom: 1px solid #edf0f4; color: #243149; font-size: 14px; }
+.user-management-form-header button { padding: 0 15px 0 0; border: 0; border-right: 1px solid #dfe4eb; background: transparent; color: #344767; font: inherit; cursor: pointer; }
+.user-management-form { width: min(520px, 100%); padding: 20px 0 40px 72px; }
+.user-management-form-field { display: grid; grid-template-columns: 83px minmax(0, 333px); align-items: start; gap: 0; margin-bottom: 20px; }
+.user-management-form-field > label { padding: 6px 20px 0 0; color: #222; font-size: 14px; text-align: right; white-space: nowrap; }
+.user-management-form-field > label span { color: #f04b45; }
+.user-management-form-control { min-width: 0; }
+.user-management-form-control input, .user-management-form-control select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid #dce1e9; border-radius: 2px; background: #fff; color: #333; font: inherit; font-size: 13px; outline: none; }
+.user-management-form-control input::placeholder, .user-management-form-control select:invalid { color: #a0a6af; }
+.user-management-form-control input:focus, .user-management-form-control select:focus { border-color: var(--primary); }
+.user-management-form-control input[readonly] { background: #f7f8fa; color: #526073; cursor: default; }
+.user-management-form-control [aria-invalid="true"] { border-color: #e35b55; }
+.user-management-form-hint { margin-top: 22px; color: #999; font-size: 11px; line-height: 16px; white-space: nowrap; }
+.user-management-form-hint.is-password-hint { margin-top: 6px; }
+.user-management-form-error { margin-top: 5px; color: #d54941; font-size: 12px; line-height: 17px; }
+.user-management-form-error[hidden] { display: none; }
+.user-management-custom-password[hidden], [data-default-password-fields][hidden] { display: none; }
+.user-management-password-switch { margin: -8px 0 20px 83px; }
+.user-management-password-switch button, .user-management-password-inline button { padding: 0; border: 0; background: transparent; color: var(--primary); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.user-management-password-switch button:focus-visible, .user-management-password-inline button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.user-management-password-inline { display: flex; width: max-content; align-items: center; gap: 12px; }
+.user-management-password-entry { position: relative; width: 333px; max-width: 100%; }
+.user-management-password-entry input { width: 100%; padding-right: 36px; }
+.user-management-password-entry .user-management-password-visibility { position: absolute; top: 0; right: 5px; display: grid; width: 26px; height: 30px; place-items: center; padding: 0; border: 0; background: transparent; color: #7b8799; cursor: pointer; }
+.user-management-password-visibility svg { width: 17px; height: 17px; }
+.user-management-password-visibility[aria-pressed="false"] .user-management-eye-off, .user-management-password-visibility[aria-pressed="true"] .user-management-eye { display: none; }
+.user-management-password-entry button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.user-management-password-inline .user-management-password-entry { flex: 0 0 333px; }
+.user-management-form-buttons { display: flex; gap: 15px; margin-left: 83px; }
+.user-management-form-buttons .user-management-primary, .user-management-form-buttons .user-management-secondary { min-width: 54px; }
+.user-management-empty { padding: 28px 10px !important; color: #8994a4; }
+@media (max-width: 700px) { .user-management-form { padding-left: 14px; padding-right: 14px; } .user-management-form-field { grid-template-columns: 82px minmax(0, 1fr); } .user-management-form-hint { white-space: normal; } .user-management-password-inline { width: 100%; flex-wrap: wrap; } .user-management-password-inline .user-management-password-entry { flex: 1 1 100%; width: 100%; } }
+@media (max-width: 1250px) { .user-management-filters { grid-template-columns: repeat(2, minmax(260px, 1fr)); } .user-management-filter-actions { grid-column: 1 / -1; } }

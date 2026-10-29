@@ -35,6 +35,7 @@
     'sales-reconciliation-statement.html': 'enterprise',
     'audit-config.html': 'enterprise',
     'basic-info.html': 'enterprise',
+    'user-management.html': 'enterprise',
     'purchase-task.html': 'enterprise',
     'purchase-task-allocation.html': 'enterprise',
     'purchase-task-allocation-detail.html': 'enterprise',

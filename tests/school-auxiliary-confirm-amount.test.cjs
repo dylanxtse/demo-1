@@ -71,6 +71,9 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
     assert.doesNotMatch(html, /<th rowspan="2">辅料<\/th>/);
     assert.match(html, /<h1>干调需求确认<\/h1>/);
     assert.match(html, /<th rowspan="2">小计<\/th>/);
+    assert.match(html, /<th rowspan="2">单位<\/th>/);
+    assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
+    assert.doesNotMatch(html, /<td class="is-number">[\d,.]+ (?:L|kg)<\/td>/);
     assert.doesNotMatch(html, /schoolRecipeAuxiliaryExpectedAt|school-recipe-demand-delivery-field/);
     assert.match(html, /填报天数：<\/span><strong>1<\/strong>/);
     assert.match(html, /午餐合计金额/);

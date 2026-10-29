@@ -612,6 +612,29 @@
   font-weight: 400;
 }
 
+.purchase-allocation-product-main {
+  display: block;
+  padding: 4px 0 14px;
+}
+
+.purchase-allocation-product-main .purchase-product-title {
+  margin: 0 0 14px;
+}
+
+.purchase-allocation-product-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.purchase-allocation-product-meta strong {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
 .purchase-product-owner {
   display: flex;
   align-items: center;
@@ -1766,6 +1789,10 @@
   }
   .purchase-product-main {
     grid-template-columns: 76px 1fr;
+  }
+  .purchase-allocation-product-meta {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
   .purchase-product-meta,
   .purchase-product-owner {

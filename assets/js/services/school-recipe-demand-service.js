@@ -464,7 +464,8 @@
     const productMap = getProductMap();
     const calculation = attendanceService.calculate(menu, attendanceService.emptyRecord(date, canteen), {
       canteen,
-      participants: []
+      participants: [],
+      groupMealRowsByDish: true
     });
     const meals = (calculation.mealRows || []).map((meal) => ({
       key: meal.key,
@@ -484,6 +485,7 @@
         return {
           ...row,
           key,
+          legacyKey: `${meal.key}::${row.productCode}::${row.unit}`,
           productName: product.name || row.productName,
           brand: product.brand || '--',
           spec: product.spec || '--',

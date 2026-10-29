@@ -97,7 +97,8 @@
       'receipt-change.html',
       'receipt-change-form.html',
       'receipt-change-detail.html',
-      'basic-info.html'
+      'basic-info.html',
+      'user-management.html'
     ]),
     education: new Set([
       'education.html',

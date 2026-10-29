@@ -104,6 +104,7 @@
   const selectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
   const selectedProductsByMealStorageKey = 'school-recipe-auxiliary-selected-products-by-meal-v1';
   const defaultProductsStorageKey = 'school-recipe-auxiliary-default-products-v1';
+  const allDefaultProductsMigrationKey = 'school-recipe-auxiliary-all-default-products-v1';
   const viewStorageKey = 'school-recipe-auxiliary-attendance-view-v1';
   const defaultModeKey = 'school-recipe-auxiliary-default-mode-v1';
   const orderModeKey = 'school-recipe-auxiliary-quantity-order-mode-v1';
@@ -199,6 +200,13 @@
   if (initialMode === 'people' && recipeDates.has(dateState.selectedDate)) persistDraft();
 
   const storedDefaultStorage = window.AppStorage?.read?.(defaultProductsStorageKey, {}) || {};
+  const migratedCanteens = window.AppStorage?.read?.(allDefaultProductsMigrationKey, {}) || {};
+  if (!migratedCanteens[canteenScope]) {
+    storedDefaultStorage[canteenScope] = products.map((product) => product.id);
+    window.AppStorage?.write?.(defaultProductsStorageKey, storedDefaultStorage);
+    migratedCanteens[canteenScope] = true;
+    window.AppStorage?.write?.(allDefaultProductsMigrationKey, migratedCanteens);
+  }
   const storedDefaultIds = Array.isArray(storedDefaultStorage[canteenScope]) ? storedDefaultStorage[canteenScope] : [];
   const defaultProductIds = new Set(products.filter((product) => storedDefaultIds.includes(product.id)).map((product) => product.id));
   const mealKeys = Object.keys(meals);
@@ -327,6 +335,33 @@
     return attendanceService.status(menuForDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
   }
 
+  function hasSubmittedAuxiliaryDemand(date) {
+    const records = window.DemoStore?.get?.('recipeDemandRecords');
+    const currentCanteenId = String(currentCanteen.id || '');
+    const currentCanteenName = String(currentCanteen.name || '');
+    if (!Array.isArray(records)) return false;
+
+    return records.some((record) => {
+      if (!record || !(record.auxiliary === true || record.auxiliary === 'true' || record.demandType === 'auxiliary' || record.source === '学校端辅料下单')) return false;
+
+      const recordCanteen = record.canteen && typeof record.canteen === 'object' ? record.canteen : {};
+      const recordCanteenId = String(record.canteenId || recordCanteen.id || '');
+      const recordCanteenName = String(recordCanteen.name || (typeof record.canteen === 'string' ? record.canteen : '') || record.canteenName || '');
+      if (recordCanteenId && currentCanteenId) {
+        if (recordCanteenId !== currentCanteenId) return false;
+      } else if (!recordCanteenName || !currentCanteenName || recordCanteenName !== currentCanteenName) {
+        return false;
+      }
+
+      const recordDates = [
+        ...(Array.isArray(record.dates) ? record.dates : typeof record.dates === 'string' ? record.dates.split(/[、,，\s]+/) : []),
+        ...(Array.isArray(record.dateSummaries) ? record.dateSummaries.map((summary) => summary?.date) : []),
+        ...(record.date ? String(record.date).split(/[、,，\s]+/) : [])
+      ];
+      return recordDates.some((recordDate) => normalizeRecipeDate(recordDate) === date);
+    });
+  }
+
   function renderCanteenBar() {
     const canteens = availableCanteens.length ? availableCanteens : [currentCanteen];
     return `<div class="school-recipe-canteen-switch" aria-label="当前食堂"><div class="school-recipe-canteen-tabs" role="tablist" aria-label="切换食堂">${canteens.map((canteen) => { const key = String(canteen.id || canteen.name); const active = key === String(currentCanteen.id || currentCanteen.name); return `<button type="button" class="school-recipe-canteen-tab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-aux-canteen="${escapeHtml(key)}">${escapeHtml(canteen.name)}</button>`; }).join('')}</div></div>`;
@@ -367,7 +402,9 @@
         ? directService.readCombinedDraft(currentCanteen).dates.includes(date) : date === dateState.selectedDate;
       return `<button type="button" class="school-recipe-attendance-date-item ${selected ? 'is-selected' : ''}${hasRecipe ? '' : ' is-empty'} is-${status}" data-aux-date="${date}" aria-pressed="${selected}" title="${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择或取消此用料日期' : hasRecipe ? '有菜谱' : '无菜谱'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
     }).join('');
-    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择用料日期（可多选）' : '本月日期'}</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
+    const submittedWarning = state.mode === 'people' && hasSubmittedAuxiliaryDemand(dateState.selectedDate)
+      ? '<div class="school-auxiliary-submitted-warning" role="status">已提交过当前日期的用料需求，请确认无误后继续填报</div>' : '';
+    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择用料日期（可多选）' : '本月日期'}</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}${submittedWarning}</div></aside>`;
   }
 
   function rowData(product) {
@@ -398,11 +435,11 @@
     const bodyRows = state.selected.map((product, index) => {
       const data = rowData(product);
       const quantities = splitByPersonType
-        ? groups.flatMap((group) => { const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0); const purchase = product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity; return [`<td class="number">${amount(quantity)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(purchase)} ${escapeHtml(product.doseUnit)}</td>`]; })
-        : [`<td class="number">${amount(data.totalQty)} ${escapeHtml(product.doseUnit)}</td>`, `<td class="number">${amount(data.totalPurchaseQty)} ${escapeHtml(product.doseUnit)}</td>`];
-      return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td>${escapeHtml(product.code)}</td><td>是</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
+        ? groups.flatMap((group) => { const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0); const purchase = product.packSize ? Math.ceil(quantity / product.packSize) * product.packSize : quantity; return [`<td class="number">${amount(quantity)}</td>`, `<td class="number">${amount(purchase)}</td>`]; })
+        : [`<td class="number">${amount(data.totalQty)}</td>`, `<td class="number">${amount(data.totalPurchaseQty)}</td>`];
+      return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td>${escapeHtml(product.code)}</td><td>是</td><td>${escapeHtml(product.unit || product.doseUnit || '--')}</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
     }).join('');
-    return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:370px"><col style="width:118px"><col style="width:100px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">人均用量</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
+    return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:370px"><col style="width:118px"><col style="width:100px"><col style="width:88px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">人均用量</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th><th rowspan="2">计量单位</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
   }
 
   function renderPeopleTable() {

@@ -116,6 +116,8 @@
         orderQty: line.orderQty ?? line.quantity,
         unitPrice: line.unitPrice ?? line.orderPrice,
         shippingQty: line.shippingQty ?? line.shippedQty ?? line.actualQty,
+        recipeDemandDate: record.recipeDemandDate || order.recipeDemandDate || '',
+        recipeDemandDates: record.recipeDemandDates || order.recipeDemandDates || [],
         customerCode: record.customerCode || order.customerCode || order.customerNo,
         deliveryPerson: record.deliveryPerson || record.driver || order.driver,
         mealCounts: record.mealCounts || order.mealCounts,
