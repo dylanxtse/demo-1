@@ -335,33 +335,6 @@
     return attendanceService.status(menuForDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
   }
 
-  function hasSubmittedAuxiliaryDemand(date) {
-    const records = window.DemoStore?.get?.('recipeDemandRecords');
-    const currentCanteenId = String(currentCanteen.id || '');
-    const currentCanteenName = String(currentCanteen.name || '');
-    if (!Array.isArray(records)) return false;
-
-    return records.some((record) => {
-      if (!record || !(record.auxiliary === true || record.auxiliary === 'true' || record.demandType === 'auxiliary' || record.source === '学校端辅料下单')) return false;
-
-      const recordCanteen = record.canteen && typeof record.canteen === 'object' ? record.canteen : {};
-      const recordCanteenId = String(record.canteenId || recordCanteen.id || '');
-      const recordCanteenName = String(recordCanteen.name || (typeof record.canteen === 'string' ? record.canteen : '') || record.canteenName || '');
-      if (recordCanteenId && currentCanteenId) {
-        if (recordCanteenId !== currentCanteenId) return false;
-      } else if (!recordCanteenName || !currentCanteenName || recordCanteenName !== currentCanteenName) {
-        return false;
-      }
-
-      const recordDates = [
-        ...(Array.isArray(record.dates) ? record.dates : typeof record.dates === 'string' ? record.dates.split(/[、,，\s]+/) : []),
-        ...(Array.isArray(record.dateSummaries) ? record.dateSummaries.map((summary) => summary?.date) : []),
-        ...(record.date ? String(record.date).split(/[、,，\s]+/) : [])
-      ];
-      return recordDates.some((recordDate) => normalizeRecipeDate(recordDate) === date);
-    });
-  }
-
   function renderCanteenBar() {
     const canteens = availableCanteens.length ? availableCanteens : [currentCanteen];
     return `<div class="school-recipe-canteen-switch" aria-label="当前食堂"><div class="school-recipe-canteen-tabs" role="tablist" aria-label="切换食堂">${canteens.map((canteen) => { const key = String(canteen.id || canteen.name); const active = key === String(currentCanteen.id || currentCanteen.name); return `<button type="button" class="school-recipe-canteen-tab${active ? ' is-active' : ''}" role="tab" aria-selected="${active}" data-aux-canteen="${escapeHtml(key)}">${escapeHtml(canteen.name)}</button>`; }).join('')}</div></div>`;
@@ -402,9 +375,7 @@
         ? directService.readCombinedDraft(currentCanteen).dates.includes(date) : date === dateState.selectedDate;
       return `<button type="button" class="school-recipe-attendance-date-item ${selected ? 'is-selected' : ''}${hasRecipe ? '' : ' is-empty'} is-${status}" data-aux-date="${date}" aria-pressed="${selected}" title="${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择或取消此用料日期' : hasRecipe ? '有菜谱' : '无菜谱'}"><span class="school-recipe-attendance-date-number">${Number(date.slice(8, 10))}</span><span class="school-recipe-attendance-date-week${week}">${weekday(date)}</span></button>`;
     }).join('');
-    const submittedWarning = state.mode === 'people' && hasSubmittedAuxiliaryDemand(dateState.selectedDate)
-      ? '<div class="school-auxiliary-submitted-warning" role="status">已提交过当前日期的用料需求，请确认无误后继续填报</div>' : '';
-    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择用料日期（可多选）' : '本月日期'}</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}${submittedWarning}</div></aside>`;
+    return `<aside class="school-recipe-attendance-date-panel school-auxiliary-recipe-date-panel" aria-label="商品需求填报日期"><div class="school-recipe-attendance-panel-heading"><div class="school-recipe-attendance-calendar-actions"><button type="button" data-aux-month="prev" aria-label="上一个月" title="上一个月" ${canGoPrevious ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg></button><span class="school-recipe-attendance-current-month">${monthLabel(dateState.monthStart)}</span><button type="button" data-aux-month="next" aria-label="下一个月" title="下一个月" ${canGoNext ? '' : 'disabled'}><svg class="icon-svg school-recipe-attendance-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div><div class="school-recipe-attendance-calendar-caption"><span>${state.mode === 'quantity' && state.orderMode === 'combined' ? '选择用料日期（可多选）' : '本月日期'}</span></div><div class="school-recipe-attendance-calendar-weekdays" aria-hidden="true">${weekdayNames.map((name) => `<span>${name}</span>`).join('')}</div><div class="school-recipe-attendance-date-list">${cells}</div></aside>`;
   }
 
   function rowData(product) {

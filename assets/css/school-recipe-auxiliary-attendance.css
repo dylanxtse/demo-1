@@ -5,7 +5,6 @@
 .school-auxiliary-canteen-tab.is-active { border-color: var(--primary); color: var(--primary); background: #edf5ff; font-weight: 500; }
 .school-auxiliary-independent-tag { margin-left: auto; padding: 4px 9px; border: 1px solid #cfe4d6; border-radius: 4px; color: #2b7a4b; background: #f2fbf5; font-size: 12px; }
 .school-auxiliary-body { display: grid; min-width: 0; min-height: 0; flex: 1; grid-template-columns: 280px minmax(0, 1fr); gap: var(--content-gap); padding: 12px; overflow: hidden; }
-.school-auxiliary-submitted-warning { grid-column: 1 / -1; margin: 4px 2px 0; padding: 8px 9px; border: 0; border-radius: 0; color: #d93025; background: transparent; font-size: 12px; line-height: 18px; }
 .school-auxiliary-date-panel { display: flex; min-height: 0; flex-direction: column; border: 1px solid var(--border-light); border-radius: 6px; background: #fafbfc; overflow: hidden; }
 .school-auxiliary-date-heading { padding: 16px; border-bottom: 1px solid var(--border-light); color: #354052; font-size: 14px; font-weight: 500; }
 .school-auxiliary-date-list { display: flex; flex-direction: column; gap: 6px; padding: 10px; overflow: auto; }
