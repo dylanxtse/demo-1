@@ -11,8 +11,13 @@
     orderPricePriority3: '近一次销售价',
     orderPricePriority4: '手动定价',
     allowClientEditPrice: true,
+    allowRecipeDemandPurchaseQuantityEdit: true,
     splitOrderByMeal: true,
     splitOrderByPersonType: false,
+    recipePurchaseQtyChangeThresholdMode: 'quantity',
+    recipePurchaseQtyChangeThresholdValue: '',
+    recipePurchaseQtyChangeLowerLimitValue: '',
+    recipePurchaseQtyChangeUpperLimitValue: '',
     purchasePriceMode: '订价模式',
     purchasePricePriority1: '协议价',
     purchasePricePriority2: '市场价',
@@ -164,6 +169,39 @@
             ${configCheckbox('splitOrderByPersonType', '按人员类型拆单', '开启后，学校通过需求填报下单时将按人员类型和是否营养餐拆分订单；')}
           </div>
         </div>
+        <div class="config-row permission-row recipe-purchase-edit-row">
+          <div class="config-label">需求填报采购量修改</div>
+          <div class="recipe-purchase-edit-content">
+            <div class="config-inline-fields recipe-purchase-edit-head">
+              <label class="recipe-purchase-switch">
+                <span>允许修改</span>
+                <input type="checkbox" data-config="allowRecipeDemandPurchaseQuantityEdit" aria-label="允许修改需求填报采购量">
+                <span class="recipe-purchase-switch-track" aria-hidden="true"></span>
+              </label>
+              <div class="recipe-purchase-limit-settings">
+                <div class="config-inline-fields recipe-purchase-limit-mode-fields">
+                  <span>限制类型：按</span>
+                  <select class="config-select recipe-purchase-limit-mode" data-config="recipePurchaseQtyChangeThresholdMode" aria-label="采购量修改限制方式">
+                    <option value="quantity">商品数量</option>
+                    <option value="percentage">百分比</option>
+                  </select>
+                  <span>限制</span>
+                  ${help('按商品数量时直接计算采购量差值；按百分比时以系统计算采购量为基准。空值表示对应方向不限')}
+                </div>
+                <div class="config-inline-fields recipe-purchase-limit-bound-row">
+                  <span class="recipe-purchase-limit-bound-label">最小数量：采购量 −</span>
+                  <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeLowerLimitValue" aria-label="最小采购量减去的数量或比例" placeholder="不限">
+                  <span data-recipe-purchase-limit-unit>商品单位</span>
+                </div>
+                <div class="config-inline-fields recipe-purchase-limit-bound-row">
+                  <span class="recipe-purchase-limit-bound-label">最大数量：采购量 +</span>
+                  <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeUpperLimitValue" aria-label="最大采购量增加的数量或比例" placeholder="不限">
+                  <span data-recipe-purchase-limit-unit>商品单位</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <h2 class="system-config-title">采购配置</h2>
         <div class="config-row purchase-mode-row">
@@ -253,7 +291,12 @@
 
   const root = window.AppShell.mount({ title: '业务配置', content });
   const persistedSettings = window.DemoStore.getSettings() || {};
-  let savedSettings = { ...defaults, ...persistedSettings };
+  let savedSettings = {
+    ...defaults,
+    ...persistedSettings,
+    recipePurchaseQtyChangeLowerLimitValue: persistedSettings.recipePurchaseQtyChangeLowerLimitValue ?? persistedSettings.recipePurchaseQtyChangeThresholdValue ?? defaults.recipePurchaseQtyChangeLowerLimitValue,
+    recipePurchaseQtyChangeUpperLimitValue: persistedSettings.recipePurchaseQtyChangeUpperLimitValue ?? persistedSettings.recipePurchaseQtyChangeThresholdValue ?? defaults.recipePurchaseQtyChangeUpperLimitValue
+  };
   let pendingScrollPosition = null;
   const recipeDeliveryKeys = new Set(['recipeDeliveryAdvanceDays', 'recipeDeliveryTime']);
   let recipeDeliveryEditing = false;
@@ -307,11 +350,27 @@
       if (element.type === 'checkbox') element.checked = Boolean(savedSettings[key]);
       else if (key === 'purchasePriceMode') element.value = normalizePurchaseMode(savedSettings[key]);
       else element.value = savedSettings[key] ?? '';
+      if (element.matches('.recipe-purchase-limit-value')) element.dataset.lastValidValue = element.value;
     });
     updatePurchasePriorityFields(root.querySelector('[data-config="purchasePriceMode"]')?.value);
     root.querySelectorAll('[data-radio-config]').forEach((element) => {
       element.checked = String(savedSettings[element.dataset.radioConfig] ?? defaults[element.dataset.radioConfig]) === element.value;
     });
+    updateRecipePurchaseLimitUnit();
+    updateRecipePurchaseLimitVisibility();
+  }
+
+  function updateRecipePurchaseLimitUnit() {
+    const mode = root.querySelector('[data-config="recipePurchaseQtyChangeThresholdMode"]')?.value;
+    root.querySelectorAll('[data-recipe-purchase-limit-unit]').forEach((unit) => {
+      unit.textContent = mode === 'percentage' ? '%' : '商品单位';
+    });
+  }
+
+  function updateRecipePurchaseLimitVisibility() {
+    const enabled = Boolean(root.querySelector('[data-config="allowRecipeDemandPurchaseQuantityEdit"]')?.checked);
+    const limitSettings = root.querySelector('.recipe-purchase-limit-settings');
+    if (limitSettings) limitSettings.hidden = !enabled;
   }
 
   function readFormSettings() {
@@ -376,13 +435,32 @@
     if (event.target.matches('[data-config], [data-radio-config]')) {
       if (recipeDeliveryKeys.has(event.target.dataset.config)) return;
       if (event.target.dataset.config === 'purchasePriceMode') updatePurchasePriorityFields(event.target.value);
+      if (event.target.dataset.config === 'recipePurchaseQtyChangeThresholdMode') updateRecipePurchaseLimitUnit();
+      if (event.target.dataset.config === 'allowRecipeDemandPurchaseQuantityEdit') updateRecipePurchaseLimitVisibility();
       persistSettings();
     }
   });
   root.addEventListener('input', (event) => {
     if (recipeDeliveryKeys.has(event.target.dataset.config)) return;
+    if (event.target.matches('.recipe-purchase-limit-value')) {
+      const value = event.target.value;
+      if (!/^\d*\.?\d*$/.test(value)) {
+        event.target.value = event.target.dataset.lastValidValue || '';
+        return;
+      }
+      event.target.dataset.lastValidValue = value;
+      if (value !== '.' && (value === '' || Number.isFinite(Number(value)))) persistSettings();
+      return;
+    }
     if (event.target.matches('.config-input')) persistSettings();
   });
+  root.addEventListener('blur', (event) => {
+    if (!event.target.matches('.recipe-purchase-limit-value')) return;
+    const value = event.target.value.trim();
+    event.target.value = value && value !== '.' && Number.isFinite(Number(value)) ? String(Number(value)) : '';
+    event.target.dataset.lastValidValue = event.target.value;
+    persistSettings();
+  }, true);
   root.addEventListener('click', (event) => {
     if (event.target.closest('[data-action="edit-recipe-delivery"]')) {
       setRecipeDeliveryEditing(true);

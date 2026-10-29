@@ -86,7 +86,11 @@
   const currentSalesPrice = (item) => demandService.currentSalesPrice?.(productForIngredient(item)) ?? 0;
   const canModifyUnitPrice = () => Boolean(demandService.canModifyClientOrderPrice?.());
   const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value || {}, key);
+  const recipePurchaseEditSetting = window.DemoStore?.getSettings?.()?.allowRecipeDemandPurchaseQuantityEdit;
+  const canEditRecipePurchaseQuantity = recipePurchaseEditSetting !== false && recipePurchaseEditSetting !== 'false'
+    && recipePurchaseEditSetting !== '否' && recipePurchaseEditSetting !== 0 && recipePurchaseEditSetting !== '0';
   const canModifyPurchaseQuantity = (item) => {
+    if (!canEditRecipePurchaseQuantity) return false;
     const product = productForIngredient(item);
     const value = item?.allowSchoolModifyPurchaseQuantity ?? product?.allowSchoolModifyPurchaseQuantity;
     return value !== false && value !== 'false' && value !== '否' && value !== 0 && value !== '0';
@@ -99,6 +103,11 @@
     const amount = Number(value);
     return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
   };
+  const purchaseQuantityThreshold = (baseQuantity, nextQuantity) => canEditRecipePurchaseQuantity
+    ? window.RecipePurchaseQuantityThreshold?.evaluate(baseQuantity, nextQuantity) || { valid: true, enabled: false }
+    : { valid: true, enabled: false };
+  const purchaseQuantityThresholdMessage = (result) => window.RecipePurchaseQuantityThreshold?.message(result)
+    || '采购量调整超出允许范围';
   const purchaseRowKey = (item) => String(item?.key || `${item?.productCode || item?.productName || ''}::${item?.unit || '--'}`);
   const purchaseQuantityKey = (summary, meal, item, participantKey) => demandService.purchaseAllocationKey?.(summary, meal, item, participantKey)
     || `${meal?.key || ''}::${purchaseRowKey(item)}::${participantKey}`;
@@ -342,21 +351,25 @@
           const key = purchaseQuantityKey(null, meal, row, participant.key);
           const participantName = attendanceService.participantDisplayName?.(participant, participants)
             || participant.label || participant.tagName || participant.key;
+          const baseValue = purchaseQuantity(row.participantQty?.[participant.key], row);
           const value = purchaseQuantityValue(null, meal, row, participant);
+          const threshold = purchaseQuantityThreshold(baseValue, value);
           const participantEditable = editable && Number(row.participantQty?.[participant.key] || 0) > 0;
           const overridden = participantEditable && hasPurchaseQuantityOverride(null, meal, row, participant.key);
           const readonlyTitle = participantEditable ? '' : ` title="${editable ? '该人员类型暂无需求' : '企业端已关闭学校修改采购量'}"`;
-          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${participantEditable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${participantName}采购量${participantEditable ? '' : '（无需求不可编辑）'}`)}"${participantEditable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购量`)}" title="清空采购量"${participantEditable ? '' : ' disabled'}>×</button></div></td>`;
+          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${participantEditable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input${threshold.valid ? '' : ' is-invalid'}" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(value))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-base-quantity="${escapeHtml(fixedQuantity(baseValue))}" data-purchase-participant-key="${escapeHtml(participant.key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-invalid="${!threshold.valid}" aria-label="${escapeHtml(`${participantName}采购量${participantEditable ? '' : '（无需求不可编辑）'}`)}"${threshold.valid ? '' : ` title="${escapeHtml(purchaseQuantityThresholdMessage(threshold))}"`}${participantEditable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${participantName}采购量`)}" title="清空采购量"${participantEditable ? '' : ' disabled'}>×</button></div></td>`;
           return `${demandCell}${purchaseCell}`;
         }).join('') : (() => {
           const totalQty = participants.reduce((total, participant) => total + Number(row.participantQty?.[participant.key] || 0), 0);
+          const basePurchaseQty = purchaseQuantity(totalQty, row);
           const totalPurchaseQty = aggregatePurchaseQuantity(meal, row, participants);
+          const threshold = purchaseQuantityThreshold(basePurchaseQty, totalPurchaseQty);
           const aggregateMeal = splitOrderByMeal() ? meal : { key: 'all-meals' };
           const key = purchaseQuantityKey(null, aggregateMeal, row, 'all-participants');
           const aggregateEditable = editable && totalQty > 0;
           const overridden = aggregateEditable && hasPurchaseQuantityOverride(null, aggregateMeal, row, 'all-participants');
           const readonlyTitle = aggregateEditable ? '' : ` title="${editable ? '暂无需求不可编辑' : '企业端已关闭学校修改采购量'}"`;
-          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${aggregateEditable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(totalPurchaseQty))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-label="${escapeHtml(`${row.productName || '商品'}采购量${aggregateEditable ? '' : '（不可编辑）'}`)}"${aggregateEditable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${row.productName || '商品'}采购量`)}" title="清空采购量"${aggregateEditable ? '' : ' disabled'}>×</button></div></td>`;
+          const purchaseCell = `<td class="is-number school-recipe-demand-purchase-cell${aggregateEditable ? '' : ' is-readonly'}"${readonlyTitle}><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input${threshold.valid ? '' : ' is-invalid'}" type="number" min="0" step="${isStandardProduct(row) ? '1' : 'any'}" inputmode="${isStandardProduct(row) ? 'numeric' : 'decimal'}" value="${escapeHtml(fixedQuantity(totalPurchaseQty))}" data-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-base-quantity="${escapeHtml(fixedQuantity(basePurchaseQty))}" data-purchase-overridden="${overridden ? 'true' : 'false'}" aria-invalid="${!threshold.valid}" aria-label="${escapeHtml(`${row.productName || '商品'}采购量${aggregateEditable ? '' : '（不可编辑）'}`)}"${threshold.valid ? '' : ` title="${escapeHtml(purchaseQuantityThresholdMessage(threshold))}"`}${aggregateEditable ? '' : ' disabled'}><button type="button" class="school-recipe-demand-purchase-clear" data-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空${escapeHtml(`${row.productName || '商品'}采购量`)}" title="清空采购量"${aggregateEditable ? '' : ' disabled'}>×</button></div></td>`;
           return `<td class="is-number">${quantity(totalQty)}</td>${purchaseCell}`;
         })();
         return `<tr class="school-recipe-demand-product-row${editable ? '' : ' is-readonly'}">
@@ -469,6 +482,19 @@
     if (!key || input.disabled) return;
     input.dataset.purchaseOverridden = 'true';
     state.purchaseQtyOverrides[key] = input.value;
+    return validatePurchaseQuantityInput(input);
+  }
+
+  function validatePurchaseQuantityInput(input) {
+    if (!input || input.disabled) return true;
+    const result = purchaseQuantityThreshold(input.dataset.purchaseBaseQuantity, input.value);
+    if (input.classList?.toggle) input.classList.toggle('is-invalid', !result.valid);
+    else if (result.valid) input.classList?.remove?.('is-invalid');
+    else input.classList?.add?.('is-invalid');
+    input.setAttribute?.('aria-invalid', String(!result.valid));
+    if (!result.valid) input.title = purchaseQuantityThresholdMessage(result);
+    else input.removeAttribute?.('title');
+    return result.valid;
   }
 
   function rememberUnitPrice(input) {
@@ -520,11 +546,13 @@
   }
 
   function syncPurchaseQuantityInputs() {
+    let valid = true;
     body.querySelectorAll('[data-purchase-quantity]').forEach((input) => {
       if (input.dataset.purchaseOverridden !== 'true') return;
       normalizePurchaseQuantityInput(input);
-      rememberPurchaseQuantity(input);
+      if (!rememberPurchaseQuantity(input)) valid = false;
     });
+    return valid;
   }
 
   function captureViewportState() {
@@ -573,8 +601,9 @@
     const input = button.closest('.school-recipe-demand-purchase-control')?.querySelector('[data-purchase-quantity]');
     if (input) {
       input.value = '';
-      input.dataset.purchaseOverridden = 'true';
+      const valid = rememberPurchaseQuantity(input);
       input.focus({ preventScroll: true });
+      if (!valid) showToast(purchaseQuantityThresholdMessage(purchaseQuantityThreshold(input.dataset.purchaseBaseQuantity, input.value)), true);
     }
     restoreViewportState(viewport);
     updatePurchaseClearState();
@@ -590,7 +619,6 @@
       .filter((input) => input.dataset.purchaseParticipantKey === participantKey && !input.disabled);
     inputs.forEach((input) => {
       input.value = '';
-      input.dataset.purchaseOverridden = 'true';
       rememberPurchaseQuantity(input);
     });
     restoreViewportState(viewport);
@@ -610,6 +638,8 @@
       const aggregateMeal = splitOrderByMeal() ? source.meal : { key: 'all-meals' };
       state.purchaseQtyOverrides[purchaseQuantityKey(null, aggregateMeal, source.row, 'all-participants')] = 0;
       renderBody({ preserveViewport: true });
+      updateSubmitButtonState();
+      updatePurchaseClearState();
       showToast('操作成功');
       return;
     }
@@ -740,8 +770,11 @@
     if (!submitButton || state.submitting) return;
     const preview = demandService.buildPreview([...state.selectedDates], { canteen: currentCanteenScope });
     const hasCurrentPurchaseQuantity = hasPurchaseQuantity(preview);
+    const hasInvalidPurchaseQuantity = [...body.querySelectorAll('[data-purchase-quantity]:not(:disabled)')]
+      .some((input) => !validatePurchaseQuantityInput(input));
     submitButton.disabled = !(preview.canSubmit
       && hasCurrentPurchaseQuantity
+      && !hasInvalidPurchaseQuantity
       && expectedAtIsAllowed(state.expectedAt, preview.dates));
     refreshProductAmounts(preview);
   }
@@ -768,7 +801,8 @@
     const purchaseInput = event.target.closest('[data-purchase-quantity]');
     if (purchaseInput) {
       normalizePurchaseQuantityInput(purchaseInput);
-      rememberPurchaseQuantity(purchaseInput);
+      const valid = rememberPurchaseQuantity(purchaseInput);
+      if (!valid) showToast(purchaseQuantityThresholdMessage(purchaseQuantityThreshold(purchaseInput.dataset.purchaseBaseQuantity, purchaseInput.value)), true);
       updatePurchaseClearState();
       updateSubmitButtonState();
     }
@@ -882,7 +916,12 @@
     }
     if (action !== 'submit' || state.submitting) return;
     if (!syncUnitPriceInputs()) return;
-    syncPurchaseQuantityInputs();
+    if (!syncPurchaseQuantityInputs()) {
+      const invalid = body.querySelector('[data-purchase-quantity][aria-invalid="true"]');
+      invalid?.focus();
+      showToast(purchaseQuantityThresholdMessage(purchaseQuantityThreshold(invalid?.dataset.purchaseBaseQuantity, invalid?.value)), true);
+      return;
+    }
     const preview = demandService.buildPreview([...state.selectedDates], {
       canteen: currentCanteenScope
     });

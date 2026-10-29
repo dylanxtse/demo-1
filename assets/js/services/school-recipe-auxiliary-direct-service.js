@@ -91,6 +91,11 @@
       category, ...legacy
     };
   });
+  const packagedProductCodes = new Set(attendanceProducts()
+    .filter((product) => Number(product.packSize) > 0)
+    .map((product) => String(product.code)));
+  const isPackagedStandardProduct = (product) => product?.isStandardProduct === true
+    || packagedProductCodes.has(String(product?.code || product?.productCode || ''));
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const roundQuantity = (value) => Number(Number(value || 0).toFixed(2));
   const timestamp = () => window.BusinessRules?.now?.() || new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -566,7 +571,7 @@
   }
 
   window.SchoolRecipeAuxiliaryDirectService = {
-    products: clone(products), attendanceProducts, mealDefinitionsForDate, keyFor, catalogProducts,
+    products: clone(products), attendanceProducts, isPackagedStandardProduct, mealDefinitionsForDate, keyFor, catalogProducts,
     readDraft, writeDraft, readFilledDates, readNoMealDraft, readNoMealFilledDates, readCombinedDraft, writeCombinedDraft,
     participantsFor, buildPreview, buildDatesPreview, buildNoMealPreview, buildNoMealDatesPreview, buildCombinedPreview, buildSimplePreview, buildSimpleDraftPreview,
     submit, submitDates, submitSimple

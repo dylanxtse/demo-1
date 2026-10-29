@@ -155,7 +155,8 @@ test('干调数量填报只显示商品和确认入口，送达时间在确认�
   assert.match(page.outerHTML, /data-aux-simple-confirm disabled/);
   assert.match(page.outerHTML, /data-aux-entry-mode="people"/);
   assert.doesNotMatch(page.outerHTML, /school-recipe-entry-default-mark/);
-  assert.match(page.outerHTML, /<th>序号<\/th><th>商品名称（计量单位\/品牌\/规格）<\/th><th>商品编号<\/th><th>单位<\/th><th>采购数量<\/th>/);
+  assert.match(page.outerHTML, /<th>序号<\/th><th>商品名称（计量单位\/品牌\/规格）<\/th><th>商品编号<\/th><th>是否标品<\/th><th>单位<\/th><th>采购数量<\/th>/);
+  assert.match(page.outerHTML, /<td>SP0300030<\/td><td>是<\/td><td>L<\/td>/);
   assert.doesNotMatch(page.outerHTML, /<th>干调<\/th>/);
   assert.doesNotMatch(page.outerHTML, /school-auxiliary-calendar|data-aux-date=|data-aux-direct-meal=/);
 });
@@ -202,7 +203,7 @@ test('干调商品可按名称和编号搜索，底部可查看已填写商品',
   assert.match(body.innerHTML, /食盐/);
   click('[data-aux-simple-query]');
   assert.match(body.innerHTML, /未找到匹配的商品/);
-  assert.match(body.innerHTML, /colspan="5"/);
+  assert.match(body.innerHTML, /colspan="6"/);
   click('[data-aux-simple-search-reset]');
   assert.equal(searchInput.value, '');
   assert.match(body.innerHTML, /金龙鱼5L桶装油/);
@@ -333,6 +334,9 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
     };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-simple-confirm.js'), 'utf8'), context);
+  assert.match(confirmHtml, /<th>商品编号<\/th><th>是否标品<\/th><th>单位<\/th>/);
+  assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>L<\/td>/);
+  assert.match(confirmHtml, /<td colspan="7">合计金额<\/td>/);
   assert.match(confirmHtml, /干调需求确认/);
   assert.match(confirmHtml, /data-aux-simple-confirm-expected-at/);
   assert.match(confirmHtml, /期望送达时间/);

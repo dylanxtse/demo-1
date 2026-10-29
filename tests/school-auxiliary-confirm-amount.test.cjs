@@ -72,8 +72,15 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
     assert.match(html, /<h1>干调需求确认<\/h1>/);
     assert.match(html, /<th rowspan="2">小计<\/th>/);
     assert.match(html, /<th rowspan="2">单位<\/th>/);
-    assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
-    assert.doesNotMatch(html, /<td class="is-number">[\d,.]+ (?:L|kg)<\/td>/);
+    assert.match(html, /<th rowspan="2">编号<\/th><th rowspan="2">是否标品<\/th><th rowspan="2">单位<\/th>/);
+    assert.match(html, /<td>SP0300030<\/td><td>是<\/td><td>L<\/td>/);
+    if (splitPerson) {
+      assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
+      assert.doesNotMatch(html, /<th>上次结余<\/th>/);
+    } else {
+      assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number">[\d,.]+ (?:L|kg)<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
+      assert.match(html, /<th>上次结余<\/th>/);
+    }
     assert.doesNotMatch(html, /schoolRecipeAuxiliaryExpectedAt|school-recipe-demand-delivery-field/);
     assert.match(html, /填报天数：<\/span><strong>1<\/strong>/);
     assert.match(html, /午餐合计金额/);
@@ -84,7 +91,7 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
     assert.equal(subtotalValues.length, 2);
     assert.equal(mealTotal, Number(subtotalValues.reduce((sum, value) => sum + value, 0).toFixed(2)));
     assert.ok(grandTotal > mealTotal);
-    assert.match(html, new RegExp(`<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${splitPerson ? 9 : 7}">午餐合计金额`));
+    assert.match(html, new RegExp(`<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${splitPerson ? 10 : 9}">午餐合计金额`));
   }
 });
 

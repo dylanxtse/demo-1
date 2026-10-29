@@ -93,8 +93,8 @@
       const code = String(product.code);
       const value = state.quantities[code] ?? '';
       const name = `${product.name}（${product.unit}/${product.brand}/${product.spec}）`;
-      return `<tr><td>${index + 1}</td><td class="product-cell">${escapeHtml(name)}</td><td>${escapeHtml(code)}</td><td>${escapeHtml(product.unit)}</td><td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="请输入" value="${escapeHtml(value)}" data-aux-simple-quantity="${escapeHtml(code)}" aria-label="${escapeHtml(product.name)}采购数量"></div></td></tr>`;
-    }).join('') || `<tr><td colspan="5" class="school-auxiliary-empty">${!catalog.length ? '暂无可填报商品' : state.filledOnly && !filledCount() ? '暂无已填写商品' : '未找到匹配的商品'}</td></tr>`;
+      return `<tr><td>${index + 1}</td><td class="product-cell">${escapeHtml(name)}</td><td>${escapeHtml(code)}</td><td>${service.isPackagedStandardProduct(product) ? '是' : '否'}</td><td>${escapeHtml(product.unit)}</td><td><div class="school-recipe-direct-input-wrap"><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="请输入" value="${escapeHtml(value)}" data-aux-simple-quantity="${escapeHtml(code)}" aria-label="${escapeHtml(product.name)}采购数量"></div></td></tr>`;
+    }).join('') || `<tr><td colspan="6" class="school-auxiliary-empty">${!catalog.length ? '暂无可填报商品' : state.filledOnly && !filledCount() ? '暂无已填写商品' : '未找到匹配的商品'}</td></tr>`;
   }
 
   function renderPage() {
@@ -107,7 +107,7 @@
         ${renderCanteens()}
         <div class="school-auxiliary-simple-scroll">
           <div class="school-auxiliary-simple-search"><label for="schoolAuxiliaryProductSearch">商品名称</label><input id="schoolAuxiliaryProductSearch" type="search" value="${escapeHtml(state.searchInput)}" placeholder="请输入商品名称/编号" data-aux-simple-search><button type="button" class="btn btn-primary btn-sm" data-aux-simple-query>查询</button><button type="button" class="btn btn-sm" data-aux-simple-search-reset>重置</button></div>
-          <div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-simple-table"><thead><tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>单位</th><th>采购数量</th></tr></thead><tbody data-aux-simple-table-body>${renderRows()}</tbody></table></div>
+          <div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-simple-table"><thead><tr><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编号</th><th>是否标品</th><th>单位</th><th>采购数量</th></tr></thead><tbody data-aux-simple-table-body>${renderRows()}</tbody></table></div>
         </div>
         <footer class="school-auxiliary-footer school-auxiliary-simple-footer"><div><button type="button" class="school-auxiliary-simple-filled-count" data-aux-simple-filled-count aria-pressed="${state.filledOnly}"${count || state.filledOnly ? '' : ' hidden disabled'}>${toggleLabel}</button></div><div class="school-auxiliary-simple-actions"><span class="school-auxiliary-simple-error" data-aux-simple-error role="alert"></span><button type="button" class="btn btn-primary btn-sm${result.canSubmit ? '' : ' btn-disabled'}" data-aux-simple-confirm${result.canSubmit ? '' : ' disabled'}>确认需求</button></div></footer>
       </main></div>

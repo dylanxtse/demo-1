@@ -416,8 +416,13 @@
     purchasePricePriority5: '手动定价',
     purchasePricePriority6: '',
     allowClientEditPrice: true,
+    allowRecipeDemandPurchaseQuantityEdit: true,
     splitOrderByMeal: true,
     splitOrderByPersonType: false,
+    recipePurchaseQtyChangeThresholdMode: 'quantity',
+    recipePurchaseQtyChangeThresholdValue: '',
+    recipePurchaseQtyChangeLowerLimitValue: '',
+    recipePurchaseQtyChangeUpperLimitValue: '',
     recipeDeliveryAdvanceDays: '0',
     recipeDeliveryTime: '07:30',
     autoShipAfterSorting: false,
@@ -469,6 +474,13 @@
         ...(existing.auditReviewers && typeof existing.auditReviewers === 'object' ? existing.auditReviewers : {})
       }
     };
+
+    const hasLowerPurchaseLimit = Object.prototype.hasOwnProperty.call(existing, 'recipePurchaseQtyChangeLowerLimitValue');
+    const hasUpperPurchaseLimit = Object.prototype.hasOwnProperty.call(existing, 'recipePurchaseQtyChangeUpperLimitValue');
+    if (!hasLowerPurchaseLimit && !hasUpperPurchaseLimit && existing.recipePurchaseQtyChangeThresholdValue != null) {
+      current.settings.recipePurchaseQtyChangeLowerLimitValue = existing.recipePurchaseQtyChangeThresholdValue;
+      current.settings.recipePurchaseQtyChangeUpperLimitValue = existing.recipePurchaseQtyChangeThresholdValue;
+    }
 
     // 旧版配置没有精度版本，首次升级时按新的默认规则迁移；之后保留用户的切换结果。
     if (existing.decimalSettingsVersion !== defaultSettings.decimalSettingsVersion) {

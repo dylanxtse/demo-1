@@ -251,7 +251,9 @@
 .school-recipe-demand-unit-price-input:hover,
 .school-recipe-demand-unit-price-input:focus { border-color: #a9c8fa; background: #fff; }
 .school-recipe-demand-unit-price-input[aria-invalid="true"],
-.school-recipe-demand-unit-price-input[aria-invalid="true"]:focus { border-color: #f04e4e; background: #fff7f7; box-shadow: 0 0 0 1px rgba(240, 78, 78, .08); }
+.school-recipe-demand-unit-price-input[aria-invalid="true"]:focus,
+.school-recipe-demand-purchase-input[aria-invalid="true"],
+.school-recipe-demand-purchase-input[aria-invalid="true"]:focus { border-color: #f04e4e; background: #fff7f7; box-shadow: 0 0 0 1px rgba(240, 78, 78, .08); }
 .school-recipe-demand-unit-price-input:disabled { border-color: #eef1f5; color: #9aa4b2; background: #f7f8fa; cursor: not-allowed; }
 .school-recipe-demand-unit-price-input:disabled:hover { border-color: #eef1f5; background: #f7f8fa; }
 .school-recipe-demand-unit-price-input::-webkit-inner-spin-button,

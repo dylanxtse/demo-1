@@ -1,5 +1,8 @@
 (function () {
   const isSupplierProductPage = document.body?.dataset.userEnd === 'supplier';
+  const isFalseFlag = (value) => value === false || value === 'false' || value === '否' || value === 0 || value === '0';
+  const settings = window.DemoStore?.getSettings?.() || {};
+  const canManagePurchaseQuantity = !isSupplierProductPage && !isFalseFlag(settings.allowRecipeDemandPurchaseQuantityEdit);
   const downloadIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   const addIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   const categoryIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
@@ -51,11 +54,12 @@
                 <div class="filter-group">
                   <label class="filter-label" for="standardProductFilter">是否标品</label>
                   <select class="filter-select" id="standardProductFilter"><option value="全部" selected>全部</option><option value="是">是</option><option value="否">否</option></select>
-                </div>
+                </div>`}
+                ${canManagePurchaseQuantity ? `
                 <div class="filter-group">
                   <label class="filter-label" for="purchaseQuantityFilter">是否允许修改采购量</label>
                   <select class="filter-select" id="purchaseQuantityFilter"><option value="全部" selected>全部</option><option value="是">是</option><option value="否">否</option></select>
-                </div>`}
+                </div>` : ''}
               </div>
               <div class="action-controls">
                 <button class="btn btn-primary btn-sm btn-fixed" type="button" data-action="query">查询</button>
@@ -67,13 +71,13 @@
           <div class="action-bar">
             <div class="action-main">
               <button class="btn btn-primary btn-sm btn-action" type="button" data-action="add-product">${addIcon}添加商品</button>
-              ${isSupplierProductPage ? '' : `<div class="purchase-quantity-action-wrap" id="purchaseQuantityActionWrap">
+              ${canManagePurchaseQuantity ? `<div class="purchase-quantity-action-wrap" id="purchaseQuantityActionWrap">
                 <button id="batchPurchaseQuantityBtn" class="btn btn-sm btn-action btn-blue btn-disabled purchase-quantity-action" type="button" disabled title="请先勾选商品" aria-haspopup="menu">修改采购量设置<span class="purchase-quantity-action-arrow" aria-hidden="true">▾</span></button>
                 <div class="purchase-quantity-menu" role="menu" aria-label="采购量修改权限">
                   <button class="purchase-quantity-menu-item" type="button" data-action="allow-purchase-quantity" role="menuitem">允许修改</button>
                   <button class="purchase-quantity-menu-item" type="button" data-action="deny-purchase-quantity" role="menuitem">禁止修改</button>
                 </div>
-              </div>`}
+              </div>` : ''}
               <button id="supplierImportInfoBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品信息</button>
               <button id="supplierImportImageBtn" class="btn btn-sm btn-action btn-blue ${isSupplierProductPage ? 'btn-disabled' : ''}" type="button" ${isSupplierProductPage ? 'disabled' : ''}>导入商品图片</button>
               ${isSupplierProductPage ? '' : '<button class="btn btn-sm btn-action btn-blue" type="button" id="importMarketPriceBtn">导入市场价</button>'}
@@ -103,7 +107,7 @@
                     <th>产地</th>
                     <th>保质期</th>
                     ${isSupplierProductPage ? '' : '<th>采购类型</th>'}
-                    ${isSupplierProductPage ? '' : '<th><span class="product-list-header-title"><span>是否允许修改采购量</span><span class="config-help" data-product-tooltip="允许修改的商品在学校根据食谱下单时可自定义修改采购量" tabindex="0" role="img" aria-label="允许修改的商品在学校根据食谱下单时可自定义修改采购量">?</span></span></th>'}
+                    ${canManagePurchaseQuantity ? '<th><span class="product-list-header-title"><span>是否允许修改采购量</span><span class="config-help" data-product-tooltip="允许修改的商品在学校根据食谱下单时可自定义修改采购量" tabindex="0" role="img" aria-label="允许修改的商品在学校根据食谱下单时可自定义修改采购量">?</span></span></th>' : ''}
                     <th>商品来源</th>
                     <th>添加时间</th>
                     <th>操作</th>
@@ -177,6 +181,34 @@
           <div class="unshelf-modal-actions">
             <button class="btn" type="button" data-action="cancel-market-price">取消</button>
             <button class="btn btn-primary" type="button" data-action="confirm-market-price">导入</button>
+          </div>
+        </div>
+      </div>
+      <div class="unshelf-modal" id="productInfoImportModal" aria-hidden="true">
+        <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="productInfoImportTitle" aria-describedby="productInfoImportHint">
+          <div class="unshelf-modal-header">
+            <h2 id="productInfoImportTitle">导入商品信息</h2>
+            <button class="unshelf-modal-close" type="button" data-action="close-product-info-import-modal" aria-label="关闭">×</button>
+          </div>
+          <div class="unshelf-modal-body">
+            <div class="market-price-import-section">
+              <label class="unshelf-reason-label">下载模板</label>
+              <a href="./product-info-import-template.html" class="market-price-import-template-link">商品信息导入模板.xlsx</a>
+              <p class="market-price-import-upload-hint" id="productInfoImportHint">储存条件列位于规格后，可留空；填写时请选择冷冻、冷藏或常温。</p>
+            </div>
+            <div class="market-price-import-section">
+              <label class="unshelf-reason-label">上传文件</label>
+              <div class="market-price-import-upload">
+                <button class="btn btn-sm btn-blue" type="button" data-action="trigger-product-info-upload">上传</button>
+                <input type="file" id="productInfoFileInput" accept=".xlsx" style="display:none">
+                <span class="market-price-import-upload-hint">只能上传xlsx文件，且不超过10M</span>
+              </div>
+              <span class="market-price-import-filename" id="productInfoFileName"></span>
+            </div>
+          </div>
+          <div class="unshelf-modal-actions">
+            <button class="btn" type="button" data-action="cancel-product-info-import">取消</button>
+            <button class="btn btn-primary" type="button" data-action="confirm-product-info-import">导入</button>
           </div>
         </div>
       </div>
@@ -297,7 +329,7 @@
           <td>${safe.origin || '--'}</td>
           <td>${shelfLife}</td>
           ${isSupplierProductPage ? '' : `<td>${purchaseType}</td>`}
-          ${isSupplierProductPage ? '' : `<td class="center">${canModifyPurchaseQuantity(product) ? '是' : '否'}</td>`}
+          ${canManagePurchaseQuantity ? `<td class="center">${canModifyPurchaseQuantity(product) ? '是' : '否'}</td>` : ''}
           <td>${safe.source}</td>
           <td>${safe.addTime}</td>
           <td class="action-cell"><div class="operation-actions">
@@ -315,7 +347,6 @@
     .map((checkbox) => checkbox.closest('tr')?.querySelector('[data-code]')?.dataset.code)
     .filter(Boolean);
 
-  const isFalseFlag = (value) => value === false || value === 'false' || value === '否' || value === 0 || value === '0';
   const canModifyPurchaseQuantity = (product) => !isFalseFlag(product?.allowSchoolModifyPurchaseQuantity);
   let pendingPurchaseQuantityCodes = [];
   let productHeaderTooltip = null;
@@ -452,7 +483,7 @@
     const source = value('sourceFilter');
     const netVegetable = isSupplierProductPage ? '全部' : value('netVegetableFilter');
     const standardProduct = isSupplierProductPage ? '全部' : value('standardProductFilter');
-    const purchaseQuantity = isSupplierProductPage ? '全部' : value('purchaseQuantityFilter');
+    const purchaseQuantity = canManagePurchaseQuantity ? value('purchaseQuantityFilter') : '全部';
     const result = state.products.filter((product) => (
       (!nameOrCode || `${product.name} ${product.code}`.toLowerCase().includes(nameOrCode)) &&
       (!brand || product.brand.toLowerCase().includes(brand)) &&
@@ -461,7 +492,7 @@
       (source === '全部' || product.source === source) &&
       (isSupplierProductPage || netVegetable === '全部' || (netVegetable === '净菜' && product.isNetVegetable) || (netVegetable === '非净菜' && !product.isNetVegetable)) &&
       (isSupplierProductPage || standardProduct === '全部' || (standardProduct === '是' && product.isStandardProduct) || (standardProduct === '否' && !product.isStandardProduct)) &&
-      (isSupplierProductPage || purchaseQuantity === '全部' || (purchaseQuantity === '是' && canModifyPurchaseQuantity(product)) || (purchaseQuantity === '否' && !canModifyPurchaseQuantity(product)))
+      (!canManagePurchaseQuantity || purchaseQuantity === '全部' || (purchaseQuantity === '是' && canModifyPurchaseQuantity(product)) || (purchaseQuantity === '否' && !canModifyPurchaseQuantity(product)))
     ));
     state.filteredProducts = result;
     state.total = result.length;
@@ -475,7 +506,7 @@
     if (!isSupplierProductPage) document.getElementById('purchaseTypeFilter').value = '全部';
     if (!isSupplierProductPage) document.getElementById('netVegetableFilter').value = '全部';
     if (!isSupplierProductPage) document.getElementById('standardProductFilter').value = '全部';
-    if (!isSupplierProductPage) document.getElementById('purchaseQuantityFilter').value = '全部';
+    if (canManagePurchaseQuantity) document.getElementById('purchaseQuantityFilter').value = '全部';
     filterProducts(true);
   }
 
@@ -612,6 +643,22 @@
       if (action === 'confirm-unshelf') confirmUnshelf();
       if (action === 'close-market-price-modal' || action === 'cancel-market-price') closeMarketPriceModal();
       if (action === 'confirm-market-price') confirmMarketPriceImport();
+      if (action === 'close-product-info-import-modal' || action === 'cancel-product-info-import') {
+        closeProductInfoImportModal();
+        return;
+      }
+      if (action === 'trigger-product-info-upload') {
+        document.getElementById('productInfoFileInput').click();
+        return;
+      }
+      if (action === 'confirm-product-info-import') {
+        confirmProductInfoImport();
+        return;
+      }
+      if (event.target.id === 'productInfoImportModal') {
+        closeProductInfoImportModal();
+        return;
+      }
       if (action === 'trigger-market-price-upload') {
         document.getElementById('marketPriceFileInput').click();
         return;
@@ -684,6 +731,25 @@
         if (event.key === 'Enter') filterProducts(true);
       });
     });
+    document.getElementById('supplierImportInfoBtn')?.addEventListener('click', openProductInfoImportModal);
+    document.getElementById('productInfoFileInput')?.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const nameSpan = document.getElementById('productInfoFileName');
+      if (!file.name.toLowerCase().endsWith('.xlsx')) {
+        if (nameSpan) nameSpan.textContent = '';
+        window.alert('只能上传xlsx文件');
+        event.target.value = '';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        if (nameSpan) nameSpan.textContent = '';
+        window.alert('文件大小不能超过10M');
+        event.target.value = '';
+        return;
+      }
+      if (nameSpan) nameSpan.textContent = file.name;
+    });
     document.getElementById('importMarketPriceBtn')?.addEventListener('click', openMarketPriceModal);
     document.getElementById('marketPriceFileInput')?.addEventListener('change', (event) => {
       const file = event.target.files[0];
@@ -702,6 +768,30 @@
     const modal = document.getElementById('marketPriceImportModal');
     modal.classList.add('is-visible');
     modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function openProductInfoImportModal() {
+    const modal = document.getElementById('productInfoImportModal');
+    modal.classList.add('is-visible');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeProductInfoImportModal() {
+    const modal = document.getElementById('productInfoImportModal');
+    modal.classList.remove('is-visible');
+    modal.setAttribute('aria-hidden', 'true');
+    document.getElementById('productInfoFileInput').value = '';
+    document.getElementById('productInfoFileName').textContent = '';
+  }
+
+  function confirmProductInfoImport() {
+    const fileInput = document.getElementById('productInfoFileInput');
+    if (!fileInput.files.length) {
+      window.alert('请先上传文件');
+      return;
+    }
+    closeProductInfoImportModal();
+    showOperationToast('导入成功');
   }
 
   function closeMarketPriceModal() {

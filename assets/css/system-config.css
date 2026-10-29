@@ -196,6 +196,59 @@
 
 .permission-row { margin-bottom: 14px; }
 .config-checkbox-group { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
+.recipe-purchase-edit-head { align-items: flex-start; gap: 12px; }
+.recipe-purchase-limit-settings { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.recipe-purchase-limit-settings[hidden] { display: none !important; }
+.recipe-purchase-limit-mode-fields { gap: 8px; min-height: 32px; }
+.recipe-purchase-limit-mode { width: 110px; }
+.recipe-purchase-limit-bound-row { gap: 6px; min-height: 32px; white-space: nowrap; }
+.recipe-purchase-limit-bound-label { min-width: 144px; }
+.recipe-purchase-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  gap: 8px;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.recipe-purchase-switch input {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.recipe-purchase-switch-track {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+  flex: 0 0 34px;
+  border-radius: 10px;
+  background: #cbd1dc;
+  transition: background-color .16s ease;
+}
+.recipe-purchase-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+  transition: transform .16s ease;
+}
+.recipe-purchase-switch input:checked + .recipe-purchase-switch-track { background: #2857c7; }
+.recipe-purchase-switch input:checked + .recipe-purchase-switch-track::after { transform: translateX(14px); }
+.recipe-purchase-switch input:focus-visible + .recipe-purchase-switch-track { outline: 2px solid #9ab6f5; outline-offset: 2px; }
+.recipe-purchase-limit-value { width: 78px; }
 .purchase-mode-row .config-select { width: 196px; }
 .purchase-priority-row { margin-bottom: 14px; }
 
