@@ -141,7 +141,10 @@
   const purchaseValue = (groupKey, product, label, demand) => {
     const key = purchaseKey(groupKey, product, label);
     if (canEditRecipePurchaseQuantity && hasOwn(state.purchaseQtyOverrides, key)) return number(state.purchaseQtyOverrides[key]);
-    return splitPerson ? purchase(demand, product) : purchasePlanFor(product)[groupKey]?.purchaseQty ?? purchase(demand, product);
+    const plan = purchasePlanFor(product)[groupKey];
+    return splitPerson
+      ? plan?.participantPurchaseQuantities?.[keyFor(label)] ?? purchase(demand, product)
+      : plan?.purchaseQty ?? purchase(demand, product);
   };
   const validatePurchaseQuantityInput = (input) => {
     if (!input) return true;
@@ -328,14 +331,39 @@
     let available = balanceRule?.openingBalance?.(currentCanteen, product.code, firstDate) || 0;
     const result = {};
     mealGroups().forEach((group) => {
+      const previousBalance = available;
+      if (splitPerson) {
+        const participantPurchaseQuantities = {};
+        const participantBaseQuantities = {};
+        labels.forEach((label) => {
+          const demand = demandFor(product, group.meals, label);
+          const calculated = balanceRule?.calculate?.(demand, available, packSizeFor(product))
+            || { purchaseQty: purchaseBaseQuantity(purchase(Math.max(0, demand - available), product), product) };
+          const baseQuantity = Number((calculated.purchaseQty / purchasePackSize(product)).toFixed(4));
+          const key = purchaseKey(group.key, product, label);
+          const purchaseQty = canEditRecipePurchaseQuantity && hasOwn(state.purchaseQtyOverrides, key)
+            ? number(state.purchaseQtyOverrides[key]) : baseQuantity;
+          const participantKey = keyFor(label);
+          participantBaseQuantities[participantKey] = baseQuantity;
+          participantPurchaseQuantities[participantKey] = purchaseQty;
+          available = Math.max(0, Number((available + purchaseBaseQuantity(purchaseQty, product) - demand).toFixed(4)));
+        });
+        result[group.key] = {
+          previousBalance,
+          participantBaseQuantities,
+          participantPurchaseQuantities,
+          purchaseQty: Object.values(participantPurchaseQuantities).reduce((sum, value) => sum + number(value), 0)
+        };
+        return;
+      }
       const demand = labels.reduce((sum, label) => sum + demandFor(product, group.meals, label), 0);
       const calculated = balanceRule?.calculate?.(demand, available, packSizeFor(product))
-        || { previousBalance: 0, purchaseQty: purchaseBaseQuantity(purchase(demand, product), product) };
+        || { purchaseQty: purchaseBaseQuantity(purchase(Math.max(0, demand - available), product), product) };
       const key = purchaseKey(group.key, product, '合计');
+      const baseQuantity = Number((calculated.purchaseQty / purchasePackSize(product)).toFixed(4));
       const purchaseQty = canEditRecipePurchaseQuantity && hasOwn(state.purchaseQtyOverrides, key)
-        ? number(state.purchaseQtyOverrides[key]) : Number((calculated.purchaseQty / (packSizeFor(product) || 1)).toFixed(4));
-      result[group.key] = { previousBalance: calculated.previousBalance,
-        baseQuantity: Number((calculated.purchaseQty / (packSizeFor(product) || 1)).toFixed(4)), purchaseQty };
+        ? number(state.purchaseQtyOverrides[key]) : baseQuantity;
+      result[group.key] = { previousBalance, baseQuantity, purchaseQty };
       available = Math.max(0, Number((available + purchaseBaseQuantity(purchaseQty, product) - demand).toFixed(4)));
     });
     return result;
@@ -691,7 +719,10 @@
     const rows = activeProducts.map((product, index) => {
       const renderPurchaseCell = (label, demand) => {
         const key = purchaseKey(groupKey, product, label);
-        const baseQuantity = splitPerson ? purchase(demand, product) : purchasePlanFor(product)[groupKey]?.baseQuantity ?? purchase(demand, product);
+        const purchasePlan = purchasePlanFor(product)[groupKey];
+        const baseQuantity = splitPerson
+          ? purchasePlan?.participantBaseQuantities?.[keyFor(label)] ?? purchase(demand, product)
+          : purchasePlan?.baseQuantity ?? purchase(demand, product);
         const value = purchaseValue(groupKey, product, label, demand);
         const threshold = canEditRecipePurchaseQuantity ? purchaseQuantityThreshold(baseQuantity, value) : { valid: true };
         const disabled = canEditRecipePurchaseQuantity ? '' : ' disabled';
@@ -705,7 +736,7 @@
         : (() => {
           const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0);
           const balance = purchasePlanFor(product)[groupKey]?.previousBalance || 0;
-          return [`<td class="is-number">${amount(demandInProductUnit(product, demand))}</td>`, `<td class="is-number">${amount(balance)} ${escapeHtml(productContentUnitFor(product))}</td>`, renderPurchaseCell('合计', demand)];
+          return [`<td class="is-number">${amount(demandInProductUnit(product, demand))}</td>`, `<td class="is-number">${amount(demandInProductUnit(product, balance))}</td>`, renderPurchaseCell('合计', demand)];
         })();
       const priceKey = unitPriceKey(product);
       const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell"><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${amount(unitPriceValue(product))}" data-aux-unit-price data-unit-price-key="${escapeHtml(priceKey)}"${canModifyUnitPrice() ? '' : ' disabled'} aria-label="${escapeHtml(`${product.name}单价`)}"></td>`;

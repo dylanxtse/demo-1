@@ -2003,11 +2003,35 @@
       + '</div>';
   }
 
-  function auxiliaryPurchaseQuantity(product, demandQty) {
-    const packSize = Number(product?.packSize || 0);
-    return auxiliaryDirectService.isPackagedStandardProduct(product)
-      ? Math.ceil(Math.max(0, Number(demandQty || 0) - 1e-9) / (packSize > 0 ? packSize : 1))
-      : Number(demandQty || 0);
+  function auxiliaryPurchasePlan(product, demandQty, previousBalance = 0) {
+    const packaged = auxiliaryDirectService.isPackagedStandardProduct(product);
+    const packSize = packaged ? Number(product?.packSize) || 1 : 0;
+    const balance = window.SchoolAuxiliaryBalance?.calculate?.(demandQty, previousBalance, packSize);
+    const netDemand = Math.max(0, Number(demandQty || 0) - Number(previousBalance || 0));
+    const purchaseBase = Number(balance?.purchaseQty ?? (packaged
+      ? Math.ceil(Math.max(0, netDemand - 1e-9) / packSize) * packSize : netDemand));
+    return {
+      quantity: packaged ? auxiliaryDirectService.quantityInProductUnit(product, purchaseBase) : purchaseBase,
+      purchaseBase,
+      balanceAfter: Number(balance?.balanceAfter ?? Math.max(0, Number(previousBalance || 0) + purchaseBase - Number(demandQty || 0)))
+    };
+  }
+
+  function auxiliaryPurchaseQuantity(product, demandQty, previousBalance = 0) {
+    return auxiliaryPurchasePlan(product, demandQty, previousBalance).quantity;
+  }
+
+  function auxiliaryDemandPreviousBalance(product, menu, mealRows = [], activeMeal = null) {
+    const balanceRule = window.SchoolAuxiliaryBalance;
+    let available = balanceRule?.openingBalance?.(currentCanteen(), product.code, menu?.date) || 0;
+    if (!shouldSplitConfirmByMeal() || !activeMeal) return available;
+    for (const meal of mealRows || []) {
+      if (String(meal.key) === String(activeMeal.key)) break;
+      if (!auxiliarySelectedProductsForMeal(meal.key).some((item) => item.id === product.id)) continue;
+      const demand = Number(meal.totalPeople || 0) * Number(product.dose || 0);
+      available = auxiliaryPurchasePlan(product, demand, available).balanceAfter;
+    }
+    return available;
   }
 
   function renderAuxiliaryDemandRows(menu, record, activeMealKey = '') {
@@ -2018,11 +2042,12 @@
       : { key: 'all-meals', name: '合计', totalPeople: calculation.totalPeople };
     const totalPeople = Number(meal?.totalPeople || 0);
     const selectionMealKey = shouldSplitConfirmByMeal() ? meal?.key : 'all-meals';
-    const rows = auxiliarySelectedProductsForMeal(selectionMealKey).map((product) => ({
-      ...product,
-      totalQty: totalPeople * Number(product.dose || 0),
-      purchaseQty: auxiliaryPurchaseQuantity(product, totalPeople * Number(product.dose || 0))
-    }));
+    const activeMeal = shouldSplitConfirmByMeal() ? meal : null;
+    const rows = auxiliarySelectedProductsForMeal(selectionMealKey).map((product) => {
+      const demand = totalPeople * Number(product.dose || 0);
+      const previousBalance = auxiliaryDemandPreviousBalance(product, menu, calculation.mealRows, activeMeal);
+      return { ...product, totalQty: demand, purchaseQty: auxiliaryPurchaseQuantity(product, demand, previousBalance) };
+    });
     const toolbar = '<div class="school-mobile-demand-toolbar"><strong>需求测算</strong><button type="button" data-action="open-auxiliary-products"><span aria-hidden="true">＋</span>添加商品</button></div>';
     if (!rows.length) return toolbar + '<div class="school-mobile-demand-list"><div class="school-mobile-empty">请添加商品</div></div>';
     return toolbar + '<div class="school-mobile-demand-list school-mobile-auxiliary-demand-list" role="list">' + rows.map((row) => {
@@ -2090,20 +2115,13 @@
     const totalPeople = Number(activeMeal?.totalPeople ?? calculation.totalPeople ?? 0);
     const participantPeople = activeMeal?.participantPeople || calculation.participantPeople || {};
     const totalQty = totalPeople * Number(product.dose || 0);
-    const balanceRule = window.SchoolAuxiliaryBalance;
-    let previousBalance = balanceRule?.openingBalance?.(currentCanteen(), product.code, menu.date) || 0;
-    if (activeMeal) {
-      for (const meal of calculation.mealRows || []) {
-        if (meal.key === activeMeal.key) break;
-        if (!auxiliarySelectedProductsForMeal(meal.key).some((item) => item.id === product.id)) continue;
-        const demand = Number(meal.totalPeople || 0) * Number(product.dose || 0);
-        const packSize = auxiliaryDirectService.isPackagedStandardProduct(product) ? Number(product.packSize) || 1 : 0;
-        previousBalance = balanceRule?.calculate?.(demand, previousBalance, packSize)?.balanceAfter ?? previousBalance;
-      }
-    }
+    const previousBalance = auxiliaryDemandPreviousBalance(product, menu, calculation.mealRows, activeMeal);
+    let participantBalance = previousBalance;
     const participantRows = participants().map((participant) => {
       const demand = Number(participantPeople[participant.key] || 0) * Number(product.dose || 0);
-      return { participant, demand, purchase: auxiliaryPurchaseQuantity(product, demand) };
+      const purchase = auxiliaryPurchasePlan(product, demand, participantBalance);
+      participantBalance = purchase.balanceAfter;
+      return { participant, demand, purchase: purchase.quantity };
     });
     return {
       product,
@@ -2112,7 +2130,7 @@
       demandUnit: auxiliaryDirectService.productContentUnit(product),
       totalQty,
       previousBalance,
-      purchaseQty: auxiliaryPurchaseQuantity(product, totalQty),
+      purchaseQty: auxiliaryPurchaseQuantity(product, totalQty, previousBalance),
       participantRows
     };
   }
@@ -2689,34 +2707,53 @@
     return Number(row?.marketPrice || 0);
   }
 
-  function auxiliaryConfirmPurchaseQuantity(row, participant, mealKey) {
+  function auxiliaryConfirmPurchaseQuantity(row, participant, mealKey, preview) {
     const participantKey = participant?.key || DEFAULT_ORDER_PARTICIPANT.key;
-    const key = purchaseQuantityKey(row, participantKey, mealKey || 'all-meals');
+    const targetMealKey = mealKey || 'all-meals';
+    const key = purchaseQuantityKey(row, participantKey, targetMealKey);
     const demand = participantKey === DEFAULT_ORDER_PARTICIPANT.key
       ? Number(row.totalQty || 0)
       : Number(row.participantQty?.[participantKey] || 0);
-    return hasOwn(state.purchaseQtyOverrides, key)
-      ? state.purchaseQtyOverrides[key]
-      : auxiliaryPurchaseQuantity(row, demand);
+    if (hasOwn(state.purchaseQtyOverrides, key)) return state.purchaseQtyOverrides[key];
+    const plan = auxiliaryConfirmPurchasePlan(preview || buildAuxiliaryConfirmPreview(), row, targetMealKey);
+    return plan.purchaseQuantities[participantKey] ?? auxiliaryPurchaseQuantity(row, demand, plan.previousBalance);
   }
 
-  function auxiliaryConfirmPreviousBalance(preview, row, mealKey) {
+  function auxiliaryConfirmPurchasePlan(preview, row, targetMealKey) {
     const balanceRule = window.SchoolAuxiliaryBalance;
     const firstDate = [...(preview?.dates || [])].sort()[0] || '';
     let available = balanceRule?.openingBalance?.(currentCanteen(), row.productCode, firstDate) || 0;
-    if (!shouldSplitConfirmByMeal()) return available;
+    const targetKey = String(targetMealKey || 'all-meals');
+    let previousBalance = available;
+    const purchaseQuantities = {};
+    const orderParticipants = shouldSplitConfirmByPersonType()
+      ? (preview?.participants || participants()) : [DEFAULT_ORDER_PARTICIPANT];
     for (const meal of confirmMealDefinitions(preview)) {
-      if (meal.key === mealKey) break;
-      const earlierRow = auxiliaryConfirmMealRows(preview, meal.key)
+      const mealRow = auxiliaryConfirmMealRows(preview, meal.key)
         .find((item) => String(item.productCode) === String(row.productCode));
-      if (!earlierRow) continue;
-      const packSize = auxiliaryDirectService.isPackagedStandardProduct(earlierRow)
-        ? Number(earlierRow.packSize) || 1 : 1;
-      const purchased = auxiliaryConfirmPurchaseQuantity(earlierRow, DEFAULT_ORDER_PARTICIPANT, meal.key);
-      available = Math.max(0, Number((available + Number(purchased || 0) * packSize
-        - Number(earlierRow.totalQty || 0)).toFixed(4)));
+      if (!mealRow) continue;
+      if (String(meal.key) === targetKey) previousBalance = available;
+      for (const participant of orderParticipants) {
+        const participantKey = participant?.key || DEFAULT_ORDER_PARTICIPANT.key;
+        const demand = participantKey === DEFAULT_ORDER_PARTICIPANT.key
+          ? Number(mealRow.totalQty || 0)
+          : Number(mealRow.participantQty?.[participantKey] || 0);
+        const calculated = auxiliaryPurchasePlan(mealRow, demand, available);
+        const key = purchaseQuantityKey(mealRow, participantKey, meal.key);
+        const purchaseQty = hasOwn(state.purchaseQtyOverrides, key)
+          ? Number(state.purchaseQtyOverrides[key]) : calculated.quantity;
+        if (String(meal.key) === targetKey) purchaseQuantities[participantKey] = purchaseQty;
+        const packaged = auxiliaryDirectService.isPackagedStandardProduct(mealRow);
+        const packSize = packaged ? Number(mealRow.packSize) || 1 : 1;
+        available = Math.max(0, Number((available + Number(purchaseQty || 0) * packSize - demand).toFixed(4)));
+      }
+      if (String(meal.key) === targetKey) break;
     }
-    return available;
+    return { previousBalance, purchaseQuantities };
+  }
+
+  function auxiliaryConfirmPreviousBalance(preview, row, mealKey) {
+    return auxiliaryConfirmPurchasePlan(preview, row, mealKey).previousBalance;
   }
 
   function auxiliaryConfirmCanEditPurchaseQuantity(preview, participant, mealKey) {
@@ -2734,7 +2771,7 @@
       ? (preview.participants || [])
       : [DEFAULT_ORDER_PARTICIPANT];
     return meals.some((meal) => auxiliaryConfirmMealRows(preview, meal.key).some((row) => (
-      orderParticipants.some((participant) => Number(auxiliaryConfirmPurchaseQuantity(row, participant, meal.key)) > 0)
+      orderParticipants.some((participant) => Number(auxiliaryConfirmPurchaseQuantity(row, participant, meal.key, preview)) > 0)
     )));
   }
 
@@ -2749,7 +2786,7 @@
         ? Number(row.totalQty || 0)
         : Number(row.participantQty?.[participant.key] || 0);
       const purchaseKey = purchaseQuantityKey(row, participant?.key || DEFAULT_ORDER_PARTICIPANT.key, mealKey || 'all-meals');
-      const purchaseValue = auxiliaryConfirmPurchaseQuantity(row, participant, mealKey);
+      const purchaseValue = auxiliaryConfirmPurchaseQuantity(row, participant, mealKey, preview);
       const purchaseEditable = isEditing && canModifyAuxiliaryPurchaseQuantity(row);
       const purchaseMarkup = purchaseEditable
         ? '<div class="school-mobile-demand-purchase-control"><input class="school-mobile-demand-purchase-input" type="number" min="0" step="any" inputmode="decimal" value="' + escapeHtml(fixedQuantity(purchaseValue)) + '" data-action="confirm-purchase-quantity" data-purchase-key="' + escapeHtml(purchaseKey) + '" data-purchase-participant-key="' + escapeHtml(participant?.key || DEFAULT_ORDER_PARTICIPANT.key) + '" data-purchase-overridden="' + (hasOwn(state.purchaseQtyOverrides, purchaseKey) ? 'true' : 'false') + '" aria-label="' + escapeHtml(orderTagName(participant) + row.productName + '采购量') + '"><span class="school-mobile-demand-purchase-unit">' + escapeHtml(row.unit) + '</span></div>'
@@ -2760,8 +2797,7 @@
         ? auxiliaryConfirmPreviousBalance(preview, row, mealKey) : null;
       const balanceMarkup = previousBalance === null ? ''
         : '<small class="school-mobile-demand-product-balance">上次结余：'
-          + quantity(previousBalance) + ' '
-          + escapeHtml(auxiliaryDirectService.productContentUnit(row) || row.unit) + '</small>';
+          + quantity(auxiliaryDirectService.quantityInProductUnit(row, previousBalance)) + '</small>';
       const priceMarkup = isUnitPriceEditing && canModifyConfirmUnitPrice()
         ? '<div class="school-mobile-demand-price is-editable"><input class="school-mobile-demand-price-input" type="number" min="' + escapeHtml(minimumPrice()) + '" step="' + escapeHtml(minimumPrice()) + '" inputmode="decimal" value="' + escapeHtml(fixedPrice(price)) + '" data-action="confirm-unit-price" data-unit-price-key="' + escapeHtml(priceKey) + '" data-unit-price-overridden="' + (hasOwn(state.unitPriceOverrides, priceKey) ? 'true' : 'false') + '" aria-label="' + escapeHtml(row.productName + '单价') + '"><em>元/' + escapeHtml(row.unit) + '</em></div>'
         : '<div class="school-mobile-demand-price is-readonly"><strong class="school-mobile-demand-price-value">' + escapeHtml(fixedPrice(price)) + '</strong><em>元/' + escapeHtml(row.unit) + '</em></div>';
@@ -3609,7 +3645,7 @@
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-detail-sheet" role="dialog" aria-modal="true" aria-label="商品需求明细">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(product.name) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<p class="school-mobile-sheet-subtitle">' + (mealName ? escapeHtml(mealName) + ' · ' : '') + escapeHtml(product.code) + ' · ' + escapeHtml(detail.unit) + '</p>'
-      + '<div class="school-mobile-demand-detail-total school-mobile-demand-detail-total-auxiliary"><div><span>人均用量</span><strong>' + escapeHtml(product.doseDisplay || (quantity(product.dose) + ' ' + detail.demandUnit)) + '</strong></div><div><span>需求总量</span><strong>' + quantity(auxiliaryDirectService.quantityInProductUnit(product, detail.totalQty)) + ' ' + escapeHtml(detail.unit) + '</strong></div><div><span>上次结余</span><strong>' + quantity(detail.previousBalance) + ' ' + escapeHtml(detail.demandUnit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(detail.purchaseQty) + ' ' + escapeHtml(detail.unit) + '</strong></div></div>'
+      + '<div class="school-mobile-demand-detail-total school-mobile-demand-detail-total-auxiliary"><div><span>人均用量</span><strong>' + escapeHtml(product.doseDisplay || (quantity(product.dose) + ' ' + detail.demandUnit)) + '</strong></div><div><span>需求总量</span><strong>' + quantity(auxiliaryDirectService.quantityInProductUnit(product, detail.totalQty)) + ' ' + escapeHtml(detail.unit) + '</strong></div><div><span>上次结余</span><strong>' + quantity(auxiliaryDirectService.quantityInProductUnit(product, detail.previousBalance)) + '</strong></div><div><span>采购总量</span><strong>' + quantity(detail.purchaseQty) + ' ' + escapeHtml(detail.unit) + '</strong></div></div>'
       + participantDetailMarkup
       + '</section></div>';
   }
@@ -4096,13 +4132,16 @@
     try {
       const submissionPreview = isAuxiliary ? buildAuxiliarySubmissionPreview(preview) : preview;
       const purchaseQuantityOverrides = { ...state.purchaseQtyOverrides };
-      if (isAuxiliary && !shouldSplitConfirmByPersonType()) {
+      const purchaseQuantityDefaults = {};
+      if (isAuxiliary) {
+        const orderParticipants = shouldSplitConfirmByPersonType()
+          ? (preview.participants || participants()) : [DEFAULT_ORDER_PARTICIPANT];
         confirmMealDefinitions(preview).forEach((meal) => {
           auxiliaryConfirmMealRows(preview, meal.key).forEach((row) => {
-            const key = purchaseQuantityKey(row, DEFAULT_ORDER_PARTICIPANT.key, meal.key);
-            if (!hasOwn(purchaseQuantityOverrides, key)) {
-              purchaseQuantityOverrides[key] = auxiliaryConfirmPurchaseQuantity(row, DEFAULT_ORDER_PARTICIPANT, meal.key);
-            }
+            orderParticipants.forEach((participant) => {
+              const key = purchaseQuantityKey(row, participant.key || DEFAULT_ORDER_PARTICIPANT.key, meal.key);
+              purchaseQuantityDefaults[key] = auxiliaryConfirmPurchaseQuantity(row, participant, meal.key, preview);
+            });
           });
         });
       }
@@ -4113,7 +4152,8 @@
         preview: submissionPreview,
         auxiliaryProducts: isAuxiliary ? auxiliarySubmissionProducts() : undefined,
         unitPriceOverrides: { ...state.unitPriceOverrides },
-        purchaseQuantityOverrides
+        purchaseQuantityOverrides,
+        purchaseQuantityDefaults: isAuxiliary ? purchaseQuantityDefaults : undefined
       });
       clearAttendanceAfterFlow();
       state.submitting = false;

@@ -89,7 +89,6 @@
     return `${product.name}（${unit}/${product.brand || '--'}/${spec}）`;
   };
   const amount = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
-  const wholeAmount = (value) => Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0, useGrouping: false });
   const normalizeRecipeDate = (value) => {
     const match = String(value || '').trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
     return match ? `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}` : '';
@@ -397,16 +396,26 @@
     return amount(directService.quantityInProductUnit(product, quantity));
   }
 
-  function renderPurchaseQuantity(product, quantity) {
-    if (directService.isPackagedStandardProduct(product) && Number(product.packSize) > 0) {
-      const packCount = Math.ceil(Math.max(0, Number(quantity) - 1e-9) / Number(product.packSize));
-      const purchaseQuantity = wholeAmount(packCount);
-      return `<span class="school-auxiliary-purchase-quantity" title="${escapeHtml(purchaseQuantity)}">${escapeHtml(purchaseQuantity)}</span>`;
-    }
-    const purchaseAmount = directService.isPackagedStandardProduct(product)
-      ? Math.ceil(Math.max(0, Number(quantity) - 1e-9)) : Number(quantity);
-    const purchaseQuantity = amount(purchaseAmount);
+  function purchasePlan(product, demand, available = 0) {
+    const packaged = directService.isPackagedStandardProduct(product);
+    const packSize = packaged ? Number(product.packSize) || 1 : 0;
+    const balance = window.SchoolAuxiliaryBalance?.calculate?.(demand, available, packSize);
+    const netDemand = Math.max(0, Number(demand || 0) - Number(available || 0));
+    const basePurchase = Number(balance?.purchaseQty ?? (packaged
+      ? Math.ceil(Math.max(0, netDemand - 1e-9) / packSize) * packSize : netDemand));
+    return {
+      quantity: packaged ? directService.quantityInProductUnit(product, basePurchase) : basePurchase,
+      balanceAfter: Number(balance?.balanceAfter ?? Math.max(0, Number(available || 0) + basePurchase - Number(demand || 0)))
+    };
+  }
+
+  function renderPurchaseQuantityValue(product, quantity) {
+    const purchaseQuantity = amount(quantity);
     return `<span class="school-auxiliary-purchase-quantity" title="${escapeHtml(purchaseQuantity)}">${escapeHtml(purchaseQuantity)}</span>`;
+  }
+
+  function renderPurchaseQuantity(product, demand, available = 0) {
+    return renderPurchaseQuantityValue(product, purchasePlan(product, demand, available).quantity);
   }
 
   function previousBalanceFor(product) {
@@ -445,12 +454,18 @@
       const data = rowData(product);
       const standardProduct = directService.isPackagedStandardProduct(product);
       const unit = product.unit || '--';
+      const openingBalance = previousBalanceFor(product);
       const quantities = splitByPersonType
-        ? groups.flatMap((group) => {
+        ? (() => {
+          let available = openingBalance;
+          return groups.flatMap((group) => {
           const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0);
-          return [`<td class="number">${renderDemandQuantity(product, quantity)}</td>`, `<td class="number">${renderPurchaseQuantity(product, quantity)}</td>`];
-        })
-        : [`<td class="number">${renderDemandQuantity(product, data.totalQty)}</td>`, `<td class="number">${amount(previousBalanceFor(product))} ${escapeHtml(directService.productContentUnit(product))}</td>`, `<td class="number">${renderPurchaseQuantity(product, data.totalQty)}</td>`];
+          const plan = purchasePlan(product, quantity, available);
+          available = plan.balanceAfter;
+          return [`<td class="number">${renderDemandQuantity(product, quantity)}</td>`, `<td class="number">${renderPurchaseQuantityValue(product, plan.quantity)}</td>`];
+          });
+        })()
+        : [`<td class="number">${renderDemandQuantity(product, data.totalQty)}</td>`, `<td class="number">${amount(directService.quantityInProductUnit(product, openingBalance))}</td>`, `<td class="number">${renderPurchaseQuantity(product, data.totalQty, openingBalance)}</td>`];
       return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${directService.productContentUnit(product)}`)}</span></td><td>${escapeHtml(product.code)}</td><td>${standardProduct ? '是' : '否'}</td><td>${escapeHtml(unit)}</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
     }).join('');
     return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:370px"><col style="width:118px"><col style="width:100px"><col style="width:88px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">人均用量</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th><th rowspan="2">计量单位</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;

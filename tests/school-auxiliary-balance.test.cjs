@@ -76,7 +76,7 @@ test('干调填报页与确认页显示上次结余，填报页保持原有采�
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
   assert.match(entryHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
-  assert.match(entryHtml, /<td class="number">1\.20<\/td><td class="number">2\.00 L<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2">2<\/span><\/td>/);
+  assert.match(entryHtml, /<td class="number">1\.20<\/td><td class="number">0\.40<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="1\.00">1\.00<\/span><\/td>/);
 
   let confirmHtml = '';
   context.AppShell = { mount({ content }) {
@@ -86,7 +86,7 @@ test('干调填报页与确认页显示上次结余，填报页保持原有采�
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-demand-confirm.js'), 'utf8'), context);
   assert.match(confirmHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
   assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
-  assert.match(confirmHtml, /<td class="is-number">1\.20<\/td><td class="is-number">2\.00 L<\/td>/);
+  assert.match(confirmHtml, /<td class="is-number">1\.20<\/td><td class="is-number">0\.40<\/td>/);
   assert.match(confirmHtml, /value="1\.00" data-aux-purchase-quantity/);
   assert.match(confirmHtml, /data-purchase-base-quantity="1\.00"/);
   assert.match(confirmHtml, /data-aux-product-subtotal>¥55\.00<\/td>/);
@@ -121,7 +121,7 @@ test('干调人数填报按商品单位显示未取整需求并向上取整标�
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
 
   assert.match(entryHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
-  assert.match(entryHtml, /<td>桶<\/td><td class="number">1\.20<\/td><td class="number">0\.00 L<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2">2<\/span><\/td>/);
+  assert.match(entryHtml, /<td>桶<\/td><td class="number">1\.20<\/td><td class="number">0\.00<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2\.00">2\.00<\/span><\/td>/);
 });
 
 test('标品按商品单位收货后，结余仍按基础计量单位结转', () => {

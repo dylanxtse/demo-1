@@ -614,12 +614,12 @@
       .map((product) => [String(product.code || product.id), product]));
   }
 
-  function buildPurchaseQuantityAllocations(preview, overrides, productMap, excludedProductKeys = new Set()) {
+  function buildPurchaseQuantityAllocations(preview, overrides, productMap, excludedProductKeys = new Set(), defaults = {}) {
     const allocations = {};
     const participants = preview.participants || [];
     const splitOrderByMeal = shouldSplitOrderByMeal();
     const splitOrderByPersonType = shouldSplitOrderByPersonType();
-    const assignedAggregateOverrides = new Set();
+    const assignedAggregateValues = new Set();
     const mealDefinitions = [];
     const mealKeys = new Set();
     (preview.dateSummaries || []).forEach((summary) => {
@@ -636,22 +636,29 @@
         .forEach((row) => {
           if (excludedProductKeys.has(purchaseRowKey(row))) return;
           const product = productMap.get(String(row.productCode)) || {};
-          if (!canModifyPurchaseQuantity(product)) return;
           const aggregateMeal = splitOrderByMeal ? meal : { key: 'all-meals' };
-          const aggregateOverrideKey = !splitOrderByPersonType
+          const aggregateKey = !splitOrderByPersonType
             ? purchaseAllocationKey(null, aggregateMeal, row, DEFAULT_ORDER_PARTICIPANT.key)
             : '';
-          const hasAggregateOverride = aggregateOverrideKey && hasOwn(overrides, aggregateOverrideKey);
+          const hasAggregateOverride = canModifyPurchaseQuantity(product) && aggregateKey && hasOwn(overrides, aggregateKey);
+          const hasAggregateDefault = aggregateKey && hasOwn(defaults, aggregateKey);
           participants.forEach((participant) => {
             if (number(row.participantQty?.[participant.key]) <= 0) return;
             const overrideKey = purchaseAllocationKey(null, meal, row, participant.key);
             if (hasAggregateOverride) {
-              allocations[overrideKey] = assignedAggregateOverrides.has(aggregateOverrideKey)
+              allocations[overrideKey] = assignedAggregateValues.has(aggregateKey)
                 ? 0
-                : normalizePurchaseQuantity(overrides[aggregateOverrideKey], product);
-              assignedAggregateOverrides.add(aggregateOverrideKey);
-            } else if (hasOwn(overrides, overrideKey)) {
+                : normalizePurchaseQuantity(overrides[aggregateKey], product);
+              assignedAggregateValues.add(aggregateKey);
+            } else if (canModifyPurchaseQuantity(product) && hasOwn(overrides, overrideKey)) {
               allocations[overrideKey] = normalizePurchaseQuantity(overrides[overrideKey], product);
+            } else if (hasAggregateDefault) {
+              allocations[overrideKey] = assignedAggregateValues.has(aggregateKey)
+                ? 0
+                : normalizePurchaseQuantity(defaults[aggregateKey], product);
+              assignedAggregateValues.add(aggregateKey);
+            } else if (hasOwn(defaults, overrideKey)) {
+              allocations[overrideKey] = normalizePurchaseQuantity(defaults[overrideKey], product);
             }
           });
         });
@@ -897,7 +904,9 @@
     };
     writeAll([...records, record]);
 
-    const purchaseQuantityAllocations = buildPurchaseQuantityAllocations(preview, purchaseQuantityOverrides, productMap, excludedProductKeys);
+    const purchaseQuantityAllocations = buildPurchaseQuantityAllocations(
+      preview, purchaseQuantityOverrides, productMap, excludedProductKeys, options.purchaseQuantityDefaults || {}
+    );
     const mealDefinitions = [];
     const mealKeys = new Set();
     preview.dateSummaries.forEach((summary) => {

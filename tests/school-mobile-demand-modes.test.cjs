@@ -320,7 +320,7 @@ test('手机端人数填报读取Web默认干调商品，支持左滑移除和�
   dispatch('click', 'open-auxiliary-demand-detail', { auxiliaryId: 'aux-oil' });
   const detailTotals = app.innerHTML.slice(app.innerHTML.indexOf('school-mobile-demand-detail-total-auxiliary'),
     app.innerHTML.indexOf('school-mobile-demand-detail-total-auxiliary') + 450);
-  assert.match(detailTotals, /<span>需求总量<\/span><strong>0\.71 桶<\/strong><\/div><div><span>上次结余<\/span><strong>2\.00 L<\/strong><\/div><div><span>采购总量<\/span><strong>1\.00 桶<\/strong>/);
+  assert.match(detailTotals, /<span>需求总量<\/span><strong>0\.71 桶<\/strong><\/div><div><span>上次结余<\/span><strong>0\.40<\/strong><\/div><div><span>采购总量<\/span><strong>1\.00 桶<\/strong>/);
   dispatch('click', 'close-sheet');
 
   const removeButtonAttributes = {};
@@ -398,7 +398,7 @@ test('手机端人数填报确认页按企业配置计算送达时间并隐藏�
 
   assert.match(app.innerHTML, /school-mobile-confirm-page/);
   assert.match(app.innerHTML, /school-mobile-topbar-title">干调需求确认<\/strong>/);
-  assert.match(app.innerHTML, /SP0300030<\/small><small class="school-mobile-demand-product-balance">上次结余：2\.00 L<\/small>/);
+  assert.match(app.innerHTML, /SP0300030<\/small><small class="school-mobile-demand-product-balance">上次结余：0\.40<\/small>/);
   assert.doesNotMatch(app.innerHTML, /<span>期望送达时间<\/span>|data-action="open-expected-at"/);
   const selectedDates = Array.from(app.innerHTML.matchAll(/class="school-mobile-confirm-date[^\"]*is-selected[^\"]*" data-action="confirm-date" data-date="([^"]+)"/g), (match) => match[1]);
   assert.ok(selectedDates.length > 0);
