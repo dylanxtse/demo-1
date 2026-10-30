@@ -559,10 +559,11 @@
   function sourceProducts() {
     const fallbackProducts = [
       ['SP0300039', '土豆丝', '斤', 4.8], ['SP0300040', '土豆', '斤', 3.2], ['SP0300038', '牛奶', '瓶', 5], ['SP0300037', '牛奶', '瓶', 5],
-      ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', 'KG', 500, '25kg/袋'], ['SP0300031', '净膛鲫鱼', '斤', 18.5], ['SP0300030', '金龙鱼5L桶装油', '瓶', 55],
-      ['SP0300029', '鲫鱼', '斤', 15], ['SP0300026', '面', '瓶', 1], ['SP0300025', '大米', 'KG', 19], ['SP0300024', '三元牛奶', '瓶', 10],
+      ['SP0300036', '大玉米棒子', 'KG', 5], ['SP0300034', '黑大米', '袋', 500, '25kg'], ['SP0300031', '净膛鲫鱼', '斤', 18.5, '500g左右'], ['SP0300030', '金龙鱼5L桶装油', '桶', 55, '5L'],
+      ['SP0300037', '牛奶', '瓶', 5, '250ml'],
+      ['SP0300029', '鲫鱼', '斤', 15], ['SP0300026', '面', '斤', 1], ['SP0300025', '大米', 'KG', 19], ['SP0300024', '三元牛奶', '瓶', 10],
       ['SP0300023', '大饼', '斤', 1], ['SP0300020', '西红柿', 'KG', 5.6], ['SP0300019', '大白菜', '斤', 2.2], ['SP0300018', '鸡蛋', '斤', 22],
-      ['SP0300017', '金龙鱼豆油', '斤', 50], ['SP0300016', '面粉', '袋', 1500, '25kg/袋'], ['SP0300015', '香蕉', '斤', 30], ['SP0300014', '苹果', '斤', 23],
+      ['SP0300017', '金龙鱼豆油', '斤', 50], ['SP0300016', '面粉', '袋', 1500, '25kg'], ['SP0300015', '香蕉', '斤', 30], ['SP0300014', '苹果', '斤', 23],
       ['SP0300050', '土豆块', '斤', 5.2], ['SP0300051', '白菜段', '斤', 3.2], ['SP0300052', '白菜丝', '斤', 3.4],
       ['SP0300053', '胡萝卜', '斤', 2.8], ['SP0300054', '胡萝卜丝', '斤', 4.8], ['SP0300055', '胡萝卜片', '斤', 4.6],
       ['SP0300056', '青椒', '斤', 4.5], ['SP0300057', '青椒丝', '斤', 7.2], ['SP0300058', '青椒块', '斤', 6.8],
@@ -932,36 +933,40 @@
   }
 
   function normalizeProductMetadata(state) {
-    const revision = 'products-v11-bag-product-prices';
+    const revision = 'products-v14-auxiliary-sp-codes';
     const seededNetVegetables = new Set([
       'SP0300020', 'SP0300039', 'SP0300050', 'SP0300051', 'SP0300052', 'SP0300054',
       'SP0300055', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300061'
     ]);
     const refreshedProductCodes = new Set([
-      'SP0300039', 'SP0300040', 'SP0300034', 'SP0300016', 'SP0300031', 'SP0300020', 'SP0300019',
+      'SP0300034', 'SP0300016', 'SP0300031', 'SP0300030', 'SP0300024', 'SP0300026', 'SP0300037', 'SP0300042',
+      'SP0300039', 'SP0300040', 'SP0300020', 'SP0300019',
       'SP0300050', 'SP0300051', 'SP0300052', 'SP0300053', 'SP0300054', 'SP0300055',
-      'SP0300056', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300060', 'SP0300061'
+      'SP0300056', 'SP0300057', 'SP0300058', 'SP0300059', 'SP0300060', 'SP0300061', 'SP0300847', 'SP0300912'
     ]);
-    const legacyEggLiquidCode = 'SIM-NET-EGG-LIQUID';
-    const eggLiquidCode = 'SP0300043';
+    const legacyProductCodes = new Map([
+      ['SIM-NET-EGG-LIQUID', 'SP0300043'],
+      ['OA0300010', 'SP0300847'],
+      ['OA0300011', 'SP0300912']
+    ]);
     const shouldRefreshProducts = state.productSeedRevision !== revision;
     let changed = false;
-    const replaceLegacyEggLiquidCode = (value) => {
+    const replaceLegacyProductCodes = (value) => {
       if (Array.isArray(value)) {
-        value.forEach((item, index) => { value[index] = replaceLegacyEggLiquidCode(item); });
+        value.forEach((item, index) => { value[index] = replaceLegacyProductCodes(item); });
         return value;
       }
       if (value && typeof value === 'object') {
-        Object.keys(value).forEach((key) => { value[key] = replaceLegacyEggLiquidCode(value[key]); });
+        Object.keys(value).forEach((key) => { value[key] = replaceLegacyProductCodes(value[key]); });
         return value;
       }
-      if (value === legacyEggLiquidCode) {
+      if (legacyProductCodes.has(value)) {
         changed = true;
-        return eggLiquidCode;
+        return legacyProductCodes.get(value);
       }
       return value;
     };
-    replaceLegacyEggLiquidCode(state);
+    replaceLegacyProductCodes(state);
     state.products = Array.isArray(state.products) ? state.products : [];
     if (shouldRefreshProducts) {
       (window.MockProducts || [])
@@ -995,11 +1000,30 @@
           || window.ProductStorageCondition?.infer(product.name) || '常温';
         changed = true;
       }
-      // 修正旧演示数据：黑大米按重量计量，袋为分包单位（1袋 = 25KG）。
-      if (productCode === 'SP0300034' && product.unit === '袋') {
-        product.unit = 'KG';
+      const rawSpec = String(product.spec || '').trim();
+      const packageSpec = rawSpec.match(/\s*\/\s*(桶|瓶|袋|箱|份|条|包|罐|盒|把|个)\s*$/);
+      if (packageSpec) {
+        const spec = rawSpec.replace(packageSpec[0], '').trim();
+        if (spec !== product.spec) {
+          product.spec = spec;
+          changed = true;
+        }
+        if (/^(桶|瓶|袋|箱|包|罐|盒)$/.test(packageSpec[1]) && product.unit !== packageSpec[1]) {
+          product.unit = packageSpec[1];
+          changed = true;
+        }
+      }
+      const purchaseUnit = String(product.purchaseUnit || '').trim();
+      if (purchaseUnit && product.unit !== purchaseUnit) {
+        product.unit = purchaseUnit;
         changed = true;
       }
+      ['measurementUnit', 'purchaseUnit'].forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(product, key)) {
+          delete product[key];
+          changed = true;
+        }
+      });
       if (product.seq == null || product.seq === '') {
         product.seq = index + 1;
         changed = true;
@@ -1050,6 +1074,20 @@
         if (product.purchaseType === '企业自加工') product.purchaseType = '供应商送货';
         changed = true;
       }
+    });
+    (state.recipeDemandRecords || []).forEach((record) => {
+      (record.balanceRows || []).forEach((row) => {
+        if (!row.unit && row.purchaseUnit) {
+          row.unit = row.purchaseUnit;
+          changed = true;
+        }
+        ['purchaseUnit', 'measurementUnit'].forEach((key) => {
+          if (Object.prototype.hasOwnProperty.call(row, key)) {
+            delete row[key];
+            changed = true;
+          }
+        });
+      });
     });
     if (state.productSeedRevision !== revision) {
       state.productSeedRevision = revision;
@@ -1259,8 +1297,9 @@
         || products.find((product) => product.name === lineName);
       if (sameName) {
         const productId = sameName.code || sameName.id;
-        if (line.productId !== productId || line.goodsCode !== productId) {
+        if (line.productId !== productId || line.productCode !== productId || line.goodsCode !== productId) {
           line.productId = productId;
+          line.productCode = productId;
           line.goodsCode = productId;
           changed = true;
         }
@@ -1882,7 +1921,7 @@
         route: '南城二线',
         status: 'CONFIRMED',
         items: [
-          { goodsCode: 'SP0300031', goodsName: '鲫鱼', unit: 'L', quantity: 12, unitPrice: 20, isNetVegetable: true },
+          { goodsCode: 'SP0300031', goodsName: '鲫鱼', unit: '斤', quantity: 12, unitPrice: 20, isNetVegetable: false },
           { goodsCode: 'SP0300040', goodsName: '土豆', unit: '斤', quantity: 20, unitPrice: 6.8, isNetVegetable: false }
         ]
       }

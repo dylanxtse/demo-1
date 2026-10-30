@@ -81,17 +81,17 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
     assert.match(html, /<th rowspan="2">单位<\/th>/);
     assert.match(html, /<th rowspan="2">编号<\/th><th rowspan="2">是否标品<\/th><th rowspan="2">单位<\/th>/);
     assert.match(html, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
-    assert.match(html, /<td>SP0300031<\/td><td>是<\/td><td>袋<\/td>/);
-    assert.match(html, /<th>需求总量<\/th>/);
-    assert.match(html, /<td class="is-number">0\.24 L<\/td>/);
+    assert.match(html, /<td>SP0300847<\/td><td>是<\/td><td>袋<\/td>/);
+    assert.match(html, /<th>需求量<\/th>/);
+    assert.match(html, /<td class="is-number">0\.05<\/td>/);
     if (splitPerson) {
       assert.match(html, /value="1\.00" data-aux-purchase-quantity/);
       assert.match(html, /data-aux-product-subtotal>¥55\.00<\/td>/);
-      assert.match(html, /<td class="is-number">[\d,.]+ (?:L|kg)<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
+      assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
       assert.doesNotMatch(html, /<th>上次结余<\/th>/);
     } else {
       assert.match(html, /value="0\.00" data-aux-purchase-quantity/);
-      assert.match(html, /<td class="is-number">[\d,.]+ (?:L|kg)<\/td><td class="is-number">[\d,.]+ (?:L|kg)<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
+      assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number">[\d,.]+ (?:L|kg)<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
       assert.match(html, /<th>上次结余<\/th>/);
     }
     assert.doesNotMatch(html, /schoolRecipeAuxiliaryExpectedAt|school-recipe-demand-delivery-field/);
@@ -129,7 +129,7 @@ test('按需求人数计算基础用量，并按整桶整袋生成订单和结�
     .filter((item) => item.recipeDemandRecordId === record.id)
     .map((item) => ({ mealKey: item.mealKey, items: item.items.map((line) => [line.productCode, line.orderQty]) })) }));
   const oil = order.items.find((item) => item.productCode === 'SP0300030');
-  const salt = order.items.find((item) => item.productCode === 'SP0300031');
+  const salt = order.items.find((item) => item.productCode === 'SP0300847');
   assert.equal(oil.unit, '桶');
   assert.equal(oil.orderQty, 1);
   assert.equal(oil.orderSubtotal, 55);
@@ -139,7 +139,8 @@ test('按需求人数计算基础用量，并按整桶整袋生成订单和结�
   assert.equal(oilBalance.demandQty, 0.36);
   assert.equal(oilBalance.purchaseQty, 1);
   assert.equal(oilBalance.purchaseBaseQty, 5);
-  assert.equal(oilBalance.purchaseUnit, '桶');
+  assert.equal(oilBalance.unit, '桶');
+  assert.equal(Object.hasOwn(oilBalance, 'purchaseUnit'), false);
 });
 
 test('修改单价或采购量时，小计和两行合计立即更新', () => {

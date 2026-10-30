@@ -40,17 +40,20 @@
 
   var catalog = [
     { code: 'SP0300038', name: '牛奶', unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级-蛋奶类三级', marketPrice: 5, image: '' },
-    { code: 'SP0300039', name: '全麦面粉', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类-面类', marketPrice: 2, image: '' },
-    { code: 'SP0300045', name: '黑面', unit: 'L', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5, image: '' },
+    { code: 'SP0300037', name: '牛奶', unit: '瓶', brand: '三元', spec: '250ml', category: '蛋奶类-蛋奶类二级-蛋奶类三级', marketPrice: 5, image: '' },
+    { code: 'SP0300039', name: '土豆丝', unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', isNetVegetable: true, marketPrice: 4.8, image: '' },
+    { code: 'SP0300045', name: '黑面', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5, image: '' },
+    { code: 'SP0300047', name: '全麦面粉', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类-面类', marketPrice: 2, image: '' },
     { code: 'SP0300046', name: '干豆皮', unit: '斤', brand: '--', spec: '--', category: '其他材料-其他二级', marketPrice: 6, image: '' },
     { code: 'SP0300019', name: '大白菜', unit: '斤', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: 8, image: '' },
-    { code: 'SP0300020', name: '鸡蛋', unit: '斤', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: 22, image: '' },
-    { code: 'SP0300025', name: '西红柿', unit: 'KG', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: 20, image: '' },
+    { code: 'SP0300020', name: '西红柿', unit: 'KG', brand: '--', spec: '散装', category: '果蔬-果蔬二级', marketPrice: 5.6, image: '' },
+    { code: 'SP0300025', name: '大米', unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 19, image: '' },
+    { code: 'SP0300018', name: '鸡蛋', unit: '斤', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: 22, image: '' },
     { code: 'SP0300029', name: '鲫鱼', unit: '斤', brand: '--', spec: '--', category: '水产品-水产品二级', marketPrice: 15, image: '' },
-    { code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '瓶', brand: '金龙鱼', spec: '5L/瓶', category: '食油-食油二级', marketPrice: 55, image: '' },
-    { code: 'SP0300034', name: '黑大米', unit: '袋', brand: '--', spec: '25kg/袋', category: '主食（米面粉点心类）-粮食类', marketPrice: 500, image: '' },
-    { code: 'SP0300040', name: '土豆', unit: '斤', brand: '农家优选', spec: '500g/份', category: '果蔬-果蔬二级', marketPrice: 6.8, image: '' },
-    { code: 'SP0300042', name: '面包', unit: '个', brand: '桃李', spec: '100g/个', category: '主食（米面粉点心类）-点心类', marketPrice: 3.5, image: '' }
+    { code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '桶', brand: '金龙鱼', spec: '5L', category: '食油-食油二级', marketPrice: 55, image: '' },
+    { code: 'SP0300034', name: '黑大米', unit: '袋', brand: '--', spec: '25kg', category: '主食（米面粉点心类）-粮食类', marketPrice: 500, image: '' },
+    { code: 'SP0300040', name: '土豆', unit: '斤', brand: '农家优选', spec: '散装', category: '果蔬-果蔬二级', marketPrice: 6.8, image: '' },
+    { code: 'SP0300042', name: '面包', unit: '个', brand: '桃李', spec: '100g', category: '主食（米面粉点心类）-点心类', marketPrice: 3.5, image: '' }
   ];
 
   function product(code, name) {
@@ -189,7 +192,7 @@
       makeTask({
         id: 'PT-20260826-0039',
         date: '2026-08-26',
-        productCode: 'SP0300039',
+        productCode: 'SP0300047',
         productName: '全麦面粉',
         unit: '斤',
         category: '主食（米面粉点心类）-粮食类-面类',
@@ -217,11 +220,11 @@
     var items = function (entries) { return entries; };
     return [
       makeOrder({ no: 'CGD202608250300003', supplier: '盒马鲜生', purchaseType: '供应商送货', source: '手动创建', expectedAt: '2026-08-28 00:00:00', addedAt: '2026-08-25 16:20:20', status: '待收货', items: items([
-        { productCode: 'SP0300045', productName: '黑面', unit: 'L', quantity: 10, purchasePrice: 5, supplierQuote: 0, marketPrice: 5 },
+        { productCode: 'SP0300045', productName: '黑面', unit: '斤', quantity: 10, purchasePrice: 5, supplierQuote: 0, marketPrice: 5 },
         { productCode: 'SP0300046', productName: '干豆皮', unit: '斤', quantity: 10, purchasePrice: 6, supplierQuote: 0, marketPrice: 6 }
       ]) }),
       makeOrder({ no: 'CGD202608250300002', supplier: '每日优选', purchaseType: '供应商送货', source: '采购任务生成', expectedAt: '2026-08-26 03:33:12', addedAt: '2026-08-25 03:33:12', status: '已关闭', items: [
-        { productCode: 'SP0300039', productName: '全麦面粉', unit: '斤', quantity: 10, purchasePrice: 1, supplierQuote: 0, marketPrice: 1 }
+        { productCode: 'SP0300047', productName: '全麦面粉', unit: '斤', quantity: 10, purchasePrice: 1, supplierQuote: 0, marketPrice: 1 }
       ] }),
       makeOrder({ no: 'CGD202608250300001', supplier: '盒马鲜生', purchaseType: '供应商送货', source: '采购任务生成', expectedAt: '2026-08-26 03:33:12', addedAt: '2026-08-25 03:33:12', status: '待入库', items: [
         { productCode: 'SP0300038', productName: '牛奶', unit: '瓶', quantity: 10, purchasePrice: 5, supplierQuote: 0, marketPrice: 5, receivedQty: 10, currentPrice: 5, receivedAmount: 50 }
@@ -230,13 +233,13 @@
         { productCode: 'SP0300019', productName: '大白菜', unit: '斤', quantity: 80, purchasePrice: 1.5, supplierQuote: 1.5, marketPrice: 1.5 }
       ] }),
       makeOrder({ no: 'CGD202608230300005', supplier: '鲜菜源蔬菜批发中心', purchaseType: '供应商送货', source: '手动创建', expectedAt: '2026-08-26 00:00:00', addedAt: '2026-08-23 10:21:15', status: '已完成', supplierStatus: '已发货', items: [
-        { productCode: 'SP0300025', productName: '西红柿', unit: 'KG', quantity: 30, purchasePrice: 4.5, supplierQuote: 4.5, marketPrice: 4.5, receivedQty: 30, currentPrice: 4.5, receivedAmount: 135 }
+        { productCode: 'SP0300020', productName: '西红柿', unit: 'KG', quantity: 30, purchasePrice: 4.5, supplierQuote: 4.5, marketPrice: 4.5, receivedQty: 30, currentPrice: 4.5, receivedAmount: 135 }
       ] }),
       makeOrder({ no: 'CGD202608220300006', supplier: '绿源供应商', purchaseType: '市场自采', source: '手动创建', expectedAt: '2026-08-25 00:00:00', addedAt: '2026-08-22 16:10:00', status: '待收货', items: [
         { productCode: 'SP0300029', productName: '鲫鱼', unit: '斤', quantity: 20, purchasePrice: 15, supplierQuote: 0, marketPrice: 15 }
       ] }),
       makeOrder({ no: 'CGD202608210300007', supplier: '盒马鲜生', purchaseType: '供应商送货', source: '采购任务生成', expectedAt: '2026-08-24 00:00:00', addedAt: '2026-08-21 14:30:22', status: '已完成', supplierStatus: '已发货', items: [
-        { productCode: 'SP0300030', productName: '金龙鱼5L桶装油', unit: '瓶', quantity: 6, purchasePrice: 55, supplierQuote: 55, marketPrice: 55, receivedQty: 6, currentPrice: 55, receivedAmount: 330 }
+        { productCode: 'SP0300030', productName: '金龙鱼5L桶装油', unit: '桶', quantity: 6, purchasePrice: 55, supplierQuote: 55, marketPrice: 55, receivedQty: 6, currentPrice: 55, receivedAmount: 330 }
       ] }),
       makeOrder({ no: 'CGD202608200300008', supplier: '每日优选', purchaseType: '供应商送货', source: '手动创建', expectedAt: '2026-08-23 00:00:00', addedAt: '2026-08-20 11:42:13', status: '待收货', items: [
         { productCode: 'SP0300034', productName: '黑大米', unit: '斤', quantity: 20, purchasePrice: 10, supplierQuote: 0, marketPrice: 10 }
@@ -245,13 +248,13 @@
         { productCode: 'SP0300040', productName: '土豆', unit: '斤', quantity: 50, purchasePrice: 6.8, supplierQuote: 0, marketPrice: 6.8 }
       ] }),
       makeOrder({ no: 'CGD202608180300010', supplier: '每日优选', purchaseType: '联营供应商采购', source: '手动创建', expectedAt: '2026-08-21 00:00:00', addedAt: '2026-08-18 09:35:17', status: '已完成', supplierStatus: '已发货', items: [
-        { productCode: 'SP0300020', productName: '鸡蛋', unit: '斤', quantity: 35, purchasePrice: 5.8, supplierQuote: 5.8, marketPrice: 5.8, receivedQty: 35, currentPrice: 5.8, receivedAmount: 203 }
+        { productCode: 'SP0300018', productName: '鸡蛋', unit: '斤', quantity: 35, purchasePrice: 5.8, supplierQuote: 5.8, marketPrice: 5.8, receivedQty: 35, currentPrice: 5.8, receivedAmount: 203 }
       ] }),
       makeOrder({ no: 'CGD202608170300011', supplier: '鲜菜源蔬菜批发中心', purchaseType: '供应商送货', source: '手动创建', expectedAt: '2026-08-20 00:00:00', addedAt: '2026-08-17 16:05:31', status: '待收货', items: [
         { productCode: 'SP0300019', productName: '大白菜', unit: '斤', quantity: 40, purchasePrice: 1.8, supplierQuote: 1.8, marketPrice: 1.8 }
       ] }),
       makeOrder({ no: 'CGD202608160300012', supplier: '盒马鲜生', purchaseType: '市场自采', source: '手动创建', expectedAt: '2026-08-19 00:00:00', addedAt: '2026-08-16 13:22:08', status: '待收货', items: [
-        { productCode: 'SP0300039', productName: '全麦面粉', unit: '斤', quantity: 20, purchasePrice: 2, supplierQuote: 0, marketPrice: 2 }
+        { productCode: 'SP0300047', productName: '全麦面粉', unit: '斤', quantity: 20, purchasePrice: 2, supplierQuote: 0, marketPrice: 2 }
       ] }),
       makeOrder({ no: 'CGD202608150300013', supplier: '每日优选', purchaseType: '供应商送货', source: '采购任务生成', expectedAt: '2026-08-18 00:00:00', addedAt: '2026-08-15 10:18:00', status: '已完成', supplierStatus: '已发货', items: [
         { productCode: 'SP0300046', productName: '干豆皮', unit: '斤', quantity: 10, purchasePrice: 6, supplierQuote: 6, marketPrice: 6, receivedQty: 10, currentPrice: 6, receivedAmount: 60 }

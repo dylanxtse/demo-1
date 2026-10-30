@@ -203,6 +203,9 @@
 .recipe-purchase-limit-mode { width: 110px; }
 .recipe-purchase-limit-bound-row { gap: 6px; min-height: 32px; white-space: nowrap; }
 .recipe-purchase-limit-bound-label { min-width: 144px; }
+.recipe-purchase-edit-actions { align-items: center; gap: 8px; margin-left: auto; min-height: 32px; }
+.recipe-purchase-edit-actions[hidden] { display: none !important; }
+.recipe-purchase-edit-actions .config-apply { margin-left: 0; }
 .recipe-purchase-switch {
   position: relative;
   display: inline-flex;

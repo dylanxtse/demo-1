@@ -30,7 +30,7 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
     const product = context.SchoolOrderService.getProductCatalog().find((item) => String(item.code || item.id) === String(row.productCode));
     const price = context.SchoolRecipeDemandService.currentSalesPrice(product);
     const demandQty = preview.participants.reduce((total, item) => total + Number(row.participantQty?.[item.key] || 0), 0);
-    const purchaseQty = product?.isStandardProduct ? Math.ceil(demandQty) : demandQty;
+    const purchaseQty = context.SchoolRecipeService.orderQuantityFromDemand(demandQty, product);
     return sum + price * purchaseQty;
   }, 0);
   const subtotalCells = [];
@@ -53,6 +53,8 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
   assert.doesNotMatch(body.innerHTML, /schoolRecipeExpectedAt|school-recipe-demand-delivery-field/);
   assert.match(body.innerHTML, /填报天数：<\/span><strong>1<\/strong>/);
   assert.match(body.innerHTML, /<th rowspan="2">小计<\/th>/);
+  assert.match(body.innerHTML, /<th>需求量<\/th>/);
+  assert.doesNotMatch(body.innerHTML, /<th>需求总量<\/th>/);
   assert.match(body.innerHTML, /早餐合计金额/);
   assert.match(body.innerHTML, /所有餐次合计金额/);
   assert.match(body.innerHTML, /<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="\d+">早餐合计金额<\/td><td class="is-number" data-product-meal-total>¥[\d,]+\.\d{2}<\/td><td aria-hidden="true"><\/td><\/tr><tr class="school-recipe-demand-product-total-row is-grand"><td colspan="\d+">所有餐次合计金额<\/td><td class="is-number" data-product-grand-total>¥[\d,]+\.\d{2}<\/td><td aria-hidden="true"><\/td><\/tr><\/tfoot>/);
@@ -63,6 +65,14 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
   const displayedAmount = Number(body.innerHTML.match(/data-product-grand-total>¥([\d,]+\.\d{2})/)?.[1].replaceAll(',', ''));
   assert.equal(displayedAmount, Number(expectedAmount.toFixed(2)));
   assert.ok(displayedAmount > mealAmount);
+  const firstMealKey = preview.dateSummaries[0].calculation.mealRows[0].key;
+  const firstDemandRow = context.SchoolRecipeDemandService.aggregateMealRows(preview, firstMealKey)
+    .find((row) => row.mappingStatus === '已关联' && Number(row.totalQty) > 0);
+  const firstDemandProduct = context.SchoolOrderService.getProductCatalog().find((item) => String(item.code || item.id) === String(firstDemandRow.productCode));
+  const firstDemandRowHtml = body.innerHTML.split('</tr>').find((row) => row.includes(firstDemandRow.productCode));
+  const expectedDisplayedDemand = context.SchoolRecipeService.quantityInProductUnit(firstDemandRow.totalQty, firstDemandProduct)
+    .toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  assert.match(firstDemandRowHtml, new RegExp(`<td class="is-number">${expectedDisplayedDemand}<\\/td>`));
   const firstPriceInput = body.innerHTML.match(/class="school-recipe-demand-unit-price-input"[^>]*value="([^"]+)"[^>]*data-unit-price-key="([^"]+)"/);
   assert.ok(firstPriceInput);
   const priceInput = {

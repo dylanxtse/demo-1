@@ -50,8 +50,7 @@
     ...product,
     id: String(product.id || product.code),
     code: String(product.code || ''),
-    doseUnit: product.doseUnit || product.unit || '--',
-    doseDisplay: product.doseDisplay || (product.unit === 'L' ? '1 ml' : '1 g'),
+    doseDisplay: product.doseDisplay || (auxiliaryDirectService.productContentUnit(product) === 'L' ? '1 ml' : '1 g'),
     dose: Number(product.dose || 0),
     marketPrice: Number(product.marketPrice || 0)
   }));
@@ -282,9 +281,9 @@
         ['staple-special', '特级面粉'], ['staple-grain', '杂粮米']
       ],
       products: [
-        { id: 'order-staple-black-rice', code: 'SP0300034', name: '黑大米', unit: '袋', price: 500, stock: 150, subKey: 'staple-root', spec: '25kg/袋' },
+        { id: 'order-staple-black-rice', code: 'SP0300034', name: '黑大米', unit: '袋', price: 500, stock: 150, subKey: 'staple-root', spec: '25kg' },
         { id: 'order-staple-rice', code: 'SP0300025', name: '大米', unit: 'KG', price: 19, stock: 120, subKey: 'staple-rice', spec: '散装' },
-        { id: 'order-staple-flour', code: 'SP0300016', name: '面粉', unit: '袋', price: 1500, stock: 80, subKey: 'staple-flour', spec: '25kg/袋' },
+        { id: 'order-staple-flour', code: 'SP0300016', name: '面粉', unit: '袋', price: 1500, stock: 80, subKey: 'staple-flour', spec: '25kg' },
         { id: 'order-staple-cake', code: 'SP0300023', name: '大饼', unit: '斤', price: 1, stock: 90, subKey: 'staple-root', spec: '散装' }
       ]
     },
@@ -296,8 +295,8 @@
         ['oil-flax', '亚麻籽油'], ['oil-olive', '橄榄油']
       ],
       products: [
-        { id: 'order-oil-golden-10l', code: 'OA0300001', name: '金龙鱼10L', unit: '桶', price: 150, stock: 150, subKey: 'oil-root', spec: '10L/桶' },
-        { id: 'order-oil-golden-5l', code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '瓶', price: 55, stock: 80, subKey: 'oil-root', spec: '5L/瓶' },
+        { id: 'order-oil-golden-10l', code: 'OA0300001', name: '金龙鱼10L', unit: '桶', price: 150, stock: 150, subKey: 'oil-root', spec: '10L' },
+        { id: 'order-oil-golden-5l', code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '桶', price: 55, stock: 80, subKey: 'oil-root', spec: '5L' },
         { id: 'order-oil-soy', code: 'SP0300017', name: '金龙鱼豆油', unit: '斤', price: 50, stock: 120, subKey: 'oil-soy', spec: '散装' }
       ]
     },
@@ -327,7 +326,7 @@
       key: 'fish', name: '水产品', image: productOrderAssetRoot + 'order-category-fish.png',
       subcategories: [['fish-root', '水产品三级'], ['fish-freshwater', '淡水鱼'], ['fish-sea', '海水鱼'], ['fish-shrimp', '虾蟹类']],
       products: [
-        { id: 'order-fish-carp', code: 'SP0300031', name: '净膛鲫鱼', unit: '斤', price: 18.5, stock: 90, subKey: 'fish-freshwater', spec: '500g左右/条' },
+        { id: 'order-fish-carp', code: 'SP0300031', name: '净膛鲫鱼', unit: '斤', price: 18.5, stock: 90, subKey: 'fish-freshwater', spec: '500g左右' },
         { id: 'order-fish-shrimp', code: 'SP0300029', name: '鲫鱼', unit: '斤', price: 15, stock: 100, subKey: 'fish-freshwater', spec: '鲜活' }
       ]
     },
@@ -336,23 +335,23 @@
       subcategories: [['dairy-root', '蛋奶类三级'], ['dairy-egg', '鸡蛋'], ['dairy-milk', '牛奶'], ['dairy-snack', '奶制品']],
       products: [
         { id: 'order-dairy-egg', code: 'SP0300018', name: '鸡蛋', unit: '斤', price: 22, stock: 160, subKey: 'dairy-egg', spec: '鲜鸡蛋' },
-        { id: 'order-dairy-milk', code: 'SP0300024', name: '三元牛奶', unit: '瓶', price: 10, stock: 150, subKey: 'dairy-milk', spec: '10瓶1箱' }
+        { id: 'order-dairy-milk', code: 'SP0300024', name: '三元牛奶', unit: '瓶', price: 10, stock: 150, subKey: 'dairy-milk', spec: '--' }
       ]
     },
     {
       key: 'seasoning', name: '调料', image: productOrderAssetRoot + 'order-category-seasoning.png',
       subcategories: [['seasoning-root', '调料三级'], ['seasoning-salt', '食用盐'], ['seasoning-sauce', '酱油醋'], ['seasoning-spice', '调味料']],
       products: [
-        { id: 'order-seasoning-salt', code: 'OA0300003', name: '食用盐', unit: '袋', price: 3.5, stock: 90, subKey: 'seasoning-salt', spec: '500g/袋' },
-        { id: 'order-seasoning-soy', code: 'OA0300004', name: '生抽酱油', unit: '瓶', price: 12, stock: 70, subKey: 'seasoning-sauce', spec: '1.9L/瓶' }
+        { id: 'order-seasoning-salt', code: 'OA0300003', name: '食用盐', unit: '袋', price: 3.5, stock: 90, subKey: 'seasoning-salt', spec: '500g' },
+        { id: 'order-seasoning-soy', code: 'OA0300004', name: '生抽酱油', unit: '瓶', price: 12, stock: 70, subKey: 'seasoning-sauce', spec: '1.9L' }
       ]
     },
     {
       key: 'other', name: '其他材料', image: productOrderAssetRoot + 'order-category-other.png',
       subcategories: [['other-root', '其他材料三级'], ['other-flour', '面粉'], ['other-snack', '佐餐食品'], ['other-misc', '其他']],
       products: [
-        { id: 'order-other-noodle', code: 'OA0300005', name: '挂面', unit: '把', price: 8, stock: 100, subKey: 'other-snack', spec: '500g/把' },
-        { id: 'order-other-starch', code: 'OA0300006', name: '淀粉', unit: '袋', price: 9, stock: 80, subKey: 'other-flour', spec: '500g/袋' }
+        { id: 'order-other-noodle', code: 'OA0300005', name: '挂面', unit: '把', price: 8, stock: 100, subKey: 'other-snack', spec: '500g' },
+        { id: 'order-other-starch', code: 'OA0300006', name: '淀粉', unit: '袋', price: 9, stock: 80, subKey: 'other-flour', spec: '500g' }
       ]
     }
   ];
@@ -1632,10 +1631,11 @@
 
   function renderEntryModeSheet() {
     const title = state.sheet?.demandType === 'auxiliary' ? '干料需求填报' : '菜谱需求填报';
+    const quantityLabel = '商品数量填报';
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-entry-mode-sheet" role="dialog" aria-modal="true" aria-label="' + title + '">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + title + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="people"><strong>就餐人数填报</strong><span aria-hidden="true">›</span></button>'
-      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>商品数量填报</strong><span aria-hidden="true">›</span></button>'
+      + '<button type="button" class="school-mobile-entry-mode-option" data-action="choose-entry-mode" data-entry-mode="quantity"><strong>' + quantityLabel + '</strong><span aria-hidden="true">›</span></button>'
       + '</section></div>';
   }
 
@@ -1652,25 +1652,38 @@
     state.directParticipantKey = activeParticipant?.key || '';
     const participantTabs = split ? '<div class="school-mobile-direct-participant-tabs" role="tablist" aria-label="人员类型切换">'
       + (preview.participants || []).map((person) => '<button type="button" class="school-mobile-direct-participant-tab' + (person.key === state.directParticipantKey ? ' is-active' : '') + '" data-action="select-direct-participant" data-participant-key="' + escapeHtml(person.key) + '" role="tab" aria-selected="' + (person.key === state.directParticipantKey) + '">' + escapeHtml(orderTagName(person)) + '</button>').join('') + '</div>' : '';
-    const rows = (active?.rows || []).map((row) => {
-      const key = row.key + (activeParticipant ? '::' + activeParticipant.key : '');
-      const label = activeParticipant ? orderTagName(activeParticipant) : '采购量';
-      const value = draft[key] ?? '';
-      const field = '<div class="school-mobile-direct-field"><span class="school-mobile-direct-input-wrap"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="-1" aria-label="减少' + escapeHtml(row.productName + ' ' + label) + '">−</button><input type="number" inputmode="decimal" min="0" ' + (row.isStandardProduct ? 'step="1"' : 'step="any"') + ' data-action="direct-quantity-input" data-quantity-key="' + escapeHtml(key) + '" aria-label="' + escapeHtml(row.productName + ' ' + label) + '" value="' + escapeHtml(value) + '"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="1" aria-label="增加' + escapeHtml(row.productName + ' ' + label) + '">+</button></span></div>';
-      return '<article class="school-mobile-direct-row">'
-        + '<div class="school-mobile-direct-row-details"><strong class="school-mobile-direct-product-name">' + escapeHtml(row.productName || '') + '</strong><small>' + escapeHtml(row.productCode || '') + ' · ' + (row.isStandardProduct ? '标品' : '非标品') + '</small><span>' + directMoney(row.orderPrice) + '/' + escapeHtml(row.unit || '') + '</span></div>'
-        + '<div class="school-mobile-direct-row-purchase">' + field + '</div>'
-        + '</article>';
+    const rowsByDish = new Map();
+    (active?.rows || []).forEach((row) => {
+      const dishKey = String(row.dishId || row.dishName || 'unnamed-dish');
+      if (!rowsByDish.has(dishKey)) rowsByDish.set(dishKey, { name: row.dishName || '未命名菜品', rows: [] });
+      rowsByDish.get(dishKey).rows.push(row);
+    });
+    const rows = [...rowsByDish.values()].map(({ name: dishName, rows: dishRows }) => {
+      const ingredients = dishRows.map((row) => {
+        const key = row.key + (activeParticipant ? '::' + activeParticipant.key : '');
+        const label = activeParticipant ? orderTagName(activeParticipant) : '采购量';
+        const value = draft[key] ?? '';
+        const rowLabel = dishName + ' ' + row.productName + ' ' + label;
+        const field = '<div class="school-mobile-direct-field"><span class="school-mobile-direct-input-wrap"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="-1" aria-label="减少' + escapeHtml(rowLabel) + '">−</button><input type="number" inputmode="decimal" min="0" ' + (row.isStandardProduct ? 'step="1"' : 'step="any"') + ' data-action="direct-quantity-input" data-quantity-key="' + escapeHtml(key) + '" aria-label="' + escapeHtml(rowLabel) + '" value="' + escapeHtml(value) + '"><button type="button" class="school-mobile-direct-step-button" data-action="direct-quantity-step" data-step="1" aria-label="增加' + escapeHtml(rowLabel) + '">+</button></span></div>';
+        return '<article class="school-mobile-direct-row">'
+          + '<div class="school-mobile-direct-row-details"><strong class="school-mobile-direct-product-name">' + escapeHtml(row.productName || '') + '</strong><small>' + escapeHtml(row.productCode || '') + ' · ' + (row.isStandardProduct ? '标品' : '非标品') + '</small><span>' + directMoney(row.orderPrice) + '/' + escapeHtml(row.unit || '') + '</span></div>'
+          + '<div class="school-mobile-direct-row-purchase">' + field + '</div>'
+          + '</article>';
+      }).join('');
+      return '<section class="school-mobile-direct-dish-group" data-dish-name="' + escapeHtml(dishName) + '">'
+        + '<header class="school-mobile-direct-dish-header"><strong>' + escapeHtml(dishName) + '</strong><small>' + number(dishRows.length) + ' 种食材</small></header>'
+        + ingredients
+        + '</section>';
     }).join('');
     const filledDays = directFilledDates();
-    const filledProductCount = directFilledProductRows(state.date, draft).length;
+    const filledIngredientCount = preview.selectedRows.length;
     return '<div class="school-mobile-attendance-page school-mobile-direct-page"><div class="school-mobile-scroll school-mobile-attendance-scroll">'
       + renderDateStrip('quantity')
       + '<section class="school-mobile-summary-card school-mobile-direct-summary"><div><strong>' + escapeHtml(dateText(state.date)) + '</strong><small>' + escapeHtml(state.canteen) + '</small></div></section>'
       + '<section class="school-mobile-demand-section">' + tabs + participantTabs
       + (rows || '<div class="school-mobile-empty">当前餐次暂无可填报商品</div>') + '</section>'
       + (preview.missingMappings?.length ? '<div class="school-mobile-notice"><i>!</i><span>当前食谱有未关联商品，请先完善关联。</span></div>' : '')
-      + '</div><div class="school-mobile-attendance-actions"><button type="button" class="school-mobile-auxiliary-filled-trigger school-mobile-direct-filled-trigger" data-action="direct-filled-detail"' + (filledProductCount ? '' : ' disabled') + '><span>已填写</span><strong data-direct-filled-count>' + number(filledProductCount) + ' 种商品</strong></button><button type="button" class="school-mobile-button is-primary" data-action="direct-continue"' + (filledDays.length ? '' : ' disabled') + '>确认需求</button></div></div>';
+      + '</div><div class="school-mobile-attendance-actions"><button type="button" class="school-mobile-auxiliary-filled-trigger school-mobile-direct-filled-trigger" data-action="direct-filled-detail"' + (filledIngredientCount ? '' : ' disabled') + '><span>已填写</span><strong data-direct-filled-count>' + number(filledIngredientCount) + ' 项食材</strong></button><button type="button" class="school-mobile-button is-primary" data-action="direct-continue"' + (filledDays.length ? '' : ' disabled') + '>确认需求</button></div></div>';
   }
 
   function renderAuxiliarySimpleQuantity() {
@@ -1992,7 +2005,9 @@
 
   function auxiliaryPurchaseQuantity(product, demandQty) {
     const packSize = Number(product?.packSize || 0);
-    return packSize > 0 ? Math.ceil(Number(demandQty || 0) / packSize) * packSize : Number(demandQty || 0);
+    return auxiliaryDirectService.isPackagedStandardProduct(product)
+      ? Math.ceil(Math.max(0, Number(demandQty || 0) - 1e-9) / (packSize > 0 ? packSize : 1))
+      : Number(demandQty || 0);
   }
 
   function renderAuxiliaryDemandRows(menu, record, activeMealKey = '') {
@@ -2016,7 +2031,7 @@
       return '<div class="school-mobile-demand-swipe-item' + (isOpen ? ' is-swiped' : '') + '" data-demand-swipe-item data-demand-swipe-key="' + escapeHtml(identity) + '" role="listitem">'
         + '<button type="button" class="school-mobile-demand-row" data-action="open-auxiliary-demand-detail" data-menu-date="' + escapeHtml(menu.date) + '" data-auxiliary-id="' + escapeHtml(row.id) + '" data-auxiliary-meal-key="' + escapeHtml(meal?.key || '') + '" aria-label="查看' + escapeHtml(row.name) + '采购量明细，左滑可移除">'
           + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.name) + '</strong><small>' + escapeHtml(row.code) + '</small></div>'
-          + '<span class="school-mobile-demand-qty">' + quantity(row.purchaseQty) + ' ' + escapeHtml(row.doseUnit) + '</span>'
+          + '<span class="school-mobile-demand-qty">' + quantity(row.purchaseQty) + ' ' + escapeHtml(row.unit) + '</span>'
           + '<span class="school-mobile-demand-detail-arrow" aria-hidden="true">›</span>'
         + '</button>'
         + '<button type="button" class="school-mobile-demand-remove" data-action="remove-auxiliary-product" data-auxiliary-id="' + escapeHtml(row.id) + '" data-auxiliary-meal-key="' + escapeHtml(selectionMealKey || '') + '" aria-label="移除' + escapeHtml(row.name) + '" aria-hidden="' + (isOpen ? 'false' : 'true') + '" tabindex="' + (isOpen ? '0' : '-1') + '">移除</button>'
@@ -2052,7 +2067,7 @@
       const isSelected = selectedIds.has(product.id);
       const searchText = [product.name, product.auxiliaryName, product.code, product.brand, product.spec].join(' ').toLocaleLowerCase();
       return '<button type="button" class="school-mobile-demand-picker-option' + (isSelected ? ' is-selected' : '') + '" data-action="toggle-auxiliary-product-picker" data-auxiliary-id="' + escapeHtml(product.id) + '" data-search-text="' + escapeHtml(searchText) + '" aria-pressed="' + isSelected + '">'
-        + '<span class="school-mobile-demand-picker-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code + ' · ' + product.doseUnit) + '</small></span>'
+        + '<span class="school-mobile-demand-picker-product"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.code + ' · ' + product.unit + ' · ' + product.spec) + '</small></span>'
         + '<span class="school-mobile-demand-picker-indicator">' + (isSelected ? '✓' : '＋') + '</span>'
         + '</button>';
     }).join('');
@@ -2075,6 +2090,17 @@
     const totalPeople = Number(activeMeal?.totalPeople ?? calculation.totalPeople ?? 0);
     const participantPeople = activeMeal?.participantPeople || calculation.participantPeople || {};
     const totalQty = totalPeople * Number(product.dose || 0);
+    const balanceRule = window.SchoolAuxiliaryBalance;
+    let previousBalance = balanceRule?.openingBalance?.(currentCanteen(), product.code, menu.date) || 0;
+    if (activeMeal) {
+      for (const meal of calculation.mealRows || []) {
+        if (meal.key === activeMeal.key) break;
+        if (!auxiliarySelectedProductsForMeal(meal.key).some((item) => item.id === product.id)) continue;
+        const demand = Number(meal.totalPeople || 0) * Number(product.dose || 0);
+        const packSize = auxiliaryDirectService.isPackagedStandardProduct(product) ? Number(product.packSize) || 1 : 0;
+        previousBalance = balanceRule?.calculate?.(demand, previousBalance, packSize)?.balanceAfter ?? previousBalance;
+      }
+    }
     const participantRows = participants().map((participant) => {
       const demand = Number(participantPeople[participant.key] || 0) * Number(product.dose || 0);
       return { participant, demand, purchase: auxiliaryPurchaseQuantity(product, demand) };
@@ -2082,8 +2108,10 @@
     return {
       product,
       mealName: activeMeal?.name || '合计',
-      unit: product.doseUnit || '--',
+      unit: product.unit || '--',
+      demandUnit: auxiliaryDirectService.productContentUnit(product),
       totalQty,
+      previousBalance,
       purchaseQty: auxiliaryPurchaseQuantity(product, totalQty),
       participantRows
     };
@@ -2126,11 +2154,11 @@
       const totalQty = currentParticipants.reduce((total, participant) => total + Number(participantQty[participant.key] || 0), 0);
       return {
         ...product,
-        key: product.id + '::' + product.doseUnit,
+        key: product.id + '::' + product.unit,
         mappingStatus: '已关联',
         productCode: product.code,
         productName: product.name,
-        unit: product.doseUnit,
+        unit: product.unit,
         participantQty,
         totalQty,
         purchaseQty: auxiliaryPurchaseQuantity(product, totalQty)
@@ -2174,12 +2202,12 @@
         code: product.code,
         productCode: product.code,
         productName: product.name,
-        unit: product.doseUnit,
+        unit: product.unit,
         currentSalesPrice: Number.isFinite(Number(currentPrice)) ? Number(currentPrice) : Number(product.marketPrice || 0),
         marketPrice: Number.isFinite(Number(currentPrice)) ? Number(currentPrice) : Number(product.marketPrice || 0),
         brand: catalogProduct?.brand || '--',
-        spec: catalogProduct?.spec || '--',
-        isStandardProduct: Boolean(catalogProduct?.isStandardProduct || catalogProduct?.isStandard),
+        spec: catalogProduct?.spec && catalogProduct.spec !== '--' ? catalogProduct.spec : product.spec,
+        isStandardProduct: auxiliaryDirectService.isPackagedStandardProduct(product),
         allowSchoolModifyPurchaseQuantity: catalogProduct?.allowSchoolModifyPurchaseQuantity !== false
           && catalogProduct?.allowSchoolModifyPurchaseQuantity !== 'false'
           && catalogProduct?.allowSchoolModifyPurchaseQuantity !== '否'
@@ -2236,7 +2264,7 @@
           ), 0);
           return {
             ...product,
-            key: product.id + '::' + product.doseUnit,
+            key: product.id + '::' + product.unit,
             mappingStatus: '已关联',
             participantQty,
             totalQty,
@@ -2672,6 +2700,25 @@
       : auxiliaryPurchaseQuantity(row, demand);
   }
 
+  function auxiliaryConfirmPreviousBalance(preview, row, mealKey) {
+    const balanceRule = window.SchoolAuxiliaryBalance;
+    const firstDate = [...(preview?.dates || [])].sort()[0] || '';
+    let available = balanceRule?.openingBalance?.(currentCanteen(), row.productCode, firstDate) || 0;
+    if (!shouldSplitConfirmByMeal()) return available;
+    for (const meal of confirmMealDefinitions(preview)) {
+      if (meal.key === mealKey) break;
+      const earlierRow = auxiliaryConfirmMealRows(preview, meal.key)
+        .find((item) => String(item.productCode) === String(row.productCode));
+      if (!earlierRow) continue;
+      const packSize = auxiliaryDirectService.isPackagedStandardProduct(earlierRow)
+        ? Number(earlierRow.packSize) || 1 : 1;
+      const purchased = auxiliaryConfirmPurchaseQuantity(earlierRow, DEFAULT_ORDER_PARTICIPANT, meal.key);
+      available = Math.max(0, Number((available + Number(purchased || 0) * packSize
+        - Number(earlierRow.totalQty || 0)).toFixed(4)));
+    }
+    return available;
+  }
+
   function auxiliaryConfirmCanEditPurchaseQuantity(preview, participant, mealKey) {
     return auxiliaryConfirmMealRows(preview, mealKey).some((row) => {
       const demand = participant?.key === DEFAULT_ORDER_PARTICIPANT.key
@@ -2709,12 +2756,18 @@
         : '<div class="school-mobile-demand-purchase-display"><strong>' + quantity(purchaseValue) + '</strong><span class="school-mobile-demand-purchase-unit">' + escapeHtml(row.unit) + '</span></div>';
       const priceKey = purchaseRowKey(row);
       const price = auxiliaryConfirmUnitPrice(row);
+      const previousBalance = participant?.key === DEFAULT_ORDER_PARTICIPANT.key
+        ? auxiliaryConfirmPreviousBalance(preview, row, mealKey) : null;
+      const balanceMarkup = previousBalance === null ? ''
+        : '<small class="school-mobile-demand-product-balance">上次结余：'
+          + quantity(previousBalance) + ' '
+          + escapeHtml(auxiliaryDirectService.productContentUnit(row) || row.unit) + '</small>';
       const priceMarkup = isUnitPriceEditing && canModifyConfirmUnitPrice()
         ? '<div class="school-mobile-demand-price is-editable"><input class="school-mobile-demand-price-input" type="number" min="' + escapeHtml(minimumPrice()) + '" step="' + escapeHtml(minimumPrice()) + '" inputmode="decimal" value="' + escapeHtml(fixedPrice(price)) + '" data-action="confirm-unit-price" data-unit-price-key="' + escapeHtml(priceKey) + '" data-unit-price-overridden="' + (hasOwn(state.unitPriceOverrides, priceKey) ? 'true' : 'false') + '" aria-label="' + escapeHtml(row.productName + '单价') + '"><em>元/' + escapeHtml(row.unit) + '</em></div>'
         : '<div class="school-mobile-demand-price is-readonly"><strong class="school-mobile-demand-price-value">' + escapeHtml(fixedPrice(price)) + '</strong><em>元/' + escapeHtml(row.unit) + '</em></div>';
       return '<div class="school-mobile-demand-row school-mobile-auxiliary-confirm-row">'
         + '<span class="school-mobile-demand-index">' + String(index + 1).padStart(2, '0') + '</span>'
-        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.productName) + '</strong><small class="school-mobile-demand-product-meta">' + escapeHtml(row.productCode || '--') + '</small></div>'
+        + '<div class="school-mobile-demand-product"><strong>' + escapeHtml(row.productName) + '</strong><small class="school-mobile-demand-product-meta">' + escapeHtml(row.productCode || '--') + '</small>' + balanceMarkup + '</div>'
         + '<div class="school-mobile-demand-quantity">'
         + purchaseMarkup
         + priceMarkup
@@ -3542,7 +3595,7 @@
         || item.participant?.label || item.participant?.tagName || '人员';
       return '<div class="school-mobile-demand-detail-row" role="row">'
         + '<strong role="cell">' + escapeHtml(participantName) + '</strong>'
-        + '<span role="cell">' + quantity(item.demand) + ' ' + escapeHtml(detail.unit) + '</span>'
+        + '<span role="cell">' + quantity(auxiliaryDirectService.quantityInProductUnit(product, item.demand)) + ' ' + escapeHtml(detail.unit) + '</span>'
         + '<span role="cell">' + quantity(item.purchase) + ' ' + escapeHtml(detail.unit) + '</span>'
         + '</div>';
     }).join('');
@@ -3556,7 +3609,7 @@
     return '<div class="school-mobile-sheet-backdrop" data-sheet-backdrop><section class="school-mobile-sheet school-mobile-demand-detail-sheet" role="dialog" aria-modal="true" aria-label="商品需求明细">'
       + '<div class="school-mobile-sheet-handle"></div><header class="school-mobile-sheet-header"><h2>' + escapeHtml(product.name) + '</h2><button type="button" data-action="close-sheet" aria-label="关闭">×</button></header>'
       + '<p class="school-mobile-sheet-subtitle">' + (mealName ? escapeHtml(mealName) + ' · ' : '') + escapeHtml(product.code) + ' · ' + escapeHtml(detail.unit) + '</p>'
-      + '<div class="school-mobile-demand-detail-total school-mobile-demand-detail-total-auxiliary"><div><span>人均用量</span><strong>' + escapeHtml(product.doseDisplay || (quantity(product.dose) + ' ' + detail.unit)) + '</strong></div><div><span>需求总量</span><strong>' + quantity(detail.totalQty) + ' ' + escapeHtml(detail.unit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(detail.purchaseQty) + ' ' + escapeHtml(detail.unit) + '</strong></div></div>'
+      + '<div class="school-mobile-demand-detail-total school-mobile-demand-detail-total-auxiliary"><div><span>人均用量</span><strong>' + escapeHtml(product.doseDisplay || (quantity(product.dose) + ' ' + detail.demandUnit)) + '</strong></div><div><span>需求总量</span><strong>' + quantity(auxiliaryDirectService.quantityInProductUnit(product, detail.totalQty)) + ' ' + escapeHtml(detail.unit) + '</strong></div><div><span>上次结余</span><strong>' + quantity(detail.previousBalance) + ' ' + escapeHtml(detail.demandUnit) + '</strong></div><div><span>采购总量</span><strong>' + quantity(detail.purchaseQty) + ' ' + escapeHtml(detail.unit) + '</strong></div></div>'
       + participantDetailMarkup
       + '</section></div>';
   }
@@ -4042,6 +4095,17 @@
     render();
     try {
       const submissionPreview = isAuxiliary ? buildAuxiliarySubmissionPreview(preview) : preview;
+      const purchaseQuantityOverrides = { ...state.purchaseQtyOverrides };
+      if (isAuxiliary && !shouldSplitConfirmByPersonType()) {
+        confirmMealDefinitions(preview).forEach((meal) => {
+          auxiliaryConfirmMealRows(preview, meal.key).forEach((row) => {
+            const key = purchaseQuantityKey(row, DEFAULT_ORDER_PARTICIPANT.key, meal.key);
+            if (!hasOwn(purchaseQuantityOverrides, key)) {
+              purchaseQuantityOverrides[key] = auxiliaryConfirmPurchaseQuantity(row, DEFAULT_ORDER_PARTICIPANT, meal.key);
+            }
+          });
+        });
+      }
       const result = await demandService.submit(dates, {
         ...serviceOptions(),
         expectedAt,
@@ -4049,7 +4113,7 @@
         preview: submissionPreview,
         auxiliaryProducts: isAuxiliary ? auxiliarySubmissionProducts() : undefined,
         unitPriceOverrides: { ...state.unitPriceOverrides },
-        purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }
+        purchaseQuantityOverrides
       });
       clearAttendanceAfterFlow();
       state.submitting = false;
@@ -4104,11 +4168,11 @@
     writeDirectDraft(state.date, draft);
     const filledDays = directFilledDates();
     updateDirectDateStripStatus(state.date, filledDays.includes(state.date));
-    const filledProductCount = directFilledProductRows(state.date, draft).length;
+    const filledIngredientCount = directPreview(state.date, draft).selectedRows.length;
     const filledCount = app.querySelector('[data-direct-filled-count]');
-    if (filledCount) filledCount.textContent = number(filledProductCount) + ' 种商品';
+    if (filledCount) filledCount.textContent = number(filledIngredientCount) + ' 项食材';
     const filledButton = app.querySelector('[data-action="direct-filled-detail"]');
-    if (filledButton) filledButton.disabled = !filledProductCount;
+    if (filledButton) filledButton.disabled = !filledIngredientCount;
     const button = app.querySelector('[data-action="direct-continue"]');
     if (button) button.disabled = !filledDays.length;
   }

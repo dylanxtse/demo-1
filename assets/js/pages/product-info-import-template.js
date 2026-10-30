@@ -22,7 +22,7 @@
     ['alias', '商品别名', 140],
     ['brand', '品牌', 120],
     ['spec', '规格', 130],
-    ['storageCondition', '储存条件', 140],
+    ['storageCondition', '*储存条件', 140],
     ['origin', '产地', 120],
     ['description', '指标说明', 150],
     ['isWeighed', '是否称重', 140],
@@ -80,7 +80,7 @@
             <colgroup>${columnGroup}</colgroup>
             <thead>
               <tr class="school-order-export-title-row"><th colspan="${fields.length}">商品信息导入模板</th></tr>
-              <tr class="school-order-export-meta-row"><td colspan="${fields.length}">红色“*”为必填项；储存条件在规格后，可留空，填写时请选择冷冻、冷藏或常温。其他字段填写规则请参考Excel模板说明。</td></tr>
+              <tr class="school-order-export-meta-row"><td colspan="${fields.length}">红色“*”为必填项；储存条件在规格后，必须选择冷冻、冷藏或常温。其他字段填写规则请参考Excel模板说明。</td></tr>
               <tr class="school-order-export-column-row">${headers}</tr>
             </thead>
             <tbody>${rows}</tbody>

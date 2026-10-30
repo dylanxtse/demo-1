@@ -120,7 +120,7 @@
         id: `RETURN-LINE-${index}-${Date.now()}`,
         goodsId: item.goodsId || item.goodsCode || item.productId || '',
         goodsName: item.goodsName || item.productName || item.name || item.displayName || '',
-        unit: item.unit || item.measurementUnit || '',
+        unit: item.unit || '',
         brand: item.brand || '--',
         spec: item.spec || '--',
         image: item.image || item.imageUrl || '',

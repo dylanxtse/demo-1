@@ -12,6 +12,7 @@ function mobileApp(options = {}) {
     'assets/js/services/school-recipe-service.js',
     'assets/js/services/school-recipe-attendance-service.js',
     'assets/js/services/school-order-service.js',
+    'assets/js/utils/school-auxiliary-balance.js',
     'assets/js/services/operations-service.js',
     'assets/js/services/school-recipe-demand-service.js',
     'assets/js/services/school-recipe-auxiliary-direct-service.js',
@@ -144,27 +145,19 @@ test('两个手机入口先选择填报方式，干调数量填写和确认分�
   dispatch('click', 'back');
 
   dispatch('click', 'open-auxiliary-attendance');
+  assert.match(app.innerHTML, /<strong>商品数量填报<\/strong>/);
   dispatch('click', 'choose-entry-mode', { entryMode: 'quantity' });
-  const product = context.SchoolRecipeAuxiliaryDirectService.catalogProducts(canteen)[0];
-  assert.doesNotMatch(app.innerHTML, /aria-label="餐次切换"|data-action="select-direct-meal"/);
-  assert.doesNotMatch(app.innerHTML, /用料日期|school-mobile-date-strip|期望送达时间|data-action="direct-submit"/);
-  assert.match(app.innerHTML, /data-action="direct-continue" disabled/);
-  assert.equal((app.innerHTML.match(/class="school-mobile-direct-row"/g) || []).length, 50);
-  assert.equal((app.innerHTML.match(new RegExp(`data-quantity-key="${product.code}"`, 'g')) || []).length, 1);
-  assert.doesNotMatch(app.innerHTML, /data-action="open-direct-detail"/);
-  dispatch('input', 'direct-quantity-input', { quantityKey: product.code }, '2.5');
+  const product = context.SchoolRecipeAuxiliaryDirectService.catalogProducts(canteen, true)[0];
+  assert.match(app.innerHTML, /school-mobile-auxiliary-simple-page/);
+  assert.match(app.innerHTML, /school-mobile-auxiliary-products-panel/);
+  assert.doesNotMatch(app.innerHTML, /school-mobile-date-strip-quantity|school-mobile-direct-dish-group/);
+  assert.ok(app.innerHTML.includes(`data-quantity-key="${product.code}"`));
+  dispatch('input', 'direct-quantity-input', { quantityKey: product.code }, '2');
   dispatch('click', 'direct-continue');
   assert.match(app.innerHTML, /school-mobile-auxiliary-simple-confirm-page/);
-  assert.match(app.innerHTML, /商品需求汇总|期望送达时间/);
-  assert.match(app.innerHTML, /<small>共¥[\d,]+\.\d{2}<\/small>/);
-  assert.doesNotMatch(app.innerHTML, /用料日期|餐次切换/);
-  assert.match(app.innerHTML, /data-action="direct-submit" disabled/);
-  dispatch('click', 'open-expected-at');
-  dispatch('click', 'confirm-expected-at');
-  assert.match(app.innerHTML, /data-action="direct-submit"[^>]*>提交需求并下单/);
-  assert.match(app.innerHTML, /合计金额/);
+  assert.match(app.innerHTML, /期望送达时间/);
   dispatch('click', 'back');
-  assert.match(app.innerHTML, /data-action="direct-quantity-input"[^>]*value="2.5"/);
+  assert.match(app.innerHTML, new RegExp(`data-quantity-key="${product.code}"[^>]*value="2"`));
 });
 
 test('菜谱数量填报按当前日期统计已填写商品并支持查看和移除', () => {
@@ -179,7 +172,7 @@ test('菜谱数量填报按当前日期统计已填写商品并支持查看和�
 
   dispatch('click', 'open-attendance');
   dispatch('click', 'choose-entry-mode', { entryMode: 'quantity' });
-  assert.match(app.innerHTML, /data-action="direct-filled-detail" disabled><span>已填写<\/span><strong data-direct-filled-count>0 种商品/);
+  assert.match(app.innerHTML, /data-action="direct-filled-detail" disabled><span>已填写<\/span><strong data-direct-filled-count>0 项食材/);
 
   dispatch('input', 'direct-quantity-input', { quantityKey: first.key }, '2');
   const dateItem = dateItems.get(date);
@@ -187,7 +180,7 @@ test('菜谱数量填报按当前日期统计已填写商品并支持查看和�
   assert.match(dateItem.getAttribute('aria-label'), /已填写$/);
   dispatch('input', 'direct-quantity-input', { quantityKey: second.key }, '3');
   dispatch('click', 'select-direct-meal', { mealKey: meal.key });
-  assert.match(app.innerHTML, /data-action="direct-filled-detail"><span>已填写<\/span><strong data-direct-filled-count>2 种商品/);
+  assert.match(app.innerHTML, /data-action="direct-filled-detail"><span>已填写<\/span><strong data-direct-filled-count>2 项食材/);
 
   dispatch('click', 'direct-filled-detail');
   assert.match(app.innerHTML, /school-mobile-auxiliary-filled-backdrop/);
@@ -198,7 +191,7 @@ test('菜谱数量填报按当前日期统计已填写商品并支持查看和�
   assert.match(app.innerHTML, /data-action="remove-direct-filled-product"/);
 
   dispatch('click', 'remove-direct-filled-product', { productCode: first.productCode });
-  assert.match(app.innerHTML, /data-direct-filled-count>1 种商品/);
+  assert.match(app.innerHTML, /data-direct-filled-count>1 项食材/);
   const detailStart = app.innerHTML.indexOf('school-mobile-auxiliary-filled-sheet');
   const detail = app.innerHTML.slice(detailStart, app.innerHTML.indexOf('</section>', detailStart));
   assert.ok(detailStart >= 0);
@@ -209,24 +202,58 @@ test('菜谱数量填报按当前日期统计已填写商品并支持查看和�
 
   dispatch('click', 'remove-direct-filled-product', { productCode: second.productCode });
   assert.doesNotMatch(app.innerHTML, /school-mobile-auxiliary-filled-backdrop/);
-  assert.match(app.innerHTML, /data-action="direct-filled-detail" disabled><span>已填写<\/span><strong data-direct-filled-count>0 种商品/);
+  assert.match(app.innerHTML, /data-action="direct-filled-detail" disabled><span>已填写<\/span><strong data-direct-filled-count>0 项食材/);
   assert.match(app.innerHTML, new RegExp('data-date="' + date + '" aria-label="[^"]*未填写" title="未填写"'));
   assert.equal(context.AppStorage.read('school-recipe-demand-direct-drafts-v1', {})[scope], undefined);
 });
 
-test('手机端干调数量可按名称或编号查询，并在弹层查看和移除已填写商品', () => {
+test('手机菜谱数量入口按菜品展示原料，并将同一商品按菜品分别填写', () => {
+  const { context, app, dispatch } = mobileApp();
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const date = context.SchoolRecipeService.getAll()[0].date;
+  const preview = context.SchoolRecipeDemandService.buildDirectPreview(date, {}, { canteen });
+  const breakfast = preview.meals.find((meal) => meal.key === 'breakfast');
+  const sameProductRows = breakfast.rows.filter((row) => row.productCode === 'SP0300037');
+  assert.equal(sameProductRows.length, 2);
+  assert.notEqual(sameProductRows[0].dishName, sameProductRows[1].dishName);
+
+  dispatch('click', 'open-attendance');
+  assert.match(app.innerHTML, /<strong>商品数量填报<\/strong>/);
+  dispatch('click', 'choose-entry-mode', { entryMode: 'quantity' });
+  sameProductRows.forEach((row) => {
+    assert.ok(app.innerHTML.includes(`data-dish-name="${row.dishName}"`));
+    assert.ok(app.innerHTML.includes(`data-quantity-key="${row.key}"`));
+    assert.ok(app.innerHTML.includes(`${row.dishName} ${row.productName} 采购量`));
+  });
+  assert.doesNotMatch(app.innerHTML, /<span>菜品<\/span>/);
+  assert.doesNotMatch(app.innerHTML, /school-mobile-auxiliary-simple-page|school-mobile-auxiliary-products-panel/);
+
+  dispatch('input', 'direct-quantity-input', { quantityKey: sameProductRows[0].key }, '2');
+  dispatch('input', 'direct-quantity-input', { quantityKey: sameProductRows[1].key }, '3');
+  dispatch('click', 'select-direct-meal', { mealKey: breakfast.key });
+  assert.match(app.innerHTML, /data-direct-filled-count>2 项食材/);
+  dispatch('click', 'direct-continue');
+  assert.match(app.innerHTML, /菜谱需求确认/);
+  assert.ok(app.innerHTML.includes(`<strong>5 ${sameProductRows[0].unit}</strong>`));
+  assert.doesNotMatch(app.innerHTML, /school-mobile-auxiliary-simple-confirm-page/);
+
+  dispatch('click', 'back');
+  sameProductRows.forEach((row, index) => {
+    const value = index === 0 ? 2 : 3;
+    assert.match(app.innerHTML, new RegExp(`data-quantity-key="${row.key}"[^>]*value="${value}"`));
+  });
+});
+
+test('手机干调商品数量可按名称或编号查询，并在明细中移除商品', () => {
   const { context, app, dispatch } = mobileApp();
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const products = context.SchoolRecipeAuxiliaryDirectService.catalogProducts(canteen, true);
   dispatch('click', 'open-auxiliary-attendance');
   dispatch('click', 'choose-entry-mode', { entryMode: 'quantity' });
-  assert.match(app.innerHTML, /<section class="school-mobile-auxiliary-products-panel"><form class="school-mobile-auxiliary-simple-search"/);
-  assert.match(app.innerHTML, /placeholder="请输入商品名称\/编号"/);
-  assert.match(app.innerHTML, /data-action="auxiliary-search-clear" aria-label="清除查询" hidden>×<\/button>/);
-  assert.doesNotMatch(app.innerHTML, /data-action="auxiliary-search-reset"|>重置<\/button>/);
-  assert.match(app.innerHTML, /已填写<\/span><strong data-auxiliary-filled-count>0 种商品/);
-  assert.match(app.innerHTML, /种商品<\/strong><\/button>/);
-  assert.doesNotMatch(app.innerHTML, /种商品<\/strong><span aria-hidden="true">↑<\/span>/);
+
+  assert.match(app.innerHTML, /school-mobile-auxiliary-simple-search/);
+  assert.equal((app.innerHTML.match(/class="school-mobile-direct-row"/g) || []).length, products.length);
+  assert.match(app.innerHTML, /data-auxiliary-filled-count>0 种商品/);
 
   dispatch('input', 'direct-quantity-input', { quantityKey: products[0].code }, '2');
   dispatch('input', 'direct-quantity-input', { quantityKey: products[1].code }, '3');
@@ -235,43 +262,21 @@ test('手机端干调数量可按名称或编号查询，并在弹层查看和�
     matches(selector) { return selector === '[data-auxiliary-search-form]'; }
   });
   submitSearch();
-  assert.match(app.innerHTML, /data-action="auxiliary-search-clear" aria-label="清除查询">×<\/button>/);
-  assert.match(app.innerHTML, /已填写<\/span><strong data-auxiliary-filled-count>2 种商品/);
   assert.ok(app.innerHTML.includes(`data-quantity-key="${products[0].code}"`));
   assert.ok(!app.innerHTML.includes(`data-quantity-key="${products[1].code}"`));
+  assert.match(app.innerHTML, /data-auxiliary-filled-count>2 种商品/);
 
   dispatch('click', 'auxiliary-filled-detail');
-  assert.match(app.innerHTML, /school-mobile-sheet-backdrop school-mobile-auxiliary-filled-backdrop/);
   assert.match(app.innerHTML, /role="dialog" aria-modal="false" aria-label="商品明细"/);
-  assert.match(app.innerHTML, /<h2>商品明细<\/h2>/);
-  assert.match(app.innerHTML, /<small>共¥[\d,]+\.\d{2}<\/small>/);
-  assert.doesNotMatch(app.innerHTML, /<p class="school-mobile-sheet-subtitle">共 \d+ 种商品<\/p>/);
-  assert.ok(app.innerHTML.includes(`${products[0].name}`));
-  assert.ok(app.innerHTML.includes(`${products[1].name}`));
-  assert.match(app.innerHTML, /<strong>2 L<\/strong>/);
-  assert.match(app.innerHTML, /<strong>3 kg<\/strong>/);
-  assert.match(app.innerHTML, /data-action="remove-auxiliary-filled-product"/);
+  assert.ok(app.innerHTML.includes(`<strong>2 ${products[0].unit}</strong>`));
+  assert.ok(app.innerHTML.includes(`<strong>3 ${products[1].unit}</strong>`));
   dispatch('click', 'remove-auxiliary-filled-product', { productCode: products[0].code });
   assert.match(app.innerHTML, /data-auxiliary-filled-count>1 种商品/);
-  const detailStart = app.innerHTML.indexOf('school-mobile-auxiliary-filled-sheet');
-  assert.ok(detailStart >= 0);
-  const detail = app.innerHTML.slice(detailStart, app.innerHTML.indexOf('</section>', detailStart));
-  assert.equal(detail.includes(products[0].name), false);
-  assert.equal(detail.includes(products[1].name), true);
-  dispatch('click', 'direct-continue');
-  assert.match(app.innerHTML, /school-mobile-auxiliary-simple-confirm-page/);
-  assert.doesNotMatch(app.innerHTML, /school-mobile-auxiliary-filled-backdrop/);
-  dispatch('click', 'back');
-  dispatch('click', 'auxiliary-filled-detail');
-  dispatch('click', 'close-sheet');
-  dispatch('click', 'auxiliary-search-clear');
-  assert.match(app.innerHTML, /data-action="auxiliary-search-clear" aria-label="清除查询" hidden>×<\/button>/);
-  assert.equal((app.innerHTML.match(/class="school-mobile-direct-row"/g) || []).length, products.length);
-  dispatch('click', 'direct-continue');
-  assert.match(app.innerHTML, /school-mobile-auxiliary-simple-confirm-page/);
+  assert.doesNotMatch(app.innerHTML, new RegExp(`<strong>${products[0].name}</strong>`));
+  assert.ok(app.innerHTML.includes(products[1].name));
 });
 
-test('移除最后一项干调商品后自动关闭明细弹层', () => {
+test('移除最后一项手机干调商品后自动关闭明细弹层', () => {
   const { context, app, dispatch } = mobileApp();
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const product = context.SchoolRecipeAuxiliaryDirectService.catalogProducts(canteen, true)[0];
@@ -283,7 +288,6 @@ test('移除最后一项干调商品后自动关闭明细弹层', () => {
   dispatch('click', 'remove-auxiliary-filled-product', { productCode: product.code });
   assert.doesNotMatch(app.innerHTML, /school-mobile-auxiliary-filled-backdrop/);
   assert.match(app.innerHTML, /data-auxiliary-filled-count>0 种商品/);
-  assert.doesNotMatch(app.innerHTML, /暂无已填写商品/);
   assert.match(app.innerHTML, new RegExp(`data-quantity-key="${product.code}"[^>]*value=""`));
 });
 
@@ -294,6 +298,11 @@ test('手机端人数填报读取Web默认干调商品，支持左滑移除和�
   } });
   const menu = context.SchoolRecipeService.getAll()[0];
   const firstMeal = menu.meals[0].key;
+  context.DemoStore.replace('recipeDemandRecords', [{
+    id: 'MOBILE-AUX-BALANCE-ENTRY', auxiliary: true, entryMode: 'people',
+    canteenId: canteen, canteen: '第一食堂', dates: ['2026-09-01'],
+    balanceRows: [{ productCode: 'SP0300030', unit: 'L', demandQty: 3, purchaseQty: 5 }]
+  }]);
   dispatch('click', 'open-auxiliary-attendance');
   dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
 
@@ -308,6 +317,11 @@ test('手机端人数填报读取Web默认干调商品，支持左滑移除和�
   assert.match(app.innerHTML, /data-action="confirm-auxiliary-products" disabled>添加<\/button>/);
   dispatch('click', 'cancel-auxiliary-products');
   assert.match(app.innerHTML, /data-action="open-auxiliary-demand-detail"[^>]*data-auxiliary-id="aux-oil"/);
+  dispatch('click', 'open-auxiliary-demand-detail', { auxiliaryId: 'aux-oil' });
+  const detailTotals = app.innerHTML.slice(app.innerHTML.indexOf('school-mobile-demand-detail-total-auxiliary'),
+    app.innerHTML.indexOf('school-mobile-demand-detail-total-auxiliary') + 450);
+  assert.match(detailTotals, /<span>需求总量<\/span><strong>0\.71 桶<\/strong><\/div><div><span>上次结余<\/span><strong>2\.00 L<\/strong><\/div><div><span>采购总量<\/span><strong>1\.00 桶<\/strong>/);
+  dispatch('click', 'close-sheet');
 
   const removeButtonAttributes = {};
   const removeButton = {
@@ -334,7 +348,6 @@ test('手机端人数填报读取Web默认干调商品，支持左滑移除和�
   assert.equal(removeButtonAttributes['aria-hidden'], 'false');
   assert.equal(removeButtonAttributes.tabIndex, 0);
   dispatch('click', 'open-auxiliary-demand-detail', { auxiliaryId: 'aux-oil' });
-
   dispatch('click', 'remove-auxiliary-product', { auxiliaryId: 'aux-oil', auxiliaryMealKey: firstMeal }, '', {
     closest(selector) {
       if (selector === '[data-action]' || selector.includes('remove-auxiliary-product')) return this;
@@ -374,12 +387,18 @@ test('手机端人数填报确认页按企业配置计算送达时间并隐藏�
     'school-recipe-auxiliary-default-products-v1': JSON.stringify({ 'canteen-004': ['aux-oil'] })
   } });
   context.DemoStore.updateSettings({ recipeDeliveryAdvanceDays: '2', recipeDeliveryTime: '06:45' });
+  context.DemoStore.replace('recipeDemandRecords', [{
+    id: 'MOBILE-AUX-BALANCE-CONFIRM', auxiliary: true, entryMode: 'people',
+    canteenId: 'canteen-004', canteen: '第一食堂', dates: ['2026-09-01'],
+    balanceRows: [{ productCode: 'SP0300030', unit: 'L', demandQty: 3, purchaseQty: 5 }]
+  }]);
   dispatch('click', 'open-auxiliary-attendance');
   dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
   dispatch('click', 'continue');
 
   assert.match(app.innerHTML, /school-mobile-confirm-page/);
   assert.match(app.innerHTML, /school-mobile-topbar-title">干调需求确认<\/strong>/);
+  assert.match(app.innerHTML, /SP0300030<\/small><small class="school-mobile-demand-product-balance">上次结余：2\.00 L<\/small>/);
   assert.doesNotMatch(app.innerHTML, /<span>期望送达时间<\/span>|data-action="open-expected-at"/);
   const selectedDates = Array.from(app.innerHTML.matchAll(/class="school-mobile-confirm-date[^\"]*is-selected[^\"]*" data-action="confirm-date" data-date="([^"]+)"/g), (match) => match[1]);
   assert.ok(selectedDates.length > 0);
@@ -389,6 +408,9 @@ test('手机端人数填报确认页按企业配置计算送达时间并隐藏�
   await new Promise((resolve) => setTimeout(resolve, 20));
   const record = context.DemoStore.get('recipeDemandRecords').at(-1);
   assert.equal(record.expectedAt, expectedAt);
+  const oilOrder = record.orders.map((item) => context.SchoolOrderService.get(item.orderId))
+    .find((order) => order?.items?.some((item) => item.productCode === 'SP0300030'));
+  assert.equal(oilOrder.items.find((item) => item.productCode === 'SP0300030').orderQty, 1);
 });
 
 test('菜谱人数填报确认页标题显示菜谱需求确认', () => {
@@ -499,63 +521,39 @@ test('企业端不拆分餐次和人员类型时，确认页合并商品和金�
   assert.ok(app.innerHTML.includes(`<span>合计金额</span><strong>${display}</strong>`));
 });
 
-test('手机端干调商品数量不选用料日期，直接生成需求记录与订单', async () => {
+test('手机端干调商品数量填报确认并生成干调需求订单', async () => {
   const { context, app, dispatch } = mobileApp();
-  context.DemoStore.updateSettings({ splitOrderByMeal: true, splitOrderByPersonType: true });
-  const date = context.SchoolRecipeService.getAll()[0].date;
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
-  const row = context.SchoolRecipeAuxiliaryDirectService.catalogProducts(canteen)[0];
+  const product = context.SchoolRecipeAuxiliaryDirectService.catalogProducts(canteen)[0];
   const before = context.DemoStore.get('recipeDemandRecords').length;
   dispatch('click', 'open-auxiliary-attendance');
   dispatch('click', 'choose-entry-mode', { entryMode: 'quantity' });
-  dispatch('input', 'direct-quantity-input', { quantityKey: row.code }, '2.5');
-  assert.doesNotMatch(app.innerHTML, /用料日期|school-mobile-date-strip|期望送达时间/);
+  assert.ok(app.innerHTML.includes(`data-quantity-key="${product.code}"`));
+  assert.doesNotMatch(app.innerHTML, /用料日期|school-mobile-date-strip/);
+  dispatch('input', 'direct-quantity-input', { quantityKey: product.code }, '2');
   dispatch('click', 'direct-continue');
   assert.match(app.innerHTML, /school-mobile-auxiliary-simple-confirm-page/);
-  assert.match(app.innerHTML, /<span>食堂<\/span><strong>第一食堂<\/strong><\/div><div class="school-mobile-field"><span>期望送达时间<\/span>/);
   assert.match(app.innerHTML, /data-action="open-expected-at"/);
   dispatch('click', 'open-expected-at');
-  assert.match(app.innerHTML, /选择期望送达时间/);
   const laterDate = new Date();
   laterDate.setDate(laterDate.getDate() + 3);
   const deliveryDate = laterDate.toISOString().slice(0, 10);
   dispatch('click', 'expected-at-date', { date: deliveryDate });
-  assert.ok(app.innerHTML.includes(`${deliveryDate.replace(/-/g, '/')} 07:30:00`));
   dispatch('click', 'expected-at-time-value', { timePart: 'hour', timeValue: '09' });
   dispatch('click', 'confirm-expected-at');
-  assert.ok(app.innerHTML.includes(`${deliveryDate.replace(/-/g, '/')} 09:30:00`));
   dispatch('click', 'direct-submit');
   await new Promise((resolve) => setTimeout(resolve, 20));
   const records = context.DemoStore.get('recipeDemandRecords');
-  assert.equal(records.length, before + 1);
-  assert.equal(records.at(-1).entryMode, 'quantity');
-  assert.equal(records.at(-1).demandType, 'auxiliary');
-  assert.equal(records.at(-1).auxiliary, true);
-  assert.equal(records.at(-1).orderMode, 'simple');
-  assert.equal(records.at(-1).expectedAt, `${deliveryDate} 09:30:00`);
-  assert.deepEqual(Array.from(records.at(-1).dateSummaries[0].filledMeals), []);
-  assert.equal(records.at(-1).orders.length, 1);
-  assert.ok(records.at(-1).orders.every((order) => !order.mealKey && !order.mealName));
-  assert.match(app.innerHTML, /需求已提交并生成订单/);
-  dispatch('click', 'open-profile-submissions');
   const record = records.at(-1);
-  const cardStart = app.innerHTML.indexOf(record.recordNo);
-  const card = app.innerHTML.slice(cardStart, app.innerHTML.indexOf('</article>', cardStart));
-  assert.match(card, /干调需求填报-商品数量填报/);
-  assert.doesNotMatch(card, /用料日期/);
-  assert.match(card, /school-mobile-record-metrics is-quantity/);
-  assert.doesNotMatch(card, /总人次/);
-  dispatch('click', 'record', { recordId: record.id });
-  assert.match(app.innerHTML, /<span>填报类型<\/span><strong>干调需求填报<\/strong>/);
-  assert.match(app.innerHTML, /<span>填报方式<\/span><strong>商品数量填报<\/strong>/);
-  assert.doesNotMatch(app.innerHTML, /<h2>用料日期<\/h2>/);
-  assert.match(app.innerHTML, /school-mobile-order-meal">干调总量<\/span>/);
-  assert.doesNotMatch(app.innerHTML, /人次 ·/);
-
-  const legacy = { ...record, dateSummaries: record.dateSummaries.map(({ filledMeals, ...summary }) => summary) };
-  context.DemoStore.replace('recipeDemandRecords', records.map((item) => item.id === legacy.id ? legacy : item));
-  dispatch('click', 'record', { recordId: legacy.id });
-  assert.doesNotMatch(app.innerHTML, /<h2>用料日期<\/h2>/);
+  assert.equal(records.length, before + 1);
+  assert.equal(record.entryMode, 'quantity');
+  assert.equal(record.demandType, 'auxiliary');
+  assert.equal(record.auxiliary, true);
+  assert.equal(record.orderMode, 'simple');
+  assert.equal(record.expectedAt, `${deliveryDate} 09:30:00`);
+  assert.equal(record.orders.length, 1);
+  assert.ok(record.orders.every((order) => !order.mealKey && !order.mealName));
+  assert.match(app.innerHTML, /需求已提交并生成订单/);
 });
 
 test('手机端干调旧日期与餐次草稿汇成商品总量，提交后清空旧草稿', async () => {

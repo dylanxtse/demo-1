@@ -240,10 +240,13 @@
 
   function productQuantityContext(item) {
     const product = productFor(item);
-    const factor = product && recipeService?.productUnitFactor?.(product);
+    const productInfo = product && recipeService?.productQuantityInfo?.(product);
     const productUnit = String(product?.unit || '').trim();
-    if (factor && productUnit) return { product, factor, unit: productUnit, quantityUnit: 'product' };
-    return { product: null, factor: 1, unit: item?.unit || '--', quantityUnit: 'recipe' };
+    if (productInfo && productUnit) return {
+      product, factor: productInfo.demandFactor, unit: productUnit,
+      demandUnit: productInfo.demandUnit, quantityUnit: 'content'
+    };
+    return { product: null, factor: 1, unit: item?.unit || '--', demandUnit: item?.unit || '--', quantityUnit: 'recipe' };
   }
 
   function valueForParticipant(values, participant) {
@@ -410,6 +413,7 @@
           ingredientNames: [],
           unit,
           quantityUnit: quantityContext.quantityUnit,
+          demandUnit: quantityContext.demandUnit,
           recipeUnit: recipeService?.recipeMeasureUnit || 'g',
           perCapitaQty: 0,
           participantQty: Object.fromEntries(participants.map((participant) => [participant.key, 0])),

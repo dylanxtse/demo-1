@@ -21,21 +21,21 @@
     { seq: 1, code: 'SP0300039', name: '土豆丝', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '4.80', status: '已上架', alias: '净菜土豆丝', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-06-03 17:52:26' },
     { seq: 21, code: 'SP0300040', name: '土豆', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-根茎类', marketPrice: '3.20', status: '已上架', alias: '鲜土豆', origin: '山东', shelfLife: '15天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-29 09:00:00' },
     { seq: 2, code: 'SP0300038', name: '牛奶', isNetVegetable: false, unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '5.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '市场自采', source: '平台添加', addTime: '2026-05-22 14:58:58' },
-    { seq: 3, code: 'SP0300037', name: '牛奶', isNetVegetable: false, unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '5.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '市场自采', source: '平台添加', addTime: '2026-05-22 14:49:00' },
+    { seq: 3, code: 'SP0300037', name: '牛奶', isNetVegetable: false, unit: '瓶', brand: '三元', spec: '250ml', category: '蛋奶类-蛋奶类二级', marketPrice: '5.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '市场自采', source: '平台添加', addTime: '2026-05-22 14:49:00' },
     { seq: 4, code: 'SP0300036', name: '大玉米棒子', isNetVegetable: false, unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '5.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-29 10:00:29' },
-    { seq: 5, code: 'SP0300034', name: '黑大米', isNetVegetable: false, unit: 'KG', brand: '五谷优选', spec: '25kg/袋', category: '主食（米面粉点心类）-粮食类', marketPrice: '500.00', status: '已上架', alias: '黑米', origin: '东北', shelfLife: '12个月', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-28 15:27:28' },
-    { seq: 6, code: 'SP0300031', name: '净膛鲫鱼', isNetVegetable: false, unit: '斤', brand: '鲜活水产', spec: '500g左右/条', category: '水产品-淡水鱼类', marketPrice: '18.50', status: '已上架', alias: '处理鲫鱼', origin: '本地养殖', shelfLife: '1天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 16:53:55' },
-    { seq: 7, code: 'SP0300030', name: '金龙鱼5L桶装油', isNetVegetable: false, unit: '瓶', brand: '金龙鱼', spec: '5L/瓶', category: '食油-食油二级', marketPrice: '55.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 13:07:25' },
+    { seq: 5, code: 'SP0300034', name: '黑大米', isNetVegetable: false, unit: '袋', brand: '五谷优选', spec: '25kg', category: '主食（米面粉点心类）-粮食类', marketPrice: '500.00', status: '已上架', alias: '黑米', origin: '东北', shelfLife: '12个月', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-28 15:27:28' },
+    { seq: 6, code: 'SP0300031', name: '净膛鲫鱼', isNetVegetable: false, unit: '斤', brand: '鲜活水产', spec: '500g左右', category: '水产品-淡水鱼类', marketPrice: '18.50', status: '已上架', alias: '处理鲫鱼', origin: '本地养殖', shelfLife: '1天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 16:53:55' },
+    { seq: 7, code: 'SP0300030', name: '金龙鱼5L桶装油', isNetVegetable: false, unit: '桶', brand: '金龙鱼', spec: '5L', category: '食油-食油二级', marketPrice: '55.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 13:07:25' },
     { seq: 8, code: 'SP0300029', name: '鲫鱼', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '水产品-水产品二级', marketPrice: '15.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-04-23 13:05:29' },
-    { seq: 9, code: 'SP0300026', name: '面', isNetVegetable: false, unit: '瓶', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-30 16:07:10' },
+    { seq: 9, code: 'SP0300026', name: '面', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-30 16:07:10' },
     { seq: 10, code: 'SP0300025', name: '大米', isNetVegetable: false, unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '19.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-23 16:08:26' },
-    { seq: 11, code: 'SP0300024', name: '三元牛奶', isNetVegetable: false, unit: '瓶', brand: '三元', spec: '10瓶1箱', category: '蛋奶类-蛋奶类二级', marketPrice: '10.00', status: '已上架', alias: '', origin: '', shelfLife: '1年', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-12 11:11:29' },
+    { seq: 11, code: 'SP0300024', name: '三元牛奶', isNetVegetable: false, unit: '瓶', brand: '三元', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '10.00', status: '已上架', alias: '', origin: '', shelfLife: '1年', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-12 11:11:29' },
     { seq: 12, code: 'SP0300023', name: '大饼', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: '1.00', status: '已上架', alias: '', origin: '', shelfLife: '1天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-09 16:32:38' },
     { seq: 13, code: 'SP0300020', name: '西红柿', isNetVegetable: true, unit: 'KG', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '5.60', status: '已上架', alias: '净菜西红柿', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2025-12-04 16:02:21' },
     { seq: 14, code: 'SP0300019', name: '大白菜', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-叶菜类', marketPrice: '2.20', status: '已上架', alias: '鲜大白菜', origin: '山东', shelfLife: '7天', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 16:00:29' },
     { seq: 15, code: 'SP0300018', name: '鸡蛋', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: '22.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 16, code: 'SP0300017', name: '金龙鱼豆油', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '食油-食油二级', marketPrice: '50.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
-    { seq: 17, code: 'SP0300016', name: '面粉', isNetVegetable: false, unit: '袋', brand: '--', spec: '25kg/袋', category: '其他材料-其他二级', marketPrice: '1500.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
+    { seq: 17, code: 'SP0300016', name: '面粉', isNetVegetable: false, unit: '袋', brand: '--', spec: '25kg', category: '其他材料-其他二级', marketPrice: '1500.00', status: '已下架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 18, code: 'SP0300015', name: '香蕉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: '30.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 19, code: 'SP0300014', name: '苹果', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '果蔬-果蔬二级', marketPrice: '23.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
     { seq: 20, code: 'SP0300013', name: '鸡腿肉', isNetVegetable: false, unit: '斤', brand: '--', spec: '--', category: '肉（豆）制品-肉（豆）制品二级', marketPrice: '23.00', status: '已上架', alias: '', origin: '', shelfLife: '', purchaseType: '供应商送货', source: '平台添加', addTime: '2025-12-04 13:43:38' },
@@ -50,7 +50,9 @@
     { seq: 30, code: 'SP0300058', name: '青椒块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '6.80', status: '已上架', alias: '净菜青椒块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:45:00' },
     { seq: 31, code: 'SP0300059', name: '什锦配菜', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜组合', marketPrice: '6.50', status: '已上架', alias: '三色什锦配菜', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 09:50:00' },
     { seq: 32, code: 'SP0300060', name: '西兰花', isNetVegetable: false, unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-花菜类', marketPrice: '5.20', status: '已上架', alias: '青花菜', origin: '云南', shelfLife: '5天', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-07-31 09:55:00' },
-    { seq: 33, code: 'SP0300061', name: '西兰花块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '7.80', status: '已上架', alias: '净菜西兰花块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 10:00:00' }
+    { seq: 33, code: 'SP0300061', name: '西兰花块', isNetVegetable: true, unit: '斤', brand: '--', spec: '散装', category: '果蔬-净菜类', marketPrice: '7.80', status: '已上架', alias: '净菜西兰花块', origin: '中心厨房', shelfLife: '1天', purchaseType: '企业自加工', source: '平台添加', addTime: '2026-07-31 10:00:00' },
+    { seq: 34, code: 'SP0300847', name: '食盐', isNetVegetable: false, isStandardProduct: true, unit: '袋', brand: '--', spec: '500g', category: '调味品-食盐', marketPrice: '18.50', status: '已上架', alias: '精制盐', origin: '', shelfLife: '12个月', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-10-30 10:05:00' },
+    { seq: 35, code: 'SP0300912', name: '味精', isNetVegetable: false, isStandardProduct: true, unit: '袋', brand: '--', spec: '250g', category: '调味品-香辛调味品', marketPrice: '8.00', status: '已上架', alias: '谷氨酸钠', origin: '', shelfLife: '24个月', purchaseType: '供应商送货', source: '平台添加', addTime: '2026-10-30 10:06:00' }
   ].map((product) => ({
     ...product,
     storageCondition: product.storageCondition || inferStorageCondition(product.name),
@@ -63,16 +65,16 @@
   const orders = [
     { id: 'ORD-20260730-001', orderNo: 'DD202607300100001', customerName: '第一实验学校', canteen: '第一食堂', customerType: '学校', orderTag: '营养餐', orderAmount: 2860.5, shippingAmount: 0, returnAmount: 0, reconciliationAmount: 0, expectedAt: '2026-07-31 07:30', status: 'PENDING', receiptStatus: '待收货', productCount: 18, warehouse: '中心仓', supplement: '否', remark: '上午七点半前送达', route: '东城一线', driver: '张师傅', source: '客户下单', creator: '王采购', createdAt: '2026-07-30 09:18:22', items: [
       { goodsName: '大白菜', isNetVegetable: false, goodsCode: 'SP0300019', unit: '斤', brand: '--', spec: '散装', unitPrice: 1.5, quantity: 80, subtotal: 120, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-30', inspectionImages: [{ name: '验货照片1.jpg' }, { name: '验货照片2.jpg' }], inspectionVideos: [] },
-      { goodsName: '鸡蛋', isNetVegetable: false, goodsCode: 'SP0300020', unit: '斤', brand: '农家', spec: '500g/份', unitPrice: 5.8, quantity: 35, subtotal: 203, shippedQty: 35, shippedAmount: 203, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-29', inspectionImages: [{ name: '鸡蛋验货.jpg' }], inspectionVideos: [{ name: '开箱验货.mp4' }] },
-      { goodsName: '土豆', isNetVegetable: false, goodsCode: 'SP0300040', unit: '斤', brand: '农家优选', spec: '500g/份', unitPrice: 6.8, quantity: 50, subtotal: 340, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-30', inspectionImages: [], inspectionVideos: [] }
+      { goodsName: '鸡蛋', isNetVegetable: false, goodsCode: 'SP0300018', unit: '斤', brand: '农家', spec: '500g', unitPrice: 5.8, quantity: 35, subtotal: 203, shippedQty: 35, shippedAmount: 203, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-29', inspectionImages: [{ name: '鸡蛋验货.jpg' }], inspectionVideos: [{ name: '开箱验货.mp4' }] },
+      { goodsName: '土豆', isNetVegetable: false, goodsCode: 'SP0300040', unit: '斤', brand: '田园直供', spec: '散装', unitPrice: 6.8, quantity: 50, subtotal: 340, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-30', inspectionImages: [], inspectionVideos: [] }
     ], operationLogs: [
       { action: '创建', desc: '王采购 创建订单 2026-07-30 09:18:22' },
       { action: '提交审核', desc: '王采购 提交审核 2026-07-30 09:19:05' }
     ] },
     { id: 'ORD-20260729-012', orderNo: 'DD202607290200012', customerName: '阳光幼儿园', canteen: '园区食堂', customerType: '幼儿园', orderTag: '普通餐', orderAmount: 1568, shippingAmount: 1520, returnAmount: 48, reconciliationAmount: 1472, expectedAt: '2026-07-30 08:00', status: 'CONFIRMED', receiptStatus: '未收货', productCount: 12, warehouse: '中心仓', supplement: '否', remark: '', route: '南城二线', driver: '李师傅', source: '平台添加', creator: '管理员', createdAt: '2026-07-29 14:36:10', items: [
       { goodsName: '鲫鱼', isNetVegetable: true, goodsCode: 'SP0300031', unit: '斤', brand: '--', spec: '--', unitPrice: 20, quantity: 20, subtotal: 400, shippedQty: 8, shippedAmount: 160, returnQty: 12, returnAmount: 240, reconciliationQty: 8, reconciliationAmount: 160, acceptedQty: 8, acceptedAmount: 160, remark: '库存不足', productionDate: '2026-07-29', inspectionImages: [{ name: '鲫鱼验货.jpg' }], inspectionVideos: [] },
-      { goodsName: '西红柿', isNetVegetable: false, goodsCode: 'SP0300025', unit: 'KG', brand: '--', spec: '--', unitPrice: 4.5, quantity: 30, subtotal: 135, shippedQty: 30, shippedAmount: 135, returnQty: 0, returnAmount: 0, reconciliationQty: 30, reconciliationAmount: 135, acceptedQty: 30, acceptedAmount: 135, remark: '', productionDate: '2026-07-29', inspectionImages: [], inspectionVideos: [] },
-      { goodsName: '猪肉', isNetVegetable: false, goodsCode: 'SP0300015', unit: '斤', brand: '双汇', spec: '500g/份', unitPrice: 18, quantity: 40, subtotal: 720, shippedQty: 40, shippedAmount: 720, returnQty: 0, returnAmount: 0, reconciliationQty: 40, reconciliationAmount: 720, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-29', inspectionImages: [{ name: '猪肉检疫.jpg' }, { name: '猪肉外观.jpg' }], inspectionVideos: [{ name: '验货视频.mp4' }] }
+      { goodsName: '西红柿', isNetVegetable: false, goodsCode: 'SP0300020', unit: 'KG', brand: '--', spec: '--', unitPrice: 4.5, quantity: 30, subtotal: 135, shippedQty: 30, shippedAmount: 135, returnQty: 0, returnAmount: 0, reconciliationQty: 30, reconciliationAmount: 135, acceptedQty: 30, acceptedAmount: 135, remark: '', productionDate: '2026-07-29', inspectionImages: [], inspectionVideos: [] },
+      { goodsName: '猪肉', isNetVegetable: false, goodsCode: 'SP0300015', unit: '斤', brand: '双汇', spec: '500g', unitPrice: 18, quantity: 40, subtotal: 720, shippedQty: 40, shippedAmount: 720, returnQty: 0, returnAmount: 0, reconciliationQty: 40, reconciliationAmount: 720, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-29', inspectionImages: [{ name: '猪肉检疫.jpg' }, { name: '猪肉外观.jpg' }], inspectionVideos: [{ name: '验货视频.mp4' }] }
     ], operationLogs: [
       { action: '创建', desc: '管理员 创建订单 2026-07-29 14:36:10' },
       { action: '提交审核', desc: '管理员 提交审核 2026-07-29 14:37:00' },
@@ -91,8 +93,8 @@
       { action: '完成发货', desc: '周师傅 完成发货 2026-07-29 07:00:00' }
     ] },
     { id: 'ORD-20260727-003', orderNo: 'DD202607270400003', customerName: '机关第二食堂', canteen: '二号食堂', customerType: '机关单位', orderTag: '普通餐', orderAmount: 973.2, shippingAmount: 0, returnAmount: 0, reconciliationAmount: 0, expectedAt: '2026-07-28 09:00', status: 'CLOSED', receiptStatus: '未收货', productCount: 8, warehouse: '中心仓', supplement: '否', remark: '客户取消', route: '西城一线', driver: '', source: '平台添加', creator: '管理员', createdAt: '2026-07-27 11:20:08', items: [
-      { goodsName: '牛奶', isNetVegetable: true, goodsCode: 'SP0300037', unit: '瓶', brand: '--', spec: '--', unitPrice: 5, quantity: 100, subtotal: 500, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-27', inspectionImages: [], inspectionVideos: [] },
-      { goodsName: '面包', isNetVegetable: false, goodsCode: 'SP0300042', unit: '个', brand: '桃李', spec: '100g/个', unitPrice: 3.5, quantity: 80, subtotal: 280, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-27', inspectionImages: [], inspectionVideos: [] }
+      { goodsName: '牛奶', isNetVegetable: true, goodsCode: 'SP0300037', unit: '瓶', brand: '三元', spec: '250ml', unitPrice: 5, quantity: 100, subtotal: 500, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-27', inspectionImages: [], inspectionVideos: [] },
+      { goodsName: '面包', isNetVegetable: false, goodsCode: 'SP0300042', unit: '个', brand: '桃李', spec: '100g', unitPrice: 3.5, quantity: 80, subtotal: 280, shippedQty: 0, shippedAmount: 0, returnQty: 0, returnAmount: 0, reconciliationQty: 0, reconciliationAmount: 0, acceptedQty: 0, acceptedAmount: 0, remark: '', productionDate: '2026-07-27', inspectionImages: [], inspectionVideos: [] }
     ], operationLogs: [
       { action: '创建', desc: '管理员 创建订单 2026-07-27 11:20:08' },
       { action: '关闭', desc: '管理员 关闭订单 2026-07-27 14:00:00' }
@@ -148,7 +150,7 @@
       createdAt: '2026-09-29 16:20:00', expectedAt: '2026-09-28 07:30:00', orderTag: '其他-不区分',
       mealKey: 'dinner', mealName: '晚餐', mealPeople: 120, participantType: '其他',
       recordId: 'AUXILIARY-DEMAND-20260929162000-DEMO', recordNo: 'XQ2026092991306', recordDate: '2026-09-29',
-      items: [['金龙鱼5L桶装油', 'SP0300030', 'L', 55, 1.44], ['食盐', 'SP0300031', 'kg', 18.5, 0.48]]
+      items: [['金龙鱼5L桶装油', 'SP0300030', '桶', 55, 1], ['食盐', 'SP0300847', '袋', 18.5, 1]]
     })
   );
 
@@ -178,7 +180,7 @@
     // 第一实验学校 / 第一食堂 (东城一线, 中心仓) - expectedAt: 2026-07-31
     { id: 'SORT-001', orderId: 'ORD-20260730-001', goodsCode: 'SP0300019', isNetVegetable: false, goodsName: '大白菜(斤/--/散装)', customerName: '第一实验学校', canteen: '第一食堂', orderQty: 80, actualQty: 0, unit: '斤', route: '东城一线', orderNo: 'DD202607300100001', orderTag: '营养餐', shipped: '否', progress: '0%', remark: '', stock: 236, status: 'PENDING', sorter: '', sortingAt: '', warehouse: '中心仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 07:30' },
     { id: 'SORT-002', orderId: 'ORD-20260730-001', goodsCode: 'SP0300018', isNetVegetable: false, goodsName: '鸡蛋(斤/农家/500g份)', customerName: '第一实验学校', canteen: '第一食堂', orderQty: 35, actualQty: 35, unit: '斤', route: '东城一线', orderNo: 'DD202607300100001', orderTag: '营养餐', shipped: '否', progress: '100%', remark: '', stock: 109, status: 'SORTED', sorter: '陈分拣', sortingAt: '2026-07-31 06:21', warehouse: '中心仓', category: '蛋奶类', shortage: '否', supplier: '新鲜农场', expectedAt: '2026-07-31 07:30' },
-    { id: 'SORT-003', orderId: 'ORD-20260730-001', goodsCode: 'SP0300040', isNetVegetable: true, goodsName: '土豆(斤/农家优选/500g份)', customerName: '第一实验学校', canteen: '第一食堂', orderQty: 50, actualQty: 50, unit: '斤', route: '东城一线', orderNo: 'DD202607300100001', orderTag: '营养餐', shipped: '否', progress: '100%', remark: '', stock: 180, status: 'SORTED', sorter: '陈分拣', sortingAt: '2026-07-31 06:25', warehouse: '中心仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 07:30' },
+    { id: 'SORT-003', orderId: 'ORD-20260730-001', goodsCode: 'SP0300040', isNetVegetable: false, goodsName: '土豆(斤/田园直供/散装)', customerName: '第一实验学校', canteen: '第一食堂', orderQty: 50, actualQty: 50, unit: '斤', route: '东城一线', orderNo: 'DD202607300100001', orderTag: '营养餐', shipped: '否', progress: '100%', remark: '', stock: 180, status: 'SORTED', sorter: '陈分拣', sortingAt: '2026-07-31 06:25', warehouse: '中心仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 07:30' },
     { id: 'SORT-004', orderId: 'ORD-20260730-001', goodsCode: 'SP0300020', isNetVegetable: true, goodsName: '西红柿(KG/--/--)', customerName: '第一实验学校', canteen: '第一食堂', orderQty: 30, actualQty: 0, unit: 'KG', route: '东城一线', orderNo: 'DD202607300100001', orderTag: '营养餐', shipped: '否', progress: '0%', remark: '', stock: 95, status: 'PENDING', sorter: '', sortingAt: '', warehouse: '中心仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 07:30' },
 
     // 阳光幼儿园 / 园区食堂 (南城二线, 中心仓) - expectedAt: 2026-07-31
@@ -198,7 +200,7 @@
 
     // 实验幼儿园 / 食堂 (南城二线, 中心仓) - expectedAt: 2026-07-31
     { id: 'SORT-014', orderId: 'ORD-20260730-010', goodsCode: 'SP0300014', isNetVegetable: false, goodsName: '苹果(斤/--/--)', customerName: '实验幼儿园', canteen: '食堂', orderQty: 50, actualQty: 50, unit: '斤', route: '南城二线', orderNo: 'DD202607300100010', orderTag: '普通餐', shipped: '否', progress: '100%', remark: '', stock: 180, status: 'SORTED', sorter: '李分拣', sortingAt: '2026-07-31 06:20', warehouse: '中心仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 08:30' },
-    { id: 'SORT-015', orderId: 'ORD-20260730-010', goodsCode: 'SP0300024', isNetVegetable: false, goodsName: '三元牛奶(瓶/三元/10瓶1箱)', customerName: '实验幼儿园', canteen: '食堂', orderQty: 30, actualQty: 0, unit: '瓶', route: '南城二线', orderNo: 'DD202607300100010', orderTag: '普通餐', shipped: '否', progress: '0%', remark: '', stock: 85, status: 'PENDING', sorter: '', sortingAt: '', warehouse: '中心仓', category: '蛋奶类', shortage: '否', supplier: '乳业供应商', expectedAt: '2026-07-31 08:30' },
+    { id: 'SORT-015', orderId: 'ORD-20260730-010', goodsCode: 'SP0300024', isNetVegetable: false, goodsName: '三元牛奶(瓶/三元/--)', customerName: '实验幼儿园', canteen: '食堂', orderQty: 30, actualQty: 0, unit: '瓶', route: '南城二线', orderNo: 'DD202607300100010', orderTag: '普通餐', shipped: '否', progress: '0%', remark: '', stock: 85, status: 'PENDING', sorter: '', sortingAt: '', warehouse: '中心仓', category: '蛋奶类', shortage: '否', supplier: '乳业供应商', expectedAt: '2026-07-31 08:30' },
 
     // 第七中学 / 初中部食堂 (北城一线, 北区仓) - expectedAt: 2026-07-31
     { id: 'SORT-016', orderId: 'ORD-20260730-015', goodsCode: 'SP0300034', isNetVegetable: false, goodsName: '大米(KG/--/--)', customerName: '第七中学', canteen: '初中部食堂', orderQty: 90, actualQty: 90, unit: 'KG', route: '北城一线', orderNo: 'DD202607300100015', orderTag: '营养餐', shipped: '否', progress: '100%', remark: '', stock: 520, status: 'SORTED', sorter: '王分拣', sortingAt: '2026-07-31 05:30', warehouse: '北区仓', category: '主食', shortage: '否', supplier: '粮油供应商', expectedAt: '2026-07-31 07:00' },
@@ -210,7 +212,7 @@
     { id: 'SORT-020', orderId: 'ORD-20260730-020', goodsCode: 'SP0300029', isNetVegetable: false, goodsName: '鲫鱼(斤/--/--)', customerName: '机关第一食堂', canteen: '一号食堂', orderQty: 15, actualQty: 0, unit: '斤', route: '西城一线', orderNo: 'DD202607300100020', orderTag: '普通餐', shipped: '否', progress: '0%', remark: '', stock: 5, status: 'PENDING', sorter: '', sortingAt: '', warehouse: '中心仓', category: '水产品', shortage: '否', supplier: '海鲜供应商', expectedAt: '2026-07-31 09:00' },
 
     // 育才中学 / 初中部食堂 (北城一线, 北区仓) - expectedAt: 2026-07-31
-    { id: 'SORT-021', orderId: 'ORD-20260730-022', goodsCode: 'SP0300040', isNetVegetable: false, goodsName: '土豆(斤/农家优选/500g份)', customerName: '育才中学', canteen: '初中部食堂', orderQty: 70, actualQty: 70, unit: '斤', route: '北城一线', orderNo: 'DD202607300100022', orderTag: '营养餐', shipped: '否', progress: '100%', remark: '', stock: 180, status: 'SORTED', sorter: '王分拣', sortingAt: '2026-07-31 05:45', warehouse: '北区仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 07:00' },
+    { id: 'SORT-021', orderId: 'ORD-20260730-022', goodsCode: 'SP0300040', isNetVegetable: false, goodsName: '土豆(斤/田园直供/散装)', customerName: '育才中学', canteen: '初中部食堂', orderQty: 70, actualQty: 70, unit: '斤', route: '北城一线', orderNo: 'DD202607300100022', orderTag: '营养餐', shipped: '否', progress: '100%', remark: '', stock: 180, status: 'SORTED', sorter: '王分拣', sortingAt: '2026-07-31 05:45', warehouse: '北区仓', category: '果蔬', shortage: '否', supplier: '绿源供应商', expectedAt: '2026-07-31 07:00' },
     { id: 'SORT-022', orderId: 'ORD-20260730-022', goodsCode: 'SP0300020', isNetVegetable: true, goodsName: '西红柿(KG/--/--)', customerName: '育才中学', canteen: '初中部食堂', orderQty: 25, actualQty: 0, unit: 'KG', route: '北城一线', orderNo: 'DD202607300100022', orderTag: '营养餐', shipped: '否', progress: '0%', remark: '', stock: 0, status: 'SHORTAGE', sorter: '', sortingAt: '', warehouse: '北区仓', category: '果蔬', shortage: '是', supplier: '绿源供应商', expectedAt: '2026-07-31 07:00' },
 
     // 阳光幼儿园 / 分园食堂 (南城二线, 中心仓) - expectedAt: 2026-07-31
@@ -755,7 +757,7 @@
       ],
       items: [
         { productCode: 'SP0300014', productName: '苹果', unit: '斤', brand: '--', spec: '--', conversionRate: 1, expectedQty: 0, damageQty: 0, actualQty: 6, unitPrice: '23.00', amount: '138.00', productionDate: '2026-07-24', qualityFiles: [] },
-        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '10瓶1箱', conversionRate: 1, expectedQty: 0, damageQty: 0, actualQty: 1, unitPrice: '10.00', amount: '10.00', productionDate: '2026-07-24', qualityFiles: [{ name: '出厂检验报告.pdf' }] }
+        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '--', conversionRate: 1, expectedQty: 0, damageQty: 0, actualQty: 1, unitPrice: '10.00', amount: '10.00', productionDate: '2026-07-24', qualityFiles: [{ name: '出厂检验报告.pdf' }] }
       ]
     },
     {
@@ -850,7 +852,7 @@
         { action: '完成', operator: '系统', desc: '系统 标记完成 2026-07-24 11:16:00' }
       ],
       items: [
-        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '10瓶1箱', conversionRate: 10, expectedQty: 0, damageQty: 0, actualQty: 11, unitPrice: '10.00', amount: '110.00', productionDate: '2026-07-20', qualityFiles: [] }
+        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '--', conversionRate: 10, expectedQty: 0, damageQty: 0, actualQty: 11, unitPrice: '10.00', amount: '110.00', productionDate: '2026-07-20', qualityFiles: [] }
       ]
     },
     {
@@ -1032,7 +1034,7 @@
         { action: '审核', operator: '李四', desc: '李四 驳回 2026-07-25 15:30:20' }
       ],
       items: [
-        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '10瓶1箱', conversionRate: 1, currentStock: 60, outboundQty: 20, unitPrice: '10.00', amount: '200.00', remark: '客户取消' }
+        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '--', conversionRate: 1, currentStock: 60, outboundQty: 20, unitPrice: '10.00', amount: '200.00', remark: '客户取消' }
       ]
     },
     {
@@ -1079,7 +1081,7 @@
       ],
       items: [
         { productCode: 'SP0300025', productName: '大米', unit: 'KG', brand: '--', spec: '--', conversionRate: 1, currentStock: 190, outboundQty: 10, unitPrice: '19.00', amount: '190.00', remark: '' },
-        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '10瓶1箱', conversionRate: 1, currentStock: 80, outboundQty: 23, unitPrice: '10.00', amount: '230.00', remark: '' }
+        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '--', conversionRate: 1, currentStock: 80, outboundQty: 23, unitPrice: '10.00', amount: '230.00', remark: '' }
       ]
     },
     {
@@ -1101,7 +1103,7 @@
         { action: '完成', operator: '系统', desc: '系统 标记完成 2026-07-15 09:46:00' }
       ],
       items: [
-        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '10瓶1箱', conversionRate: 10, currentStock: 100, outboundQty: 10, unitPrice: '10.00', amount: '100.00', remark: '转换出库' }
+        { productCode: 'SP0300024', productName: '三元牛奶', unit: '瓶', brand: '三元', spec: '--', conversionRate: 10, currentStock: 100, outboundQty: 10, unitPrice: '10.00', amount: '100.00', remark: '转换出库' }
       ]
     },
     {

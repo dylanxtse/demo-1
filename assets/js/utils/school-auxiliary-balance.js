@@ -25,9 +25,12 @@
       const linkedOrders = schoolOrders.filter((order) => String(order.recipeDemandRecordId || '') === String(record.id || ''));
       const matchingLines = linkedOrders.flatMap((order) => order.items || [])
         .filter((line) => String(line.productCode || line.goodsCode || '') === code);
-      const lineInBaseUnits = (line, value) => Number(value || 0)
-        * (matching.some((row) => row.purchaseUnit && row.purchaseUnit === line.unit && row.purchaseUnit !== row.unit)
-          ? Number(matching.find((row) => row.purchaseUnit === line.unit)?.packSize || 1) : 1);
+      const lineInBaseUnits = (line, value) => {
+        const row = matching.find((item) => String(item.unit || '') === String(line.unit || ''));
+        const hasPackageSize = Number(row?.packSize) > 0;
+        const packageProduct = row?.isStandardProduct === true || row?.isStandardProduct === 'true' || row?.isStandardProduct === '是';
+        return Number(value || 0) * (row && hasPackageSize && packageProduct ? Number(row.packSize) : 1);
+      };
       const ordered = matchingLines.reduce((sum, line) => sum + lineInBaseUnits(line, line.orderQty), 0);
       const received = linkedOrders.length && linkedOrders.every((order) =>
         order.receiptStatus === '已收货' || order.receiptStatus === '部分收货')

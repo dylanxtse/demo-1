@@ -29,10 +29,11 @@
     kg: 1000,
     公斤: 1000,
     千克: 1000,
+    ml: 1,
+    毫升: 1,
     L: 1000,
     l: 1000,
-    升: 1000,
-    瓶: 250
+    升: 1000
   });
   const unitFactor = (unit) => {
     const value = String(unit || '').trim();
@@ -41,15 +42,66 @@
       ?? productUnitFactors[value.toUpperCase()]
       ?? null;
   };
-  const gramsPerProductUnit = (product) => {
-    const unit = String(product?.unit || '').trim();
-    if (!unit) return null;
-    if (unit === '瓶') {
+  const discreteOrderUnit = /^(?:瓶|桶|袋|包|盒|罐|箱|个|只|根|支|份|条|把)$/;
+  const contentMeasure = (unit) => {
+    const value = String(unit || '').trim();
+    if (/^(?:kg|公斤|千克|g|克)$/i.test(value)) return { unit: 'kg', gramsPerUnit: 1000 };
+    if (/^(?:l|升|ml|毫升)$/i.test(value)) return { unit: 'L', gramsPerUnit: 1000 };
+    const gramsPerUnit = unitFactor(value);
+    return gramsPerUnit ? { unit: value, gramsPerUnit } : null;
+  };
+  const productQuantityInfo = (product) => {
+    const orderUnit = String(product?.unit || '').trim();
+    if (!orderUnit) return null;
+    const isPackaged = discreteOrderUnit.test(orderUnit);
+    if (isPackaged) {
       const spec = String(product?.spec || '').trim();
-      const match = spec.match(/(\d+(?:\.\d+)?)\s*(kg|公斤|千克|g|克|l|升)\s*\/\s*(?:瓶|桶)/i);
-      if (match) return Number(match[1]) * unitFactor(match[2]);
+      const match = spec.match(/(\d+(?:\.\d+)?)\s*(kg|公斤|千克|g|克|l|升|ml|毫升)(?:\s*\/\s*(瓶|桶|袋|包|盒|罐|箱|个|只|根|支|份|条|把))?/i);
+      if (!match || (match[3] && match[3] !== orderUnit)) {
+        const legacyFactor = recipeUnitFactors[orderUnit];
+        return legacyFactor ? {
+          demandUnit: 'g', demandFactor: 1, orderUnitFactor: legacyFactor, isPackaged: true
+        } : null;
+      }
+      const measure = contentMeasure(match[2]);
+      if (!measure) return null;
+      return {
+        demandUnit: measure.unit,
+        demandFactor: measure.gramsPerUnit,
+        orderUnitFactor: Number(match[1]) * unitFactor(match[2]),
+        isPackaged: true
+      };
     }
-    return unitFactor(unit);
+    const measure = contentMeasure(orderUnit);
+    return measure ? {
+      demandUnit: measure.unit,
+      demandFactor: measure.gramsPerUnit,
+      orderUnitFactor: measure.gramsPerUnit,
+      isPackaged: false
+    } : null;
+  };
+  const gramsPerProductUnit = (product) => productQuantityInfo(product)?.orderUnitFactor
+    || recipeUnitFactors[String(product?.unit || '').trim()]
+    || null;
+  const productContentUnit = (product) => productQuantityInfo(product)?.demandUnit || '';
+  const isDiscreteOrderUnit = (product) => discreteOrderUnit.test(String(product?.unit || '').trim());
+  const isStandardProduct = (product) => [product?.isStandardProduct, product?.isStandard]
+    .some((value) => value === true || value === 'true' || value === '是' || value === 1 || value === '1');
+  const quantityInProductUnit = (value, product) => {
+    const info = productQuantityInfo(product);
+    if (!info) return number(value);
+    return Number((number(value) * info.demandFactor / info.orderUnitFactor).toFixed(6));
+  };
+  const orderQuantityFromDemand = (value, product) => {
+    const info = productQuantityInfo(product);
+    const orderQuantity = quantityInProductUnit(value, product);
+    const shouldRound = Boolean(info?.isPackaged) || isStandardProduct(product);
+    return Number((shouldRound ? Math.ceil(orderQuantity - 1e-9) : orderQuantity).toFixed(6));
+  };
+  const normalizeOrderQuantity = (value, product) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return isDiscreteOrderUnit(product) ? Math.ceil(parsed - 1e-9) : parsed;
   };
   const convertGramsToProductUnit = (value, product) => {
     const factor = gramsPerProductUnit(product);
@@ -646,6 +698,12 @@
     MENU_VERSION,
     recipeMeasureUnit,
     productUnitFactor: gramsPerProductUnit,
+    productQuantityInfo,
+    productContentUnit,
+    isDiscreteOrderUnit,
+    quantityInProductUnit,
+    orderQuantityFromDemand,
+    normalizeOrderQuantity,
     convertGramsToProductUnit,
     mealTypes: [
       { key: 'breakfast', name: '早餐' },

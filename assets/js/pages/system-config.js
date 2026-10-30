@@ -199,6 +199,9 @@
                   <span data-recipe-purchase-limit-unit>计量单位</span>
                 </div>
               </div>
+              <div class="config-inline-fields recipe-purchase-edit-actions">
+                <button class="config-apply" type="button" data-action="apply-recipe-purchase">应用</button>
+              </div>
             </div>
           </div>
         </div>
@@ -299,6 +302,11 @@
   };
   let pendingScrollPosition = null;
   const recipeDeliveryKeys = new Set(['recipeDeliveryAdvanceDays', 'recipeDeliveryTime']);
+  const recipePurchaseKeys = new Set([
+    'recipePurchaseQtyChangeThresholdMode',
+    'recipePurchaseQtyChangeLowerLimitValue',
+    'recipePurchaseQtyChangeUpperLimitValue'
+  ]);
   let recipeDeliveryEditing = false;
 
   function readScrollPosition() {
@@ -371,6 +379,8 @@
     const enabled = Boolean(root.querySelector('[data-config="allowRecipeDemandPurchaseQuantityEdit"]')?.checked);
     const limitSettings = root.querySelector('.recipe-purchase-limit-settings');
     if (limitSettings) limitSettings.hidden = !enabled;
+    const editActions = root.querySelector('.recipe-purchase-edit-actions');
+    if (editActions) editActions.hidden = !enabled;
   }
 
   function readFormSettings() {
@@ -410,6 +420,7 @@
     const scrollPosition = pendingScrollPosition || readScrollPosition();
     const next = readFormSettings();
     if (!options.applyRecipeDelivery) recipeDeliveryKeys.forEach((key) => { next[key] = savedSettings[key]; });
+    if (!options.applyRecipePurchase) recipePurchaseKeys.forEach((key) => { next[key] = savedSettings[key]; });
     window.DemoStore.updateSettings(next);
     savedSettings = Object.assign(savedSettings, next);
     restoreScrollPosition(scrollPosition);
@@ -433,10 +444,14 @@
 
   root.addEventListener('change', (event) => {
     if (event.target.matches('[data-config], [data-radio-config]')) {
-      if (recipeDeliveryKeys.has(event.target.dataset.config)) return;
+      const key = event.target.dataset.config;
+      if (recipeDeliveryKeys.has(key)) return;
+      if (key === 'allowRecipeDemandPurchaseQuantityEdit') updateRecipePurchaseLimitVisibility();
+      if (recipePurchaseKeys.has(key)) {
+        if (key === 'recipePurchaseQtyChangeThresholdMode') updateRecipePurchaseLimitUnit();
+        return;
+      }
       if (event.target.dataset.config === 'purchasePriceMode') updatePurchasePriorityFields(event.target.value);
-      if (event.target.dataset.config === 'recipePurchaseQtyChangeThresholdMode') updateRecipePurchaseLimitUnit();
-      if (event.target.dataset.config === 'allowRecipeDemandPurchaseQuantityEdit') updateRecipePurchaseLimitVisibility();
       persistSettings();
     }
   });
@@ -449,7 +464,9 @@
         return;
       }
       event.target.dataset.lastValidValue = value;
-      if (value !== '.' && (value === '' || Number.isFinite(Number(value)))) persistSettings();
+      return;
+    }
+    if (recipePurchaseKeys.has(event.target.dataset.config)) {
       return;
     }
     if (event.target.matches('.config-input')) persistSettings();
@@ -459,7 +476,6 @@
     const value = event.target.value.trim();
     event.target.value = value && value !== '.' && Number.isFinite(Number(value)) ? String(Number(value)) : '';
     event.target.dataset.lastValidValue = event.target.value;
-    persistSettings();
   }, true);
   root.addEventListener('click', (event) => {
     if (event.target.closest('[data-action="edit-recipe-delivery"]')) {
@@ -489,6 +505,20 @@
       daysInput.value = String(Number(days));
       persistSettings({ applyRecipeDelivery: true });
       setRecipeDeliveryEditing(false);
+      return;
+    }
+    if (event.target.closest('[data-action="apply-recipe-purchase"]')) {
+      for (const input of root.querySelectorAll('.recipe-purchase-limit-value')) {
+        const value = input.value.trim();
+        if (value && value !== '.' && (!/^\d*\.?\d*$/.test(value) || !Number.isFinite(Number(value)))) {
+          showStatus('请输入有效的非负数值', true);
+          input.focus();
+          return;
+        }
+        input.value = value && value !== '.' ? String(Number(value)) : '';
+        input.dataset.lastValidValue = input.value;
+      }
+      persistSettings({ applyRecipePurchase: true });
       return;
     }
     const clear = event.target.closest('[data-clear]');

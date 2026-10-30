@@ -29,9 +29,12 @@
     || item?.isStandard === true || item?.isStandard === 'true' || item?.isStandard === '是'
     || productForIngredient(item).isStandardProduct === true || productForIngredient(item).isStandard === true;
   const renderProductName = (item, display) => `${item?.isNetVegetable === true || productForIngredient(item).isNetVegetable === true ? '<span class="school-recipe-net-vegetable-tag">净菜</span>' : ''}${escapeHtml(display)}`;
+  const renderDemandQuantity = (item, value) => `${quantity(value)}${item?.demandUnit ? ` ${escapeHtml(item.demandUnit)}` : ''}`;
   const purchaseQuantity = (value, item) => {
     const amount = Number(value);
-    return Number.isFinite(amount) ? (isStandardProduct(item) ? Math.ceil(amount) : amount) : 0;
+    if (!Number.isFinite(amount)) return 0;
+    return recipeService.orderQuantityFromDemand?.(amount, productForIngredient(item))
+      ?? (isStandardProduct(item) ? Math.ceil(amount) : amount);
   };
   const weekday = (date) => weekdayNames[new Date(`${date}T00:00:00`).getDay()];
   const longDate = (date) => `${date.slice(0, 4)}年${date.slice(5, 7)}月${date.slice(8, 10)}日 星期${weekday(date)}`;
@@ -386,12 +389,12 @@
       <td>${isStandardProduct(row) ? '是' : '否'}</td>
       <td>${escapeHtml(row.productCode || '--')}</td>
       <td>${escapeHtml(row.unit)}</td>
-      ${byPersonType ? participants.map((participant) => `<td class="is-number">${quantity(row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('') : `<td class="is-number">${quantity(row.totalQty)}</td><td class="is-number">${quantity(purchaseQuantity(row.totalQty, row))}</td>`}
+      ${byPersonType ? participants.map((participant) => `<td class="is-number">${renderDemandQuantity(row, row.participantQty?.[participant.key])}</td><td class="is-number">${quantity(purchaseQuantity(row.participantQty?.[participant.key], row))}</td>`).join('') : `<td class="is-number">${renderDemandQuantity(row, row.totalQty)}</td><td class="is-number">${quantity(purchaseQuantity(row.totalQty, row))}</td>`}
     </tr>`).join('');
     const dynamicColumns = byPersonType ? participants.map((participant) => demandParticipantHeader(participants, participant)).join('') : '<th colspan="2">合计</th>';
-    const dynamicSubColumns = byPersonType ? participants.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>采购量</th>';
+    const dynamicSubColumns = byPersonType ? participants.map(() => '<th>需求总量</th><th>采购量</th>').join('') : '<th>需求总量</th><th>采购量</th>';
     const dynamicColgroup = byPersonType ? participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-purchase">';
-    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
+    return rows ? `<div class="school-recipe-attendance-table-wrap"><table class="school-recipe-attendance-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-standard"><col class="col-code"><col class="col-unit">${dynamicColgroup}</colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品名称（计量单位/品牌/规格）</th><th rowspan="2">是否标品</th><th rowspan="2">商品编号</th><th rowspan="2">计量单位</th>${dynamicColumns}</tr><tr>${dynamicSubColumns}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="school-recipe-attendance-empty">当前食谱暂无关联商品</div>';
   }
 
   function renderDetail(menu) {

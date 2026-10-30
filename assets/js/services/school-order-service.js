@@ -233,8 +233,8 @@
         recipeDemandDate: '2026-09-29', recipeParticipantType: '其他',
         operationAction: '创建订单', operationDescription: '晚餐、需求提交记录 XQ2026092991306',
         items: [
-          { name: '金龙鱼5L桶装油', unit: 'L', productCode: 'SP0300030', orderPrice: 55, orderQty: 1.44 },
-          { name: '食盐', unit: 'kg', productCode: 'SP0300031', orderPrice: 18.5, orderQty: 0.48 }
+          { name: '金龙鱼5L桶装油', unit: '桶', productCode: 'SP0300030', orderPrice: 55, orderQty: 1 },
+          { name: '食盐', unit: '袋', productCode: 'SP0300847', orderPrice: 18.5, orderQty: 1 }
         ]
       })
     ];
@@ -247,14 +247,14 @@
         id: 'SCHOOL-ORDER-005', orderNo: 'DD202608270300002', createdAt: '2026-08-27 14:39:01', expectedAt: '2026-08-28 03:33:12',
         canteen: '第一食堂', driver: '杨雄', items: [
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 1 },
-          { name: '黑面', unit: 'L', productCode: 'SP0300040', orderPrice: 5, orderQty: 10 }
+          { name: '黑面', unit: '斤', productCode: 'SP0300045', orderPrice: 5, orderQty: 10 }
         ]
       }),
       makeOrder({
         id: 'SCHOOL-ORDER-006', orderNo: 'DD202608270300001', createdAt: '2026-08-27 14:37:54', expectedAt: '2026-08-26 03:33:12',
         canteen: '第一食堂', driver: '杨雄', items: [
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 1 },
-          { name: '黑面', unit: 'L', productCode: 'SP0300040', orderPrice: 5, orderQty: 10 }
+          { name: '黑面', unit: '斤', productCode: 'SP0300045', orderPrice: 5, orderQty: 10 }
         ]
       }),
       makeOrder({
@@ -263,10 +263,10 @@
         items: [
           { name: '土豆丝', unit: '斤', productCode: 'SP0300039', orderPrice: 1, orderQty: 20 },
           { name: '大白菜', unit: '斤', productCode: 'SP0300019', orderPrice: 2, orderQty: 30 },
-          { name: '胡萝卜', unit: '斤', productCode: 'SP0300020', orderPrice: 2, orderQty: 20 },
+          { name: '胡萝卜', unit: '斤', productCode: 'SP0300053', orderPrice: 2, orderQty: 20 },
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 4 },
-          { name: '黑面', unit: 'L', productCode: 'SP0300040', orderPrice: 5, orderQty: 4 },
-          { name: '金龙鱼5L桶装油', unit: '瓶', productCode: 'SP0300030', orderPrice: 57, orderQty: 2 }
+          { name: '黑面', unit: '斤', productCode: 'SP0300045', orderPrice: 5, orderQty: 4 },
+          { name: '金龙鱼5L桶装油', unit: '桶', productCode: 'SP0300030', orderPrice: 57, orderQty: 2 }
         ]
       })
     ];
@@ -275,14 +275,14 @@
         id: 'SCHOOL-ORDER-008', orderNo: 'DD202608250300001', createdAt: '2026-08-25 15:33:37', expectedAt: '2026-08-26 03:33:12',
         canteen: '第一食堂', source: '客户下单', driver: '杨雄', creator: '默认', items: [
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 1 },
-          { name: '黑面', unit: 'L', productCode: 'SP0300040', orderPrice: 5, orderQty: 10 }
+          { name: '黑面', unit: '斤', productCode: 'SP0300045', orderPrice: 5, orderQty: 10 }
         ]
       }),
       makeOrder({
         id: 'SCHOOL-ORDER-009', orderNo: 'DD202608250500001', createdAt: '2026-08-25 15:19:03', expectedAt: '2026-08-27 03:17:31',
         supplierName: '统仓配送公司', canteen: '静安第一中学食堂', orderTag: '学生-不区分', source: '客户下单', driver: '张三三', creator: '默认', items: [
-          { name: '鸡蛋', unit: '斤', productCode: 'SP0300041', orderPrice: 8, orderQty: 100 },
-          { name: '鸡腿肉', unit: '斤', productCode: 'SP0300042', orderPrice: 24, orderQty: 100 }
+          { name: '鸡蛋', unit: '斤', productCode: 'SP0300018', orderPrice: 8, orderQty: 100 },
+          { name: '鸡腿肉', unit: '斤', productCode: 'SP0300013', orderPrice: 24, orderQty: 100 }
         ]
       }),
       makeOrder({
@@ -294,7 +294,7 @@
       makeOrder({
         id: 'SCHOOL-ORDER-011', orderNo: 'DD202608190300001', createdAt: '2026-08-19 13:47:48', expectedAt: '2026-08-20 00:00:00',
         canteen: '静安第一中学食堂（演示）', items: [
-          { name: '黑面', unit: 'L', productCode: 'SP0300040', orderPrice: 5, orderQty: 10 },
+          { name: '黑面', unit: '斤', productCode: 'SP0300045', orderPrice: 5, orderQty: 10 },
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 10 },
           { name: '大玉米棒子', unit: 'KG', productCode: 'SP0300036', orderPrice: 5, orderQty: 20 }
         ]
@@ -328,7 +328,7 @@
           { name: '大玉米棒子', unit: 'KG', productCode: 'SP0300036', orderPrice: 5, orderQty: 10 },
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 5 }
         ] : [
-          { name: isWarehouse ? '土豆丝' : '黑面', unit: isWarehouse ? '斤' : 'L', productCode: isWarehouse ? 'SP0300039' : 'SP0300040', orderPrice: isWarehouse ? 1 : 5, orderQty: 10 },
+          { name: isWarehouse ? '土豆丝' : '黑面', unit: '斤', productCode: isWarehouse ? 'SP0300039' : 'SP0300045', orderPrice: isWarehouse ? 1 : 5, orderQty: 10 },
           { name: '牛奶', unit: '瓶', productCode: 'SP0300038', orderPrice: 5, orderQty: 10 }
         ]
       });
@@ -350,7 +350,7 @@
         id: 'SCHOOL-ORDER-OLD-001', orderNo: 'DD202608040300004', createdAt: '2026-08-04 16:25:45', expectedAt: '2026-08-05 00:00:00',
         status: '已完成', canteen: '静安第一中学食堂（演示）', driver: '杨雄', shipped: true, shippingAt: '2026-08-04 17:06:02',
         items: [
-          { name: '黑面', unit: 'L', productCode: 'SP0300040', orderPrice: 5, orderQty: 5, shippedQty: 5, traceCode: 'SYM202608040300000002' },
+          { name: '黑面', unit: '斤', productCode: 'SP0300045', orderPrice: 5, orderQty: 5, shippedQty: 5, traceCode: 'SYM202608040300000002' },
           { name: '大玉米棒子', unit: 'KG', productCode: 'SP0300036', orderPrice: 5, orderQty: 5, shippedQty: 5, traceCode: 'SYM202608040300000003' },
           { name: '黑大米', unit: '斤', productCode: 'SP0300034', orderPrice: 10, orderQty: 5, shippedQty: 5, traceCode: 'SYM202608040300000004' }
         ]
@@ -482,13 +482,16 @@
   function getProductCatalog() {
     const products = window.DemoStore?.get?.('products') || [];
     const fallback = [
-      { code: 'SP0300040', name: '黑面', unit: 'L', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5 },
+      { code: 'SP0300045', name: '黑面', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5 },
       { code: 'SP0300036', name: '大玉米棒子', unit: 'KG', brand: '--', spec: '--', category: '主食（米面粉点心类）-粮食类', marketPrice: 5 },
-      { code: 'SP0300034', name: '黑大米', unit: '袋', brand: '--', spec: '25kg/袋', category: '主食（米面粉点心类）-粮食类', marketPrice: 500 },
+      { code: 'SP0300034', name: '黑大米', unit: '袋', brand: '--', spec: '25kg', category: '主食（米面粉点心类）-粮食类', marketPrice: 500 },
       { code: 'SP0300039', name: '土豆丝', unit: '斤', brand: '--', spec: '--', category: '果蔬-净菜类', isNetVegetable: true, marketPrice: 1 },
       { code: 'SP0300038', name: '牛奶', unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', marketPrice: 5 },
-      { code: 'SP0300031', name: '鲫鱼', unit: 'L', brand: '--', spec: '--', category: '水产品-淡水鱼类', marketPrice: 20 },
-      { code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '瓶', brand: '金龙鱼', spec: '5L/瓶', category: '食油-食油二级', marketPrice: 55 }
+      { code: 'SP0300037', name: '牛奶', unit: '瓶', brand: '三元', spec: '250ml', category: '蛋奶类-蛋奶类二级', marketPrice: 5 },
+      { code: 'SP0300031', name: '鲫鱼', unit: '斤', brand: '--', spec: '500g左右', category: '水产品-淡水鱼类', marketPrice: 20 },
+      { code: 'SP0300030', name: '金龙鱼5L桶装油', unit: '桶', brand: '金龙鱼', spec: '5L', category: '食油-食油二级', marketPrice: 55 },
+      { code: 'SP0300847', name: '食盐', unit: '袋', brand: '--', spec: '500g', category: '调味品-食盐', marketPrice: 18.5, isStandardProduct: true },
+      { code: 'SP0300912', name: '味精', unit: '袋', brand: '--', spec: '250g', category: '调味品-香辛调味品', marketPrice: 8, isStandardProduct: true }
     ];
     const source = products.length ? products : fallback;
     const merged = [...source, ...fallback];

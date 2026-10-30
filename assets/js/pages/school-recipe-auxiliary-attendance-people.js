@@ -83,8 +83,12 @@
   const products = directService.attendanceProducts();
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const productDisplayText = (product) => {
+    const unit = product.unit || '--';
+    const spec = String(product.spec || '--').replace(/\s*\/\s*(桶|瓶|袋|箱|份|条|包|罐|盒|把|个)\s*$/, '').trim();
+    return `${product.name}（${unit}/${product.brand || '--'}/${spec}）`;
+  };
   const amount = (value) => Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
-  const compactAmount = (value) => Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 2, useGrouping: false });
   const wholeAmount = (value) => Number(value || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0, useGrouping: false });
   const normalizeRecipeDate = (value) => {
     const match = String(value || '').trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
@@ -389,15 +393,36 @@
     return { totalQty: participantRows.reduce((sum, quantity) => sum + quantity, 0) };
   }
 
+  function renderDemandQuantity(product, quantity) {
+    return amount(directService.quantityInProductUnit(product, quantity));
+  }
+
   function renderPurchaseQuantity(product, quantity) {
-    if (Number(product.packSize) > 0) {
-      const unit = product.purchaseUnit || product.unit || product.doseUnit || '';
+    if (directService.isPackagedStandardProduct(product) && Number(product.packSize) > 0) {
       const packCount = Math.ceil(Math.max(0, Number(quantity) - 1e-9) / Number(product.packSize));
-      const perPack = `每${unit}${compactAmount(product.packSize)}${product.doseUnit || product.unit || ''}`;
-      return `<span class="school-auxiliary-purchase-quantity" title="${escapeHtml(`${wholeAmount(packCount)}${unit}，${perPack}`)}"><strong>${wholeAmount(packCount)}${escapeHtml(unit)}</strong><small>${escapeHtml(perPack)}</small></span>`;
+      const purchaseQuantity = wholeAmount(packCount);
+      return `<span class="school-auxiliary-purchase-quantity" title="${escapeHtml(purchaseQuantity)}">${escapeHtml(purchaseQuantity)}</span>`;
     }
-    const unit = product.doseUnit || product.unit || '';
-    return `<span class="school-auxiliary-purchase-quantity">${amount(quantity)}${unit ? ` ${escapeHtml(unit)}` : ''}</span>`;
+    const purchaseAmount = directService.isPackagedStandardProduct(product)
+      ? Math.ceil(Math.max(0, Number(quantity) - 1e-9)) : Number(quantity);
+    const purchaseQuantity = amount(purchaseAmount);
+    return `<span class="school-auxiliary-purchase-quantity" title="${escapeHtml(purchaseQuantity)}">${escapeHtml(purchaseQuantity)}</span>`;
+  }
+
+  function previousBalanceFor(product) {
+    const balanceRule = window.SchoolAuxiliaryBalance;
+    let available = balanceRule?.openingBalance?.(currentCanteen, product.code, dateState.selectedDate) || 0;
+    if (!shouldSplitOrderByMeal()) return available;
+    for (const [mealKey, meal] of Object.entries(meals)) {
+      if (mealKey === state.meal) break;
+      if (!selectedProductsForMeal(mealKey).some((item) => item.id === product.id)) continue;
+      const demand = configuredGroups.reduce((sum, participant) => sum + Math.max(0,
+        Number(valueForParticipant(meal, participant) || 0)
+          - Number(valueForParticipant(meal, participant, 'nonDining_') || 0)) * Number(product.dose || 0), 0);
+      const packSize = directService.isPackagedStandardProduct(product) ? Number(product.packSize) || 1 : 0;
+      available = balanceRule?.calculate?.(demand, available, packSize)?.balanceAfter ?? available;
+    }
+    return available;
   }
 
   function renderRows() {
@@ -405,24 +430,28 @@
       return '<div class="school-auxiliary-empty" role="status">当前没有实际就餐人数</div>';
     }
     if (!state.selected.length) return '<div class="school-auxiliary-empty">请添加商品</div>';
-    const displayProduct = (product) => `${product.name}（${product.doseUnit || '--'}/${product.brand || '--'}/${product.spec || '--'}）`;
+    const displayProduct = productDisplayText;
     const splitByPersonType = (() => {
       const value = window.DemoStore?.getSettings?.()?.splitOrderByPersonType;
       return value === true || value === 'true' || value === 1 || value === '1';
     })();
     const groups = configuredGroups.map((participant) => ({ participant, label: participantDisplayName(participant), key: participant.key }));
-    const demandColumns = splitByPersonType ? groups.map((group) => `<th colspan="2">${participantHeader(group.participant)}</th>`).join('') : '<th colspan="2">合计</th>';
-    const demandSubColumns = splitByPersonType ? groups.map(() => '<th>需求总量</th><th>采购量</th>').join('') : '<th>需求总量</th><th>采购量</th>';
-    const demandColgroup = (splitByPersonType ? groups : [{}]).map(() => '<col style="width:126px"><col style="width:112px">').join('');
+    const demandColumns = splitByPersonType ? groups.map((group) => `<th colspan="2">${participantHeader(group.participant)}</th>`).join('') : '<th colspan="3">合计</th>';
+    const demandSubColumns = splitByPersonType ? groups.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>上次结余</th><th>采购量</th>';
+    const demandColgroup = splitByPersonType
+      ? groups.map(() => '<col style="width:126px"><col style="width:112px">').join('')
+      : '<col style="width:126px"><col style="width:126px"><col style="width:112px">';
     const bodyRows = state.selected.map((product, index) => {
       const data = rowData(product);
+      const standardProduct = directService.isPackagedStandardProduct(product);
+      const unit = product.unit || '--';
       const quantities = splitByPersonType
         ? groups.flatMap((group) => {
           const quantity = Number(valueForParticipant(people(), group.participant) || 0) * Number(product.dose || 0);
-          return [`<td class="number">${amount(quantity)}</td>`, `<td class="number">${renderPurchaseQuantity(product, quantity)}</td>`];
+          return [`<td class="number">${renderDemandQuantity(product, quantity)}</td>`, `<td class="number">${renderPurchaseQuantity(product, quantity)}</td>`];
         })
-        : [`<td class="number">${amount(data.totalQty)}</td>`, `<td class="number">${renderPurchaseQuantity(product, data.totalQty)}</td>`];
-      return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${product.doseUnit}`)}</span></td><td>${escapeHtml(product.code)}</td><td>是</td><td>${escapeHtml(product.unit || product.doseUnit || '--')}</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
+        : [`<td class="number">${renderDemandQuantity(product, data.totalQty)}</td>`, `<td class="number">${amount(previousBalanceFor(product))} ${escapeHtml(directService.productContentUnit(product))}</td>`, `<td class="number">${renderPurchaseQuantity(product, data.totalQty)}</td>`];
+      return `<tr><td>${index + 1}</td><td class="product-cell"><span class="product-display-text">${escapeHtml(displayProduct(product))}</span></td><td><span class="school-auxiliary-dose-value">${escapeHtml(product.doseDisplay || `${product.dose} ${directService.productContentUnit(product)}`)}</span></td><td>${escapeHtml(product.code)}</td><td>${standardProduct ? '是' : '否'}</td><td>${escapeHtml(unit)}</td>${quantities.join('')}<td><button class="school-auxiliary-remove" type="button" data-remove-id="${escapeHtml(product.id)}">移除</button></td></tr>`;
     }).join('');
     return `<div class="school-auxiliary-table-wrap"><table class="school-auxiliary-table school-auxiliary-demand-table"><colgroup><col style="width:58px"><col style="width:370px"><col style="width:118px"><col style="width:100px"><col style="width:88px"><col style="width:88px">${demandColgroup}<col style="width:70px"></colgroup><thead><tr><th rowspan="2">序号</th><th rowspan="2">商品</th><th rowspan="2">人均用量</th><th rowspan="2">编号</th><th rowspan="2">是否标品</th><th rowspan="2">计量单位</th>${demandColumns}<th rowspan="2">操作</th></tr><tr>${demandSubColumns}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
   }
@@ -468,8 +497,8 @@
       return `<option value="${escapeHtml(value)}"${value === filters.category ? ' selected' : ''}>${escapeHtml(`${'　'.repeat(path.length - 1)}${path[path.length - 1]}`)}</option>`;
     }).join('');
     const rows = visible.map((product) => {
-      const productDisplay = `${product.name}（${product.doseUnit || product.unit || '--'}/${product.brand || '--'}/${product.spec || '--'}）`;
-      return `<tr><td><input type="checkbox" value="${escapeHtml(product.id)}" data-aux-product-checkbox aria-label="选择${escapeHtml(product.name)}"${state.modalSelected.has(product.id) ? ' checked' : ''}></td><td class="product-list-name">${escapeHtml(productDisplay)}</td><td class="product-list-category">${product.category.map(escapeHtml).join(' / ')}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.purchaseUnit)}</td><td><button type="button" class="school-auxiliary-product-default${state.defaultProductIds.has(product.id) ? ' is-default' : ''}" data-aux-product-default="${escapeHtml(product.id)}" aria-pressed="${state.defaultProductIds.has(product.id)}">${state.defaultProductIds.has(product.id) ? '取消默认' : '设为默认'}</button></td></tr>`;
+      const productDisplay = productDisplayText(product);
+      return `<tr><td><input type="checkbox" value="${escapeHtml(product.id)}" data-aux-product-checkbox aria-label="选择${escapeHtml(product.name)}"${state.modalSelected.has(product.id) ? ' checked' : ''}></td><td class="product-list-name">${escapeHtml(productDisplay)}</td><td class="product-list-category">${product.category.map(escapeHtml).join(' / ')}</td><td>${escapeHtml(product.code)}</td><td>${escapeHtml(product.unit || '--')}</td><td><button type="button" class="school-auxiliary-product-default${state.defaultProductIds.has(product.id) ? ' is-default' : ''}" data-aux-product-default="${escapeHtml(product.id)}" aria-pressed="${state.defaultProductIds.has(product.id)}">${state.defaultProductIds.has(product.id) ? '取消默认' : '设为默认'}</button></td></tr>`;
     }).join('');
     const pageButtons = Array.from({ length: pageCount }, (_, index) => index + 1)
       .map((page) => `<button type="button" class="school-auxiliary-page-button${page === state.modalPage ? ' is-active' : ''}" data-aux-product-page="${page}"${page === state.modalPage ? ' aria-current="page"' : ''}>${page}</button>`).join('');

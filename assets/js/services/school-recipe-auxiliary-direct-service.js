@@ -13,63 +13,76 @@
     orderTag: '其他-不区分', tagId: 'other-non-nutritious'
   };
   const products = [
-    { id: 'aux-oil', auxiliaryName: '油', name: '金龙鱼5L桶装油', brand: '金龙鱼', code: 'SP0300030', spec: '5L/桶', unit: 'L', marketPrice: 55 },
-    { id: 'aux-salt', auxiliaryName: '盐', name: '食盐', brand: '—', code: 'SP0300031', spec: '500g/袋', unit: 'kg', marketPrice: 18.5 },
-    { id: 'aux-msg', auxiliaryName: '味精', name: '味精', brand: '—', code: 'SP0300032', spec: '250g/袋', unit: 'kg', marketPrice: 8 }
+    { id: 'aux-oil', auxiliaryName: '油', name: '金龙鱼5L桶装油', brand: '金龙鱼', code: 'SP0300030', spec: '5L', unit: '桶', marketPrice: 55 },
+    { id: 'aux-salt', auxiliaryName: '盐', name: '食盐', brand: '—', code: 'SP0300847', spec: '500g', unit: '袋', marketPrice: 18.5 },
+    { id: 'aux-msg', auxiliaryName: '味精', name: '味精', brand: '—', code: 'SP0300912', spec: '250g', unit: '袋', marketPrice: 8 }
   ];
+  const migrateProductQuantities = (values) => {
+    const quantities = { ...(values || {}) };
+    [['OA0300010', 'SP0300847'], ['OA0300011', 'SP0300912']].forEach(([legacyCode, productCode]) => {
+      if (quantities[legacyCode] != null && quantities[productCode] == null) quantities[productCode] = quantities[legacyCode];
+      delete quantities[legacyCode];
+    });
+    return quantities;
+  };
   const simpleDemoProducts = [
-    ['生抽', '金标生抽', '海天', '1.9L/桶', 'L', 19.8],
-    ['老抽', '草菇老抽', '海天', '1.9L/桶', 'L', 21.5],
-    ['香醋', '镇江香醋', '恒顺', '500ml/瓶', 'L', 9.8],
-    ['陈醋', '山西陈醋', '东湖', '500ml/瓶', 'L', 10.5],
-    ['料酒', '葱姜料酒', '王致和', '1.75L/桶', 'L', 15.8],
-    ['蚝油', '蚝油', '李锦记', '700g/瓶', 'kg', 16.8],
-    ['香油', '小磨香油', '金龙鱼', '400ml/瓶', 'L', 24.5],
-    ['辣椒油', '辣椒油', '演示品牌', '500ml/瓶', 'L', 18.5],
-    ['花椒油', '花椒油', '演示品牌', '500ml/瓶', 'L', 22.8],
-    ['豆瓣酱', '郫县豆瓣酱', '鹃城', '1kg/袋', 'kg', 17.8],
-    ['黄豆酱', '黄豆酱', '海天', '800g/瓶', 'kg', 13.8],
-    ['甜面酱', '甜面酱', '六必居', '500g/袋', 'kg', 8.5],
-    ['番茄酱', '番茄酱', '凤球唛', '850g/罐', 'kg', 12.8],
-    ['剁椒酱', '剁椒酱', '演示品牌', '500g/瓶', 'kg', 11.5],
-    ['辣椒酱', '香辣酱', '演示品牌', '500g/瓶', 'kg', 12.5],
-    ['芝麻酱', '纯芝麻酱', '六必居', '350g/瓶', 'kg', 19.8],
-    ['白砂糖', '白砂糖', '演示品牌', '1kg/袋', 'kg', 8.8],
-    ['冰糖', '单晶冰糖', '演示品牌', '500g/袋', 'kg', 7.8],
-    ['红糖', '红糖', '演示品牌', '500g/袋', 'kg', 9.5],
-    ['绵白糖', '绵白糖', '演示品牌', '1kg/袋', 'kg', 9.2],
-    ['鸡精', '鸡精调味料', '太太乐', '1kg/袋', 'kg', 31.8],
-    ['胡椒粉', '胡椒粉', '演示品牌', '500g/袋', 'kg', 23.5],
-    ['白胡椒粉', '白胡椒粉', '演示品牌', '500g/袋', 'kg', 29.8],
-    ['黑胡椒粉', '黑胡椒粉', '演示品牌', '500g/袋', 'kg', 27.8],
-    ['五香粉', '五香粉', '演示品牌', '500g/袋', 'kg', 18.5],
-    ['十三香', '十三香调味料', '王守义', '500g/袋', 'kg', 21.5],
-    ['孜然粉', '孜然粉', '演示品牌', '500g/袋', 'kg', 32.8],
-    ['辣椒粉', '辣椒粉', '演示品牌', '500g/袋', 'kg', 24.8],
-    ['花椒粉', '花椒粉', '演示品牌', '500g/袋', 'kg', 46.8],
-    ['咖喱粉', '咖喱粉', '演示品牌', '500g/袋', 'kg', 26.8],
-    ['淀粉', '食用淀粉', '演示品牌', '1kg/袋', 'kg', 8.5],
-    ['玉米淀粉', '玉米淀粉', '演示品牌', '1kg/袋', 'kg', 7.8],
-    ['小苏打', '食用小苏打', '演示品牌', '500g/袋', 'kg', 5.8],
-    ['泡打粉', '无铝泡打粉', '演示品牌', '500g/袋', 'kg', 12.8],
-    ['酵母粉', '高活性干酵母', '安琪', '500g/袋', 'kg', 19.8],
-    ['白芝麻', '熟白芝麻', '演示品牌', '500g/袋', 'kg', 23.8],
-    ['黑芝麻', '熟黑芝麻', '演示品牌', '500g/袋', 'kg', 27.8],
-    ['干辣椒', '干红辣椒', '演示品牌', '500g/袋', 'kg', 28.8],
-    ['花椒', '红花椒', '演示品牌', '500g/袋', 'kg', 68.8],
-    ['八角', '八角茴香', '演示品牌', '500g/袋', 'kg', 58.8],
-    ['桂皮', '桂皮', '演示品牌', '500g/袋', 'kg', 29.8],
-    ['香叶', '香叶', '演示品牌', '250g/袋', 'kg', 36.8],
-    ['丁香', '丁香', '演示品牌', '250g/袋', 'kg', 59.8],
-    ['小茴香', '小茴香', '演示品牌', '500g/袋', 'kg', 32.8],
-    ['豆豉', '风味豆豉', '演示品牌', '500g/袋', 'kg', 13.8],
-    ['豆腐乳', '红方腐乳', '王致和', '340g/瓶', 'kg', 15.8],
-    ['藤椒油', '藤椒油', '演示品牌', '500ml/瓶', 'L', 28.8]
+    ['生抽', '金标生抽', '海天', '1.9L', '桶', 19.8],
+    ['老抽', '草菇老抽', '海天', '1.9L', '桶', 21.5],
+    ['香醋', '镇江香醋', '恒顺', '500ml', '瓶', 9.8],
+    ['陈醋', '山西陈醋', '东湖', '500ml', '瓶', 10.5],
+    ['料酒', '葱姜料酒', '王致和', '1.75L', '桶', 15.8],
+    ['蚝油', '蚝油', '李锦记', '700g', '瓶', 16.8],
+    ['香油', '小磨香油', '金龙鱼', '400ml', '瓶', 24.5],
+    ['辣椒油', '辣椒油', '演示品牌', '500ml', '瓶', 18.5],
+    ['花椒油', '花椒油', '演示品牌', '500ml', '瓶', 22.8],
+    ['豆瓣酱', '郫县豆瓣酱', '鹃城', '1kg', '袋', 17.8],
+    ['黄豆酱', '黄豆酱', '海天', '800g', '瓶', 13.8],
+    ['甜面酱', '甜面酱', '六必居', '500g', '袋', 8.5],
+    ['番茄酱', '番茄酱', '凤球唛', '850g', '罐', 12.8],
+    ['剁椒酱', '剁椒酱', '演示品牌', '500g', '瓶', 11.5],
+    ['辣椒酱', '香辣酱', '演示品牌', '500g', '瓶', 12.5],
+    ['芝麻酱', '纯芝麻酱', '六必居', '350g', '瓶', 19.8],
+    ['白砂糖', '白砂糖', '演示品牌', '1kg', '袋', 8.8],
+    ['冰糖', '单晶冰糖', '演示品牌', '500g', '袋', 7.8],
+    ['红糖', '红糖', '演示品牌', '500g', '袋', 9.5],
+    ['绵白糖', '绵白糖', '演示品牌', '1kg', '袋', 9.2],
+    ['鸡精', '鸡精调味料', '太太乐', '1kg', '袋', 31.8],
+    ['胡椒粉', '胡椒粉', '演示品牌', '500g', '袋', 23.5],
+    ['白胡椒粉', '白胡椒粉', '演示品牌', '500g', '袋', 29.8],
+    ['黑胡椒粉', '黑胡椒粉', '演示品牌', '500g', '袋', 27.8],
+    ['五香粉', '五香粉', '演示品牌', '500g', '袋', 18.5],
+    ['十三香', '十三香调味料', '王守义', '500g', '袋', 21.5],
+    ['孜然粉', '孜然粉', '演示品牌', '500g', '袋', 32.8],
+    ['辣椒粉', '辣椒粉', '演示品牌', '500g', '袋', 24.8],
+    ['花椒粉', '花椒粉', '演示品牌', '500g', '袋', 46.8],
+    ['咖喱粉', '咖喱粉', '演示品牌', '500g', '袋', 26.8],
+    ['淀粉', '食用淀粉', '演示品牌', '1kg', '袋', 8.5],
+    ['玉米淀粉', '玉米淀粉', '演示品牌', '1kg', '袋', 7.8],
+    ['小苏打', '食用小苏打', '演示品牌', '500g', '袋', 5.8],
+    ['泡打粉', '无铝泡打粉', '演示品牌', '500g', '袋', 12.8],
+    ['酵母粉', '高活性干酵母', '安琪', '500g', '袋', 19.8],
+    ['白芝麻', '熟白芝麻', '演示品牌', '500g', '袋', 23.8],
+    ['黑芝麻', '熟黑芝麻', '演示品牌', '500g', '袋', 27.8],
+    ['干辣椒', '干红辣椒', '演示品牌', '500g', '袋', 28.8],
+    ['花椒', '红花椒', '演示品牌', '500g', '袋', 68.8],
+    ['八角', '八角茴香', '演示品牌', '500g', '袋', 58.8],
+    ['桂皮', '桂皮', '演示品牌', '500g', '袋', 29.8],
+    ['香叶', '香叶', '演示品牌', '250g', '袋', 36.8],
+    ['丁香', '丁香', '演示品牌', '250g', '袋', 59.8],
+    ['小茴香', '小茴香', '演示品牌', '500g', '袋', 32.8],
+    ['豆豉', '风味豆豉', '演示品牌', '500g', '袋', 13.8],
+    ['豆腐乳', '红方腐乳', '王致和', '340g', '瓶', 15.8],
+    ['藤椒油', '藤椒油', '演示品牌', '500ml', '瓶', 28.8]
   ].map(([auxiliaryName, name, brand, spec, unit, marketPrice], index) => ({
     id: `aux-simple-${index + 1}`, auxiliaryName, name, brand,
     code: `SP039${String(index + 1).padStart(4, '0')}`, spec, unit, marketPrice
   }));
   const simpleProducts = [...products, ...simpleDemoProducts];
+  const productContentUnit = (product) => {
+    const match = String(product?.spec || '').match(/\d+(?:\.\d+)?\s*(kg|公斤|千克|g|克|L|l|ml|毫升)/i);
+    if (!match) return '';
+    return /^(?:kg|公斤|千克|g|克)$/i.test(match[1]) ? 'kg' : 'L';
+  };
   const attendanceProducts = () => simpleProducts.map((product) => {
     const legacy = {
       'aux-oil': { doseDisplay: '12 ml', dose: 0.012, packSize: 5, category: ['食用油', '植物油', '大豆油'] },
@@ -77,8 +90,9 @@
       'aux-msg': { doseDisplay: '1 g', dose: 0.001, packSize: 0.25, category: ['调味品', '香辛调味品', '味精'] }
     }[product.id];
     const spec = product.spec || '';
-    const size = spec.match(/^(\d+(?:\.\d+)?)(kg|g|L|ml)\//i);
+    const size = spec.match(/^(\d+(?:\.\d+)?)(kg|g|L|ml)$/i);
     const packSize = size ? Number(size[1]) * (/^(g|ml)$/i.test(size[2]) ? 0.001 : 1) : 0;
+    const contentUnit = productContentUnit(product);
     const category = /油$/.test(product.auxiliaryName) ? ['食用油', '调味油']
       : /醋$/.test(product.auxiliaryName) ? ['调味品', '食醋']
         : /酱$|腐乳|豆豉/.test(product.auxiliaryName) ? ['调味品', '酱料']
@@ -86,16 +100,25 @@
             : /粉$|花椒|八角|桂皮|香叶|丁香|小茴香|干辣椒/.test(product.auxiliaryName) ? ['调味品', '香辛料']
               : ['调味品', '其他'];
     return {
-      ...product, doseUnit: product.unit, doseDisplay: product.unit === 'L' ? '1 ml' : '1 g',
-      dose: 0.001, packSize, purchaseUnit: spec.split('/').at(-1) || product.unit,
+      ...product, doseDisplay: contentUnit === 'L' ? '1 ml' : '1 g',
+      dose: 0.001, packSize,
+      isStandardProduct: product.isStandardProduct === undefined ? packSize > 0 : product.isStandardProduct === true,
       category, ...legacy
     };
   });
   const packagedProductCodes = new Set(attendanceProducts()
-    .filter((product) => Number(product.packSize) > 0)
+    .filter((product) => product.isStandardProduct === true)
     .map((product) => String(product.code)));
-  const isPackagedStandardProduct = (product) => product?.isStandardProduct === true
-    || packagedProductCodes.has(String(product?.code || product?.productCode || ''));
+  const isPackagedStandardProduct = (product) => {
+    const value = product?.isStandardProduct ?? product?.isStandard;
+    if (value !== undefined) return value === true || value === 'true' || value === '是';
+    return packagedProductCodes.has(String(product?.code || product?.productCode || ''));
+  };
+  const quantityInProductUnit = (product, quantity) => {
+    const packSize = Number(product?.packSize);
+    const unitSize = isPackagedStandardProduct(product) && packSize > 0 ? packSize : 1;
+    return Number(quantity || 0) / unitSize;
+  };
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const roundQuantity = (value) => Number(Number(value || 0).toFixed(2));
   const timestamp = () => window.BusinessRules?.now?.() || new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -155,19 +178,24 @@
   };
   const combinedScope = (canteen) => canteenFor(canteen).id || canteenFor(canteen).name || '第一食堂';
   const selectedProductsKey = 'school-recipe-auxiliary-selected-products-v1';
+  const withCatalogMetadata = (product) => ({
+    ...product,
+    isStandardProduct: isPackagedStandardProduct(product),
+    currentSalesPrice: priceFor(product)
+  });
   const catalogProducts = (canteen, includeAll = false) => {
-    if (includeAll) return simpleProducts.map((product) => ({ ...product, isStandardProduct: false, currentSalesPrice: priceFor(product) }));
+    if (includeAll) return simpleProducts.map(withCatalogMetadata);
     const selectedIds = window.AppStorage?.read?.(selectedProductsKey, {})?.[combinedScope(canteen)];
     const configured = Array.isArray(selectedIds) && selectedIds.length
       ? simpleProducts.filter((product) => selectedIds.includes(product.id)) : products;
     const maintained = configured.length ? configured : products;
-    return maintained.map((product) => ({ ...product, isStandardProduct: false, currentSalesPrice: priceFor(product) }));
+    return maintained.map(withCatalogMetadata);
   };
   const readCombinedDraft = (canteen) => {
     const saved = window.AppStorage?.read?.(combinedDraftKey, {})?.[combinedScope(canteen)] || {};
     return {
       dates: Array.isArray(saved.dates) ? [...saved.dates] : [],
-      quantities: { ...(saved.quantities || {}) }
+      quantities: migrateProductQuantities(saved.quantities)
     };
   };
   const writeCombinedDraft = (canteen, draft) => {
@@ -237,15 +265,17 @@
         : Number(raw || 0);
       return {
         key, productCode: product.code, productName: product.name, auxiliaryName: product.auxiliaryName,
-        unit: product.unit, brand: product.brand, spec: product.spec, isStandardProduct: false,
+        unit: product.unit, brand: product.brand, spec: product.spec, isStandardProduct: product.isStandardProduct === true,
         orderPrice: priceFor(product), participantQty, orderQty
       };
     }) }));
     const rows = meals.flatMap((meal) => meal.rows);
     const invalid = rows.find((row) => !Number.isFinite(row.orderQty) || row.orderQty < 0
-      || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key]) || row.participantQty[person.key] < 0)));
+      || (row.isStandardProduct && !Number.isInteger(row.orderQty))
+      || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key])
+        || row.participantQty[person.key] < 0 || (row.isStandardProduct && !Number.isInteger(row.participantQty[person.key])))));
     const selectedRows = rows.filter((row) => row.orderQty > 0);
-    const message = invalid ? '采购量需为非负数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
+    const message = invalid ? '采购量需为非负整数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
     return { date, canteen: canteenFor(canteen), participants, meals, rows, selectedRows, canSubmit: !message, message };
   }
 
@@ -293,14 +323,16 @@
         : Number(raw || 0);
       return {
         key, productCode: key, productName: product.name, auxiliaryName: product.auxiliaryName,
-        unit: product.unit, brand: product.brand, spec: product.spec, isStandardProduct: false,
+        unit: product.unit, brand: product.brand, spec: product.spec, isStandardProduct: product.isStandardProduct === true,
         orderPrice: priceFor(product), participantQty, orderQty
       };
     });
     const invalid = rows.find((row) => !Number.isFinite(row.orderQty) || row.orderQty < 0
-      || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key]) || row.participantQty[person.key] < 0)));
+      || (row.isStandardProduct && !Number.isInteger(row.orderQty))
+      || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key])
+        || row.participantQty[person.key] < 0 || (row.isStandardProduct && !Number.isInteger(row.participantQty[person.key])))));
     const selectedRows = rows.filter((row) => row.orderQty > 0);
-    const message = invalid ? '采购量需为非负数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
+    const message = invalid ? '采购量需为非负整数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
     return { date, canteen: canteenFor(canteen), participants, meals: [], rows, selectedRows, canSubmit: !message, message };
   }
 
@@ -571,7 +603,7 @@
   }
 
   window.SchoolRecipeAuxiliaryDirectService = {
-    products: clone(products), attendanceProducts, isPackagedStandardProduct, mealDefinitionsForDate, keyFor, catalogProducts,
+    products: clone(products), attendanceProducts, productContentUnit, isPackagedStandardProduct, quantityInProductUnit, migrateProductQuantities, mealDefinitionsForDate, keyFor, catalogProducts,
     readDraft, writeDraft, readFilledDates, readNoMealDraft, readNoMealFilledDates, readCombinedDraft, writeCombinedDraft,
     participantsFor, buildPreview, buildDatesPreview, buildNoMealPreview, buildNoMealDatesPreview, buildCombinedPreview, buildSimplePreview, buildSimpleDraftPreview,
     submit, submitDates, submitSimple

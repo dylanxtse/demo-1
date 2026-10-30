@@ -23,12 +23,12 @@
   const productRows = [
     { id: 'product-1', name: '全麦面粉', unit: '斤', brand: '--', spec: '--', category: '主食（米面粉点心类）', orderQty: 3, placedQty: '6.00', detailQty: ['2.00', '2.00', '2.00'] },
     { id: 'product-2', name: '牛奶', unit: '瓶', brand: '--', spec: '--', category: '蛋奶类-蛋奶类二级', orderQty: 3, placedQty: '3.00', detailQty: ['1.00', '1.00', '1.00'] },
-    { id: 'product-3', name: '金龙鱼5L桶装油', unit: '瓶', brand: '金龙鱼', spec: '5L/瓶', category: '食油-食油二级', orderQty: 3, placedQty: '6.00', detailQty: ['2.00', '2.00', '2.00'] },
-    { id: 'product-4', name: '大米', unit: 'KG', brand: '--', spec: '25kg/袋', category: '主食（米面粉点心类）', orderQty: 2, placedQty: '4.00', detailQty: ['1.00', '2.00', '1.00'] },
-    { id: 'product-5', name: '鸡腿肉', unit: '斤', brand: '双汇', spec: '500g/份', category: '肉（豆）制品-肉制品', orderQty: 4, placedQty: '4.00', detailQty: ['1.00', '1.00', '2.00'] },
+    { id: 'product-3', name: '金龙鱼5L桶装油', unit: '桶', brand: '金龙鱼', spec: '5L', category: '食油-食油二级', orderQty: 3, placedQty: '6.00', detailQty: ['2.00', '2.00', '2.00'] },
+    { id: 'product-4', name: '大米', unit: 'KG', brand: '--', spec: '25kg', category: '主食（米面粉点心类）', orderQty: 2, placedQty: '4.00', detailQty: ['1.00', '2.00', '1.00'] },
+    { id: 'product-5', name: '鸡腿肉', unit: '斤', brand: '双汇', spec: '--', category: '肉（豆）制品-肉制品', orderQty: 4, placedQty: '4.00', detailQty: ['1.00', '1.00', '2.00'] },
     { id: 'product-6', name: '鲫鱼', unit: '斤', brand: '--', spec: '--', category: '水产品-水产品二级', orderQty: 2, placedQty: '2.00', detailQty: ['1.00', '1.00', '0.00'] },
     { id: 'product-7', name: '土豆', unit: '斤', brand: '田园直供', spec: '散装', category: '果蔬-根茎类', orderQty: 3, placedQty: '5.00', detailQty: ['2.00', '2.00', '1.00'] },
-    { id: 'product-8', name: '鸡蛋', unit: '斤', brand: '农家', spec: '500g/份', category: '蛋奶类-蛋奶类二级', orderQty: 5, placedQty: '5.00', detailQty: ['2.00', '1.00', '2.00'] },
+    { id: 'product-8', name: '鸡蛋', unit: '斤', brand: '农家', spec: '--', category: '蛋奶类-蛋奶类二级', orderQty: 5, placedQty: '5.00', detailQty: ['2.00', '1.00', '2.00'] },
     { id: 'product-9', name: '西红柿', unit: 'KG', brand: '--', spec: '--', category: '果蔬-果蔬二级', orderQty: 2, placedQty: '2.00', detailQty: ['1.00', '1.00', '0.00'] }
   ];
 

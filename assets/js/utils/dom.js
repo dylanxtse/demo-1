@@ -48,9 +48,13 @@
         return candidateName && candidateName === parsed.name;
       }) || null;
       const name = text(product?.name || product?.productName) || parsed.name || text(item.productName || item.name || item.goodsName);
-      const unit = meaningful(product?.unit) || meaningful(item.unit) || meaningful(parsed.unit);
+      const rawSpec = String(product?.spec || item.spec || parsed.spec || '');
+      const packageUnit = rawSpec.match(/\s*\/\s*(桶|瓶|袋|箱|份|条|包|罐|盒|把|个)\s*$/)?.[1] || '';
+      const contentSpec = rawSpec
+        .replace(/\s*\/\s*(桶|瓶|袋|箱|份|条|包|罐|盒|把|个)\s*$/, '').trim();
+      const unit = meaningful(product?.unit) || meaningful(item.unit) || meaningful(packageUnit) || meaningful(parsed.unit);
       const brand = meaningful(product?.brand) || meaningful(item.brand) || meaningful(parsed.brand);
-      const spec = meaningful(product?.spec) || meaningful(item.spec) || meaningful(parsed.spec);
+      const spec = meaningful(contentSpec) || meaningful(product?.spec) || meaningful(item.spec) || meaningful(parsed.spec);
       return `${name || '--'}（${unit || '--'}/${brand || '--'}/${spec || '--'}）`;
     }
   };

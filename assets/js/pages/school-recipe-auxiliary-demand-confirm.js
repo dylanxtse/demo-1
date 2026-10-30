@@ -113,11 +113,17 @@
     return products.filter((product) => ids.has(product.id));
   };
   const selectedAnywhere = (productId) => Object.values(selectedByMeal).some((ids) => ids.includes(productId));
-  const packSizeFor = (product) => Number(product.packSize) > 0 ? Number(product.packSize) : 1;
-  const isPackaged = (product) => Number(product.packSize) > 0;
-  const purchase = (value, product) => isPackaged(product)
-    ? Math.ceil(Math.max(0, Number(value) - 1e-9) / packSizeFor(product)) : Number(value);
-  const purchaseBaseQuantity = (quantity, product) => Number(quantity) * packSizeFor(product);
+  const isStandardProduct = (product) => window.SchoolRecipeAuxiliaryDirectService.isPackagedStandardProduct(product);
+  const packSizeFor = (product) => isStandardProduct(product) && Number(product.packSize) > 0
+    ? Number(product.packSize) : isStandardProduct(product) ? 1 : 0;
+  const purchasePackSize = (product) => isStandardProduct(product) && Number(product.packSize) > 0
+    ? Number(product.packSize) : 1;
+  const productUnitFor = (product) => product.unit || '';
+  const productContentUnitFor = (product) => window.SchoolRecipeAuxiliaryDirectService.productContentUnit(product);
+  const purchase = (value, product) => isStandardProduct(product)
+    ? Math.ceil(Math.max(0, Number(value) - 1e-9) / purchasePackSize(product)) : Number(value);
+  const demandInProductUnit = (product, value) => window.SchoolRecipeAuxiliaryDirectService.quantityInProductUnit(product, value);
+  const purchaseBaseQuantity = (quantity, product) => Number(quantity) * purchasePackSize(product);
   const purchaseQuantityThreshold = (baseQuantity, nextQuantity) => window.RecipePurchaseQuantityThreshold?.evaluate(baseQuantity, nextQuantity)
     || { valid: true, enabled: false };
   const purchaseQuantityThresholdMessage = (result) => window.RecipePurchaseQuantityThreshold?.message(result)
@@ -170,7 +176,10 @@
     ? meals.map((meal) => ({ key: meal.key, mealList: [meal] }))
     : [{ key: 'all-meals', mealList: meals }]
   ).reduce((total, group) => total + selectedForMeals(group.mealList).reduce((sum, product) => sum + productSubtotal(product, group.mealList, group.key), 0), 0);
-  const productDisplay = (product) => `${product.name}（${product.doseUnit}/${product.brand}/${product.spec}）`;
+  const productDisplay = (product) => {
+    const spec = String(product.spec || '--').replace(/\s*\/\s*(桶|瓶|袋|箱|份|条|包|罐|盒|把|个)\s*$/, '').trim();
+    return `${product.name}（${productUnitFor(product)}/${product.brand}/${spec}）`;
+  };
   const number = (value) => Number(value || 0);
   const timestamp = () => window.BusinessRules?.now?.()
     || new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -228,15 +237,14 @@
       ]));
       const totalQty = Object.values(participantQty).reduce((sum, value) => sum + number(value), 0);
       return {
-        key: `${product.code}::${product.doseUnit}`,
+        key: `${product.code}::${productContentUnitFor(product)}`,
         mappingStatus: '已关联',
         productCode: product.code,
         productName: product.name,
-        unit: product.doseUnit,
-        purchaseUnit: isPackaged(product) ? product.purchaseUnit : product.doseUnit,
+        unit: productUnitFor(product),
         brand: product.brand,
         spec: product.spec,
-        isStandardProduct: isPackaged(product),
+        isStandardProduct: isStandardProduct(product),
         participantQty,
         totalQty,
         purchaseQty: purchase(totalQty, product),
@@ -276,15 +284,14 @@
       const participantQty = Object.fromEntries(labels.map((label) => [keyFor(label), demandFor(product, meals, label)]));
       const totalQty = Object.values(participantQty).reduce((sum, value) => sum + number(value), 0);
       return {
-        key: `${product.code}::${product.doseUnit}`,
+        key: `${product.code}::${productContentUnitFor(product)}`,
         mappingStatus: '已关联',
         productCode: product.code,
         productName: product.name,
-        unit: product.doseUnit,
-        purchaseUnit: isPackaged(product) ? product.purchaseUnit : product.doseUnit,
+        unit: productUnitFor(product),
         brand: product.brand,
         spec: product.spec,
-        isStandardProduct: isPackaged(product),
+        isStandardProduct: isStandardProduct(product),
         participantQty,
         totalQty,
         purchaseQty: mealGroups().reduce((sum, group) => sum + (splitPerson
@@ -322,13 +329,13 @@
     const result = {};
     mealGroups().forEach((group) => {
       const demand = labels.reduce((sum, label) => sum + demandFor(product, group.meals, label), 0);
-      const calculated = balanceRule?.calculate?.(demand, available, product.packSize)
+      const calculated = balanceRule?.calculate?.(demand, available, packSizeFor(product))
         || { previousBalance: 0, purchaseQty: purchaseBaseQuantity(purchase(demand, product), product) };
       const key = purchaseKey(group.key, product, '合计');
       const purchaseQty = canEditRecipePurchaseQuantity && hasOwn(state.purchaseQtyOverrides, key)
-        ? number(state.purchaseQtyOverrides[key]) : Number((calculated.purchaseQty / packSizeFor(product)).toFixed(4));
+        ? number(state.purchaseQtyOverrides[key]) : Number((calculated.purchaseQty / (packSizeFor(product) || 1)).toFixed(4));
       result[group.key] = { previousBalance: calculated.previousBalance,
-        baseQuantity: Number((calculated.purchaseQty / packSizeFor(product)).toFixed(4)), purchaseQty };
+        baseQuantity: Number((calculated.purchaseQty / (packSizeFor(product) || 1)).toFixed(4)), purchaseQty };
       available = Math.max(0, Number((available + purchaseBaseQuantity(purchaseQty, product) - demand).toFixed(4)));
     });
     return result;
@@ -347,13 +354,13 @@
     return {
       productCode: product.code,
       productName: product.name,
-      unit: isPackaged(product) ? product.purchaseUnit : product.doseUnit,
+      unit: productUnitFor(product),
       brand: product.brand,
       spec: product.spec,
       orderQty: quantity,
       orderPrice,
       isNetVegetable: false,
-      isStandardProduct: isPackaged(product),
+      isStandardProduct: isStandardProduct(product),
       remark: `辅料${[...state.selectedDates].sort().join('、')}${group.name}${label}需求`
     };
   }).filter(Boolean);
@@ -551,10 +558,10 @@
         productCode: row.productCode,
         unit: row.unit,
         demandQty: Number(row.totalQty || 0),
-        purchaseQty: Number((purchaseBaseQty / packSizeFor(product)).toFixed(4)),
+        purchaseQty: Number((purchaseBaseQty / (packSizeFor(product) || 1)).toFixed(4)),
         purchaseBaseQty,
-        purchaseUnit: row.purchaseUnit || row.unit,
-        packSize: product.packSize || 0
+        packSize: product.packSize || 0,
+        isStandardProduct: isStandardProduct(product)
       };
     });
     writeDemandRecords([...records, record]);
@@ -679,7 +686,7 @@
     const columns = splitPerson
       ? labels.map((label) => `<th colspan="2">${escapeHtml(participantDisplayName(label))}</th>`).join('')
       : '<th colspan="3">合计</th>';
-    const subColumns = splitPerson ? labels.map(() => '<th>需求总量</th><th>采购量</th>').join('') : '<th>需求总量</th><th>上次结余</th><th>采购量</th>';
+    const subColumns = splitPerson ? labels.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>上次结余</th><th>采购量</th>';
     const colgroup = splitPerson ? labels.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-quantity"><col class="col-purchase">';
     const rows = activeProducts.map((product, index) => {
       const renderPurchaseCell = (label, demand) => {
@@ -688,22 +695,22 @@
         const value = purchaseValue(groupKey, product, label, demand);
         const threshold = canEditRecipePurchaseQuantity ? purchaseQuantityThreshold(baseQuantity, value) : { valid: true };
         const disabled = canEditRecipePurchaseQuantity ? '' : ' disabled';
-        return `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input${threshold.valid ? '' : ' is-invalid'}" type="number" min="0" step="${isPackaged(product) ? 1 : 'any'}" inputmode="decimal" value="${amount(value)}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-base-quantity="${escapeHtml(amount(baseQuantity))}" data-packaged="${isPackaged(product)}" aria-invalid="${!threshold.valid}" aria-label="${escapeHtml(label === '合计' ? '采购量' : `${participantDisplayName(label)}采购量`)}"${disabled}${threshold.valid ? '' : ` title="${escapeHtml(purchaseQuantityThresholdMessage(threshold))}"`}><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量"${disabled}>×</button></div></td>`;
+        return `<td class="is-number school-recipe-demand-purchase-cell"><div class="school-recipe-demand-purchase-control"><input class="school-recipe-demand-purchase-input${threshold.valid ? '' : ' is-invalid'}" type="number" min="0" step="${isStandardProduct(product) ? 1 : 'any'}" inputmode="${isStandardProduct(product) ? 'numeric' : 'decimal'}" value="${amount(value)}" data-aux-purchase-quantity data-purchase-key="${escapeHtml(key)}" data-purchase-base-quantity="${escapeHtml(amount(baseQuantity))}" data-packaged="${isStandardProduct(product)}" aria-invalid="${!threshold.valid}" aria-label="${escapeHtml(label === '合计' ? '采购量' : `${participantDisplayName(label)}采购量`)}"${disabled}${threshold.valid ? '' : ` title="${escapeHtml(purchaseQuantityThresholdMessage(threshold))}"`}><button type="button" class="school-recipe-demand-purchase-clear" data-aux-purchase-clear data-purchase-key="${escapeHtml(key)}" aria-label="清空采购量"${disabled}>×</button></div></td>`;
       };
       const cells = splitPerson
         ? labels.flatMap((label) => {
           const demand = demandFor(product, activeMeals, label);
-          return [`<td class="is-number">${amount(demand)} ${escapeHtml(product.doseUnit || '')}</td>`, renderPurchaseCell(label, demand)];
+          return [`<td class="is-number">${amount(demandInProductUnit(product, demand))}</td>`, renderPurchaseCell(label, demand)];
         })
         : (() => {
           const demand = labels.reduce((sum, label) => sum + demandFor(product, activeMeals, label), 0);
           const balance = purchasePlanFor(product)[groupKey]?.previousBalance || 0;
-          return [`<td class="is-number">${amount(demand)} ${escapeHtml(product.doseUnit || '')}</td>`, `<td class="is-number">${amount(balance)} ${escapeHtml(product.doseUnit || '')}</td>`, renderPurchaseCell('合计', demand)];
+          return [`<td class="is-number">${amount(demandInProductUnit(product, demand))}</td>`, `<td class="is-number">${amount(balance)} ${escapeHtml(productContentUnitFor(product))}</td>`, renderPurchaseCell('合计', demand)];
         })();
       const priceKey = unitPriceKey(product);
       const priceCell = `<td class="is-number school-recipe-demand-unit-price-cell"><input class="school-recipe-demand-unit-price-input" type="number" min="${minimumAmount()}" step="${minimumAmount()}" inputmode="decimal" value="${amount(unitPriceValue(product))}" data-aux-unit-price data-unit-price-key="${escapeHtml(priceKey)}"${canModifyUnitPrice() ? '' : ' disabled'} aria-label="${escapeHtml(`${product.name}单价`)}"></td>`;
       const cannotRemoveLast = activeProducts.length <= 1;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${isPackaged(product) ? '是' : '否'}</td><td>${escapeHtml(isPackaged(product) ? product.purchaseUnit : product.doseUnit)}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}" title="${cannotRemoveLast ? '至少保留一项商品' : '移除当前餐次商品'}"${cannotRemoveLast ? ' disabled' : ''}>移除</button></td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(productDisplay(product))}</td><td>${escapeHtml(product.code)}</td><td>${isStandardProduct(product) ? '是' : '否'}</td><td>${escapeHtml(productUnitFor(product))}</td>${priceCell}${cells.join('')}<td class="is-number school-recipe-demand-product-subtotal" data-aux-product-subtotal>¥${money(productSubtotal(product, activeMeals, groupKey))}</td><td class="school-recipe-demand-product-action"><button type="button" class="school-recipe-demand-product-clear-row" data-action="remove-product" data-product-key="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.auxiliaryName)}" title="${cannotRemoveLast ? '至少保留一项商品' : '移除当前餐次商品'}"${cannotRemoveLast ? ' disabled' : ''}>移除</button></td></tr>`;
     }).join('');
     const activeMeal = splitMeal ? meals.find((meal) => meal.key === state.meal) : null;
     const labelColumns = 6 + (splitPerson ? labels.length * 2 : 3);

@@ -62,6 +62,7 @@
   };
   const purchaseQuantity = (value, product) => {
     const demandQuantity = number(value);
+    if (recipeService?.orderQuantityFromDemand) return recipeService.orderQuantityFromDemand(demandQuantity, product);
     return isStandardProduct(product) ? Math.ceil(demandQuantity) : demandQuantity;
   };
   const purchaseRowKey = (row) => String(row?.key || `${row?.productCode || row?.productName || ''}::${row?.unit || '--'}`);
@@ -76,6 +77,7 @@
     if (!raw) return 0;
     const parsed = Number(raw);
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    if (recipeService?.normalizeOrderQuantity) return recipeService.normalizeOrderQuantity(parsed, product);
     return isStandardProduct(product) ? Math.ceil(parsed) : parsed;
   };
   const normalizeExpectedAt = (value) => {

@@ -68,7 +68,7 @@ test('人数填报可批量添加商品，取消选择不保存', () => {
   assert.match(modal.outerHTML, /value="3" data-aux-product-jump/);
   assert.match(page.outerHTML, /<h3>添加商品<\/h3>/);
   assert.match(page.outerHTML, /<th>商品名称<\/th>/);
-  assert.match(page.outerHTML, /金龙鱼5L桶装油（L\/金龙鱼\/5L\/桶）/);
+  assert.match(page.outerHTML, /金龙鱼5L桶装油（桶\/金龙鱼\/5L）/);
   assert.match(page.outerHTML, /<th>计量单位<\/th>/);
   assert.match(page.outerHTML, /<th>操作<\/th>/);
   assert.match(page.outerHTML, /data-aux-product-default="aux-oil"[^>]*>设为默认<\/button>/);
@@ -214,10 +214,10 @@ test('设为默认的干调商品按食堂保存，并在再次打开填报页�
   assert.match(reopened.page.outerHTML, /data-remove-id="aux-salt"/);
   assert.doesNotMatch(reopened.page.outerHTML, /data-remove-id="aux-oil"/);
   assert.match(reopened.page.outerHTML, /<th rowspan="2">序号<\/th><th rowspan="2">商品<\/th><th rowspan="2">人均用量<\/th><th rowspan="2">编号<\/th>/);
-  assert.match(reopened.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th><th colspan="2">合计<\/th>/);
+  assert.match(reopened.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th><th colspan="3">合计<\/th>/);
   assert.doesNotMatch(reopened.page.outerHTML, /<th rowspan="2">干调<\/th>/);
-  assert.match(reopened.page.outerHTML, /<td class="product-cell"><span class="product-display-text">食盐（kg\/—\/500g\/袋）<\/span><\/td><td><span class="school-auxiliary-dose-value">4 g<\/span><\/td>/);
-  assert.match(reopened.page.outerHTML, /<td>是<\/td><td>kg<\/td><td class="number">[\d,.]+<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="\d+袋，每袋0\.5kg"><strong>\d+袋<\/strong><small>每袋0\.5kg<\/small><\/span><\/td>/);
+  assert.match(reopened.page.outerHTML, /<td class="product-cell"><span class="product-display-text">食盐（袋\/—\/500g）<\/span><\/td><td><span class="school-auxiliary-dose-value">4 g<\/span><\/td>/);
+  assert.match(reopened.page.outerHTML, /<td>是<\/td><td>袋<\/td><td class="number">[\d,.]+<\/td><td class="number">[\d,.]+ [^<]+<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="\d+">\d+<\/span><\/td>/);
   reopened.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-salt' }) });
   assert.deepEqual(Array.from(context.AppStorage.read(defaultKey, {})[scope]), []);
   context.AppStorage.write(selectedKey, { [scope]: ['aux-oil'] });
@@ -268,7 +268,8 @@ test('干调商品首次全部设为默认，取消默认后再次打开保持�
   assert.equal(context.AppStorage.read(defaultKey, {})[scope].length, 50);
   assert.equal(context.AppStorage.read(selectedKey, {})[scope].length, 50);
   assert.match(first.page.outerHTML, /<th rowspan="2">是否标品<\/th><th rowspan="2">计量单位<\/th>/);
-  assert.match(first.page.outerHTML, /<td>是<\/td><td>L<\/td><td class="number">[\d,.]+<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="\d+桶，每桶5L"><strong>\d+桶<\/strong><small>每桶5L<\/small><\/span><\/td>/);
+  assert.match(first.page.outerHTML, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
+  assert.match(first.page.outerHTML, /<td>是<\/td><td>桶<\/td><td class="number">[\d,.]+<\/td><td class="number">[\d,.]+ [^<]+<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="\d+">\d+<\/span><\/td>/);
   first.listeners.click({ target: target('[data-aux-product-open]') });
   assert.match(first.page.outerHTML, /data-aux-product-default="aux-oil"[^>]*>取消默认<\/button>/);
   first.listeners.click({ target: target('[data-aux-product-default]', { auxProductDefault: 'aux-oil' }) });

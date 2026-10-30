@@ -42,7 +42,7 @@ test('干调结余按食堂和商品结转，并在扣减后按标品规格采�
   assert.equal(context.SchoolAuxiliaryBalance.openingBalance(canteen, 'SP0300030', '2026-09-08'), 1);
 });
 
-test('结余只在干调确认页抵扣和显示，单日填报页保持原有测算', () => {
+test('干调填报页与确认页显示上次结余，填报页保持原有采购量测算', () => {
   const context = app();
   context.DemoStore.updateSettings({ splitOrderByPersonType: false, splitOrderByMeal: true });
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
@@ -75,9 +75,8 @@ test('结余只在干调确认页抵扣和显示，单日填报页保持原有�
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
-  assert.match(entryHtml, /<th>需求总量<\/th><th>采购量<\/th>/);
-  assert.doesNotMatch(entryHtml, /上次结余/);
-  assert.match(entryHtml, /<td class="number">6\.00<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2桶，每桶5L"><strong>2桶<\/strong><small>每桶5L<\/small><\/span><\/td>/);
+  assert.match(entryHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
+  assert.match(entryHtml, /<td class="number">1\.20<\/td><td class="number">2\.00 L<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2">2<\/span><\/td>/);
 
   let confirmHtml = '';
   context.AppShell = { mount({ content }) {
@@ -85,12 +84,44 @@ test('结余只在干调确认页抵扣和显示，单日填报页保持原有�
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-demand-confirm.js'), 'utf8'), context);
-  assert.match(confirmHtml, /<th>需求总量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
+  assert.match(confirmHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
   assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
-  assert.match(confirmHtml, /<td class="is-number">6\.00 L<\/td><td class="is-number">2\.00 L<\/td>/);
+  assert.match(confirmHtml, /<td class="is-number">1\.20<\/td><td class="is-number">2\.00 L<\/td>/);
   assert.match(confirmHtml, /value="1\.00" data-aux-purchase-quantity/);
   assert.match(confirmHtml, /data-purchase-base-quantity="1\.00"/);
   assert.match(confirmHtml, /data-aux-product-subtotal>¥55\.00<\/td>/);
+});
+
+test('干调人数填报按商品单位显示未取整需求并向上取整标品采购', () => {
+  const context = app();
+  context.DemoStore.updateSettings({ splitOrderByPersonType: false, splitOrderByMeal: true });
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const scope = String(canteen.id || canteen.name);
+  const menu = context.SchoolRecipeService.getAll()[0];
+  const lunch = menu.meals.find((meal) => meal.key === 'lunch') || menu.meals[0];
+  const participants = context.SchoolRecipeAttendanceService.participantsFor(canteen);
+  const selectedParticipant = participants[0];
+  const attendance = Object.fromEntries(menu.meals.map((meal) => [meal.key,
+    Object.fromEntries(participants.map((person) => [person.key,
+      meal.key === lunch.key && person.key === selectedParticipant.key ? 500 : 0]))]));
+  context.AppStorage.write('school-recipe-auxiliary-current-canteen', scope);
+  context.AppStorage.write('school-recipe-auxiliary-attendance-drafts-v1', {
+    [scope]: { [menu.date]: { __manual: true, ...attendance } }
+  });
+  context.AppStorage.write('school-recipe-auxiliary-selected-products-by-meal-v1', {
+    [scope]: Object.fromEntries(menu.meals.map((meal) => [meal.key, meal.key === lunch.key ? ['aux-oil'] : []]))
+  });
+  context.location = { search: `?mode=people&date=${menu.date}&canteen=${encodeURIComponent(scope)}` };
+
+  let entryHtml = '';
+  context.AppShell = { mount({ content }) {
+    entryHtml = content;
+    return { querySelector() { return null; }, addEventListener() {} };
+  } };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
+
+  assert.match(entryHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
+  assert.match(entryHtml, /<td>桶<\/td><td class="number">1\.20<\/td><td class="number">0\.00 L<\/td><td class="number"><span class="school-auxiliary-purchase-quantity" title="2">2<\/span><\/td>/);
 });
 
 test('标品按商品单位收货后，结余仍按基础计量单位结转', () => {
@@ -99,8 +130,8 @@ test('标品按商品单位收货后，结余仍按基础计量单位结转', ()
   context.DemoStore.replace('recipeDemandRecords', [{
     id: 'AUX-PACKED-1', auxiliary: true, entryMode: 'people',
     canteenId: canteen.id, canteen: canteen.name, dates: ['2026-09-01'],
-    balanceRows: [{ productCode: 'SP0300030', unit: 'L', demandQty: 3,
-      purchaseQty: 5, purchaseBaseQty: 5, purchaseUnit: '桶', packSize: 5 }]
+    balanceRows: [{ productCode: 'SP0300030', unit: '桶', demandQty: 3,
+      purchaseQty: 1, purchaseBaseQty: 5, packSize: 5, isStandardProduct: true }]
   }]);
   context.SchoolOrderService.getAll = () => [{ recipeDemandRecordId: 'AUX-PACKED-1',
     receiptStatus: '已收货', items: [{ productCode: 'SP0300030', unit: '桶', orderQty: 1,

@@ -21,6 +21,20 @@ function app() {
   return context;
 }
 
+test('干调演示商品使用新的SP编号并迁移旧草稿编号', () => {
+  const context = app();
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const products = service.catalogProducts(context.SchoolCanteenConfigService.getCanteen('第一食堂'), true);
+  assert.equal(products.find((product) => product.name === '食盐').code, 'SP0300847');
+  assert.equal(products.find((product) => product.name === '味精').code, 'SP0300912');
+  assert.ok(context.DemoStore.get('products').some((product) => product.code === 'SP0300847' && product.name === '食盐'));
+  assert.ok(context.DemoStore.get('products').some((product) => product.code === 'SP0300912' && product.name === '味精'));
+  assert.deepEqual(
+    { ...service.migrateProductQuantities({ OA0300010: '2', OA0300011: '3' }) },
+    { SP0300847: '2', SP0300912: '3' }
+  );
+});
+
 test('商品数量填报可在无食谱日期独立记录各餐次采购量', () => {
   const context = app();
   const service = context.SchoolRecipeAuxiliaryDirectService;
@@ -155,10 +169,11 @@ test('干调数量填报只显示商品和确认入口，送达时间在确认�
   assert.match(page.outerHTML, /data-aux-simple-confirm disabled/);
   assert.match(page.outerHTML, /data-aux-entry-mode="people"/);
   assert.doesNotMatch(page.outerHTML, /school-recipe-entry-default-mark/);
-  assert.match(page.outerHTML, /<th>序号<\/th><th>商品名称（计量单位\/品牌\/规格）<\/th><th>商品编号<\/th><th>是否标品<\/th><th>单位<\/th><th>采购数量<\/th>/);
-  assert.match(page.outerHTML, /<td>SP0300030<\/td><td>是<\/td><td>L<\/td>/);
+  assert.match(page.outerHTML, /<th>序号<\/th><th>商品名称（计量单位\/品牌\/规格）<\/th><th>商品编号<\/th><th>是否标品<\/th><th>单位<\/th><th>采购量<\/th>/);
+  assert.match(page.outerHTML, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
   assert.doesNotMatch(page.outerHTML, /<th>干调<\/th>/);
   assert.doesNotMatch(page.outerHTML, /school-auxiliary-calendar|data-aux-date=|data-aux-direct-meal=/);
+  assert.match(page.outerHTML, /aria-label="食盐采购量"/);
 });
 
 test('干调商品可按名称和编号搜索，底部可查看已填写商品', () => {
@@ -194,7 +209,7 @@ test('干调商品可按名称和编号搜索，底部可查看已填写商品',
   const click = (selector) => listeners.click({ target: {
     closest(candidate) { return candidate === selector ? {} : null; }
   } });
-  input('[data-aux-simple-search]', 'SP0300031');
+  input('[data-aux-simple-search]', 'SP0300847');
   assert.equal(body.innerHTML, '');
   click('[data-aux-simple-query]');
   assert.match(body.innerHTML, /食盐/);
@@ -210,7 +225,7 @@ test('干调商品可按名称和编号搜索，底部可查看已填写商品',
   input('[data-aux-simple-quantity]', '2.5', { auxSimpleQuantity: 'SP0300030' });
   assert.equal(count.textContent, '查看已填写 1 种商品');
   assert.equal(count.disabled, false);
-  input('[data-aux-simple-search]', 'SP0300031');
+  input('[data-aux-simple-search]', 'SP0300847');
   click('[data-aux-simple-query]');
   click('[data-aux-simple-search-reset]');
   assert.equal(count.textContent, '查看已填写 1 种商品');
@@ -219,7 +234,7 @@ test('干调商品可按名称和编号搜索，底部可查看已填写商品',
   assert.match(html, /data-aux-simple-filled-count aria-pressed="true"/);
   assert.match(html, />查看全部商品<\/button>/);
   assert.match(html, /金龙鱼5L桶装油/);
-  assert.doesNotMatch(html, /SP0300031/);
+  assert.doesNotMatch(html, /SP0300847/);
   input('[data-aux-simple-quantity]', '0', { auxSimpleQuantity: 'SP0300030' });
   assert.equal(count.textContent, '查看全部商品');
   listeners.change({ target: { closest(selector) {
@@ -227,7 +242,7 @@ test('干调商品可按名称和编号搜索，底部可查看已填写商品',
   } } });
   assert.match(body.innerHTML, /暂无已填写商品/);
   click('[data-aux-simple-filled-count]');
-  assert.match(html, /SP0300031/);
+  assert.match(html, /SP0300847/);
   assert.match(html, />查看已填写 0 种商品<\/button>/);
 });
 
@@ -335,7 +350,7 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-simple-confirm.js'), 'utf8'), context);
   assert.match(confirmHtml, /<th>商品编号<\/th><th>是否标品<\/th><th>单位<\/th>/);
-  assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>L<\/td>/);
+  assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
   assert.match(confirmHtml, /<td colspan="7">合计金额<\/td>/);
   assert.match(confirmHtml, /干调需求确认/);
   assert.match(confirmHtml, /data-aux-simple-confirm-expected-at/);
@@ -430,7 +445,7 @@ test('干调数量确认页只移除商品，不允许编辑采购量', () => {
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-simple-confirm.js'), 'utf8'), context);
 
   assert.match(html, /data-aux-simple-remove="SP0300030"[^>]*>移除<\/button>/);
-  assert.match(html, /data-aux-simple-remove="SP0300031"[^>]*>移除<\/button>/);
+  assert.match(html, /data-aux-simple-remove="SP0300847"[^>]*>移除<\/button>/);
   assert.doesNotMatch(html, /data-aux-simple-confirm-quantity|<input[^>]*采购数量/);
   assert.match(html, /<span[^>]*>2\.5<\/span>/);
   assert.match(html, /<span[^>]*>3<\/span>/);
@@ -439,13 +454,13 @@ test('干调数量确认页只移除商品，不允许编辑采购量', () => {
     return selector === '[data-aux-simple-remove]' ? { dataset: { auxSimpleRemove: first.code } } : null;
   } } });
   assert.doesNotMatch(html, /data-aux-simple-remove="SP0300030"/);
-  assert.match(html, /data-aux-simple-remove="SP0300031"[^>]*title="至少保留一项商品" disabled>移除<\/button>/);
+  assert.match(html, /data-aux-simple-remove="SP0300847"[^>]*title="至少保留一项商品" disabled>移除<\/button>/);
   assert.equal(context.AppStorage.read(draftKey, {})[canteen.id].quantities[first.code], undefined);
 
   listeners.click({ target: { closest(selector) {
     return selector === '[data-aux-simple-remove]' ? { dataset: { auxSimpleRemove: second.code }, disabled: true } : null;
   } } });
-  assert.match(html, /data-aux-simple-remove="SP0300031"[^>]*disabled>移除<\/button>/);
+  assert.match(html, /data-aux-simple-remove="SP0300847"[^>]*disabled>移除<\/button>/);
   assert.equal(context.AppStorage.read(draftKey, {})[canteen.id].quantities[second.code], '3');
 });
 
@@ -678,7 +693,7 @@ test('干调数量页显示全部商品，历史合并确认页仍按设置商�
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance.js'), 'utf8'), context);
   assert.doesNotMatch(page.outerHTML, /填写采购数量/);
   assert.match(page.outerHTML, /食盐/);
-  assert.match(page.outerHTML, /data-aux-simple-quantity="SP0300031"/);
+  assert.match(page.outerHTML, /data-aux-simple-quantity="SP0300847"/);
   assert.match(page.outerHTML, /金龙鱼5L桶装油/);
   assert.match(page.outerHTML, /SP0390047/);
   assert.equal((page.outerHTML.match(/data-aux-simple-quantity="/g) || []).length, 50);
