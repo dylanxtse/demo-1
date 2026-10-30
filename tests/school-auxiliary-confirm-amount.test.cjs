@@ -8,7 +8,7 @@ const { loadApp, root } = require('./helpers/app-context.cjs');
 const date = '2026-09-11';
 const parseMoney = (value) => Number(String(value || '').replaceAll(',', ''));
 
-function renderConfirm(splitPerson = false, selectedIds, selectedByMeal) {
+function renderConfirm(splitPerson = false, selectedIds, selectedByMeal, allowRecipePurchaseEdit) {
   const context = loadApp({ services: [
     'assets/js/data/school-reference-data.js',
     'assets/js/services/school-canteen-config-service.js',
@@ -21,6 +21,9 @@ function renderConfirm(splitPerson = false, selectedIds, selectedByMeal) {
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/school-auxiliary-balance.js'), 'utf8'), context);
   context.DemoStore.updateSettings({ splitOrderByMeal: true, splitOrderByPersonType: splitPerson, allowClientEditPrice: true });
+  if (allowRecipePurchaseEdit !== undefined) {
+    context.DemoStore.updateSettings({ allowRecipeDemandPurchaseQuantityEdit: allowRecipePurchaseEdit });
+  }
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const participant = context.SchoolRecipeAttendanceService.participantsFor(canteen)[0];
   const scope = String(canteen.id || canteen.name);
@@ -105,6 +108,14 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
     assert.equal(mealTotal, Number(subtotalValues.reduce((sum, value) => sum + value, 0).toFixed(2)));
     assert.ok(grandTotal >= mealTotal);
     assert.match(html, new RegExp(`<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${splitPerson ? 10 : 9}">午餐合计金额`));
+  }
+});
+
+test('干调人数填报确认页的采购量提示随企业端采购量修改配置显示和隐藏', () => {
+  const helpIcon = /school-recipe-demand-purchase-help/;
+  for (const splitPerson of [false, true]) {
+    assert.match(renderConfirm(splitPerson, undefined, undefined, true).html, helpIcon);
+    assert.doesNotMatch(renderConfirm(splitPerson, undefined, undefined, false).html, helpIcon);
   }
 });
 

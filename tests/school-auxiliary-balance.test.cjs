@@ -84,7 +84,7 @@ test('干调填报页与确认页显示上次结余，填报页保持原有采�
     return { querySelector() { return null; }, addEventListener() {} };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-demand-confirm.js'), 'utf8'), context);
-  assert.match(confirmHtml, /<th>需求量<\/th><th>上次结余<\/th><th>采购量<\/th>/);
+  assert.match(confirmHtml, /<th>需求量<\/th><th>上次结余<\/th><th><div class="school-recipe-demand-purchase-header"><span>采购量<\/span><span class="config-help school-recipe-demand-purchase-help" data-tooltip="修改数量超出限制范围时将自动回显限制范围的最大\/小数量"/);
   assert.match(confirmHtml, /<td>SP0300030<\/td><td>是<\/td><td>桶<\/td>/);
   assert.match(confirmHtml, /<td class="is-number">1\.20<\/td><td class="is-number">0\.40<\/td>/);
   assert.match(confirmHtml, /value="1\.00" data-aux-purchase-quantity/);

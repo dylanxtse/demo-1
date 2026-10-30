@@ -714,7 +714,14 @@
     const columns = splitPerson
       ? labels.map((label) => `<th colspan="2">${escapeHtml(participantDisplayName(label))}</th>`).join('')
       : '<th colspan="3">合计</th>';
-    const subColumns = splitPerson ? labels.map(() => '<th>需求量</th><th>采购量</th>').join('') : '<th>需求量</th><th>上次结余</th><th>采购量</th>';
+    const purchaseQuantityHelpText = '修改数量超出限制范围时将自动回显限制范围的最大/小数量';
+    const purchaseQuantityHelp = canEditRecipePurchaseQuantity
+      ? `<span class="config-help school-recipe-demand-purchase-help" data-tooltip="${escapeHtml(purchaseQuantityHelpText)}" tabindex="0" role="img" aria-label="${escapeHtml(purchaseQuantityHelpText)}">?</span>`
+      : '';
+    const purchaseQuantityHeader = `<div class="school-recipe-demand-purchase-header"><span>采购量</span>${purchaseQuantityHelp}</div>`;
+    const subColumns = splitPerson
+      ? labels.map(() => `<th>需求量</th><th>${purchaseQuantityHeader}</th>`).join('')
+      : `<th>需求量</th><th>上次结余</th><th>${purchaseQuantityHeader}</th>`;
     const colgroup = splitPerson ? labels.map(() => '<col class="col-quantity"><col class="col-purchase">').join('') : '<col class="col-quantity"><col class="col-quantity"><col class="col-purchase">';
     const rows = activeProducts.map((product, index) => {
       const renderPurchaseCell = (label, demand) => {

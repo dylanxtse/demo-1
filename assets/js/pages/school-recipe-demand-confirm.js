@@ -322,6 +322,11 @@
     const byPersonType = splitOrderByPersonType();
     const priceEditable = canModifyUnitPrice();
     const sources = productSources(preview, activeMealKey);
+    const purchaseQuantityHelpText = '修改数量超出限制范围时将自动回显限制范围的最大/小数量';
+    const purchaseQuantityHelp = canEditRecipePurchaseQuantity
+      ? `<span class="config-help school-recipe-demand-purchase-help" data-tooltip="${escapeHtml(purchaseQuantityHelpText)}" tabindex="0" role="img" aria-label="${escapeHtml(purchaseQuantityHelpText)}">?</span>`
+      : '';
+    const purchaseQuantityHeader = (clearControl = '') => `<div class="school-recipe-demand-purchase-header"><span>采购量</span>${purchaseQuantityHelp}${clearControl}</div>`;
     const participantColumns = byPersonType
       ? participants.map((participant) => {
         const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
@@ -332,9 +337,10 @@
       ? participants.map((participant) => {
         const name = attendanceService.participantDisplayName?.(participant, participants) || participant.label || participant.tagName || '--';
         const hasParticipantEditableRows = sources.some(({ row }) => canModifyPurchaseQuantity(row) && Number(row.participantQty?.[participant.key] || 0) > 0);
-        return `<th>需求量</th><th><div class="school-recipe-demand-purchase-header"><span>采购量</span><button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量"${hasParticipantEditableRows ? '' : ' disabled'}>×</button></div></th>`;
+        const clearControl = `<button type="button" class="school-recipe-demand-purchase-clear-column" data-action="clear-purchase-column" data-participant-key="${escapeHtml(participant.key)}" data-participant-name="${escapeHtml(name)}" title="清空${escapeHtml(name)}采购量" aria-label="清空${escapeHtml(name)}采购量"${hasParticipantEditableRows ? '' : ' disabled'}>×</button>`;
+        return `<th>需求量</th><th>${purchaseQuantityHeader(clearControl)}</th>`;
       }).join('')
-      : '<th>需求量</th><th>采购量</th>';
+      : `<th>需求量</th><th>${purchaseQuantityHeader()}</th>`;
     const participantColgroup = byPersonType
       ? participants.map(() => '<col class="col-quantity"><col class="col-purchase">').join('')
       : '<col class="col-quantity"><col class="col-purchase">';

@@ -5,6 +5,41 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { loadApp, root } = require('./helpers/app-context.cjs');
 
+const demandConfirmServices = [
+  'assets/js/data/school-reference-data.js',
+  'assets/js/services/school-canteen-config-service.js',
+  'assets/js/services/school-recipe-service.js',
+  'assets/js/services/school-recipe-attendance-service.js',
+  'assets/js/services/school-order-service.js',
+  'assets/js/services/operations-service.js',
+  'assets/js/services/school-recipe-demand-service.js'
+];
+
+function renderDemandConfirmWithPurchaseEditSetting(enabled) {
+  const { context } = loadApp({ services: demandConfirmServices });
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
+  const menu = context.SchoolRecipeService.getAll()[0];
+  const canteen = context.SchoolRecipeDemandService.currentCanteen('第一食堂');
+  const participant = context.SchoolRecipeAttendanceService.participantsFor(canteen)[0];
+  context.DemoStore.updateSettings({ allowRecipeDemandPurchaseQuantityEdit: enabled });
+  context.SchoolRecipeAttendanceService.save(menu.date, {
+    [menu.meals[0].key]: { [participant.key]: 1 }
+  }, menu.version, canteen);
+
+  const body = { innerHTML: '', querySelector() { return null; }, querySelectorAll() { return []; } };
+  const page = { querySelector() { return body; }, addEventListener() {} };
+  context.AppShell = { mount() { return { querySelector() { return page; } }; } };
+  context.location = { search: `?date=${menu.date}&canteen=${encodeURIComponent(canteen.id || canteen.name)}` };
+  vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-demand-confirm.js'), 'utf8'), context);
+  return body.innerHTML;
+}
+
+test('采购量修改提示随企业端采购量修改配置显示和隐藏', () => {
+  const helpIcon = /school-recipe-demand-purchase-help/;
+  assert.match(renderDemandConfirmWithPurchaseEditSetting(true), helpIcon);
+  assert.doesNotMatch(renderDemandConfirmWithPurchaseEditSetting(false), helpIcon);
+});
+
 test('需求确认金额汇总包含全部餐次，商品小计按采购量计算', () => {
   const { context } = loadApp({ services: [
     'assets/js/data/school-reference-data.js',
@@ -17,7 +52,7 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
   ] });
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
   const menu = context.SchoolRecipeService.getAll()[0];
-  context.DemoStore.updateSettings({ allowClientEditPrice: true });
+  context.DemoStore.updateSettings({ allowClientEditPrice: true, allowRecipeDemandPurchaseQuantityEdit: true });
   const canteen = context.SchoolRecipeDemandService.currentCanteen('第一食堂');
   const participant = context.SchoolRecipeAttendanceService.participantsFor(canteen)[0];
   const meals = Object.fromEntries(menu.meals.slice(0, 2).map((meal) => [meal.key, { [participant.key]: 1 }]));
@@ -54,6 +89,7 @@ test('需求确认金额汇总包含全部餐次，商品小计按采购量计�
   assert.match(body.innerHTML, /填报天数：<\/span><strong>1<\/strong>/);
   assert.match(body.innerHTML, /<th rowspan="2">小计<\/th>/);
   assert.match(body.innerHTML, /<th>需求量<\/th>/);
+  assert.match(body.innerHTML, /<span class="config-help school-recipe-demand-purchase-help" data-tooltip="修改数量超出限制范围时将自动回显限制范围的最大\/小数量" tabindex="0" role="img" aria-label="修改数量超出限制范围时将自动回显限制范围的最大\/小数量">\?<\/span>/);
   assert.doesNotMatch(body.innerHTML, /<th>需求总量<\/th>/);
   assert.match(body.innerHTML, /早餐合计金额/);
   assert.match(body.innerHTML, /所有餐次合计金额/);

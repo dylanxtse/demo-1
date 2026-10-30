@@ -186,20 +186,24 @@
                   </select>
                   <span>限制</span>
                   ${help('按商品数量时直接计算采购量差值；按百分比时以系统计算采购量为基准。空值表示对应方向不限')}
+                  <div class="config-inline-fields recipe-purchase-edit-actions">
+                    <button class="config-apply" type="button" data-action="apply-recipe-purchase">应用</button>
+                  </div>
                 </div>
                 <div class="config-inline-fields recipe-purchase-limit-bound-row">
-                  <span class="recipe-purchase-limit-bound-label">最小数量：采购量 −</span>
-                  <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeLowerLimitValue" aria-label="最小采购量减去的数量或比例" placeholder="不限">
+                  <span class="recipe-purchase-limit-bound-label" data-recipe-purchase-limit-label="minimum">最小数量：采购量 −</span>
+                  <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeLowerLimitValue" aria-label="最小采购量减去的数量或比例">
                   <span data-recipe-purchase-limit-unit>计量单位</span>
+                  <span data-recipe-purchase-limit-close hidden>）</span>
+                  <span class="recipe-purchase-limit-rounding-hint" data-recipe-purchase-limit-rounding-hint hidden>标品数量限制按计算结果向下取整</span>
                 </div>
                 <div class="config-inline-fields recipe-purchase-limit-bound-row">
-                  <span class="recipe-purchase-limit-bound-label">最大数量：采购量 +</span>
-                  <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeUpperLimitValue" aria-label="最大采购量增加的数量或比例" placeholder="不限">
+                  <span class="recipe-purchase-limit-bound-label" data-recipe-purchase-limit-label="maximum">最大数量：采购量 +</span>
+                  <input class="config-input recipe-purchase-limit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-config="recipePurchaseQtyChangeUpperLimitValue" aria-label="最大采购量增加的数量或比例">
                   <span data-recipe-purchase-limit-unit>计量单位</span>
+                  <span data-recipe-purchase-limit-close hidden>）</span>
+                  <span class="recipe-purchase-limit-rounding-hint" data-recipe-purchase-limit-rounding-hint hidden>标品数量限制按计算结果向上取整</span>
                 </div>
-              </div>
-              <div class="config-inline-fields recipe-purchase-edit-actions">
-                <button class="config-apply" type="button" data-action="apply-recipe-purchase">应用</button>
               </div>
             </div>
           </div>
@@ -369,8 +373,21 @@
 
   function updateRecipePurchaseLimitUnit() {
     const mode = root.querySelector('[data-config="recipePurchaseQtyChangeThresholdMode"]')?.value;
+    const isPercentage = mode === 'percentage';
     root.querySelectorAll('[data-recipe-purchase-limit-unit]').forEach((unit) => {
-      unit.textContent = mode === 'percentage' ? '%' : '计量单位';
+      unit.textContent = isPercentage ? '%' : '计量单位';
+    });
+    root.querySelectorAll('[data-recipe-purchase-limit-label]').forEach((label) => {
+      const isMinimum = label.dataset.recipePurchaseLimitLabel === 'minimum';
+      label.textContent = isPercentage
+        ? `最${isMinimum ? '小' : '大'}数量 = 采购量 ×（1 ${isMinimum ? '−' : '+'}`
+        : `最${isMinimum ? '小' : '大'}数量 = 采购量 ${isMinimum ? '−' : '+'}`;
+    });
+    root.querySelectorAll('[data-recipe-purchase-limit-close]').forEach((closing) => {
+      closing.hidden = !isPercentage;
+    });
+    root.querySelectorAll('[data-recipe-purchase-limit-rounding-hint]').forEach((hint) => {
+      hint.hidden = !isPercentage;
     });
   }
 

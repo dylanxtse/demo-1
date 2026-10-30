@@ -12,8 +12,8 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
   const savedSettings = {
     allowRecipeDemandPurchaseQuantityEdit: true,
     recipePurchaseQtyChangeThresholdMode: 'quantity',
-    recipePurchaseQtyChangeLowerLimitValue: '5',
-    recipePurchaseQtyChangeUpperLimitValue: '90',
+    recipePurchaseQtyChangeLowerLimitValue: '',
+    recipePurchaseQtyChangeUpperLimitValue: '',
     recipeDeliveryAdvanceDays: '0',
     recipeDeliveryTime: '07:30',
     orderCutoffDays: '0'
@@ -49,14 +49,20 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
 
   const allowEdit = makeControl('allowRecipeDemandPurchaseQuantityEdit', true, 'checkbox');
   const mode = makeControl('recipePurchaseQtyChangeThresholdMode', 'quantity', 'select-one');
-  const lower = makeControl('recipePurchaseQtyChangeLowerLimitValue', '5', 'text', ['config-input', 'recipe-purchase-limit-value']);
-  const upper = makeControl('recipePurchaseQtyChangeUpperLimitValue', '90', 'text', ['config-input', 'recipe-purchase-limit-value']);
+  const lower = makeControl('recipePurchaseQtyChangeLowerLimitValue', '', 'text', ['config-input', 'recipe-purchase-limit-value']);
+  const upper = makeControl('recipePurchaseQtyChangeUpperLimitValue', '', 'text', ['config-input', 'recipe-purchase-limit-value']);
   const deliveryDays = makeControl('recipeDeliveryAdvanceDays', '0', 'number');
   const deliveryTime = makeControl('recipeDeliveryTime', '07:30', 'time');
   const cutoffDays = makeControl('orderCutoffDays', '0', 'text', ['config-input']);
   const actions = Object.fromEntries(['edit-recipe-delivery', 'apply-recipe-delivery', 'cancel-recipe-delivery',
     'apply-recipe-purchase'].map((action) => [action, { hidden: false }]));
   const units = [{ textContent: '' }, { textContent: '' }];
+  const limitLabels = [
+    { dataset: { recipePurchaseLimitLabel: 'minimum' }, textContent: '' },
+    { dataset: { recipePurchaseLimitLabel: 'maximum' }, textContent: '' }
+  ];
+  const closingParentheses = [{ hidden: false }, { hidden: false }];
+  const roundingHints = [{ hidden: false }, { hidden: false }];
   const limitSettings = { hidden: false };
   const editActions = { hidden: false };
   const status = { hidden: true, classList: { toggle() {} } };
@@ -86,6 +92,9 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
       if (selector === '[data-config]') return [...values.values()];
       if (selector === '[data-radio-config]' || selector === '[data-radio-config]:checked' || selector === '[data-purchase-priority-index]') return [];
       if (selector === '[data-recipe-purchase-limit-unit]') return units;
+      if (selector === '[data-recipe-purchase-limit-label]') return limitLabels;
+      if (selector === '[data-recipe-purchase-limit-close]') return closingParentheses;
+      if (selector === '[data-recipe-purchase-limit-rounding-hint]') return roundingHints;
       if (selector === '.recipe-purchase-limit-value') return [lower, upper];
       return [];
     },
@@ -102,6 +111,12 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
   const purchaseActionsMarkup = pageMarkup.match(/recipe-purchase-edit-actions">([\s\S]*?)<\/div>/)?.[1] || '';
   assert.match(purchaseActionsMarkup, /data-action="apply-recipe-purchase">应用<\/button>/);
   assert.doesNotMatch(purchaseActionsMarkup, /data-action="(?:edit|save|cancel)-recipe-purchase"/);
+  assert.match(pageMarkup, /data-recipe-purchase-limit-rounding-hint hidden>标品数量限制按计算结果向下取整<\/span>/);
+  assert.match(pageMarkup, /data-recipe-purchase-limit-rounding-hint hidden>标品数量限制按计算结果向上取整<\/span>/);
+  assert.ok(pageMarkup.indexOf('recipe-purchase-limit-mode-fields"') < pageMarkup.indexOf('recipe-purchase-edit-actions"'));
+  assert.ok(pageMarkup.indexOf('recipe-purchase-edit-actions"') < pageMarkup.indexOf('recipe-purchase-limit-bound-row"'));
+  assert.equal(lower.value, '');
+  assert.equal(upper.value, '');
   const click = (action) => listeners.click({ target: { closest: (selector) => selector === `[data-action="${action}"]` ? actions[action] : null } });
   const fire = (type, control) => listeners[type]({ target: control });
   assert.equal(allowEdit.disabled, false);
@@ -110,6 +125,8 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
   assert.equal(upper.readOnly, false);
   assert.equal(actions['apply-recipe-purchase'].hidden, false);
   assert.equal(actions['cancel-recipe-purchase'], undefined);
+  assert.deepEqual(limitLabels.map((label) => label.textContent), ['最小数量 = 采购量 −', '最大数量 = 采购量 +']);
+  assert.deepEqual(closingParentheses.map((element) => element.hidden), [true, true]);
 
   lower.value = '7.500';
   fire('input', lower);
@@ -117,6 +134,11 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
   fire('change', mode);
   assert.deepEqual(updates, []);
   assert.deepEqual(units.map((unit) => unit.textContent), ['%', '%']);
+  assert.deepEqual(limitLabels.map((label) => label.textContent), [
+    '最小数量 = 采购量 ×（1 −', '最大数量 = 采购量 ×（1 +'
+  ]);
+  assert.deepEqual(closingParentheses.map((element) => element.hidden), [false, false]);
+  assert.deepEqual(roundingHints.map((hint) => hint.hidden), [false, false]);
 
   allowEdit.checked = false;
   fire('change', allowEdit);
@@ -125,7 +147,7 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
   assert.equal(updates.length, 1);
   assert.equal(updates[0].allowRecipeDemandPurchaseQuantityEdit, false);
   assert.equal(updates[0].recipePurchaseQtyChangeThresholdMode, 'quantity');
-  assert.equal(updates[0].recipePurchaseQtyChangeLowerLimitValue, '5');
+  assert.equal(updates[0].recipePurchaseQtyChangeLowerLimitValue, '');
   allowEdit.checked = true;
   fire('change', allowEdit);
   assert.equal(limitSettings.hidden, false);
@@ -135,15 +157,25 @@ test('需求填报采购量限制参数直接编辑且只有应用按钮会提�
   assert.equal(updates.length, 3);
   assert.equal(updates[2].orderCutoffDays, '3');
   assert.equal(updates[2].recipePurchaseQtyChangeThresholdMode, 'quantity');
-  assert.equal(updates[2].recipePurchaseQtyChangeLowerLimitValue, '5');
+  assert.equal(updates[2].recipePurchaseQtyChangeLowerLimitValue, '');
 
   click('apply-recipe-purchase');
   assert.equal(updates.length, 4);
   assert.equal(updates[3].recipePurchaseQtyChangeThresholdMode, 'percentage');
   assert.equal(updates[3].recipePurchaseQtyChangeLowerLimitValue, '7.5');
-  assert.equal(updates[3].recipePurchaseQtyChangeUpperLimitValue, '90');
+  assert.equal(updates[3].recipePurchaseQtyChangeUpperLimitValue, '');
   assert.equal(units[0].textContent, '%');
+  assert.deepEqual(roundingHints.map((hint) => hint.hidden), [false, false]);
 
+  mode.value = 'quantity';
+  fire('change', mode);
+  assert.deepEqual(units.map((unit) => unit.textContent), ['计量单位', '计量单位']);
+  assert.deepEqual(limitLabels.map((label) => label.textContent), ['最小数量 = 采购量 −', '最大数量 = 采购量 +']);
+  assert.deepEqual(closingParentheses.map((element) => element.hidden), [true, true]);
+  assert.deepEqual(roundingHints.map((hint) => hint.hidden), [true, true]);
+
+  mode.value = 'percentage';
+  fire('change', mode);
   lower.value = '8.500';
   upper.value = '120';
   click('apply-recipe-purchase');

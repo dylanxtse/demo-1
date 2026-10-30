@@ -288,6 +288,9 @@
 .school-recipe-demand-product-clear-row:focus-visible { color: #b8322a; text-decoration: underline; outline: none; }
 .school-recipe-demand-product-clear-row:disabled { color: #b8c0cb; text-decoration: none; cursor: not-allowed; }
 .school-recipe-demand-purchase-header { display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+.school-recipe-demand-purchase-help[data-tooltip]::after { top: calc(100% + 8px); bottom: auto; transform: translate(-50%, -3px); }
+.school-recipe-demand-purchase-help[data-tooltip]:hover::after,
+.school-recipe-demand-purchase-help[data-tooltip]:focus-visible::after { transform: translate(-50%, 0); }
 .school-recipe-demand-purchase-clear-column { display: inline-flex; width: 17px; height: 17px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; color: var(--danger); background: #fff0ef; font: inherit; font-size: 14px; line-height: 17px; opacity: 0; pointer-events: none; cursor: pointer; transition: opacity .15s ease, color .15s ease, background .15s ease; }
 .school-recipe-demand-product-table thead tr:nth-child(2) th:hover .school-recipe-demand-purchase-clear-column,
 .school-recipe-demand-product-table thead tr:nth-child(2) th:focus-within .school-recipe-demand-purchase-clear-column { opacity: 1; pointer-events: auto; }
