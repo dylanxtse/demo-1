@@ -174,7 +174,6 @@
           <div class="recipe-purchase-edit-content">
             <div class="config-inline-fields recipe-purchase-edit-head">
               <label class="recipe-purchase-switch">
-                <span>允许修改</span>
                 <input type="checkbox" data-config="allowRecipeDemandPurchaseQuantityEdit" aria-label="允许修改需求填报采购量">
                 <span class="recipe-purchase-switch-track" aria-hidden="true"></span>
               </label>

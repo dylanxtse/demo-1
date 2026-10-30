@@ -185,7 +185,7 @@
         </div>
       </div>
       <div class="unshelf-modal" id="productInfoImportModal" aria-hidden="true">
-        <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="productInfoImportTitle" aria-describedby="productInfoImportHint">
+        <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="productInfoImportTitle">
           <div class="unshelf-modal-header">
             <h2 id="productInfoImportTitle">导入商品信息</h2>
             <button class="unshelf-modal-close" type="button" data-action="close-product-info-import-modal" aria-label="关闭">×</button>
@@ -194,7 +194,6 @@
             <div class="market-price-import-section">
               <label class="unshelf-reason-label">下载模板</label>
               <a href="./product-info-import-template.html" class="market-price-import-template-link">商品信息导入模板.xlsx</a>
-              <p class="market-price-import-upload-hint" id="productInfoImportHint">储存条件列位于规格后，可留空；填写时请选择冷冻、冷藏或常温。</p>
             </div>
             <div class="market-price-import-section">
               <label class="unshelf-reason-label">上传文件</label>
