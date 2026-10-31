@@ -13,7 +13,8 @@
     operations: './operations.html',
     school: './school-product-management.html',
     mobile: './school-mobile.html',
-    'sorting-terminal': './sorting-terminal-login.html'
+    'sorting-terminal': './sorting-terminal-login.html',
+    'delivery-assistant': 'https://rp.mockplus.cn/rps/ZE1a0m5uhT/9Qb2V3IOin?'
   };
   const destinations = [
     ['enterprise', '切换至企业端'],
@@ -22,7 +23,8 @@
     ['operations', '切换至运维管理平台'],
     ['school', '切换至学校端'],
     ['mobile', '切换至移动端'],
-    ['sorting-terminal', '切换至分拣终端']
+    ['sorting-terminal', '切换至分拣终端'],
+    ['delivery-assistant', '配送助手']
   ];
   let wrap = document.querySelector('.sorting-terminal-switch-wrap');
   if (!wrap) {

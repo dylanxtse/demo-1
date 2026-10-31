@@ -1,4 +1,5 @@
 (function () {
+  const deliveryAssistantUrl = 'https://rp.mockplus.cn/rps/ZE1a0m5uhT/9Qb2V3IOin?';
   const bellIcon = '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
   const arrowIcon = '<svg class="icon-svg" viewBox="0 0 24 24" style="width:12px;height:12px;"><polyline points="6 9 12 15 18 9"/></svg>';
   const operationsUserIcon = '<svg class="operations-user-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.7-3.6 3.3-5.5 8-5.5s7.3 1.9 8 5.5"></path></svg>';
@@ -18,6 +19,7 @@
       const isSupplier = variant === 'supplier';
       const isOperations = variant === 'operations';
       const isSchool = variant === 'school';
+      const isMobile = variant === 'mobile';
       const session = window.DemoStore?.getSession?.() || { displayName: '管理员', companyId: '' };
       const company = window.DemoStore?.get?.('companies')?.find((item) => item.id === session.companyId);
       const companyName = companyNameOverride || (isEducation
@@ -60,6 +62,7 @@
               ? [['enterprise', '切换至企业端'], ['education', '切换至教育局端'], ['supplier', '切换至供应商端'], ['operations', '切换至运维管理平台']]
               : [['education', '切换至教育局端'], ['supplier', '切换至供应商端'], ['operations', '切换至运维管理平台'], ['school', '切换至学校端']]
       ).concat([['mobile', '切换至移动端'], ['sorting-terminal', '切换至分拣终端']])
+        .concat(isMobile ? [] : [['delivery-assistant', '配送助手']])
         .map(([target, label]) => `<button class="demo-shell-switch" type="button" role="menuitem" data-shell-switch="${target}">${label}</button>`)
         .join('');
       const avatar = isSupplier
@@ -112,11 +115,14 @@
             operations: './operations.html',
             school: './school-product-management.html',
             'sorting-terminal': './sorting-terminal-login.html',
-            mobile: './school-mobile.html'
+            mobile: './school-mobile.html',
+            'delivery-assistant': deliveryAssistantUrl
           };
-          const target = routes[switchButton.dataset.shellSwitch];
+          const switchTarget = switchButton.dataset.shellSwitch;
+          const target = routes[switchTarget];
           if (target) {
-            if (window.AppNavigationGuard?.switchTo) window.AppNavigationGuard.switchTo(switchButton.dataset.shellSwitch);
+            if (switchTarget === 'delivery-assistant') window.location.href = target;
+            else if (window.AppNavigationGuard?.switchTo) window.AppNavigationGuard.switchTo(switchTarget);
             else window.location.href = target;
           }
           return;
