@@ -6,7 +6,7 @@
   if (!service || !attendanceService || !demandService) return;
 
   const allMenus = service.getAll();
-  const firstDate = allMenus[0]?.date || '2026-09-07';
+  const firstDate = allMenus[0]?.date || '2026-11-07';
   const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')

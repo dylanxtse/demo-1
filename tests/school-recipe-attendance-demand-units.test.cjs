@@ -18,7 +18,7 @@ const services = [
 
 test('菜谱人数填报需求量和采购量按商品计量单位显示且不附单位', () => {
   const context = loadApp({ services }).context;
-  const date = '2026-09-07';
+  const date = '2026-11-07';
   const menu = context.SchoolRecipeService.getMenu(date);
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const participants = context.SchoolRecipeAttendanceService.participantsFor(canteen);

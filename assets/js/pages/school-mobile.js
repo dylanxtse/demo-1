@@ -16,7 +16,7 @@
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
   const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
   let menus = recipeService.getAll().sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  let firstDate = menus[0]?.date || '2026-09-07';
+  let firstDate = menus[0]?.date || '2026-11-07';
   const defaultCanteen = window.SchoolOrderService?.CANTEEN_NAME || '第一食堂';
   const canteenStorageKey = 'school-recipe-current-canteen';
   const mobileAuthStorageKey = 'school-mobile-auth-session-v1';
@@ -712,7 +712,7 @@
 
   function reloadMenus() {
     menus = recipeService.getAll().sort((a, b) => String(a.date).localeCompare(String(b.date)));
-    firstDate = menus[0]?.date || '2026-09-07';
+    firstDate = menus[0]?.date || '2026-11-07';
     if (!isSupportedMonth(monthKeyOf(state.date))) {
       state.date = firstDate;
       state.mealKey = '';

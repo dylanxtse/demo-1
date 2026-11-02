@@ -254,15 +254,15 @@
   function buildSeedMenus() {
     return expandSeedMenus([
       {
-        id: 'RECIPE-MENU-20260907',
-        date: '2026-09-07',
+        id: 'RECIPE-MENU-20261107',
+        date: '2026-11-07',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
-            dishes: [dish('DISH-20260907-01', '鲜奶面包', [
+            dishes: [dish('DISH-20261107-01', '鲜奶面包', [
               ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶'),
               ingredient('面粉', '面粉', 'SP0300016', 0.08, '斤')
             ])]
@@ -270,12 +270,12 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260907-02', '番茄炒蛋', [
+              dish('DISH-20261107-02', '番茄炒蛋', [
                 ingredient('西红柿', '西红柿', 'SP0300020', 0.08, 'KG'),
                 ingredient('鸡蛋', '鸡蛋', 'SP0300018', 0.05, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ]),
-              dish('DISH-20260907-03', '米饭', [
+              dish('DISH-20261107-03', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
@@ -283,11 +283,11 @@
           {
             key: 'dinner', name: '晚餐',
             dishes: [
-              dish('DISH-20260907-04', '土豆炖鸡', [
+              dish('DISH-20261107-04', '土豆炖鸡', [
                 ingredient('土豆', '土豆', 'SP0300040', 0.12, '斤'),
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.10, '斤')
               ]),
-              dish('DISH-20260907-05', '清炒大白菜', [
+              dish('DISH-20261107-05', '清炒大白菜', [
                 ingredient('大白菜', '大白菜', 'SP0300019', 0.08, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ])
@@ -296,15 +296,15 @@
         ]
       },
       {
-        id: 'RECIPE-MENU-20260908',
-        date: '2026-09-08',
+        id: 'RECIPE-MENU-20261108',
+        date: '2026-11-08',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
-            dishes: [dish('DISH-20260908-01', '牛奶鸡蛋', [
+            dishes: [dish('DISH-20261108-01', '牛奶鸡蛋', [
               ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶'),
               ingredient('鸡蛋', '鸡蛋', 'SP0300018', 0.05, '斤')
             ])]
@@ -312,33 +312,33 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260908-02', '土豆烧肉', [
+              dish('DISH-20261108-02', '土豆烧肉', [
                 ingredient('土豆', '土豆', 'SP0300040', 0.15, '斤'),
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.08, '斤')
               ]),
-              dish('DISH-20260908-03', '米饭', [
+              dish('DISH-20261108-03', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
           },
           {
             key: 'afternoonSnack', name: '午点',
-            dishes: [dish('DISH-20260908-04', '时令苹果', [
+            dishes: [dish('DISH-20261108-04', '时令苹果', [
               ingredient('苹果', '苹果', 'SP0300014', 0.10, '斤')
             ])]
           }
         ]
       },
       {
-        id: 'RECIPE-MENU-20260909',
-        date: '2026-09-09',
+        id: 'RECIPE-MENU-20261109',
+        date: '2026-11-09',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
-            dishes: [dish('DISH-20260909-01', '玉米牛奶', [
+            dishes: [dish('DISH-20261109-01', '玉米牛奶', [
               ingredient('大玉米棒子', '大玉米棒子', 'SP0300036', 0.20, 'KG'),
               ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶')
             ])]
@@ -346,18 +346,18 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260909-02', '白菜肉丝', [
+              dish('DISH-20261109-02', '白菜肉丝', [
                 ingredient('大白菜', '大白菜', 'SP0300019', 0.10, '斤'),
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.08, '斤')
               ]),
-              dish('DISH-20260909-03', '米饭', [
+              dish('DISH-20261109-03', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
           },
           {
             key: 'dinner', name: '晚餐',
-            dishes: [dish('DISH-20260909-04', '西红柿面', [
+            dishes: [dish('DISH-20261109-04', '西红柿面', [
               ingredient('西红柿', '西红柿', 'SP0300020', 0.10, 'KG'),
               ingredient('面粉', '面粉', 'SP0300016', 0.08, '斤')
             ])]
@@ -365,15 +365,15 @@
         ]
       },
       {
-        id: 'RECIPE-MENU-20260910',
-        date: '2026-09-10',
+        id: 'RECIPE-MENU-20261110',
+        date: '2026-11-10',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
-            dishes: [dish('DISH-20260910-01', '大饼牛奶', [
+            dishes: [dish('DISH-20261110-01', '大饼牛奶', [
               ingredient('大饼', '大饼', 'SP0300023', 0.10, '斤'),
               ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶')
             ])]
@@ -381,11 +381,11 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260910-02', '西红柿鸡蛋汤', [
+              dish('DISH-20261110-02', '西红柿鸡蛋汤', [
                 ingredient('西红柿', '西红柿', 'SP0300020', 0.08, 'KG'),
                 ingredient('鸡蛋', '鸡蛋', 'SP0300018', 0.04, '斤')
               ]),
-              dish('DISH-20260910-03', '大米饭', [
+              dish('DISH-20261110-03', '大米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
@@ -393,15 +393,15 @@
         ]
       },
       {
-        id: 'RECIPE-MENU-20260911',
-        date: '2026-09-11',
+        id: 'RECIPE-MENU-20261111',
+        date: '2026-11-11',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
-            dishes: [dish('DISH-20260911-01', '苹果牛奶', [
+            dishes: [dish('DISH-20261111-01', '苹果牛奶', [
               ingredient('苹果', '苹果', 'SP0300014', 0.10, '斤'),
               ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶')
             ])]
@@ -409,15 +409,15 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260911-02', '鸡腿肉烧土豆', [
+              dish('DISH-20261111-02', '鸡腿肉烧土豆', [
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.10, '斤'),
                 ingredient('土豆', '土豆', 'SP0300040', 0.12, '斤')
               ]),
-              dish('DISH-20260911-03', '清炒白菜', [
+              dish('DISH-20261111-03', '清炒白菜', [
                 ingredient('大白菜', '大白菜', 'SP0300019', 0.08, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ]),
-              dish('DISH-20260911-04', '米饭', [
+              dish('DISH-20261111-04', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
@@ -425,20 +425,20 @@
         ]
       },
       {
-        id: 'RECIPE-MENU-20260912',
-        date: '2026-09-12',
+        id: 'RECIPE-MENU-20261112',
+        date: '2026-11-12',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
             dishes: [
-              dish('DISH-20260912-01', '玉米牛奶', [
+              dish('DISH-20261112-01', '玉米牛奶', [
                 ingredient('大玉米棒子', '大玉米棒子', 'SP0300036', 0.20, 'KG'),
                 ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶')
               ]),
-              dish('DISH-20260912-02', '茶叶蛋', [
+              dish('DISH-20261112-02', '茶叶蛋', [
                 ingredient('鸡蛋', '鸡蛋', 'SP0300018', 0.05, '斤')
               ])
             ]
@@ -446,16 +446,16 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260912-03', '青椒炒肉', [
+              dish('DISH-20261112-03', '青椒炒肉', [
                 ingredient('青椒', '青椒', 'SP0300056', 0.06, '斤'),
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.08, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ]),
-              dish('DISH-20260912-04', '土豆丝', [
+              dish('DISH-20261112-04', '土豆丝', [
                 ingredient('土豆', '土豆', 'SP0300040', 0.10, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ]),
-              dish('DISH-20260912-05', '米饭', [
+              dish('DISH-20261112-05', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
@@ -463,15 +463,15 @@
         ]
       },
       {
-        id: 'RECIPE-MENU-20260914',
-        date: '2026-09-14',
+        id: 'RECIPE-MENU-20261114',
+        date: '2026-11-14',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
-            dishes: [dish('DISH-20260914-01', '面包牛奶', [
+            dishes: [dish('DISH-20261114-01', '面包牛奶', [
               ingredient('面粉', '面粉', 'SP0300016', 0.08, '斤'),
               ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶')
             ])]
@@ -479,23 +479,23 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260914-02', '土豆鸡块', [
+              dish('DISH-20261114-02', '土豆鸡块', [
                 ingredient('土豆', '土豆', 'SP0300040', 0.12, '斤'),
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.10, '斤')
               ]),
-              dish('DISH-20260914-03', '番茄炒蛋', [
+              dish('DISH-20261114-03', '番茄炒蛋', [
                 ingredient('西红柿', '西红柿', 'SP0300020', 0.08, 'KG'),
                 ingredient('鸡蛋', '鸡蛋', 'SP0300018', 0.05, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ]),
-              dish('DISH-20260914-04', '米饭', [
+              dish('DISH-20261114-04', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
           },
           {
             key: 'dinner', name: '晚餐',
-            dishes: [dish('DISH-20260914-05', '大白菜炒肉', [
+            dishes: [dish('DISH-20261114-05', '大白菜炒肉', [
               ingredient('大白菜', '大白菜', 'SP0300019', 0.08, '斤'),
               ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.08, '斤'),
               ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
@@ -504,20 +504,20 @@
         ]
       },
       {
-        id: 'RECIPE-MENU-20260915',
-        date: '2026-09-15',
+        id: 'RECIPE-MENU-20261115',
+        date: '2026-11-15',
         status: 'PUBLISHED',
         version: MENU_VERSION,
-        publishedAt: '2026-09-03 08:20:00',
+        publishedAt: '2026-11-03 08:20:00',
         meals: [
           {
             key: 'breakfast', name: '早餐',
             dishes: [
-              dish('DISH-20260915-01', '鸡蛋饼', [
+              dish('DISH-20261115-01', '鸡蛋饼', [
                 ingredient('面粉', '面粉', 'SP0300016', 0.08, '斤'),
                 ingredient('鸡蛋', '鸡蛋', 'SP0300018', 0.05, '斤')
               ]),
-              dish('DISH-20260915-02', '苹果牛奶', [
+              dish('DISH-20261115-02', '苹果牛奶', [
                 ingredient('苹果', '苹果', 'SP0300014', 0.10, '斤'),
                 ingredient('牛奶', '牛奶', 'SP0300037', 0.25, '瓶')
               ])
@@ -526,15 +526,15 @@
           {
             key: 'lunch', name: '午餐',
             dishes: [
-              dish('DISH-20260915-03', '青椒鸡丁', [
+              dish('DISH-20261115-03', '青椒鸡丁', [
                 ingredient('青椒', '青椒', 'SP0300056', 0.06, '斤'),
                 ingredient('鸡腿肉', '鸡腿肉', 'SP0300013', 0.10, '斤')
               ]),
-              dish('DISH-20260915-04', '清炒白菜', [
+              dish('DISH-20261115-04', '清炒白菜', [
                 ingredient('大白菜', '大白菜', 'SP0300019', 0.08, '斤'),
                 ingredient('食用油', '金龙鱼豆油', 'SP0300017', 0.01, '斤')
               ]),
-              dish('DISH-20260915-05', '米饭', [
+              dish('DISH-20261115-05', '米饭', [
                 ingredient('大米', '大米', 'SP0300025', 0.12, 'KG')
               ])
             ]
@@ -547,7 +547,7 @@
   function readMenus() {
     if (!window.DemoStore) return buildSeedMenus();
     const storedMenus = window.DemoStore.get(MENU_RESOURCE);
-    const current = Array.isArray(storedMenus)
+    let current = Array.isArray(storedMenus)
       ? storedMenus.map((menu) => ({
         ...menu,
         meals: (menu.meals || []).reduce((result, meal) => {
@@ -569,8 +569,35 @@
         }, [])
       }))
       : storedMenus;
-    const normalizedChanged = Array.isArray(storedMenus) && JSON.stringify(current) !== JSON.stringify(storedMenus);
     const seed = buildSeedMenus();
+    let movedDemoMenus = false;
+    if (Array.isArray(current)) {
+      const seedDates = new Set(seed.map((menu) => menu.date));
+      const existingIds = new Set(current.map((menu) => menu?.id));
+      current = current.flatMap((menu) => {
+        if (!/^RECIPE-MENU-202609\d{2}$/.test(String(menu?.id || ''))) return [menu];
+        const movedDate = String(menu.date || '').replace(/^2026-09-/, '2026-11-');
+        const movedId = String(menu.id).replace('202609', '202611');
+        if (!seedDates.has(movedDate)) return [menu];
+        movedDemoMenus = true;
+        if (existingIds.has(movedId)) return [];
+        return [{
+          ...menu,
+          id: movedId,
+          date: movedDate,
+          publishedAt: String(menu.publishedAt || '').replace(/^2026-09-/, '2026-11-'),
+          meals: (menu.meals || []).map((meal) => ({
+            ...meal,
+            dishes: (meal.dishes || []).map((item) => ({
+              ...item,
+              id: String(item.id || '').replace(/202609(\d{2})/, '202611$1')
+            }))
+          }))
+        }];
+      });
+    }
+    const normalizedChanged = Array.isArray(storedMenus)
+      && (movedDemoMenus || JSON.stringify(current) !== JSON.stringify(storedMenus));
     if (Array.isArray(current) && current.length) {
       const seedById = new Map(seed.map((menu) => [menu.id, menu]));
       let changed = false;
@@ -598,7 +625,10 @@
         merged.push(...additions);
       }
       if (!changed) {
-        if (normalizedChanged) window.DemoStore.replace(MENU_RESOURCE, current);
+        if (normalizedChanged) {
+          current.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+          window.DemoStore.replace(MENU_RESOURCE, current);
+        }
         return current;
       }
       merged.sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -611,7 +641,7 @@
 
   function readMeta() {
     if (!window.DemoStore) {
-      return { sourceName: SOURCE_NAME, version: MENU_VERSION, lastSyncAt: '2026-09-03 08:30:12', result: 'SUCCESS' };
+      return { sourceName: SOURCE_NAME, version: MENU_VERSION, lastSyncAt: '2026-11-03 08:30:12', result: 'SUCCESS' };
     }
     const current = window.DemoStore.get(META_RESOURCE);
     if (Array.isArray(current) && current[0]) return current[0];
@@ -619,7 +649,7 @@
       id: 'RECIPE-SYNC-META',
       sourceName: SOURCE_NAME,
       version: MENU_VERSION,
-      lastSyncAt: '2026-09-03 08:30:12',
+      lastSyncAt: '2026-11-03 08:30:12',
       syncedDays: readMenus().length,
       result: 'SUCCESS'
     };

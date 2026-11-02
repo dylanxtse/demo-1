@@ -4,15 +4,15 @@
   const schoolOrderService = window.SchoolOrderService;
   const canteenConfig = window.SchoolCanteenConfigService;
   const RESOURCE = 'recipeDemandRecords';
-  const DEMO_RECORD_DATE = '2026-09-07';
-  const DEMO_RECORD_CREATED_AT = '2026-08-29 16:20:00';
-  const DEMO_RECORD_VERSION = '20260911-product-unit-v1';
+  const DEMO_RECORD_DATE = '2026-11-07';
+  const DEMO_RECORD_CREATED_AT = '2026-10-29 16:20:00';
+  const DEMO_RECORD_VERSION = '20261102-recipe-demo-november-v2';
   const RECORD_NO_PATTERN = /^XQ\d{8}\d{5}$/;
   const DEMO_ATTENDANCE = {
-    id: 'RECIPE-ATTENDANCE-DEMO-20260907',
+    id: 'RECIPE-ATTENDANCE-DEMO-20261107',
     date: DEMO_RECORD_DATE,
     recipeVersion: '2026 秋季营养菜谱第 12 版',
-    updatedAt: '2026-08-29 16:20:00',
+    updatedAt: '2026-10-29 16:20:00',
     meals: {
       breakfast: { student: 520, teacher: 42 },
       lunch: { student: 680, teacher: 48 },
@@ -376,7 +376,7 @@
       canteenId: demoCanteen.id,
       participants: clone(LEGACY_PARTICIPANTS),
       dates: [DEMO_RECORD_DATE],
-      expectedAt: '2026-09-06 07:30:00',
+      expectedAt: '2026-11-06 07:30:00',
       recipeVersion: summary.menu?.version || recipeService.MENU_VERSION,
       dateSummaries: dateSummaries.map((item) => ({
         date: item.date,
@@ -404,7 +404,7 @@
       enterpriseSyncWarnings: [],
       operationLogs: [
         { action: '提交需求', operator: '管理员', operatorId: 'USER-HEAD-ADMIN', result: '提交成功', time: DEMO_RECORD_CREATED_AT, description: `提交 ${DEMO_RECORD_DATE} 的食谱需求` },
-        { action: '订单生成', operator: '系统', result: `${demoOrders.length} 笔`, time: '2026-08-29 16:20:02', description: '已按餐次及学生、教师标签生成订单' }
+        { action: '订单生成', operator: '系统', result: `${demoOrders.length} 笔`, time: '2026-10-29 16:20:02', description: '已按餐次及学生、教师标签生成订单' }
       ]
     };
   }

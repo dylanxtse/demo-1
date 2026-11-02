@@ -20,20 +20,20 @@ test('演示食谱只使用食堂配置支持的六种餐次', () => {
   assert.deepEqual(Array.from(context.SchoolRecipeAttendanceService.mealTypes, (meal) => meal.key), allowed);
   const menus = context.SchoolRecipeService.getAll();
   assert.equal(menus.every((menu) => menu.meals.every((meal) => allowed.includes(meal.key))), true);
-  const septemberEighth = menus.find((menu) => menu.date === '2026-09-08');
-  assert.deepEqual(Array.from(septemberEighth.meals, (meal) => meal.name), ['早餐', '午餐', '午点']);
+  const novemberEighth = menus.find((menu) => menu.date === '2026-11-08');
+  assert.deepEqual(Array.from(novemberEighth.meals, (meal) => meal.name), ['早餐', '午餐', '午点']);
 });
 
 test('已保存的旧演示餐次和填报数量迁移为午点', () => {
   const context = app();
-  const date = '2026-09-08';
+  const date = '2026-11-08';
   const menus = context.SchoolRecipeService.getAll();
   const menu = menus.find((item) => item.date === date);
   const meal = menu.meals.find((item) => item.key === 'afternoonSnack');
   meal.key = 'snack';
   meal.name = '加餐';
   meal.dishes.push({ id: 'CUSTOM-LEGACY-DISH', name: '自定义点心', ingredients: [] });
-  meal.dishes.push({ id: 'DISH-20260908-SNACK-EXTRA-99', name: '旧版自动菜品', ingredients: [] });
+  meal.dishes.push({ id: 'DISH-20261108-SNACK-EXTRA-99', name: '旧版自动菜品', ingredients: [] });
   context.DemoStore.replace('recipeMenus', menus);
 
   const migrated = context.SchoolRecipeService.getMenu(date);

@@ -12,7 +12,7 @@
   const dateSummaryFor = (date) => demandService.buildPreview([date], { canteen: requestedCanteen }).dateSummaries[0] || null;
   const allDateSummaries = isDirectMode ? [] : allMenus.map((menu) => dateSummaryFor(menu.date)).filter(Boolean);
   const filledDateSummaries = allDateSummaries.filter((summary) => Number(summary.calculation?.totalPeople || 0) > 0);
-  const fallbackDate = allMenus[0]?.date || '2026-09-07';
+  const fallbackDate = allMenus[0]?.date || '2026-11-07';
   const dateObject = (date) => {
     const parsed = new Date(`${String(date || fallbackDate)}T00:00:00`);
     return Number.isNaN(parsed.getTime()) ? new Date(`${fallbackDate}T00:00:00`) : parsed;

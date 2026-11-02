@@ -65,7 +65,7 @@ function mobileApp(options = {}) {
 
 test('无菜谱日期同时禁用菜谱与干调需求填报入口', () => {
   const { context, app, dispatch } = mobileApp();
-  const noMenuDate = '2026-09-06';
+  const noMenuDate = '2026-11-06';
   assert.equal(context.SchoolRecipeService.getAll().some((menu) => menu.date === noMenuDate), false);
 
   dispatch('click', 'tab', { tab: 'recipe' });
@@ -330,7 +330,7 @@ test('手机端人数填报读取Web默认干调商品，支持左滑移除和�
   };
   const swipeItemClasses = new Set();
   const swipeItem = {
-    dataset: { demandSwipeKey: `2026-09-07::${firstMeal}::aux-oil` },
+    dataset: { demandSwipeKey: `2026-11-07::${firstMeal}::aux-oil` },
     classList: { toggle(name, enabled) { enabled ? swipeItemClasses.add(name) : swipeItemClasses.delete(name); } },
     querySelector() { return removeButton; }
   };

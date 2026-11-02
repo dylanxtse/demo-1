@@ -44,8 +44,8 @@ test('商品数量填报可在无食谱日期独立记录各餐次采购量', ()
   assert.equal(empty.canSubmit, false);
   assert.deepEqual(Array.from(empty.meals, (meal) => meal.key), ['breakfast', 'lunch', 'dinner']);
   assert.deepEqual(Array.from(service.buildPreview('2026-10-05', canteen).meals, (meal) => meal.key), ['breakfast', 'lunch', 'dinner']);
-  assert.equal(service.buildPreview('2026-09-08', canteen).meals.some((meal) => meal.key === 'afternoonSnack'), true);
-  assert.equal(service.buildPreview('2026-09-08', canteen).meals.some((meal) => meal.key === 'snack'), false);
+  assert.equal(service.buildPreview('2026-11-08', canteen).meals.some((meal) => meal.key === 'afternoonSnack'), true);
+  assert.equal(service.buildPreview('2026-11-08', canteen).meals.some((meal) => meal.key === 'snack'), false);
   const firstKey = empty.meals[0].rows[0].key;
   const secondKey = empty.meals[1].rows[0].key;
   service.writeDraft(date, canteen, { [firstKey]: '2.5', [secondKey]: '3' });

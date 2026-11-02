@@ -73,7 +73,7 @@ test('直接填量底部已填写菜品食材数只统计当前餐次', () => {
 
 test('旧版按商品汇总的草稿只迁移到第一道菜', () => {
   const context = app();
-  const date = '2026-09-07';
+  const date = '2026-11-07';
   const canteen = context.SchoolRecipeDemandService.currentCanteen('第一食堂');
   const meal = context.SchoolRecipeDemandService.buildDirectPreview(date, {}, { canteen }).meals
     .find((item) => item.key === 'breakfast');

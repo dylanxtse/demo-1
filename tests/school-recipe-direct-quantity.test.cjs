@@ -20,7 +20,7 @@ function loadRecipeServices() {
 
 test('同一餐次的同一商品按菜品分别填报，确认时合并采购量', () => {
   const context = loadRecipeServices();
-  const date = '2026-09-07';
+  const date = '2026-11-07';
   const demand = context.SchoolRecipeDemandService;
   const initial = demand.buildDirectPreview(date, {});
   const breakfast = initial.meals.find((meal) => meal.key === 'breakfast');
@@ -28,7 +28,7 @@ test('同一餐次的同一商品按菜品分别填报，确认时合并采购�
 
   assert.equal(milkRows.length, 2);
   assert.equal(new Set(milkRows.map((row) => row.key)).size, 2);
-  assert.deepEqual([...milkRows.map((row) => row.dishName)], ['鲜奶面包', '牛奶']);
+  assert.deepEqual([...milkRows.map((row) => row.dishName)], ['鲜奶面包', '燕麦牛奶']);
 
   const quantities = { [milkRows[0].key]: 2, [milkRows[1].key]: 3 };
   const preview = demand.buildDirectPreview(date, quantities);
@@ -49,7 +49,7 @@ test('同一餐次的同一商品按菜品分别填报，确认时合并采购�
 
 test('同名菜品合并表格单元格，各商品仍有独立采购量输入', () => {
   const context = loadRecipeServices();
-  const date = '2026-09-08';
+  const date = '2026-11-08';
   const rows = context.SchoolRecipeDemandService.buildDirectPreview(date, {}).meals
     .find((meal) => meal.key === 'breakfast').rows.filter((row) => row.dishName === '牛奶鸡蛋');
   assert.equal(rows.length, 2);
