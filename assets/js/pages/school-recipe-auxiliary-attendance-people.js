@@ -104,7 +104,10 @@
     return { ...source, afternoonSnack: source.snack };
   };
   const recipeDateList = [...recipeDates].sort();
-  const firstDate = recipeDateList[0] || '2026-09-29';
+  const today = new Date();
+  const todayDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const todayMonth = todayDate.slice(0, 7);
+  const firstDate = recipeDateList.find((date) => date.startsWith(`${todayMonth}-`)) || todayDate;
   const draftStorageKey = 'school-recipe-auxiliary-attendance-drafts-v1';
   const selectedProductsStorageKey = 'school-recipe-auxiliary-selected-products-v1';
   const selectedProductsByMealStorageKey = 'school-recipe-auxiliary-selected-products-by-meal-v1';
@@ -125,18 +128,13 @@
   const canteenScope = String(currentCanteen.id || currentCanteen.name || '第一食堂');
   const availableCanteens = (canteenConfig?.readCanteens?.() || []).filter((canteen) => canteen && canteen.name && canteen.name !== '默认');
   const readDrafts = () => window.AppStorage?.read?.(draftStorageKey, {}) || {};
-  const normalizeMonthStart = (value) => {
-    const match = String(value || '').trim().match(/^(\d{4})[-/](\d{1,2})/);
-    return match ? `${match[1]}-${String(match[2]).padStart(2, '0')}-01` : '';
-  };
   const storedView = window.AppStorage?.read?.(viewStorageKey, {})?.[canteenScope] || {};
   const requestedDate = normalizeRecipeDate(pageParams.get('date'));
-  const savedDate = requestedDate || normalizeRecipeDate(storedView.selectedDate);
-  const selectedDate = savedDate || firstDate;
-  const savedMonthStart = normalizeMonthStart(storedView.monthStart);
+  const savedDate = normalizeRecipeDate(storedView.selectedDate);
+  const selectedDate = requestedDate || (savedDate.startsWith(`${todayMonth}-`) ? savedDate : firstDate);
   const dateState = {
     selectedDate,
-    monthStart: requestedDate ? `${requestedDate.slice(0, 7)}-01` : (savedMonthStart || `${selectedDate.slice(0, 7)}-01`)
+    monthStart: requestedDate ? `${requestedDate.slice(0, 7)}-01` : `${todayMonth}-01`
   };
   meals = createMealsForDate(dateState.selectedDate);
   const persistView = () => {

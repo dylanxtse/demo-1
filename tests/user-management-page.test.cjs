@@ -84,7 +84,8 @@ test('添加用户打开表单，返回列表；确认时校验并保存用户',
   assert.match(page.page.innerHTML, /中心仓/);
   assert.match(page.page.innerHTML, /value="1234567Aa" readonly/);
   assert.match(page.page.innerHTML, /data-user-action="custom-password"[^>]*>修改密码<\/button>/);
-  assert.match(page.page.innerHTML, /<div class="user-management-password-inline"><div class="user-management-password-entry"><input[^>]*name="password"[^>]*type="password"[^>]*><button[^>]*data-user-action="toggle-password"[^>]*aria-label="查看密码"[^>]*>/);
+  assert.match(page.page.innerHTML, /<div class="user-management-password-entry"><input[^>]*name="password"[^>]*type="password"[^>]*><button[^>]*data-user-action="toggle-password"[^>]*aria-label="查看密码"[^>]*>/);
+  assert.match(page.page.innerHTML, /class="user-management-password-switch"><button[^>]*data-user-action="default-password"[^>]*>使用默认密码<\/button>/);
   assert.equal((page.page.innerHTML.match(/class="user-management-eye"/g) || []).length, 2);
   assert.equal((page.page.innerHTML.match(/class="user-management-eye-off"/g) || []).length, 2);
   assert.match(page.page.innerHTML, /密码长度6～20位，数字、英文、特殊字符至少包含2种/);
