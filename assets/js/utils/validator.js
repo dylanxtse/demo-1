@@ -4,7 +4,6 @@
     name: { required: true, label: '商品名称' },
     storageCondition: { required: true, label: '储存条件' },
     purchaseType: { required: true, label: '采购类型' },
-    responsible: { required: true, label: '采购负责人' },
     unit: { required: true, label: '计量单位' },
     marketPrice: { required: true, label: '市场价', number: true, minimum: 0 }
   };
@@ -13,7 +12,6 @@
     validate(data) {
       const errors = {};
       Object.entries(rules).forEach(([field, rule]) => {
-        if (data.isNetVegetable && field === 'responsible') return;
         const value = String(data[field] ?? '').trim();
         if (rule.required && (!value || value === '请选择')) {
           errors[field] = `${rule.label}不能为空`;
