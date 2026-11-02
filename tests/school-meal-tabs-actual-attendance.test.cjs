@@ -145,14 +145,16 @@ test('干调人数需求填报按实际就餐人数筛选餐次并随不就餐�
   context.DemoStore.updateSettings({ splitOrderByMeal: true });
   const menu = context.SchoolRecipeService.getAll().find((item) => item.meals.length >= 3);
   assert.ok(menu);
-  const firstMeal = menu.meals[0];
-  const lastMeal = menu.meals[menu.meals.length - 1];
-  const { canteen, participants } = attendanceData(context, menu, { [firstMeal.key]: 5, [lastMeal.key]: 7 }, { [lastMeal.key]: 7 });
+  const lunchMeal = menu.meals.find((meal) => meal.key === 'lunch');
+  const otherMeal = menu.meals.find((meal) => meal.key !== 'lunch');
+  assert.ok(lunchMeal);
+  assert.ok(otherMeal);
+  const { canteen, participants } = attendanceData(context, menu, { [lunchMeal.key]: 5, [otherMeal.key]: 7 }, { [otherMeal.key]: 7 });
   const scope = String(canteen.id || canteen.name);
   const participant = participants[0];
   const draftMeals = Object.fromEntries(menu.meals.map((meal) => [meal.key, Object.fromEntries(participants.flatMap((person) => [
-    [person.key, person.key === participant.key ? (meal.key === firstMeal.key ? 5 : meal.key === lastMeal.key ? 7 : 0) : 0],
-    [`nonDining_${person.key}`, person.key === participant.key && meal.key === lastMeal.key ? 7 : 0]
+    [person.key, person.key === participant.key ? (meal.key === lunchMeal.key ? 5 : meal.key === otherMeal.key ? 7 : 0) : 0],
+    [`nonDining_${person.key}`, person.key === participant.key && meal.key === otherMeal.key ? 7 : 0]
   ]))]));
   context.AppStorage.write('school-recipe-auxiliary-attendance-drafts-v1', {
     [scope]: { [menu.date]: { __manual: true, ...draftMeals } }
@@ -160,12 +162,13 @@ test('干调人数需求填报按实际就餐人数筛选餐次并随不就餐�
 
   const { html, listeners, tabs, rows } = renderAuxiliaryAttendance(context, menu.date);
   const tabKeys = [...html.matchAll(/data-meal="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(tabKeys, [firstMeal.key]);
-  assert.equal(tabKeys.includes(lastMeal.key), false);
+  assert.deepEqual(tabKeys, [lunchMeal.key]);
+  assert.match(html, /<strong>午餐<\/strong>/);
+  assert.doesNotMatch(html, /<strong>早餐<\/strong>|<strong>午点<\/strong>/);
 
   const input = {
     value: '5',
-    dataset: { personType: `nonDining_${participant.key}`, mealKey: firstMeal.key },
+    dataset: { personType: `nonDining_${participant.key}`, mealKey: lunchMeal.key },
     classList: { toggle() {} },
     closest(selector) {
       if (selector === '[data-person-type]') return this;
@@ -179,5 +182,5 @@ test('干调人数需求填报按实际就餐人数筛选餐次并随不就餐�
   assert.equal(tabs.innerHTML, '');
   assert.match(rows.innerHTML, /当前没有实际就餐人数/);
   const savedDraft = context.AppStorage.read('school-recipe-auxiliary-attendance-drafts-v1', {})[scope][menu.date];
-  assert.equal(savedDraft[firstMeal.key][`nonDining_${participant.key}`], 5);
+  assert.equal(savedDraft[lunchMeal.key][`nonDining_${participant.key}`], 5);
 });

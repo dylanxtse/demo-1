@@ -39,6 +39,7 @@
   };
   const recipeDates = new Set(allMenus.map((menu) => menu.date));
   const mealDefinitionsForDate = (targetDate) => (allMenus.find((menu) => menu.date === targetDate)?.meals || [])
+    .filter((meal) => meal.key === 'lunch')
     .map((meal) => ({ key: String(meal.key || ''), name: meal.name || mealNameFallbacks[meal.key] || meal.key }))
     .filter((meal) => meal.key);
   const products = window.SchoolRecipeAuxiliaryDirectService.attendanceProducts();

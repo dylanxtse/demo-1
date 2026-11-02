@@ -49,6 +49,7 @@
     meal[`${prefix}${participant.key}`] = value;
   };
   const participantDisplayName = (participant) => `${participant.label} - ${participant.nutritious || '不区分'}`;
+  const auxiliaryPeopleMealKey = 'lunch';
   const participantHeader = (participant) => `<span class="school-recipe-attendance-participant-name">${escapeHtml(`${participant.label} - ${participant.nutritious || '不区分'}`)}</span>`;
   const mealNameFallbacks = {
     breakfast: '早餐',
@@ -59,7 +60,7 @@
     eveningSnack: '晚点',
     snack: '午点'
   };
-  const mealDefinitionsForDate = (date) => (menuForDate(date)?.meals || []).map((meal) => ({
+  const mealDefinitionsForDate = (date) => (menuForPeopleDate(date)?.meals || []).map((meal) => ({
     key: String(meal.key || ''),
     name: meal.name || mealNameFallbacks[meal.key] || meal.key
   })).filter((meal) => meal.key);
@@ -97,6 +98,10 @@
   const recipeMenus = window.SchoolRecipeService?.getAll?.() || [];
   const recipeDates = new Set(recipeMenus.map((menu) => normalizeRecipeDate(menu.date)).filter(Boolean));
   const menuForDate = (date) => recipeMenus.find((menu) => normalizeRecipeDate(menu.date) === String(date)) || null;
+  const menuForPeopleDate = (date) => {
+    const menu = menuForDate(date);
+    return menu ? { ...menu, meals: (menu.meals || []).filter((meal) => meal.key === auxiliaryPeopleMealKey) } : null;
+  };
   const compatibleDraftForDate = (date, draft) => {
     const source = draft || {};
     const dateMeals = mealDefinitionsForDate(date);
@@ -318,7 +323,7 @@
   const demandMeals = () => {
     const entries = Object.entries(meals);
     if (!shouldSplitOrderByMeal()) return entries;
-    const menu = menuForDate(dateState.selectedDate);
+    const menu = menuForPeopleDate(dateState.selectedDate);
     const calculation = menu && attendanceService?.calculate?.(menu, auxiliaryRecordFor(dateState.selectedDate), auxiliaryServiceOptions());
     const actualMealKeys = new Set((calculation?.mealRows || [])
       .filter((meal) => Number(meal.totalPeople || 0) > 0)
@@ -334,8 +339,8 @@
       const preview = directPreview(date);
       return preview?.canSubmit ? 'complete' : preview?.selectedRows?.length ? 'partial' : 'empty';
     }
-    if (!recipeDates.has(date)) return 'no-menu';
-    return attendanceService.status(menuForDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
+    if (!recipeDates.has(date) || !mealDefinitionsForDate(date).length) return 'no-menu';
+    return attendanceService.status(menuForPeopleDate(date), auxiliaryRecordFor(date), auxiliaryServiceOptions()).key;
   }
 
   function renderCanteenBar() {

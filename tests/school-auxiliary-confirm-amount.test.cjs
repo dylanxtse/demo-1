@@ -5,7 +5,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { loadApp, root } = require('./helpers/app-context.cjs');
 
-const date = '2026-09-11';
+const date = '2026-11-08';
 const parseMoney = (value) => Number(String(value || '').replaceAll(',', ''));
 
 function renderConfirm(splitPerson = false, selectedIds, selectedByMeal, allowRecipePurchaseEdit) {
@@ -93,8 +93,8 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
       assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
       assert.doesNotMatch(html, /<th>上次结余<\/th>/);
     } else {
-      assert.match(html, /value="0\.00" data-aux-purchase-quantity/);
-      assert.match(html, /<td class="is-number">[\d,.]+<\/td><td class="is-number">[\d,.]+ (?:L|kg)<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
+      assert.match(html, /value="1\.00" data-aux-purchase-quantity/);
+      assert.match(html, /<td class="is-number">0\.00<\/td><td class="is-number school-recipe-demand-purchase-cell">/);
       assert.match(html, /<th>上次结余<\/th>/);
     }
     assert.doesNotMatch(html, /schoolRecipeAuxiliaryExpectedAt|school-recipe-demand-delivery-field/);
@@ -106,7 +106,7 @@ test('商品需求确认页的小计与两行合计按采购量计算，隐藏�
     const grandTotal = parseMoney(html.match(/data-aux-grand-total>¥([\d,]+\.\d{2})/)?.[1]);
     assert.equal(subtotalValues.length, 2);
     assert.equal(mealTotal, Number(subtotalValues.reduce((sum, value) => sum + value, 0).toFixed(2)));
-    assert.ok(grandTotal >= mealTotal);
+    assert.equal(grandTotal, mealTotal);
     assert.match(html, new RegExp(`<tfoot><tr class="school-recipe-demand-product-total-row"><td colspan="${splitPerson ? 10 : 9}">午餐合计金额`));
   }
 });
@@ -135,7 +135,7 @@ test('按需求人数计算基础用量，并按整桶整袋生成订单和结�
   const record = context.DemoStore.get('recipeDemandRecords').find((item) => !existingRecords.has(item.id));
   assert.ok(record?.balanceRows, '应保存新需求的基础用量和采购量');
   const order = context.SchoolOrderService.getAll().find((item) => item.recipeDemandRecordId === record.id
-    && item.mealKey === 'breakfast');
+    && item.mealKey === 'lunch');
   assert.ok(order, JSON.stringify({ recordOrders: record.orders, orders: context.SchoolOrderService.getAll()
     .filter((item) => item.recipeDemandRecordId === record.id)
     .map((item) => ({ mealKey: item.mealKey, items: item.items.map((line) => [line.productCode, line.orderQty]) })) }));
@@ -147,7 +147,7 @@ test('按需求人数计算基础用量，并按整桶整袋生成订单和结�
   assert.equal(salt.unit, '袋');
   assert.equal(salt.orderQty, 1);
   const oilBalance = record.balanceRows.find((item) => item.productCode === 'SP0300030');
-  assert.equal(oilBalance.demandQty, 0.36);
+  assert.equal(oilBalance.demandQty, 0.24);
   assert.equal(oilBalance.purchaseQty, 1);
   assert.equal(oilBalance.purchaseBaseQty, 5);
   assert.equal(oilBalance.unit, '桶');
@@ -174,7 +174,7 @@ test('修改单价或采购量时，小计和两行合计立即更新', () => {
   listeners.input({ target: input('[data-aux-purchase-quantity]', { purchaseKey: quantityKey }, '0') });
   assert.equal(cells[0].textContent, '¥0.00');
   assert.ok(parseMoney(mealTotalCell.textContent.slice(1)) < increasedMealTotal);
-  assert.ok(parseMoney(grandTotalCell.textContent.slice(1)) > parseMoney(mealTotalCell.textContent.slice(1)));
+  assert.equal(parseMoney(grandTotalCell.textContent.slice(1)), parseMoney(mealTotalCell.textContent.slice(1)));
 });
 
 test('人数填报新增的干调商品可进入需求确认并计算金额', () => {
@@ -190,13 +190,14 @@ test('干调商品按餐次独立显示和移除，确认页当前餐次最后�
     lunch: ['aux-salt', 'aux-simple-47']
   });
   const { listeners } = confirmation;
+  assert.deepEqual([...confirmation.html.matchAll(/data-meal="([^"]+)"/g)].map((match) => match[1]), ['lunch']);
   assert.match(confirmation.html, /data-product-key="aux-salt"[^>]*>移除<\/button>/);
   assert.match(confirmation.html, /data-product-key="aux-simple-47"[^>]*>移除<\/button>/);
 
   const removeButton = { disabled: false, dataset: { productKey: 'aux-salt', productName: '盐' } };
   listeners.click({ target: { closest(selector) { return selector === '[data-action="remove-product"]' ? removeButton : null; } } });
-  listeners.click({ target: { closest(selector) { return selector === '[data-meal]' ? { dataset: { meal: 'breakfast' } } : null; } } });
-  assert.match(confirmation.html, /data-product-key="aux-oil"/);
+  listeners.click({ target: { closest(selector) { return selector === '[data-meal]' ? { dataset: { meal: 'lunch' } } : null; } } });
+  assert.doesNotMatch(confirmation.html, /data-product-key="aux-oil"/);
   assert.doesNotMatch(confirmation.html, /data-product-key="aux-salt"/);
   listeners.click({ target: { closest(selector) { return selector === '[data-meal]' ? { dataset: { meal: 'lunch' } } : null; } } });
   assert.doesNotMatch(confirmation.html, /data-product-key="aux-salt"/);
