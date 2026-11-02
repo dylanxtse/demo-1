@@ -193,7 +193,7 @@
           <div class="unshelf-modal-body">
             <div class="market-price-import-section">
               <label class="unshelf-reason-label">下载模板</label>
-              <a href="./product-info-import-template.html" class="market-price-import-template-link">商品信息导入模板.xlsx</a>
+              <a href="./product-info-import-template.html" class="market-price-import-template-link">商品模版.xlsx</a>
             </div>
             <div class="market-price-import-section">
               <label class="unshelf-reason-label">上传文件</label>
