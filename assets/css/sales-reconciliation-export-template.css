@@ -1,0 +1,79 @@
+.sales-reconciliation-export-template-page .school-order-export-template-inner {
+  padding-top: 24px;
+}
+
+.sales-reconciliation-export-template-page .school-order-export-template-table {
+  min-width: 2620px;
+}
+
+.sales-customer-export-inner {
+  padding-top: 24px;
+}
+
+.sales-customer-export-group + .sales-customer-export-group {
+  margin-top: 32px;
+}
+
+.sales-customer-reconciliation-export-template-page .sales-customer-export-table {
+  min-width: 2620px;
+}
+
+.sales-customer-export-table .sales-export-col-serial { width: 70px; }
+.sales-customer-export-table .sales-export-col-account-no { width: 190px; }
+.sales-customer-export-table .sales-export-col-related-no { width: 190px; }
+.sales-customer-export-table .sales-export-col-status,
+.sales-customer-export-table .sales-export-col-feedback-status { width: 120px; }
+.sales-customer-export-table .sales-export-col-receiver { width: 110px; }
+.sales-customer-export-table .sales-export-col-phone { width: 140px; }
+.sales-customer-export-table .sales-export-col-warehouse { width: 160px; }
+.sales-customer-export-table .sales-export-col-document-type { width: 125px; }
+.sales-customer-export-table .sales-export-col-amount { width: 120px; }
+.sales-customer-export-table .sales-export-col-business-time { width: 180px; }
+.sales-customer-export-table .sales-export-col-route,
+.sales-customer-export-table .sales-export-col-driver,
+.sales-customer-export-table .sales-export-col-reconciler { width: 110px; }
+
+.sales-customer-export-table .school-order-export-meta-row td > span {
+  display: inline-block;
+}
+
+.sales-reconciliation-export-template-page .sales-export-col-account-no { width: 180px; }
+.sales-reconciliation-export-template-page .sales-export-col-related-no { width: 180px; }
+.sales-reconciliation-export-template-page .sales-export-col-status { width: 115px; }
+.sales-reconciliation-export-template-page .sales-export-col-feedback-status { width: 130px; }
+.sales-reconciliation-export-template-page .sales-export-col-customer { width: 150px; }
+.sales-reconciliation-export-template-page .sales-export-col-canteen { width: 145px; }
+.sales-reconciliation-export-template-page .sales-export-col-customer-code { width: 125px; }
+.sales-reconciliation-export-template-page .sales-export-col-receiver { width: 110px; }
+.sales-reconciliation-export-template-page .sales-export-col-phone { width: 130px; }
+.sales-reconciliation-export-template-page .sales-export-col-warehouse { width: 150px; }
+.sales-reconciliation-export-template-page .sales-export-col-document-type { width: 125px; }
+.sales-reconciliation-export-template-page .sales-export-col-amount { width: 110px; }
+.sales-reconciliation-export-template-page .sales-export-col-business-time { width: 180px; }
+.sales-reconciliation-export-template-page .sales-export-col-route { width: 110px; }
+.sales-reconciliation-export-template-page .sales-export-col-driver,
+.sales-reconciliation-export-template-page .sales-export-col-reconciler { width: 100px; }
+.sales-reconciliation-export-template-page .sales-export-col-remark { width: 150px; }
+
+@page {
+  size: landscape;
+  margin: 12mm;
+}
+
+@media print {
+  .sales-reconciliation-export-template-page .school-order-export-template-table {
+    min-width: 100%;
+    table-layout: auto;
+    font-size: 9px;
+  }
+
+  .sales-reconciliation-export-template-page .school-order-export-template-table th,
+  .sales-reconciliation-export-template-page .school-order-export-template-table td {
+    padding: 0 4px;
+  }
+
+  .sales-customer-reconciliation-export-template-page .sales-customer-export-group + .sales-customer-export-group {
+    margin-top: 20px;
+    break-before: page;
+  }
+}

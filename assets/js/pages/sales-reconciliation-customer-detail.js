@@ -2,6 +2,12 @@
   'use strict';
 
   const store = window.SalesReconciliationStore;
+  const exportTemplateVersion = '20261103-sales-reconciliation-export-1';
+  const exportColumns = [
+    '序号', '对账单号', '关联单号', '对账状态', '客户反馈状态', '收货人', '收货手机号', '仓库',
+    '单据类型', '对账金额', '对账抹零', '应收金额', '发货金额', '已收金额', '未收金额',
+    '业务时间', '线路', '司机', '对账人'
+  ];
   const params = new URLSearchParams(window.location.search);
   const customerId = params.get('customerId') || '';
   const customerName = params.get('customerName') || '';
@@ -30,7 +36,6 @@
   };
   const isReturnRecord = (record) => record?.mode === 'return' || String(record?.type || '').includes('退货');
   const reconciliationMoney = (record, key) => isReturnRecord(record) ? '--' : money(record?.[key]);
-  const reconciliationExportValue = (record, key) => isReturnRecord(record) ? '--' : record?.[key];
   const dateOnly = (value) => String(value || '').slice(0, 10);
   const statusClass = (status) => ({
     未对账: 'is-danger',
@@ -84,6 +89,78 @@
     const records = getCustomerRecords();
     if (state.status === '全部') return records;
     return records.filter((record) => record.status === state.status);
+  }
+
+  function exportCustomerRows() {
+    const records = getFilteredRecords();
+    const amountFor = (record, key) => {
+      if (isReturnRecord(record)) {
+        if (key === 'amount' || key === 'receivable') return -Math.abs(numeric(record.returnAmount ?? record.amount));
+        if (key === 'zeroing') return 0;
+      }
+      return numeric(record[key]);
+    };
+    const rows = records.map((record, index) => [
+      index + 1,
+      record.accountNo,
+      record.relatedNo,
+      record.status,
+      record.feedbackStatus,
+      record.receiver,
+      record.phone,
+      record.warehouse,
+      record.documentType || record.type,
+      amountFor(record, 'amount'),
+      amountFor(record, 'zeroing'),
+      amountFor(record, 'receivable'),
+      businessAmount(record),
+      record.receivedAmount ?? record.received ?? '',
+      record.outstandingAmount ?? record.outstanding ?? '',
+      record.businessTime,
+      record.route,
+      record.driver,
+      record.reconciler
+    ].map((value) => String(value ?? '')));
+    const dates = records.map((record) => dateOnly(record.businessTime)).filter(Boolean).sort();
+    const orderCount = records.filter((record) => !isReturnRecord(record)).length;
+    const returnCount = records.length - orderCount;
+    const group = {
+      title: `客户对账--${accountName}`,
+      canteen: accountCanteen || '--',
+      businessDate: dates.length ? `${dates[0]}${dates[0] === dates[dates.length - 1] ? '' : ` ~ ${dates[dates.length - 1]}`}` : '--',
+      statementCount: records.length,
+      orderCount,
+      returnCount,
+      rows,
+      totals: [
+        records.reduce((sum, record) => sum + amountFor(record, 'amount'), 0),
+        records.reduce((sum, record) => sum + amountFor(record, 'zeroing'), 0),
+        records.reduce((sum, record) => sum + amountFor(record, 'receivable'), 0),
+        records.reduce((sum, record) => sum + businessAmount(record), 0),
+        records.reduce((sum, record) => sum + numeric(record.receivedAmount ?? record.received), 0),
+        records.reduce((sum, record) => sum + numeric(record.outstandingAmount ?? record.outstanding), 0)
+      ].map((value) => Number(value || 0).toFixed(2))
+    };
+    const exportKey = `sales-customer-reconciliation-detail-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const payload = JSON.stringify({ version: exportTemplateVersion, type: 'customer', groups: [group] });
+    try {
+      window.sessionStorage?.setItem(exportKey, payload);
+      if (window.sessionStorage?.getItem(exportKey) === payload) {
+        window.location.href = `./sales-reconciliation-export-template.html?exportKey=${encodeURIComponent(exportKey)}`;
+        return;
+      }
+    } catch (error) {
+      // 浏览器临时存储不可用时回退为 CSV 下载。
+    }
+    const csv = [exportColumns, ...rows]
+      .map((line) => line.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
+    link.download = `客户对账-${accountName}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast('导出模板暂不可用，已直接下载 CSV');
   }
 
   function renderSummary() {
@@ -157,17 +234,7 @@
 
   function handleToolbar(action) {
     const selected = getCustomerRecords().filter((record) => !isReturnRecord(record) && state.selected.has(record.id));
-    if (action === 'export') {
-      const rows = getFilteredRecords();
-      const columns = ['对账单号', '关联单号', '对账状态', '客户反馈状态', '食堂', '收货人', '单据类型', '对账金额', '抹零金额', '应收金额', '发货金额', '业务时间'];
-      const lines = [columns.join(',')].concat(rows.map((record) => [record.accountNo, record.relatedNo, record.status, record.feedbackStatus, record.canteen, record.receiver, record.type, reconciliationExportValue(record, 'amount'), reconciliationExportValue(record, 'zeroing'), reconciliationExportValue(record, 'receivable'), businessAmount(record), record.businessTime].map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')));
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' }));
-      link.download = `客户对账-${accountName}.csv`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-      return toast('导出成功');
-    }
+    if (action === 'export') return exportCustomerRows();
     if (!selected.length) return toast('请选择对账单', 'error');
     if (action === 'batch-reconcile') {
       selected.filter((record) => record.status === '未对账').forEach((record) => store.updateRecord(record.id, { status: '已对账' }));
