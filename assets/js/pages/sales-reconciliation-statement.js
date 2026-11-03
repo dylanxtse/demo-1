@@ -211,20 +211,6 @@
     modal.querySelector('[data-statement-modal-close]')?.focus();
   }
 
-  function downloadProducts() {
-    const rows = productDetails();
-    const values = [
-      ['商品名称', '商品分类', '计量单位', '发货数量', '下单单价', '发货金额', '验收数量', '验收金额', '对账抹零', '应收金额'],
-      ...rows.map((row) => [row.name, row.category, row.unit, money(row.quantity), money(row.unitPrice), money(row.shippingAmount), money(row.acceptedQuantity), money(row.acceptedAmount), money(row.zeroingAmount), money(row.receivable)])
-    ];
-    const csv = values.map((line) => line.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
-    link.download = `${statementNo}-商品明细表.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }
-
   function saveStatement() {
     const saved = store.addStatement({
       id: savedStatement?.id,
@@ -246,36 +232,6 @@
     toast(`对账单 ${saved.statementNo} 已保存`);
   }
 
-  function downloadStatement() {
-    const lines = [
-      ['对账单号', statementNo],
-      ['客户名称', sourceRecords[0]?.customerName || '--'],
-      ['发货日期', shippingPeriod],
-      ['对账单生成时间', savedStatement?.generatedAt || '2026-08-25 12:00:00'],
-      ['对账金额', amount],
-      ['抹零金额', zeroing],
-      ['应收金额', receivable],
-      ['实结金额', page.querySelector('[data-statement-settlement-amount]')?.value || ''],
-      ['结算日期', page.querySelector('[data-statement-settlement-date]')?.value || ''],
-      ['核对人', page.querySelector('[data-statement-checker]')?.value || ''],
-      ['备注说明', page.querySelector('[data-statement-remark]')?.value || ''],
-      [],
-      ['序号', '食堂', '对账单号', '发货金额', '验收金额', '对账金额', '抹零金额', '应收金额'],
-      ...sourceRecords.map((record, index) => {
-        const recordAmounts = settlementAmountsFor(record);
-        const shippingAmount = recordAmounts.shippingAmount;
-        const acceptedAmount = recordAmounts.acceptedAmount;
-        return [index + 1, record.canteen, record.accountNo, shippingAmount, acceptedAmount, signedAmount(record, 'amount'), signedAmount(record, 'zeroing'), signedAmount(record, 'receivable')];
-      })
-    ];
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([`\ufeff${lines.map((line) => line.join(',')).join('\n')}`], { type: 'text/csv;charset=utf-8' }));
-    link.download = `${statementNo}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-    toast('下载成功');
-  }
-
   page.addEventListener('click', (event) => {
     if (event.target.closest('[data-statement-back]')) window.location.href = './sales-reconciliation.html';
     if (event.target.closest('[data-statement-products]')) showProducts();
@@ -283,13 +239,11 @@
       event.target.closest('.sales-statement-products-backdrop')?.remove();
       page.querySelector('[data-statement-products]')?.focus();
     }
-    if (event.target.closest('[data-statement-products-download]')) downloadProducts();
     if (event.target.closest('[data-statement-products-print]')) {
       document.body.classList.add('sales-statement-products-printing');
       window.print();
     }
     if (event.target.closest('[data-statement-save]')) saveStatement();
-    if (event.target.closest('[data-statement-download]')) downloadStatement();
     if (event.target.closest('[data-statement-print]')) window.print();
   });
 

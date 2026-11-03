@@ -832,15 +832,6 @@
       if (!statement) return;
       const action = statementAction.dataset.salesStatementAction;
       if (action === 'view' || action === 'print') window.open(`./sales-reconciliation-statement.html?id=${encodeURIComponent(statement.id)}`, action === 'print' ? '_blank' : '_self');
-      if (action === 'download') {
-        const lines = [['客户名称', '对账单生成日期', '发货日期', '对账金额合计', '抹零金额合计', '应收金额合计'], [statement.customerName, statement.generatedAt, getStatementShippingDates(statement).join(' / '), statement.amount, statement.zeroing, statement.receivable]];
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(new Blob([`\ufeff${lines.map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')}`], { type: 'text/csv;charset=utf-8' }));
-        link.download = `${statement.statementNo || statement.id}.csv`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-        toast('下载成功');
-      }
       if (action === 'delete') {
         if (store.removeStatement?.(statement.id)) { state.statementSelected.delete(statement.id); render(); toast('删除成功'); }
       }
