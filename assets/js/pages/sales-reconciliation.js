@@ -499,7 +499,7 @@
         <td class="sales-customer-actions">${customerActionButtons(record)}</td>
       </tr>`;
     }).join('');
-    return `<div class="operations-toolbar sales-customer-toolbar"><div></div><button type="button" class="sales-export-button standard-list-export-print" data-sales-toolbar="customer-export">${downloadIcon}<span>导出</span></button></div>
+    return `<div class="operations-toolbar sales-customer-toolbar"><div></div><div class="sales-customer-export-dropdown" data-sales-export-dropdown><button type="button" class="sales-export-button standard-list-export-print" data-customer-export-toggle aria-haspopup="menu" aria-expanded="false">${downloadIcon}<span>导出</span><span class="sales-customer-export-caret" aria-hidden="true">⌄</span></button><div class="sales-customer-export-menu" role="menu" aria-label="导出选项"><button type="button" class="sales-customer-export-menu-item is-disabled" role="menuitem" disabled>导出列表</button><button type="button" class="sales-customer-export-menu-item" role="menuitem" data-sales-toolbar="customer-export">导出关联明细</button></div></div></div>
       <div class="operations-table-container sales-customer-table-container"><div class="operations-table-wrap"><table class="operations-table sales-customer-table"><thead><tr><th class="sales-customer-selection"><input type="checkbox" data-customer-select-all aria-label="选择全部"></th><th>客户编码</th><th>客户名称</th><th>食堂</th><th>联系人（电话）</th><th>对账状态</th><th>对账单笔数<span class="sales-filter-help" title="对账单笔数">?</span></th><th>对账金额</th><th>对账抹零</th><th>应收金额</th><th>发货金额</th><th>已收金额<span class="sales-filter-help" title="已收金额">?</span></th><th>未收金额</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td class="sales-empty" colspan="14">暂无数据</td></tr>'}</tbody></table></div></div>
       <div class="pagination operations-pagination sales-customer-pagination"><span class="page-total">共 ${allRecords.length} 条数据</span><select class="page-size-select" aria-label="每页条数"><option>20 条/页</option></select><div class="page-btns"><button type="button" class="page-btn" data-customer-page="prev" aria-label="上一页" ${state.customerPage === 1 ? 'disabled' : ''}>‹</button>${pageButtons}<button type="button" class="page-btn" data-customer-page="next" aria-label="下一页" ${state.customerPage === totalPages ? 'disabled' : ''}>›</button></div><div class="page-jump"><span>跳至</span><input class="pagination-jump-input" data-customer-page-input value="${state.customerPage}" aria-label="跳转页码"><span>/ ${totalPages} 页</span></div></div>`;
   }
@@ -767,6 +767,13 @@
   }
 
   page.addEventListener('click', (event) => {
+    const customerExportToggle = event.target.closest('[data-customer-export-toggle]');
+    if (customerExportToggle) {
+      const dropdown = customerExportToggle.closest('[data-sales-export-dropdown]');
+      dropdown.classList.add('is-open');
+      customerExportToggle.setAttribute('aria-expanded', 'true');
+      return;
+    }
     const tab = event.target.closest('[data-sales-tab]');
     if (tab) { state.tab = tab.dataset.salesTab; state.page = 1; state.statementPage = 1; state.selected.clear(); state.statementSelected.clear(); render(); return; }
     const customerStatus = event.target.closest('[data-customer-status]');
@@ -809,7 +816,16 @@
       return;
     }
     const toolbar = event.target.closest('[data-sales-toolbar]');
-    if (toolbar) { if (isCustomer) collectCustomerFilters(); else collectFilters(); handleToolbar(toolbar.dataset.salesToolbar); return; }
+    if (toolbar) {
+      if (toolbar.dataset.salesToolbar === 'customer-export') {
+        const dropdown = toolbar.closest('[data-sales-export-dropdown]');
+        dropdown?.classList.remove('is-open');
+        dropdown?.querySelector('[data-customer-export-toggle]')?.setAttribute('aria-expanded', 'false');
+      }
+      if (isCustomer) collectCustomerFilters(); else collectFilters();
+      handleToolbar(toolbar.dataset.salesToolbar);
+      return;
+    }
     const statementAction = event.target.closest('[data-sales-statement-action]');
     if (statementAction) {
       const statement = getState().statements.find((item) => item.id === statementAction.dataset.id);
@@ -858,6 +874,34 @@
     if (action === 'detail') window.location.href = `./sales-reconciliation-detail.html?id=${encodeURIComponent(record.id)}&view=detail`;
     if (action === 'reverse') { store.updateRecord(record.id, { status: '未对账' }); render(); toast('已反对账'); }
     if (action === 'settle') { store.updateRecord(record.id, { status: '已结算' }); render(); toast('结算成功'); }
+  });
+
+  page.addEventListener('pointerover', (event) => {
+    const dropdown = event.target.closest('[data-sales-export-dropdown]');
+    if (!dropdown || dropdown.contains(event.relatedTarget)) return;
+    dropdown.classList.add('is-open');
+    dropdown.querySelector('[data-customer-export-toggle]')?.setAttribute('aria-expanded', 'true');
+  });
+
+  page.addEventListener('pointerout', (event) => {
+    const dropdown = event.target.closest('[data-sales-export-dropdown]');
+    if (!dropdown || dropdown.contains(event.relatedTarget)) return;
+    dropdown.classList.remove('is-open');
+    dropdown.querySelector('[data-customer-export-toggle]')?.setAttribute('aria-expanded', 'false');
+  });
+
+  page.addEventListener('focusin', (event) => {
+    const dropdown = event.target.closest('[data-sales-export-dropdown]');
+    if (!dropdown) return;
+    dropdown.classList.add('is-open');
+    dropdown.querySelector('[data-customer-export-toggle]')?.setAttribute('aria-expanded', 'true');
+  });
+
+  page.addEventListener('focusout', (event) => {
+    const dropdown = event.target.closest('[data-sales-export-dropdown]');
+    if (!dropdown || dropdown.contains(event.relatedTarget)) return;
+    dropdown.classList.remove('is-open');
+    dropdown.querySelector('[data-customer-export-toggle]')?.setAttribute('aria-expanded', 'false');
   });
 
   page.addEventListener('change', (event) => {

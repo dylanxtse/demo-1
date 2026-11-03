@@ -1671,6 +1671,8 @@
 }
 
 .sales-reconciliation-page.order-module-page .sales-customer-toolbar {
+  position: relative;
+  z-index: 5;
   display: flex;
   min-height: 38px;
   align-items: center;
@@ -1678,6 +1680,65 @@
   margin: 8px 22px 0;
   padding: 0;
   flex: 0 0 auto;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-caret {
+  margin-left: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 20;
+  display: none;
+  width: 152px;
+  padding: 5px;
+  border: 1px solid var(--border-color, #e5e8ef);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(27, 42, 75, .14);
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-dropdown.is-open .sales-customer-export-menu {
+  display: block;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-menu-item {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-menu-item:hover:not(:disabled),
+.sales-reconciliation-page.order-module-page .sales-customer-export-menu-item:focus-visible {
+  outline: none;
+  background: #f1f5ff;
+  color: var(--primary);
+}
+
+.sales-reconciliation-page.order-module-page .sales-customer-export-menu-item:disabled {
+  color: var(--text-tertiary);
+  cursor: default;
 }
 
 .sales-reconciliation-page.order-module-page .sales-customer-table-container {

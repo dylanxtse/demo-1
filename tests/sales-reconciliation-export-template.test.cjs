@@ -68,10 +68,10 @@ function renderSalesReconciliation() {
     querySelectorAll() { return []; },
     addEventListener(type, handler) { listeners[type] = handler; }
   };
-  context.location = { search: '' };
+  context.location = { search: '?view=customer' };
   context.AppShell = { mount() { return { querySelector() { return page; } }; } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/sales-reconciliation.js'), 'utf8'), context);
-  return { context, listeners };
+  return { context, listeners, page };
 }
 
 function renderCustomerDetail() {
@@ -138,9 +138,14 @@ test('客户对账导出模板按截图显示分组信息、金额合计及发�
 });
 
 test('客户对账页导出将客户明细分组传入导出模板', () => {
-  const { context, listeners } = renderSalesReconciliation();
+  const { context, listeners, page } = renderSalesReconciliation();
+  assert.match(page.innerHTML, /data-sales-export-dropdown/);
+  assert.match(page.innerHTML, /导出列表/);
+  assert.match(page.innerHTML, /导出关联明细/);
+  assert.match(page.innerHTML, /导出列表<\/button>/);
+  assert.match(page.innerHTML, /disabled>导出列表<\/button>/);
   listeners.click({ target: { closest(selector) {
-    return selector === '[data-sales-toolbar]' ? { dataset: { salesToolbar: 'customer-export' } } : null;
+    return selector === '[data-sales-toolbar]' ? { dataset: { salesToolbar: 'customer-export' }, closest() { return null; } } : null;
   } } });
   const query = new URLSearchParams(context.location.href.split('?')[1]);
   assert.match(context.location.href, /^\.\/sales-reconciliation-export-template\.html\?/);
