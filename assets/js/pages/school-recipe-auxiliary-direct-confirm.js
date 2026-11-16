@@ -105,7 +105,7 @@
       modal.querySelector('[data-modal-confirm]').disabled = true;
       modal.querySelector('[data-modal-confirm]').textContent = '提交中…';
       try {
-        await directService.submitDates(demand.dates, canteen, quantitiesByDate(), expectedAt(demand.dates), orderMode);
+        await directService.submitDates(demand.dates, canteen, quantitiesByDate(), expectedAt(demand.dates), orderMode, { expectedAtAutomatic: true });
         if (orderMode === 'combined') directService.writeCombinedDraft(canteen, null);
         else demand.dates.forEach((filledDate) => directService.writeDraft(filledDate, canteen, {}));
         closeModal();

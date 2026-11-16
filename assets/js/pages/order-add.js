@@ -314,7 +314,7 @@
       customerId: customer?.id || currentRecord?.customerId || '',
       customerName: form.elements.customerName.value,
       canteen: form.elements.canteen.value,
-      expectedAt: normalizeExpectedAt(form.elements.expectedAt.value),
+      expectedAt: mode === 'edit' ? currentRecord.expectedAt : normalizeExpectedAt(form.elements.expectedAt.value),
       orderTag: form.elements.orderTag.value,
       remark: form.elements.remark.value.trim(),
       items: goodsItems.filter((item) => item.goodsId).map((item) => ({
@@ -518,6 +518,7 @@
       primary.textContent = '保存订单';
     }
     if (readonlyMode) form.querySelectorAll('input, select, textarea').forEach((control) => { control.disabled = true; });
+    if (mode === 'edit' && form.elements.expectedAt) form.elements.expectedAt.disabled = true;
   }
 
   async function loadRecord() {

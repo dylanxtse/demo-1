@@ -43,6 +43,9 @@ function loadApp(options = {}) {
   const scripts = [
     'assets/js/utils/business-rules.js',
     'assets/js/utils/storage.js',
+    'assets/js/utils/recipe-delivery-rule.js',
+    'assets/js/utils/order-delivery.js',
+    'assets/js/utils/prototype-preview.js',
     'assets/js/services/repository.js',
     'assets/js/data/mock-dataset.js',
     ...(options.services || [])

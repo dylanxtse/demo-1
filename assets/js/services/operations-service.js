@@ -104,7 +104,9 @@
   function load(resource) {
     assertResource(resource);
     const records = normalizeOrderNumbers(resource, window.DemoStore.get(resource));
-    return resource === 'sortingItems' ? enrichSortingItems(records) : records;
+    const source = resource === 'sortingItems' ? enrichSortingItems(records) : records;
+    return ['orders', 'sortingItems', 'sortingProgress', 'shortageItems', 'shippingOrders'].includes(resource)
+      ? (window.OrderDelivery?.enrichRows(source) || source) : source;
   }
 
   function save(resource, items) {
@@ -195,7 +197,8 @@
       }
       if (Array.isArray(value) && value.length === 2 && /Range$/.test(key)) {
         const sourceKey = key.replace(/Range$/, '');
-        const source = item[sourceKey] || '';
+        const source = sourceKey === 'deliveryDate'
+          ? (item.deliveryDate || window.OrderSchema.deliveryDate(item)) : item[sourceKey] || '';
         return (!value[0] || source >= value[0]) && (!value[1] || source <= `${value[1]} 23:59:59`);
       }
       if (key === 'mealName') return matchesMealName(item, value, resource);
@@ -392,7 +395,23 @@
       const page = Math.max(1, Number(query.page) || 1);
       const pageSize = Math.max(1, Number(query.pageSize) || 20);
       const conditions = query.condition || {};
-      const filtered = load(resource)
+      let source = load(resource);
+      if (resource === 'sortingProgress' && (conditions.deliveryDateRange || conditions.deliveryDate)) {
+        const { status, ...lineConditions } = conditions;
+        const groups = new Map();
+        load('sortingItems').filter((row) => matches(row, lineConditions, 'sortingItems')).forEach((row) => {
+          const key = JSON.stringify([row.customerName, row.canteen, row.deliveryDate, row.route || '']);
+          if (!groups.has(key)) groups.set(key, { ...row, id: key, sortedCount: 0, orderCount: 0 });
+          const group = groups.get(key);
+          group.orderCount += 1;
+          if (row.status === 'SORTED' || row.sortingCompleted) group.sortedCount += 1;
+        });
+        source = [...groups.values()].map((row) => ({ ...row,
+          progress: `${row.sortedCount}/${row.orderCount}`,
+          status: row.sortedCount === 0 ? 'PENDING' : row.sortedCount === row.orderCount ? 'SORTED' : 'PARTIAL'
+        }));
+      }
+      const filtered = source
         .filter((item) => matches(item, conditions, resource))
         .sort((a, b) => String(b.createdAt || b.occurredAt || b.id).localeCompare(String(a.createdAt || a.occurredAt || a.id)));
       const start = (page - 1) * pageSize;

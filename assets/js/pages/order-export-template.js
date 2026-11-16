@@ -54,7 +54,7 @@
   }
 
   const payload = readPayload();
-  const orders = Array.isArray(payload?.rows) ? payload.rows : [];
+  const orders = window.PrototypePreview.orders(payload?.rows);
   const companyName = payload?.companyName || '集采企业';
   const exportTime = payload?.exportedAt || formatDateTime(new Date());
 
@@ -93,6 +93,7 @@
       <td>${display(order.orderTag)}</td>
       <td>${display(order.shippingAt)}</td>
       <td>${display(order.expectedAt)}</td>
+      <td>${display(window.OrderDelivery.date(order))}</td>
       <td>${display(statusLabel(order.status))}</td>
       <td>${amount(line.unitPrice)}</td>
       <td>${quantity(line.quantity)}</td>
@@ -115,16 +116,14 @@
       const items = Array.isArray(order.items) ? order.items : [];
       return items.length
         ? items.map((line) => renderItemRow(line, serial++, order)).join('')
-        : '<tr class="school-order-export-item-row"><td colspan="29">暂无商品明细</td></tr>';
+        : '<tr class="school-order-export-item-row"><td colspan="30">暂无商品明细</td></tr>';
     }).join('');
     return `<div class="school-order-export-template-table-wrap">
       <table class="school-order-export-template-table">
-        <colgroup>
-          <col style="width:60px"><col style="width:160px"><col style="width:180px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:120px"><col style="width:200px"><col style="width:160px"><col style="width:200px"><col style="width:120px"><col style="width:160px"><col style="width:160px"><col style="width:100px"><col style="width:130px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:110px"><col style="width:100px"><col style="width:110px"><col style="width:100px"><col style="width:110px"><col style="width:140px"><col style="width:120px">
-        </colgroup>
+        <colgroup>${Array.from({ length: 30 }, (_, index) => `<col style="width:${index === 3 ? 200 : [14,15,16].includes(index) ? 160 : 120}px">`).join('')}</colgroup>
         <thead>
-          <tr class="school-order-export-title-row"><th colspan="29">订单商品</th></tr>
-          <tr class="school-order-export-column-row"><th>序号</th><th>订单号</th><th>商品编码</th><th>商品名称</th><th>一级分类</th><th>二级分类</th><th>三级分类</th><th>计量单位</th><th>品牌</th><th>规格</th><th>供货企业</th><th>客户名称</th><th>食堂</th><th>订单标签</th><th>发货时间</th><th>期望送达时间</th><th>单据状态</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货单价</th><th>发货数量</th><th>发货小计</th><th>验货数量</th><th>验货小计</th><th>退货数量</th><th>退货小计</th><th>备注</th><th>生产日期</th></tr>
+          <tr class="school-order-export-title-row"><th colspan="30">订单商品</th></tr>
+          <tr class="school-order-export-column-row"><th>序号</th><th>订单号</th><th>商品编码</th><th>商品名称</th><th>一级分类</th><th>二级分类</th><th>三级分类</th><th>计量单位</th><th>品牌</th><th>规格</th><th>供货企业</th><th>客户名称</th><th>食堂</th><th>订单标签</th><th>发货时间</th><th>期望送达时间</th><th>配送日期</th><th>单据状态</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货单价</th><th>发货数量</th><th>发货小计</th><th>验货数量</th><th>验货小计</th><th>退货数量</th><th>退货小计</th><th>备注</th><th>生产日期</th></tr>
         </thead>
         <tbody>
           ${allRows}

@@ -55,7 +55,7 @@
 
   const payload = readPayload();
   const service = window.SchoolOrderService;
-  const orders = Array.isArray(payload?.rows) ? payload.rows : (service?.getAll?.() || []);
+  const orders = window.PrototypePreview.orders(payload?.rows?.length ? payload.rows : service?.getAll?.());
   const schoolName = payload?.schoolName || service?.SCHOOL_NAME || '静安第一中学';
   const exportTime = payload?.exportedAt || formatDateTime(new Date());
 

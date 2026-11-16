@@ -23,18 +23,7 @@
   }
 
   function getItems() {
-    const allItems = window.DemoStore?.get('sortingItems') || [];
-    const params = new URLSearchParams(window.location.search);
-    const expectedAt = params.get('expectedAt') || '';
-    const warehouse = params.get('warehouse') || '';
-    const status = params.get('status') || '';
-    const filtered = allItems.filter((item) => {
-      if (expectedAt && String(item.expectedAt || '').slice(0, 10) !== expectedAt) return false;
-      if (warehouse && warehouse !== '全部' && String(item.warehouse || item.warehouseName || '') !== warehouse) return false;
-      if (status && status !== '全部' && !status.split(',').includes(String(item.status || ''))) return false;
-      return true;
-    });
-    return filtered.length ? filtered : allItems;
+    return window.PrototypePreview.rows(window.OrderDelivery.readRows('sortingItems', new URLSearchParams(window.location.search)), 'sortingItems');
   }
 
   function groupItems(items) {
@@ -67,6 +56,7 @@
       ${itemIndex === 0 ? groupCells : ''}
       <td>${escapeHtml(item.customerName || '--')}</td>
       <td>${escapeHtml(item.canteen || '--')}</td>
+      <td>${escapeHtml(item.expectedAt || '--')}</td><td>${escapeHtml(window.OrderDelivery.date(item))}</td>
       <td>${escapeHtml(item.remark || '')}</td>
       <td>${formatNumber(item.orderQty)}</td>
       <td>${breakdown ? breakdown.packageCount : '--'}</td>
@@ -84,10 +74,11 @@
   const expectedAt = params.get('expectedAt') || items[0]?.expectedAt?.slice(0, 10) || currentDate();
 
   document.getElementById('mergeExportWarehouse').textContent = `仓库：${warehouse === '中心仓' ? '赣县中心仓' : warehouse}`;
-  document.getElementById('mergeExportDate').textContent = `期望送达时间：${expectedAt}`;
+  document.getElementById('mergeExportDate').textContent = `期望送达时间：${[...new Set(items.map((item) => item.expectedAt))].join('、') || '--'}`;
+  document.getElementById('mergeExportDeliveryDate').textContent = `配送日期：${window.OrderDelivery.rangeLabel(items)}`;
   document.getElementById('mergeExportBody').innerHTML = groups.length
     ? groups.map(renderGroup).join('')
-    : '<tr><td colspan="13" style="text-align:center">暂无可归并数据</td></tr>';
+    : '<tr><td colspan="15" style="text-align:center">暂无可归并数据</td></tr>';
 
   const page = document.querySelector('.sorting-merge-export-page');
   const zoomValue = document.querySelector('[data-action="zoom-reset"]');

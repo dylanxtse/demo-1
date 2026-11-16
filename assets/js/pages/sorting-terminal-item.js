@@ -76,7 +76,7 @@
   const dialogPackageCount = document.getElementById('sortingTerminalItemDialogPackageCount');
   const dialogPackageRemainder = document.getElementById('sortingTerminalItemDialogPackageRemainder');
   const dialogPackageQuantity = document.getElementById('sortingTerminalItemDialogPackageQuantity');
-  let filter = 'all';
+  let filter = 'pending';
   let activeTask = null;
   let grossWeight = 0;
   let accumulatedWeight = 0;

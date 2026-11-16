@@ -237,6 +237,7 @@
     { key: 'status', label: '单据状态', format: 'status' }
   ];
   window.RecordPageConfig = {
+    deliveryDates: true,
     title: '分拣管理',
     initialTab: new URLSearchParams(window.location.search).get('view') || window.location.hash.slice(1),
     pageClass: 'sorting-module-page sorting-status-boxed',
@@ -246,7 +247,8 @@
     resource: 'sortingItems',
     defaultCondition: { expectedAt: defaultDate },
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', type: 'date', defaultValue: defaultDate },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date', defaultValue: defaultDate },
+
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入' },
       { key: 'isNetVegetable', label: '是否净菜', options: [
@@ -329,7 +331,8 @@
         expandable: true,
         renderExpandedRow: renderCustomerOrders,
         filters: [
-          { key: 'expectedAt', label: '期望送达时间', type: 'date' },
+          { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date' },
+
           { key: 'warehouse', label: '仓库', options: customerOptions('sortingItems', 'warehouse') },
           { key: 'goodsName', label: '商品名称', placeholder: '请输入' },
           { key: 'category', label: '商品分类', options: customerService.filterOptions('category') },
@@ -368,13 +371,13 @@
           { key: 'batchShortage', label: '批量标记缺货', primary: true, requiresSelection: true, batchTransition: 'markShortage', message: '确定将选中客户下尚未分拣、未发货的商品标记缺货吗？' },
           { key: 'batchPrint', label: '一键打印', primary: true, requiresSelection: true, onClick: printCustomerLabels },
           { key: 'printDocument', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: printCustomers },
-          { key: 'export', label: '导出', icon: 'supplier-purchase-export', onClick: openSortingCustomerExportTemplate }
+          { key: 'export', label: '导出', icon: 'supplier-purchase-export', allFiltered: true, onClick: openSortingCustomerExportTemplate }
         ],
         rowActions: [
           {
             key: 'sort',
             label: '分拣',
-            href: (item) => `./sorting-customer-detail.html?group=${encodeURIComponent(item.id)}&customer=${encodeURIComponent(item.customerName)}&canteen=${encodeURIComponent(item.canteen)}&date=${encodeURIComponent(item.expectedAt)}`
+            href: (item, condition) => `./sorting-customer-detail.html?group=${encodeURIComponent(item.id)}&customer=${encodeURIComponent(item.customerName)}&canteen=${encodeURIComponent(item.canteen)}&date=${encodeURIComponent(item.expectedAt)}&deliveryDate=${encodeURIComponent(item.deliveryDate || '')}&condition=${encodeURIComponent(JSON.stringify(condition || {}))}`
           },
           { key: 'print', label: '打印拣货单', onClick: (item) => printCustomers([item]) }
         ]

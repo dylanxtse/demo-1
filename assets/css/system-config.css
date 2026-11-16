@@ -300,3 +300,17 @@
   .config-priority-group { max-width: 760px; }
   .config-priority-group .config-select { width: 160px; }
 }
+
+.recipe-delivery-settings { min-width: 0; }
+.recipe-delivery-meals { display: grid; gap: 10px; }
+.recipe-delivery-meal-name { flex: 0 0 42px; font-weight: 500; }
+.recipe-delivery-hint { margin: 10px 0; color: #86909c; font-size: 12px; line-height: 20px; }
+.recipe-delivery-row .config-apply[hidden] { display: none; }
+@media (max-width: 720px) {
+  .recipe-delivery-row { flex-direction: column; gap: 10px; }
+  .recipe-delivery-row .config-label { flex-basis: auto; justify-content: flex-start; }
+  .recipe-delivery-meal { flex-wrap: wrap; }
+}
+
+.recipe-expected-row:not(.is-editing) .config-input[readonly] { background: #f7f8fa; cursor: pointer; }
+.recipe-expected-row .config-apply[hidden] { display: none; }

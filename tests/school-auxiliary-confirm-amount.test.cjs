@@ -203,3 +203,30 @@ test('干调商品按餐次独立显示和移除，确认页当前餐次最后�
   assert.doesNotMatch(confirmation.html, /data-product-key="aux-salt"/);
   assert.match(confirmation.html, /data-product-key="aux-simple-47"[^>]*disabled[^>]*>移除<\/button>/);
 });
+
+test('干调人数填报订单和企业同步订单使用午餐配送配置', async () => {
+  const confirmation = renderConfirm(false);
+  const { context, listeners } = confirmation;
+  context.DemoStore.updateSettings({ recipeDeliveryByMeal: Object.fromEntries(context.RecipeDeliveryRule.MEALS.map((meal) => [meal.key,
+    { days: meal.key === 'lunch' ? 1 : 0, time: meal.key === 'lunch' ? '06:45' : '07:00' }])) });
+  context.DemoStore.replace('recipeDemandRecords', []);
+  listeners.click({ target: { closest(selector) { return selector === '[data-action="submit"]' ? {} : null; } } });
+  confirmation.confirmSubmit();
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (context.DemoStore.get('recipeDemandRecords').some((record) => record.balanceRows)) break;
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  const record = context.DemoStore.get('recipeDemandRecords').find((item) => item.balanceRows);
+  assert.ok(record);
+  assert.ok(record.orders.length);
+  record.orders.forEach((index) => {
+    assert.equal(index.expectedAt, '2026-11-08 07:30:00');
+    assert.equal(index.deliveryAt, '2026-11-07 07:30:00');
+    assert.equal(index.mealKey, 'lunch');
+    assert.equal(context.SchoolOrderService.get(index.orderId).expectedAt, index.expectedAt);
+    const enterprise = context.DemoStore.get('orders').find((order) => order.id === index.enterpriseOrderId);
+    assert.equal(enterprise.expectedAt, index.expectedAt);
+  });
+  assert.deepEqual(Array.from(record.deliveryAts), ['2026-11-07 07:30:00']);
+  assert.deepEqual(Array.from(record.enterpriseSyncWarnings), []);
+});

@@ -1052,7 +1052,7 @@
       + '<div class="school-mobile-product-order-filters">' + tabs.map((tab) => '<button type="button" class="' + (state.productOrderFilter === tab ? 'is-active' : '') + '" data-action="product-order-filter" data-filter="' + escapeHtml(tab) + '">' + escapeHtml(tab) + '</button>').join('') + '<button type="button" class="school-mobile-product-order-filter-icon" aria-label="筛选">⌄<small>筛选</small></button></div>'
       + '<form class="school-mobile-product-order-search" data-product-order-search-form><span class="school-mobile-product-search-icon" aria-hidden="true">' + productOrderIcon('search') + '</span><input type="search" value="' + escapeHtml(state.productOrderSearchValue) + '" placeholder="请输入" data-action="product-order-search-input" aria-label="搜索订单"><button type="submit" data-action="search-product-orders">搜索</button></form>'
       + '<div class="school-mobile-product-order-list">'
-      + (orders.length ? orders.map((order) => '<article class="school-mobile-product-order-card" data-action="open-product-order" data-order-id="' + escapeHtml(order.id) + '" role="button" tabindex="0" aria-label="查看订单 ' + escapeHtml(order.orderNo || order.id) + '"><header><strong>' + escapeHtml(order.supplierName || state.productSupplier || '--') + '</strong><span class="is-' + (order.status === '已关闭' ? 'closed' : 'pending') + '">' + escapeHtml(productOrderStatusLabel(order.status)) + '</span></header><div class="school-mobile-product-order-body">' + renderOrderFieldRow('订单号：', order.orderNo || '--') + renderOrderFieldRow('订单标签：', order.orderTag || '--') + renderOrderFieldRow('下单品种数：', number(order.productCount)) + renderOrderFieldRow('下单金额：', Number(order.orderAmount || 0).toFixed(2)) + renderOrderFieldRow('期望送达时间：', productOrderDateTime(order.expectedAt)) + '<footer><button type="button" data-action="product-order-reorder" data-order-id="' + escapeHtml(order.id) + '">再来一单</button>' + (order.status !== '已关闭' ? '<button type="button" data-action="product-order-edit" data-order-id="' + escapeHtml(order.id) + '">编辑</button><button type="button" class="is-outline" data-action="product-order-close" data-order-id="' + escapeHtml(order.id) + '">关闭</button>' : '') + '</footer></div></article>').join('') : '<div class="school-mobile-product-order-empty"><strong>暂无订单</strong><span>完成一次商品下单后，订单会显示在这里</span></div>')
+      + (orders.length ? orders.map((order) => '<article class="school-mobile-product-order-card" data-action="open-product-order" data-order-id="' + escapeHtml(order.id) + '" role="button" tabindex="0" aria-label="查看订单 ' + escapeHtml(order.orderNo || order.id) + '"><header><strong>' + escapeHtml(order.supplierName || state.productSupplier || '--') + '</strong><span class="is-' + (order.status === '已关闭' ? 'closed' : 'pending') + '">' + escapeHtml(productOrderStatusLabel(order.status)) + '</span></header><div class="school-mobile-product-order-body">' + renderOrderFieldRow('订单号：', order.orderNo || '--') + renderOrderFieldRow('订单标签：', order.orderTag || '--') + renderOrderFieldRow('下单品种数：', number(order.productCount)) + renderOrderFieldRow('下单金额：', Number(order.orderAmount || 0).toFixed(2)) + renderOrderFieldRow('期望送达时间：', productOrderDateTime(order.expectedAt)) + renderOrderFieldRow('配送日期：', profileOrderDeliveryDate(order)) + '<footer><button type="button" data-action="product-order-reorder" data-order-id="' + escapeHtml(order.id) + '">再来一单</button>' + (order.status !== '已关闭' ? '<button type="button" data-action="product-order-edit" data-order-id="' + escapeHtml(order.id) + '">编辑</button><button type="button" class="is-outline" data-action="product-order-close" data-order-id="' + escapeHtml(order.id) + '">关闭</button>' : '') + '</footer></div></article>').join('') : '<div class="school-mobile-product-order-empty"><strong>暂无订单</strong><span>完成一次商品下单后，订单会显示在这里</span></div>')
       + '</div></div>';
   }
 
@@ -1812,7 +1812,7 @@
     state.submitting = true;
     render();
     try {
-      const result = await demandService.submitDirectDates(dates, drafts, { canteen: currentCanteen(), expectedAt });
+      const result = await demandService.submitDirectDates(dates, drafts, { canteen: currentCanteen(), expectedAt, expectedAtAutomatic: true });
       dates.forEach((date) => writeDirectDraft(date, {}));
       state.submitting = false;
       state.screen = 'main';
@@ -3205,6 +3205,7 @@
         + renderOrderFieldRow('下单品种数：', number(order.productCount || (order.items || []).length))
         + renderOrderFieldRow('下单金额：', formatProfileMoney(order.orderAmount))
         + renderOrderFieldRow('期望送达时间：', profileOrderExpectedAt(order))
+        + renderOrderFieldRow('配送日期：', profileOrderDeliveryDate(order))
         + '<footer>' + actionButtons + '</footer>'
         + '</div>'
         + '</article>';
@@ -3223,6 +3224,10 @@
     const value = String(order?.expectedAt || order?.expectedDate || '').trim();
     if (!value) return '--';
     return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value + ' 00:00:00' : value;
+  }
+
+  function profileOrderDeliveryDate(order) {
+    return window.OrderSchema.deliveryDate({ ...order, expectedAt: order?.expectedAt || order?.expectedDate || '' }) || '--';
   }
 
   function profileOrderMealName(order) {
@@ -3532,6 +3537,7 @@
       + '<div class="school-mobile-order-detail-info-row"><span>供货企业：</span><strong>' + escapeHtml(supplier) + '</strong></div>'
       + '<div class="school-mobile-order-detail-info-row' + (editing ? ' is-editable' : '') + '"><span>食堂：</span>' + canteenField + '</div>'
       + '<div class="school-mobile-order-detail-info-row"><span>期望送达时间：</span><strong>' + escapeHtml(profileOrderExpectedAt(order)) + '</strong></div>'
+      + '<div class="school-mobile-order-detail-info-row"><span>配送日期：</span><strong>' + escapeHtml(profileOrderDeliveryDate(order)) + '</strong></div>'
       + '<div class="school-mobile-order-detail-info-row"><span>订单餐次：</span><strong>' + escapeHtml(profileOrderMealName(order)) + '</strong></div>'
       + '<div class="school-mobile-order-detail-info-row' + (editing ? ' is-editable' : '') + '"><span>订单标签：</span>' + tagField + '</div>'
       + '</section>'
@@ -4147,7 +4153,7 @@
       }
       const result = await demandService.submit(dates, {
         ...serviceOptions(),
-        expectedAt,
+        expectedAt, expectedAtAutomatic: true,
         canteen: currentCanteen(),
         preview: submissionPreview,
         auxiliaryProducts: isAuxiliary ? auxiliarySubmissionProducts() : undefined,

@@ -111,6 +111,13 @@
   const configCheckbox = (key, label, helpText = '') => `<label class="config-checkbox"><input type="checkbox" data-config="${key}"><span class="config-checkmark"></span><span>${label}</span>${helpText ? help(helpText) : ''}</label>`;
   const configRadio = (key, value, label) => `<label class="config-radio"><input type="radio" name="${key}" value="${value}" data-radio-config="${key}"><span class="config-radiomark"></span><span>${label}</span></label>`;
 
+  const deliveryMeals = window.RecipeDeliveryRule.MEALS;
+  const deliveryFieldKey = (meal, field) => `recipeDelivery_${meal}_${field}`;
+  const deliveryFormValue = (key) => {
+    const match = key.match(/^recipeDelivery_(\w+)_(days|time)$/);
+    return match ? window.RecipeDeliveryRule.getConfig(match[1], savedSettings)[match[2]] : savedSettings[key];
+  };
+
   const content = `
     <section class="page-card system-config-page" aria-label="业务配置">
       <div class="system-config-scroll">
@@ -138,14 +145,30 @@
             <span class="config-time-wrap">${configInput('orderCutoffTime', '选择时间', 'config-time-input')}<span class="config-clock">◷</span></span>${clearButton('orderCutoffTime')}
           </div>
         </div>
-        <div class="config-row recipe-delivery-row">
-          <div class="config-label">需求填报下单送达时间${help('仅影响学校端需求填报下单，手动添加订单不受影响')}</div>
+        <div class="config-row recipe-expected-row">
+          <div class="config-label">需求填报下单送达时间${help('此配置用于计算学校填报需求下单的期望送达时间，自由选择期望送达时间的下单渠道不受此配置影响')}</div>
           <div class="config-inline-fields">
-            <span>用料日期前</span><input class="config-input config-days-input" type="number" min="0" max="365" step="1" data-config="recipeDeliveryAdvanceDays" aria-label="需求填报下单配送提前天数" readonly><span>天的</span>
-            <input class="config-input recipe-delivery-time-input" type="time" data-config="recipeDeliveryTime" aria-label="需求填报下单固定送达时间" readonly>
-            <button class="config-apply" type="button" data-action="edit-recipe-delivery">编辑</button>
-            <button class="config-apply" type="button" data-action="apply-recipe-delivery" hidden>应用</button>
-            <button class="config-apply" type="button" data-action="cancel-recipe-delivery" hidden>取消</button>
+            <span>用料日期前</span><input class="config-input config-days-input" type="number" min="0" max="365" step="1" data-config="recipeDeliveryAdvanceDays" aria-label="需求填报期望送达提前天数" readonly><span>天的</span>
+            <input class="config-input recipe-delivery-time-input" type="time" data-config="recipeDeliveryTime" aria-label="需求填报默认期望送达时间" readonly>
+            <button class="config-apply" type="button" data-action="edit-recipe-expected">编辑</button>
+            <button class="config-apply" type="button" data-action="apply-recipe-expected" hidden>保存</button>
+            <button class="config-apply" type="button" data-action="cancel-recipe-expected" hidden>取消</button>
+          </div>
+        </div>
+        <div class="config-row recipe-delivery-row">
+          <div class="config-label">订单配送日期${help('不区分餐次订单的配送日期为下单时的期望送达日期')}</div>
+          <div class="recipe-delivery-settings">
+            <div class="recipe-delivery-meals">
+              ${deliveryMeals.map((meal, index) => `<div class="config-inline-fields recipe-delivery-meal">
+                <span class="recipe-delivery-meal-name">${meal.name}</span>
+                <span>期望送达日期前</span><input class="config-input config-days-input" type="number" min="0" max="365" step="1" data-config="${deliveryFieldKey(meal.key, 'days')}" aria-label="${meal.name}配送提前天数" readonly><span>天</span>
+                ${index === 0 ? `<span class="config-inline-fields recipe-delivery-actions">
+                  <button class="config-apply" type="button" data-action="edit-recipe-delivery">编辑</button>
+                  <button class="config-apply" type="button" data-action="apply-recipe-delivery" hidden>保存</button>
+                  <button class="config-apply" type="button" data-action="cancel-recipe-delivery" hidden>取消</button>
+                </span>` : ''}
+              </div>`).join('')}
+            </div>
           </div>
         </div>
         <div class="config-row priority-row">
@@ -165,7 +188,7 @@
         <div class="config-row permission-row">
           <div class="config-label">食谱下单拆单配置</div>
           <div class="config-checkbox-group">
-            ${configCheckbox('splitOrderByMeal', '按餐次拆单', '开启后，学校根据食谱下单时将按餐次拆分订单')}
+            ${configCheckbox('splitOrderByMeal', '按餐次拆单', '开启后按餐次拆单；关闭时，送达时间不同的需求仍自动拆单')}
             ${configCheckbox('splitOrderByPersonType', '按人员类型拆单', '开启后，学校通过需求填报下单时将按人员类型和是否营养餐拆分订单；')}
           </div>
         </div>
@@ -304,12 +327,14 @@
     recipePurchaseQtyChangeUpperLimitValue: persistedSettings.recipePurchaseQtyChangeUpperLimitValue ?? persistedSettings.recipePurchaseQtyChangeThresholdValue ?? defaults.recipePurchaseQtyChangeUpperLimitValue
   };
   let pendingScrollPosition = null;
-  const recipeDeliveryKeys = new Set(['recipeDeliveryAdvanceDays', 'recipeDeliveryTime']);
+  const recipeDeliveryKeys = new Set(deliveryMeals.map((meal) => deliveryFieldKey(meal.key, 'days')));
   const recipePurchaseKeys = new Set([
     'recipePurchaseQtyChangeThresholdMode',
     'recipePurchaseQtyChangeLowerLimitValue',
     'recipePurchaseQtyChangeUpperLimitValue'
   ]);
+  const recipeExpectedKeys = new Set(['recipeDeliveryAdvanceDays', 'recipeDeliveryTime']);
+  let recipeExpectedEditing = false;
   let recipeDeliveryEditing = false;
 
   function readScrollPosition() {
@@ -360,7 +385,7 @@
       const key = element.dataset.config;
       if (element.type === 'checkbox') element.checked = Boolean(savedSettings[key]);
       else if (key === 'purchasePriceMode') element.value = normalizePurchaseMode(savedSettings[key]);
-      else element.value = savedSettings[key] ?? '';
+      else element.value = deliveryFormValue(key) ?? '';
       if (element.matches('.recipe-purchase-limit-value')) element.dataset.lastValidValue = element.value;
     });
     updatePurchasePriorityFields(root.querySelector('[data-config="purchasePriceMode"]')?.value);
@@ -408,6 +433,10 @@
     root.querySelectorAll('[data-radio-config]:checked').forEach((element) => {
       next[element.dataset.radioConfig] = element.value;
     });
+    next.recipeDeliveryByMeal = Object.fromEntries(deliveryMeals.map((meal) => [meal.key, {
+      days: Number(next[deliveryFieldKey(meal.key, 'days')])
+    }]));
+    recipeDeliveryKeys.forEach((key) => delete next[key]);
     return next;
   }
 
@@ -423,6 +452,19 @@
     root.querySelector('[data-action="cancel-recipe-delivery"]').hidden = !editing;
   }
 
+  function setRecipeExpectedEditing(editing) {
+    recipeExpectedEditing = editing;
+    root.querySelector('.recipe-expected-row')?.classList.toggle('is-editing', editing);
+    recipeExpectedKeys.forEach((key) => {
+      const input = root.querySelector(`[data-config="${key}"]`);
+      if (input) input.readOnly = !editing;
+    });
+    for (const action of ['edit', 'apply', 'cancel']) {
+      const button = root.querySelector(`[data-action="${action}-recipe-expected"]`);
+      if (button) button.hidden = action === 'edit' ? editing : !editing;
+    }
+  }
+
   function showStatus(message = '配置已保存', isError = false) {
     const status = root.querySelector('#configStatus');
     status.textContent = message;
@@ -435,7 +477,11 @@
   function persistSettings(options = {}) {
     const scrollPosition = pendingScrollPosition || readScrollPosition();
     const next = readFormSettings();
-    if (!options.applyRecipeDelivery) recipeDeliveryKeys.forEach((key) => { next[key] = savedSettings[key]; });
+    if (!options.applyRecipeDelivery) {
+      if (savedSettings.recipeDeliveryByMeal) next.recipeDeliveryByMeal = savedSettings.recipeDeliveryByMeal;
+      else delete next.recipeDeliveryByMeal;
+    }
+    if (!options.applyRecipeExpected) recipeExpectedKeys.forEach((key) => { next[key] = savedSettings[key]; });
     if (!options.applyRecipePurchase) recipePurchaseKeys.forEach((key) => { next[key] = savedSettings[key]; });
     window.DemoStore.updateSettings(next);
     savedSettings = Object.assign(savedSettings, next);
@@ -446,6 +492,7 @@
 
   applySettingsToForm();
   setRecipeDeliveryEditing(false);
+  setRecipeExpectedEditing(false);
 
   root.addEventListener('pointerdown', (event) => {
     if (event.target.closest('[data-config], [data-radio-config], .config-radio, .config-checkbox, [data-clear]')) {
@@ -461,7 +508,7 @@
   root.addEventListener('change', (event) => {
     if (event.target.matches('[data-config], [data-radio-config]')) {
       const key = event.target.dataset.config;
-      if (recipeDeliveryKeys.has(key)) return;
+      if (recipeDeliveryKeys.has(key) || recipeExpectedKeys.has(key)) return;
       if (key === 'allowRecipeDemandPurchaseQuantityEdit') updateRecipePurchaseLimitVisibility();
       if (recipePurchaseKeys.has(key)) {
         if (key === 'recipePurchaseQtyChangeThresholdMode') updateRecipePurchaseLimitUnit();
@@ -472,7 +519,7 @@
     }
   });
   root.addEventListener('input', (event) => {
-    if (recipeDeliveryKeys.has(event.target.dataset.config)) return;
+    if (recipeDeliveryKeys.has(event.target.dataset.config) || recipeExpectedKeys.has(event.target.dataset.config)) return;
     if (event.target.matches('.recipe-purchase-limit-value')) {
       const value = event.target.value;
       if (!/^\d*\.?\d*$/.test(value)) {
@@ -494,9 +541,35 @@
     event.target.dataset.lastValidValue = event.target.value;
   }, true);
   root.addEventListener('click', (event) => {
+    if (event.target.closest('[data-action="edit-recipe-expected"]')
+      || (!recipeExpectedEditing && event.target.closest('.recipe-expected-row [data-config]'))) {
+      setRecipeExpectedEditing(true);
+      root.querySelector('[data-config="recipeDeliveryAdvanceDays"]')?.focus();
+      return;
+    }
+    if (event.target.closest('[data-action="cancel-recipe-expected"]')) {
+      recipeExpectedKeys.forEach((key) => { const input = root.querySelector(`[data-config="${key}"]`); if (input) input.value = savedSettings[key]; });
+      setRecipeExpectedEditing(false);
+      pendingScrollPosition = null;
+      return;
+    }
+    if (event.target.closest('[data-action="apply-recipe-expected"]')) {
+      const days = root.querySelector('[data-config="recipeDeliveryAdvanceDays"]');
+      const time = root.querySelector('[data-config="recipeDeliveryTime"]');
+      if (!/^\d+$/.test(String(days.value).trim()) || Number(days.value) > 365) { showStatus('请输入0到365的整数天数', true); days.focus(); return; }
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time.value)) { showStatus('请选择期望送达时间', true); time.focus(); return; }
+      days.value = String(Number(days.value));
+      persistSettings({ applyRecipeExpected: true });
+      if (!recipeDeliveryEditing) recipeDeliveryKeys.forEach((key) => {
+        const input = root.querySelector(`[data-config="${key}"]`);
+        if (input) input.value = deliveryFormValue(key);
+      });
+      setRecipeExpectedEditing(false);
+      return;
+    }
     if (event.target.closest('[data-action="edit-recipe-delivery"]')) {
       setRecipeDeliveryEditing(true);
-      root.querySelector('[data-config="recipeDeliveryAdvanceDays"]')?.focus();
+      root.querySelector(`[data-config="${deliveryFieldKey(deliveryMeals[0].key, 'days')}"]`)?.focus();
       return;
     }
     if (!recipeDeliveryEditing && event.target.closest('.recipe-delivery-row [data-config]')) {
@@ -506,19 +579,19 @@
     if (event.target.closest('[data-action="cancel-recipe-delivery"]')) {
       recipeDeliveryKeys.forEach((key) => {
         const input = root.querySelector(`[data-config="${key}"]`);
-        if (input) input.value = savedSettings[key] ?? defaults[key];
+        if (input) input.value = deliveryFormValue(key);
       });
       setRecipeDeliveryEditing(false);
       pendingScrollPosition = null;
       return;
     }
     if (event.target.closest('[data-action="apply-recipe-delivery"]')) {
-      const daysInput = root.querySelector('[data-config="recipeDeliveryAdvanceDays"]');
-      const timeInput = root.querySelector('[data-config="recipeDeliveryTime"]');
-      const days = String(daysInput.value).trim();
-      if (!/^\d+$/.test(days) || Number(days) > 365) { showStatus('请输入0到365的整数天数', true); daysInput.focus(); return; }
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput.value)) { showStatus('请选择配送时间', true); timeInput.focus(); return; }
-      daysInput.value = String(Number(days));
+      for (const meal of deliveryMeals) {
+        const daysInput = root.querySelector(`[data-config="${deliveryFieldKey(meal.key, 'days')}"]`);
+        const days = String(daysInput.value).trim();
+        if (!/^\d+$/.test(days) || Number(days) > 365) { showStatus(`${meal.name}：请输入0到365的整数天数`, true); daysInput.focus(); return; }
+        daysInput.value = String(Number(days));
+      }
       persistSettings({ applyRecipeDelivery: true });
       setRecipeDeliveryEditing(false);
       return;

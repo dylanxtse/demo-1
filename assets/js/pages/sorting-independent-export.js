@@ -14,23 +14,7 @@
   }
 
   function getItems() {
-    const allItems = window.DemoStore?.get('sortingItems') || [];
-    const params = new URLSearchParams(window.location.search);
-    const expectedAt = params.get('expectedAt') || '';
-    const warehouse = params.get('warehouse') || '';
-    const status = params.get('status') || '';
-    const hasFilter = Boolean(
-      expectedAt ||
-      (warehouse && warehouse !== '全部') ||
-      (status && status !== '全部')
-    );
-    const filtered = allItems.filter((item) => {
-      if (expectedAt && String(item.expectedAt || '').slice(0, 10) !== expectedAt) return false;
-      if (warehouse && warehouse !== '全部' && String(item.warehouse || item.warehouseName || '') !== warehouse) return false;
-      if (status && status !== '全部' && !status.split(',').includes(String(item.status || ''))) return false;
-      return true;
-    });
-    return hasFilter ? filtered : allItems;
+    return window.PrototypePreview.rows(window.OrderDelivery.readRows('sortingItems', new URLSearchParams(window.location.search)), 'sortingItems');
   }
 
   function statusText(status) {
@@ -88,6 +72,7 @@
       <td>${escapeHtml(item.customerName || '--')}</td>
       <td>${escapeHtml(item.canteen || '--')}</td>
       <td>${escapeHtml(expectedAt)}</td>
+      <td>${escapeHtml(window.OrderDelivery.date(item))}</td>
       <td>${formatNumber(item.orderQty)}</td>
       <td>${item.actualQty ? formatNumber(item.actualQty) : ''}</td>
       <td>${escapeHtml(item.unit || '--')}</td>
@@ -108,7 +93,7 @@
   const items = getItems();
   document.getElementById('independentExportBody').innerHTML = items.length
     ? items.map(renderRow).join('')
-    : '<tr><td colspan="18">暂无可导出数据</td></tr>';
+    : '<tr><td colspan="19">暂无可导出数据</td></tr>';
 
   const page = document.querySelector('.sorting-independent-export-page');
   const zoomValue = document.querySelector('[data-action="zoom-reset"]');

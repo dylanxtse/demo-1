@@ -80,7 +80,7 @@
     shippedQty: Math.max(0, Number(savedState?.shippedById?.[index]) || 0),
     shortage: savedState ? shortageIds.has(index) : index === 2 && doneIds.has(index)
   }));
-  let filter = 'all';
+  let filter = 'pending';
   let activeTask = null;
   let grossWeight = 0;
   let accumulatedWeight = 0;

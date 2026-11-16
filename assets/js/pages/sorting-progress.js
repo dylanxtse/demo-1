@@ -30,13 +30,15 @@
   ];
 
   window.RecordPageConfig = {
+    deliveryDates: true,
     title: '分拣进度',
     resource: 'sortingItems',
     pageClass: 'sorting-module-page sorting-progress-page',
     usePagination: true,
     selectable: false,
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', type: 'date' },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date' },
+
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入' },
       { key: 'category', label: '商品分类', options: ['果蔬', '蛋奶类', '水产品', '主食'] },

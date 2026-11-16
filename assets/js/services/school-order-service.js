@@ -446,6 +446,7 @@
       orderTagName: String(payload.orderTagName || '').trim(),
       nutritious: String(payload.nutritious || '').trim(),
       expectedAt: String(payload.expectedAt || '').trim(),
+      deliveryAt: ((payload.mealKey || payload.mealName) && payload.deliveryAt) || window.OrderSchema.deliveryAt(payload, window.DemoStore.getSettings()),
       supplement: String(payload.supplement || '否'),
       source: String(payload.source || '平台下单'),
       orderMode: String(payload.orderMode || ''),
@@ -604,7 +605,10 @@
       const index = findIndex(orders, id);
       if (index < 0) return null;
       const current = orders[index];
-      const normalized = normalizePayload({ ...current, ...payload });
+      const nextPayload = { ...current, ...payload };
+      ['expectedAt', 'mealKey', 'mealName', 'mealNames', 'recipeDemandDate', 'recipeDemandDates'].forEach((key) => { nextPayload[key] = current[key]; });
+      nextPayload.deliveryAt = current.deliveryAt || current.expectedAt;
+      const normalized = normalizePayload(nextPayload);
       const next = canonicalOrder({
         ...current,
         ...normalized,
@@ -640,6 +644,7 @@
       };
       delete payload.id;
       delete payload.orderNo;
+      delete payload.deliveryAt;
       return this.create(payload);
     },
     approve(id) {

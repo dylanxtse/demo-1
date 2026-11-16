@@ -432,7 +432,9 @@
     return submitDates([date], canteen, { dates: [date], quantities }, expectedAt, 'simple');
   }
 
-  async function submitDates(dates, canteen, quantitiesByDate, expectedAt, orderMode = 'legacy') {
+  async function submitDates(dates, canteen, quantitiesByDate, expectedAt, orderMode = 'legacy', options = {}) {
+    const automaticExpectedAt = options.expectedAtAutomatic === true || !expectedAt;
+    if (!expectedAt) expectedAt = window.RecipeDeliveryRule.expectedAt(dates);
     const combined = orderMode === 'combined' || orderMode === 'simple';
     const noMeal = orderMode === 'no-meal';
     const preview = combined
@@ -515,7 +517,7 @@
     };
     const saveRecord = () => window.DemoStore?.replace?.(resource, [...records, record]);
     saveRecord();
-    const groups = combined
+    let groups = combined
       ? [{ key: 'combined', mealKey: '', name: '', date: '', rows: preview.selectedRows }]
       : noMeal ? [{ key: 'no-meal', mealKey: '', name: '', date: '', rows: preview.selectedRows }]
       : orderMode === 'daily' ? preview.dateSummaries.flatMap((summary) => summary.meals.map((meal) => ({
@@ -529,8 +531,31 @@
         ? preview.meals.map((meal) => ({ key: meal.key, mealKey: meal.key, name: meal.name, date: '', rows: meal.rows }))
         : [{ key: 'all-meals', mealKey: '', name: preview.meals.map((meal) => meal.name).join('、'),
           date: '', rows: preview.selectedRows }];
+    if (!combined && !noMeal && window.RecipeDeliveryRule?.isMealBased()) {
+      const deliveryGroups = new Map();
+      const byMeal = splitByMeal() || orderMode === 'daily';
+      preview.dateSummaries.forEach((summary) => summary.meals.forEach((meal) => {
+        const expected = automaticExpectedAt ? window.RecipeDeliveryRule.expectedAt([summary.date]) : expectedAt;
+        const at = window.RecipeDeliveryRule.deliveryAt(expected, meal.key);
+        const key = `${at}::${expected}::${byMeal ? meal.key : 'all-meals'}`;
+        if (!deliveryGroups.has(key)) deliveryGroups.set(key, { key: key.replace(/[^a-zA-Z0-9-]/g, '_'),
+          mealKey: byMeal ? meal.key : '', name: '', names: [], date: summary.date, expectedAt: expected, deliveryAt: at, rows: [] });
+        const group = deliveryGroups.get(key);
+        const selected = meal.rows.filter((row) => row.orderQty > 0);
+        if (!selected.length) return;
+        if (!group.names.includes(meal.name)) group.names.push(meal.name);
+        group.name = group.names.join('、');
+        group.rows.push(...selected.map((row) => ({ ...row, sourceDates: [summary.date],
+          participantDates: Object.fromEntries(preview.participants.map((person) => [person.key,
+            Number(row.participantQty?.[person.key] || 0) > 0 ? [summary.date] : []])) })));
+      }));
+      groups = [...deliveryGroups.values()];
+    }
     for (const person of orderParticipants) {
       for (const group of groups) {
+        // 无餐次订单原样使用下单时填写的期望送达时间。
+        const orderExpectedAt = group.expectedAt || expectedAt;
+        const deliveryAt = combined || noMeal ? orderExpectedAt : group.deliveryAt;
         const selected = group.rows.filter((row) => (byPerson ? Number(row.participantQty?.[person.key] || 0) : row.orderQty) > 0);
         if (!selected.length) continue;
         const orderDates = combined ? preview.dates : orderMode === 'daily' ? [group.date]
@@ -559,7 +584,7 @@
           mealKey: group.mealKey, mealName: group.name, mealPeople: '',
           recipeDemandRecordId: record.id, recipeDemandRecordNo: record.recordNo,
           recipeDemandDate: orderDates.join('、'), recipeParticipantType: person.label,
-          expectedAt, supplement: '否', source: '需求填报', status: '待审核',
+          expectedAt: orderExpectedAt, deliveryAt, supplement: '否', source: '需求填报', status: '待审核',
           orderMode: orderMode === 'legacy' ? '' : orderMode,
           creator: operator.name, items: [...orderItems.values()]
         });
@@ -574,7 +599,7 @@
             recipeDemandDate: orderDates.join('、'), recipeParticipantType: person.label,
             orderMode: orderMode === 'legacy' ? '' : orderMode,
             mealKey: order.mealKey, mealName: order.mealName, mealPeople: order.mealPeople,
-            expectedAt, items: order.items.map((line) => ({
+            expectedAt: orderExpectedAt, deliveryAt: order.deliveryAt, items: order.items.map((line) => ({
               productId: line.productCode, goodsCode: line.productCode, goodsName: line.productName,
               productName: line.productName, unit: line.unit, unitPrice: line.orderPrice,
               quantity: line.orderQty, orderQty: line.orderQty, subtotal: line.orderQty * line.orderPrice,
@@ -591,13 +616,18 @@
           date: orderDates.join('、'), dates: orderDates, mealKey: order.mealKey, mealName: order.mealName,
           mealPeople: '', participantType: person.label,
           orderTag: person.orderTag, orderTagId: person.tagId || person.key,
-          orderTagName: person.tagName || person.label, nutritious: person.nutritious || '不区分', expectedAt });
+          orderTagName: person.tagName || person.label, nutritious: person.nutritious || '不区分', expectedAt: order.expectedAt, deliveryAt: order.deliveryAt });
         saveRecord();
       }
     }
     record.operationLogs.push({ action: '订单生成', operator: operator.name,
       operatorId: operator.id, result: `${record.orders.length} 笔`, time: timestamp(),
       description: `生成订单：${record.orders.map((order) => order.orderNo).join('、')}` });
+    if (!combined && !noMeal && window.RecipeDeliveryRule?.isMealBased() && record.orders.length) {
+      record.expectedAts = [...new Set(record.orders.map((order) => order.expectedAt))].sort();
+      record.expectedAt = record.expectedAts[0];
+      record.deliveryAts = [...new Set(record.orders.map((order) => order.deliveryAt || order.expectedAt))].sort();
+    }
     saveRecord();
     return { record: clone(record), orders: clone(record.orders), preview: clone(preview) };
   }

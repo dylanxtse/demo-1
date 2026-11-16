@@ -161,6 +161,7 @@
       <td>${formatAmount(row.returnAmount)}</td>
       <td>${formatAmount(row.reconciliationAmount)}</td>
       <td>${dateTimeValue(row.expectedAt)}</td>
+      <td>${showValue(window.OrderSchema.deliveryDate(row))}</td>
       <td><span class="operation-status ${statusClass(row.status)}">${escapeHtml(row.status || '--')}</span></td>
       <td><span class="operation-status ${receiptClass(row.receiptStatus)}">${showValue(row.receiptStatus)}</span></td>
       <td>${showValue(row.productCount)}</td>
@@ -178,7 +179,7 @@
         <button type="button" class="btn-text danger" data-action="close" data-id="${escapeHtml(row.id)}" ${actionDisabled(row.status, 'close')}>关闭</button>
         <button type="button" class="btn-text danger" data-action="delete" data-id="${escapeHtml(row.id)}" ${actionDisabled(row.status, 'delete')}>删除</button>
       </div></td>
-    </tr>`).join('') : '<tr><td class="school-order-empty" colspan="20">暂无符合条件的数据</td></tr>';
+    </tr>`).join('') : '<tr><td class="school-order-empty" colspan="21">暂无符合条件的数据</td></tr>';
     const allOnPageSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
     const checkbox = page.querySelector('#schoolOrderSelectAll');
     if (checkbox) {
@@ -221,9 +222,9 @@
       </div>
       <div class="school-order-table-container">
         <div class="school-order-table-wrap"><table class="school-order-table"><colgroup>
-          <col class="col-select"><col class="col-order-no"><col class="col-supplier"><col class="col-canteen"><col class="col-tag"><col class="col-money"><col class="col-money"><col class="col-money"><col class="col-money"><col class="col-date"><col class="col-status"><col class="col-receipt"><col class="col-count"><col class="col-supplement"><col class="col-remark"><col class="col-accepted-at"><col class="col-driver"><col class="col-source"><col class="col-creator"><col class="col-action">
+          <col class="col-select"><col class="col-order-no"><col class="col-supplier"><col class="col-canteen"><col class="col-tag"><col class="col-money"><col class="col-money"><col class="col-money"><col class="col-money"><col class="col-date"><col class="col-delivery-date"><col class="col-status"><col class="col-receipt"><col class="col-count"><col class="col-supplement"><col class="col-remark"><col class="col-accepted-at"><col class="col-driver"><col class="col-source"><col class="col-creator"><col class="col-action">
         </colgroup><thead><tr>
-          <th><input id="schoolOrderSelectAll" type="checkbox" aria-label="全选订单"></th><th>订单号</th><th>供货企业</th><th>食堂</th><th>订单标签</th><th>下单金额</th><th>验收金额</th><th>退货金额</th><th>对账金额</th><th>期望送达时间</th><th>单据状态</th><th>收货状态</th><th>商品种类数</th><th>是否补单</th><th>备注</th><th>验收时间</th><th>司机</th><th>单据来源</th><th>添加人</th><th>操作</th>
+          <th><input id="schoolOrderSelectAll" type="checkbox" aria-label="全选订单"></th><th>订单号</th><th>供货企业</th><th>食堂</th><th>订单标签</th><th>下单金额</th><th>验收金额</th><th>退货金额</th><th>对账金额</th><th>期望送达时间</th><th>配送日期</th><th>单据状态</th><th>收货状态</th><th>商品种类数</th><th>是否补单</th><th>备注</th><th>验收时间</th><th>司机</th><th>单据来源</th><th>添加人</th><th>操作</th>
         </tr></thead><tbody id="schoolOrderBody"></tbody></table></div>
         <div class="pagination school-order-pagination" id="schoolOrderPagination"></div>
       </div>

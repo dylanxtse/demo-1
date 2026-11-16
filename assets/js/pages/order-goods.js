@@ -9,7 +9,7 @@
     <div class="operations-filter filter-section">
       <div class="operations-filter-main">
         <div class="operations-filter-grid">
-          <div class="operations-field"><label class="filter-label" for="goodsExpectedAt">期望送达时间</label><div class="date-input-control"><input class="filter-input" id="goodsExpectedAt" readonly placeholder="请选择日期"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div></div>
+          <div class="operations-field"><select class="filter-label date-filter-type" id="goodsDateFilterType" aria-label="日期筛选类型"><option value="expectedAt">期望送达时间</option><option value="deliveryDate">配送日期</option></select><div class="date-input-control"><input class="filter-input" id="goodsExpectedAt" readonly aria-label="期望送达时间" placeholder="请选择日期"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div></div>
           <div class="operations-field"><label class="filter-label" for="goodsCategory">商品分类</label><select class="filter-select" id="goodsCategory"><option value="" disabled hidden selected>请选择商品分类</option><option>果蔬</option><option>蛋奶类</option><option>粮食类</option><option>水产品</option></select></div>
           <div class="operations-field"><label class="filter-label" for="goodsKeyword">商品名称</label><input class="filter-input" id="goodsKeyword" placeholder="请输入"></div>
         </div>
@@ -30,7 +30,7 @@
       </div></div>
     </div>
     <div class="operations-toolbar"><span></span><button class="btn btn-sm standard-list-export-print" id="goodsExport">${downloadIcon}导出</button></div>
-    <div class="operations-table-container"><div class="operations-table-wrap"><table class="operations-table order-goods-table"><thead><tr><th>序号</th><th>订单号</th><th>商品名称（计量单位/品牌/规格）</th><th>客户名称</th><th>食堂</th><th>客户类型</th><th>订单标签</th><th>计量单位</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货数量</th><th>发货小计</th><th>期望送达时间</th><th class="status-column">单据状态</th><th>收货状态</th><th>仓库</th><th>备注</th><th>线路</th><th>添加人</th></tr></thead><tbody id="orderGoodsBody"></tbody></table></div>
+    <div class="operations-table-container"><div class="operations-table-wrap"><table class="operations-table order-goods-table"><thead><tr><th>序号</th><th>订单号</th><th>商品名称（计量单位/品牌/规格）</th><th>客户名称</th><th>食堂</th><th>客户类型</th><th>订单标签</th><th>计量单位</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>发货数量</th><th>发货小计</th><th>期望送达时间</th><th>配送日期</th><th class="status-column">单据状态</th><th>收货状态</th><th>仓库</th><th>备注</th><th>线路</th><th>添加人</th></tr></thead><tbody id="orderGoodsBody"></tbody></table></div>
     <div class="pagination" id="orderGoodsPagination"><span class="page-total"></span></div></div>
   </section>`;
   const root = window.AppShell.mount({ title: '订单管理', content });
@@ -47,6 +47,7 @@
   };
   const datePicker = window.DatePicker?.mount({ input: '#goodsExpectedAt', panelId: 'orderGoodsExpectedPicker' });
 
+
   function categoryFor(line) {
     if (line.category) return line.category;
     const name = String(line.goodsName || '');
@@ -58,9 +59,8 @@
   }
 
   async function load() {
-    const result = await service.list('orders', { page: 1, pageSize: 10000 });
+    const result = await window.PrototypePreview.list(service, 'orders', { page: 1, pageSize: 10000 });
     const keyword = document.getElementById('goodsKeyword').value.trim();
-    const expected = document.getElementById('goodsExpectedAt').value;
     const category = document.getElementById('goodsCategory').value;
     const customerType = document.getElementById('goodsCustomerType').value;
     const orderTag = document.getElementById('goodsOrderTag').value;
@@ -76,7 +76,6 @@
     rows = result.items.flatMap((order) => (order.items?.length ? order.items : [{ goodsName: '大白菜（斤/--/散装）', unit: '斤', quantity: order.productCount || 1, unitPrice: order.productCount ? order.orderAmount / order.productCount : order.orderAmount }]).map((line) => ({ ...line, order })))
       .filter(({ order, ...line }) =>
         (!keyword || String(line.goodsName || '').includes(keyword)) &&
-        (!expected || String(order.expectedAt || '').startsWith(expected)) &&
         (!category || categoryFor(line) === category) &&
         (!customerType || order.customerType === customerType) &&
         (!orderTag || order.orderTag === orderTag) &&
@@ -89,13 +88,14 @@
         (!receiptStatus || order.receiptStatus === receiptStatus) &&
         (!orderType || (order.orderType || '销售订单') === orderType) &&
         (!netVegetable || (netVegetable === 'net' ? productIsNetVegetable(line) : !productIsNetVegetable(line))));
+    if (!rows.length) rows = window.PrototypePreview.orders(result.items).flatMap((order) => order.items.map((line) => ({ ...line, order })));
     document.getElementById('orderGoodsBody').innerHTML = rows.length ? rows.map(({ order, ...line }, index) => {
       const productDisplay = window.DomUtils.formatProductDisplay(line);
       const productTag = productIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : '';
       return `<tr>
-      <td>${index + 1}</td><td><a class="cell-link order-goods-link" href="./order-detail.html?id=${encodeURIComponent(order.id)}"><span>${esc(order.orderNo)}</span><small>${esc(order.createdAt || '--')}</small></a></td><td><span class="product-display-text" title="${esc(productDisplay)}">${productTag}${esc(productDisplay)}</span></td><td>${esc(order.customerName)}</td><td>${esc(order.canteen)}</td><td>${esc(order.customerType)}</td><td>${esc(order.orderTag)}</td><td>${esc(line.unit)}</td><td>${money(line.unitPrice)}</td><td>${line.quantity || 0}</td><td>${money((line.quantity || 0) * (line.unitPrice || 0))}</td><td>${line.shippedQty || 0}</td><td>${money(line.shippedAmount)}</td><td>${esc(order.expectedAt)}</td><td class="status-column"><span class="operation-status ${statusClassMap[order.status] || 'info'}">${esc(statusMap[order.status] || order.status)}</span></td><td>${esc(order.receiptStatus || '--')}</td><td>${esc(order.warehouse || '--')}</td><td>${esc(line.remark || order.remark || '--')}</td><td>${esc(order.route || '--')}</td><td>${esc(order.creator || '--')}</td>
+      <td>${index + 1}</td><td><a class="cell-link order-goods-link" href="./order-detail.html?id=${encodeURIComponent(order.id)}"><span>${esc(order.orderNo)}</span><small>${esc(order.createdAt || '--')}</small></a></td><td><span class="product-display-text" title="${esc(productDisplay)}">${productTag}${esc(productDisplay)}</span></td><td>${esc(order.customerName)}</td><td>${esc(order.canteen)}</td><td>${esc(order.customerType)}</td><td>${esc(order.orderTag)}</td><td>${esc(line.unit)}</td><td>${money(line.unitPrice)}</td><td>${line.quantity || 0}</td><td>${money((line.quantity || 0) * (line.unitPrice || 0))}</td><td>${line.shippedQty || 0}</td><td>${money(line.shippedAmount)}</td><td>${esc(order.expectedAt)}</td><td>${esc(window.OrderDelivery.date(order))}</td><td class="status-column"><span class="operation-status ${statusClassMap[order.status] || 'info'}">${esc(statusMap[order.status] || order.status)}</span></td><td>${esc(order.receiptStatus || '--')}</td><td>${esc(order.warehouse || '--')}</td><td>${esc(line.remark || order.remark || '--')}</td><td>${esc(order.route || '--')}</td><td>${esc(order.creator || '--')}</td>
     </tr>`;
-    }).join('') : '<tr><td class="empty-cell" colspan="20">暂无数据</td></tr>';
+    }).join('') : '<tr><td class="empty-cell" colspan="21">暂无数据</td></tr>';
     document.querySelector('#orderGoodsPagination .page-total').textContent = `共 ${rows.length} 条数据`;
   }
 
@@ -132,11 +132,18 @@
       root.querySelectorAll('.operations-filter input, .operations-filter select').forEach((control) => { control.value = ''; });
       root.querySelector('#goodsMealName')?.classList.add('is-placeholder');
       datePicker?.clear(false);
+      document.getElementById('goodsDateFilterType').value = 'expectedAt';
+      document.getElementById('goodsExpectedAt').setAttribute('aria-label', '期望送达时间');
       load();
     }
     if (event.target.closest('#goodsExport')) {
       const orders = buildOrdersFromRows();
       openExportTemplate(orders);
+    }
+  });
+  root.addEventListener('change', (event) => {
+    if (event.target.id === 'goodsDateFilterType') {
+      document.getElementById('goodsExpectedAt').setAttribute('aria-label', event.target.value === 'deliveryDate' ? '配送日期' : '期望送达时间');
     }
   });
   root.addEventListener('keydown', (event) => {

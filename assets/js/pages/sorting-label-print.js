@@ -110,8 +110,10 @@
     </section>`;
   }
 
-  const payload = readPayload();
-  const labels = expandLabels(enrichRows(payload?.rows || []));
+  const input = readPayload() || {};
+  const payload = { ...input, rows: window.PrototypePreview.rows(input.rows, 'sortingItems') };
+  let labels = expandLabels(enrichRows(payload.rows));
+  if (!labels.length) labels = expandLabels(enrichRows(window.PrototypePreview.defaults('sortingItems')));
   const previewTitle = payload?.mode === 'customer' ? '客户分拣标签' : '商品分拣标签';
   const productOrderLabelSource = payload?.source === 'sorting-terminal-item-order';
   const customerOrderLabelSource = payload?.source === 'sorting-terminal-customer-item-order';

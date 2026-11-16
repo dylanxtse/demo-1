@@ -48,12 +48,15 @@
       total: 0,
       items: [],
       selected: new Set(),
+      dateTypes: {},
       condition: { ...(config.initialCondition || {}) },
       pagination: null,
       activeTab: initialTab?.key,
       activeStatus: initialTab?.defaultStatus ?? initialTab?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
     };
     const currentFilters = () => config.tabs?.find((tab) => tab.key === state.activeTab)?.filters || config.filters || [];
+    const dateType = (field) => state.dateTypes[field.key] || field.defaultDateType || 'expectedAt';
+    const dateLabel = (field) => dateType(field) === 'deliveryDate' ? '配送日期' : '期望送达时间';
     const isPlaceholderOption = (value) => /^(请选择|请输入|选择)/.test(String(value ?? '').trim());
     const renderFilter = (field) => {
       const placeholderOnly = field.placeholderOnly === true || isPlaceholderOption(field.emptyLabel);
@@ -67,7 +70,9 @@
       });
       return `
       <div class="operations-field">
-        <label class="filter-label" for="filter-${field.key}">${field.label}</label>
+        ${field.switchableDate
+          ? `<select class="filter-label date-filter-type" id="filter-type-${field.key}" data-record-date-type="${field.key}" aria-label="日期筛选类型"><option value="expectedAt"${dateType(field) === 'expectedAt' ? ' selected' : ''}>期望送达时间</option><option value="deliveryDate"${dateType(field) === 'deliveryDate' ? ' selected' : ''}>配送日期</option></select>`
+          : `<label class="filter-label" for="filter-${field.key}">${field.label}</label>`}
         ${field.options
           ? `<select class="filter-select${placeholderOnly ? ' is-placeholder' : ''}" id="filter-${field.key}"${placeholderOnly ? ' data-placeholder-only' : ''}>${emptyOption}${options.map((option) => {
             const value = typeof option === 'string' ? option : option.value;
@@ -76,11 +81,11 @@
           }).join('')}</select>`
           : field.type === 'dateRange'
             ? `<div class="date-range-picker operations-date-range" id="filter-wrap-${field.key}">
-                <input class="filter-input date-range-display" id="filter-${field.key}" type="text" readonly placeholder="${field.placeholder || '请选择日期范围'}">
+                <input class="filter-input date-range-display" id="filter-${field.key}" type="text" readonly${field.switchableDate ? ` aria-label="${dateLabel(field)}范围"` : ''} placeholder="${field.placeholder || '请选择日期范围'}">
                 <input type="hidden" data-date-start value="${escapeHtml(field.defaultStart || '')}"><input type="hidden" data-date-end value="${escapeHtml(field.defaultEnd || '')}">
               </div>`
             : field.type === 'date'
-              ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
+              ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly${field.switchableDate ? ` aria-label="${dateLabel(field)}"` : ''} value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
               : `<input class="filter-input" id="filter-${field.key}" type="${field.type || 'text'}" value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请输入'}">`}
       </div>`;
     };
@@ -263,6 +268,12 @@
     }
 
     function currentService() { return currentTab()?.service || service; }
+
+    function listRows(resource, query) {
+      return config.deliveryDates
+        ? window.PrototypePreview.list(currentService(), resource, query)
+        : currentService().list(resource, query);
+    }
 
     function currentTab() {
       return config.tabs?.find((tab) => tab.key === state.activeTab);
@@ -466,13 +477,14 @@
     function collectCondition() {
       const condition = {};
       currentFilters().forEach((field) => {
+        if (config.deliveryDates && (field.type === 'date' || field.type === 'dateRange')) return;
         if (field.type === 'dateRange') {
           const value = datePickers.get(field.key)?.getValue();
-          if (value?.startDate || value?.endDate) condition[field.conditionKey || field.key] = [value.startDate, value.endDate];
+          if (value?.startDate || value?.endDate) condition[field.switchableDate ? `${dateType(field)}Range` : field.conditionKey || field.key] = [value.startDate, value.endDate];
           return;
         }
         const value = $(`#filter-${field.key}`)?.value?.trim() || '';
-        if (value) condition[field.key] = value;
+        if (value) condition[field.switchableDate ? dateType(field) : field.key] = value;
       });
       return condition;
     }
@@ -486,7 +498,7 @@
             condition.status = statuses.length > 1 ? statuses : state.activeStatus;
           } else delete condition.status;
         }
-        const result = await currentService().list(currentResource(), { page: state.page, pageSize: state.pageSize, condition });
+        const result = await listRows(currentResource(), { page: state.page, pageSize: state.pageSize, condition });
         state.items = result.items;
         state.total = result.total;
       } catch (error) {
@@ -532,7 +544,7 @@
       const result = await service.list(action.detailResource || currentResource(), {
         page: 1,
         pageSize: 100,
-        condition: { [matchKey]: item[sourceKey] }
+        condition: { ...(config.deliveryDates ? Object.fromEntries(Object.entries(state.condition).filter(([key]) => key !== 'status')) : {}), [matchKey]: item[sourceKey] }
       });
       const columns = action.detailColumns || currentColumns();
       const heading = action.detailHeading
@@ -676,7 +688,14 @@
     async function exportRows() {
       const condition = { ...state.condition };
       if (state.activeStatus) condition.status = String(state.activeStatus).split(',');
-      const csv = await currentService().export(currentResource(), { condition }, currentColumns());
+      let csv;
+      if (config.deliveryDates) {
+        const result = await listRows(currentResource(), { page: 1, pageSize: Number.MAX_SAFE_INTEGER, condition });
+        const columns = currentColumns();
+        const cell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        csv = [columns.map((column) => cell(column.label)).join(','),
+          ...result.items.map((row) => columns.map((column) => cell(row[column.key])).join(','))].join('\n');
+      } else csv = await currentService().export(currentResource(), { condition }, currentColumns());
       const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -688,7 +707,7 @@
     }
 
     async function rowAction(actionKey, id) {
-      const item = await currentService().get(currentResource(), id);
+      const item = await currentService().get(currentResource(), id, config.deliveryDates ? state.condition : {});
       if (!item) return toast('记录不存在或已删除', 'error');
       if (actionKey === 'view') {
         const detailHref = currentTab()?.detailHref || config.detailHref;
@@ -711,7 +730,7 @@
       if (!action) return;
       if (action.onClick) return action.onClick(item);
       if (action.href) {
-        const target = typeof action.href === 'function' ? action.href(item) : action.href;
+        const target = typeof action.href === 'function' ? action.href(item, state.condition) : action.href;
         window.AppNavigation?.navigate?.(target);
         return;
       }
@@ -753,11 +772,25 @@
         const message = action.validateSelection?.(selectedItems);
         if (message) return toast(message, 'error');
       }
-      if (action.onClick) return action.onClick(state.items.filter((item) => !action.requiresSelection || state.selected.has(item.id)));
+      if (action.onClick) {
+        if (config.deliveryDates && action.allFiltered) {
+          const result = await listRows(currentResource(), { page: 1, pageSize: Number.MAX_SAFE_INTEGER,
+            condition: { ...state.condition, ...(state.activeStatus ? { status: String(state.activeStatus).split(',') } : {}) } });
+          return action.onClick(result.items);
+        }
+        return action.onClick(state.items.filter((item) => !action.requiresSelection || state.selected.has(item.id)));
+      }
       if (action.templateHref) {
         const params = new URLSearchParams();
         Object.entries(state.condition).forEach(([key, value]) => params.set(key, Array.isArray(value) ? value.join(',') : String(value)));
         if (state.activeStatus) params.set('status', state.activeStatus);
+        if (config.deliveryDates && window.OrderDelivery) {
+          try {
+            const result = await listRows(currentResource(), { page: 1, pageSize: Number.MAX_SAFE_INTEGER,
+              condition: { ...state.condition, ...(state.activeStatus ? { status: String(state.activeStatus).split(',') } : {}) } });
+            params.set('deliveryExportKey', window.OrderDelivery.saveRows(result.items));
+          } catch (error) { return toast('导出数据保存失败，请重试', 'error'); }
+        }
         const href = typeof action.templateHref === 'function' ? action.templateHref(state) : action.templateHref;
         const separator = href.includes('?') ? '&' : '?';
         window.AppNavigation?.navigate?.(`${href}${params.toString() ? separator + params.toString() : ''}`);
@@ -774,7 +807,7 @@
             const message = action.validateSelection(selectedItems);
             if (message) throw new Error(message);
           }
-          await currentService().batch(currentResource(), ids, action.batchTransition, action.payload || {});
+          await currentService().batch(currentResource(), ids, action.batchTransition, action.payload || {}, config.deliveryDates ? state.condition : {});
           state.selected.clear();
         });
       }
@@ -844,7 +877,9 @@
         state.page = 1;
         state.selected.clear();
         state.condition = {};
+        state.dateTypes = {};
         renderFilterControls();
+        if (config.deliveryDates) state.condition = collectCondition() || {};
         return load();
       }
       const statusButton = event.target.closest('[data-status-tab]');
@@ -855,7 +890,9 @@
         return load();
       }
       if (event.target.id === 'recordQuery') {
-        state.condition = collectCondition();
+        const condition = collectCondition();
+        if (!condition) return;
+        state.condition = condition;
         if (state.activeStatus) {
           const statuses = String(state.activeStatus).split(',');
           state.condition.status = statuses.length > 1 ? statuses : state.activeStatus;
@@ -865,6 +902,14 @@
         return load();
       }
       if (event.target.id === 'recordReset') {
+        if (config.deliveryDates) {
+          state.dateTypes = {};
+          renderFilterControls();
+          state.condition = collectCondition() || {};
+          state.page = 1;
+          state.selected.clear();
+          return load();
+        }
         root.querySelectorAll('.operations-filter input,.operations-filter select').forEach((element) => { element.value = ''; });
         root.querySelectorAll('select[data-placeholder-only]').forEach((element) => element.classList.add('is-placeholder'));
         datePickers.forEach((picker, key) => {
@@ -905,6 +950,14 @@
     });
 
     root.addEventListener('change', (event) => {
+      const dateKey = event.target.dataset?.recordDateType;
+      if (dateKey) {
+        const field = currentFilters().find((item) => item.key === dateKey && item.switchableDate);
+        if (!field) return;
+        state.dateTypes[dateKey] = event.target.value === 'deliveryDate' ? 'deliveryDate' : 'expectedAt';
+        $(`#filter-${dateKey}`)?.setAttribute('aria-label', `${dateLabel(field)}${field.type === 'dateRange' ? '范围' : ''}`);
+        return;
+      }
       if (event.target.matches('select[data-placeholder-only]')) {
         event.target.classList.toggle('is-placeholder', event.target.value === '');
       }
@@ -949,7 +1002,10 @@
         load();
       }
       if (event.key === 'Enter' && event.target.closest('.operations-filter')) {
-        state.condition = collectCondition();
+        const condition = collectCondition();
+        if (!condition) return;
+        state.condition = condition;
+        if (config.deliveryDates) state.selected.clear();
         if (state.activeStatus) state.condition.status = state.activeStatus;
         state.page = 1;
         load();
@@ -973,6 +1029,7 @@
     }
 
     bindDatePickers();
+    if (config.deliveryDates) state.condition = { ...(collectCondition() || {}), ...(config.initialCondition || {}) };
     root.querySelectorAll('.operations-tab').forEach((button) => button.classList.toggle('active', button.dataset.viewTab === state.activeTab));
     load();
     return { load, state };

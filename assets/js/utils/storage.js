@@ -120,7 +120,7 @@
   const canonicalOrderKeys = Object.freeze([
     'id', 'orderId', 'orderNo', 'customerId', 'customerCode', 'customerName', 'customerType', 'supplierName',
     'canteen', 'canteenId', 'orderTag', 'orderTagId', 'orderTagName', 'nutritious', 'mealKey', 'mealName', 'mealPeople',
-    'expectedAt', 'source', 'sourceType', 'createdAt', 'createTime', 'creator', 'shippingAt', 'driver', 'acceptedAt',
+    'expectedAt', 'deliveryAt', 'source', 'sourceType', 'createdAt', 'createTime', 'creator', 'shippingAt', 'driver', 'acceptedAt',
     'status', 'receiptStatus', 'receivedAt', 'supplement', 'remark', 'orderAmount', 'shippingAmount', 'acceptedAmount',
     'returnAmount', 'reconciliationAmount', 'productCount', 'orderLineCount', 'items', 'orderLines', 'warehouse', 'route',
     'receiver', 'phone', 'address', 'printed', 'sortingCompleted', 'recipeDemandRecordId',
@@ -169,8 +169,36 @@
     return result;
   }
 
+  // 配送日期在下单时计算并保存；历史订单读取快照，不随配置变更重算。
+  function calculateOrderDeliveryAt(order = {}, settings = {}) {
+    const expectedAt = String(order.expectedAt || '').trim();
+    const meals = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', morningSnack: '早点', afternoonSnack: '午点', eveningSnack: '晚点' };
+    const requestedMeals = String(order.mealName || order.mealKey || '').split(/[、,，]/).filter(Boolean);
+    if (!requestedMeals.length) return expectedAt;
+    const results = requestedMeals.map((meal) => {
+      const key = meal === 'snack' ? 'afternoonSnack' : Object.keys(meals).find((key) => key === meal || meals[key] === meal);
+      if (!key) return expectedAt;
+      const rule = settings.recipeDeliveryByMeal?.[key] || { days: key === 'breakfast' ? 1 : 0 };
+      const days = String(rule.days ?? '').trim();
+      if (!/^\d+$/.test(days) || Number(days) > 365) return expectedAt;
+      const match = expectedAt.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!match) return expectedAt;
+      const [year, month, day] = match.slice(1).map(Number);
+      const date = new Date(year, month - 1, day, 12);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return expectedAt;
+      date.setDate(date.getDate() - Number(days));
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}${expectedAt.slice(10)}`;
+    });
+    return new Set(results).size === 1 ? results[0] : expectedAt;
+  }
+
   window.OrderSchema = Object.freeze({
     detailFields: orderDetailFields,
+    deliveryAt: calculateOrderDeliveryAt,
+    deliveryDate(order = {}) {
+      const value = order.deliveryAt || order.expectedAt;
+      return String(value || '').slice(0, 10);
+    },
     normalize: normalizeOrderShape
   });
 
@@ -1363,7 +1391,7 @@
     };
 
     const dateFields = {
-      orders: ['createdAt', 'createTime', 'updatedAt', 'expectedAt', 'shippingAt', 'acceptedAt'],
+      orders: ['createdAt', 'createTime', 'updatedAt', 'expectedAt', 'deliveryAt', 'shippingAt', 'acceptedAt'],
       shippingOrders: ['createdAt', 'expectedAt'],
       sortingTasks: ['expectedAt', 'sortingAt'],
       inboundOrders: ['entryTime'],
@@ -2581,6 +2609,7 @@
       warehouse: order.warehouse || '中心仓',
       route: order.route || '',
       expectedAt: order.expectedAt || '',
+      deliveryAt: order.deliveryAt || order.expectedAt || '',
       status: 'PENDING',
       sortingCompleted: false,
       shortage: '否',
@@ -2641,6 +2670,7 @@
       status: 'PENDING',
       printed: '否',
       expectedAt: order.expectedAt || '',
+      deliveryAt: order.deliveryAt || order.expectedAt || '',
       mealKey: order.mealKey || '',
       mealName: order.mealName || '',
       orderTag: order.orderTag || '',
@@ -2921,6 +2951,7 @@
         }));
         const order = {
           ...source,
+          deliveryAt: ((source.mealKey || source.mealName) && typeof data.deliveryAt === 'string' && data.deliveryAt) || window.OrderSchema.deliveryAt(source, settings),
           id: orderId,
           orderId,
           orderNo: source.orderNo || nextOrderNumber(state, source, createdAt),
@@ -2961,8 +2992,10 @@
         if (!order) return null;
         if (Array.isArray(data.items)) assertStandardOrderQuantities(state, data.items);
         const updates = window.OrderSchema?.normalize(data, 'enterprise', { partial: true, strict: true }) || clone(data || {});
+        ['expectedAt', 'deliveryAt', 'deliveryDate', 'mealKey', 'mealName', 'mealNames', 'recipeDemandDate', 'recipeDemandDates'].forEach((key) => delete updates[key]);
         if (updates.status === 'PENDING' && !['PENDING_CONFIRM', 'PENDING_AUDIT'].includes(order.status)) delete updates.status;
         Object.assign(order, updates, { id: order.id, orderId: order.id, updatedAt: now() });
+
         if (Array.isArray(data.items)) {
           order.items = data.items.map((item, index) => ({
             ...clone(item),

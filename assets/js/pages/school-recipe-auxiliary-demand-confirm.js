@@ -471,105 +471,121 @@
       for (const group of mealGroups()) {
         const items = orderItemsFor(group, participant.key);
         if (!items.length) continue;
-        const mealPeople = [...state.selectedDates].reduce((total, targetDate) => (
-          total + group.meals.reduce((sum, meal) => sum + (splitPerson
-            ? people(draftForDate(targetDate)[meal.key], participant.key)
-            : labels.reduce((personTotal, label) => personTotal + people(draftForDate(targetDate)[meal.key], label), 0)), 0)
-        ), 0);
-        const order = orderService.create({
-          id: `SCHOOL-ORDER-${String(createdAt).slice(0, 10).replace(/-/g, '')}-${record.recordNo}-${participant.key}-${group.key}-AUX`,
-          customerName: orderService.SCHOOL_NAME || '静安第一中学',
-          supplierName: orderService.SUPPLIER_NAME,
-          canteen: currentCanteen.name || '第一食堂',
-          canteenId: currentCanteen.id || '',
-          orderTag: participant.orderTag,
-          orderTagId: participant.tagId,
-          orderTagName: participant.tagName,
-          nutritious: participant.nutritious,
-          mealKey: splitMeal ? group.key : '',
-          mealName: group.name,
-          mealPeople,
-          recipeDemandRecordId: record.id,
-          recipeDemandRecordNo: record.recordNo,
-          recipeDemandDate: preview.dates.join('、'),
-          recipeParticipantType: participant.label,
-          expectedAt: record.expectedAt,
-          supplement: '否',
-          source: '需求填报',
-          status: '待审核',
-          creator: currentOperator.name,
-          items
-        });
-        order.items.forEach((line) => {
-          const key = String(line.productCode || '');
-          const product = products.find((item) => String(item.code) === key);
-          orderedQuantities.set(key, (orderedQuantities.get(key) || 0)
-            + purchaseBaseQuantity(line.orderQty || 0, product || {}));
-        });
-        let enterpriseOrder = null;
-        try {
-          enterpriseOrder = await window.OperationsService?.create?.('orders', {
-            orderId: order.id,
-            orderNo: order.orderNo,
-            sourceType: 'CUSTOMER',
-            source: '需求填报',
-            customerName: order.customerName,
-            customerType: '学校',
-            canteen: order.canteen,
-            canteenId: order.canteenId,
+        const deliverySources = preview.dates.flatMap((targetDate) => group.meals
+          .filter((meal) => mealDefinitionsForDate(targetDate).some((item) => item.key === meal.key))
+          .map((meal) => {
+            const targetPeople = splitPerson ? people(draftForDate(targetDate)[meal.key], participant.key)
+              : labels.reduce((sum, label) => sum + people(draftForDate(targetDate)[meal.key], label), 0);
+            return { date: targetDate, key: meal.key, name: meal.name, people: targetPeople,
+              expectedAt: window.RecipeDeliveryRule.expectedAt([targetDate]),
+              rows: selectedForMeals([meal]).map((product) => ({ productCode: product.code,
+                unit: productUnitFor(product), weight: targetPeople * product.dose })) };
+          }));
+        const batches = window.RecipeDeliveryRule?.isMealBased()
+          ? window.RecipeDeliveryRule.splitItems(items, deliverySources, splitMeal)
+          : [{ key: group.key, mealKey: splitMeal ? group.key : '', mealName: group.name,
+            dates: preview.dates, expectedAt: record.expectedAt, deliveryAt: record.expectedAt, items,
+            mealPeople: deliverySources.reduce((sum, source) => sum + source.people, 0) }];
+        for (const batch of batches) {
+          const mealPeople = batch.mealPeople;
+          const order = orderService.create({
+            id: `SCHOOL-ORDER-${String(createdAt).slice(0, 10).replace(/-/g, '')}-${record.recordNo}-${participant.key}-${batch.key}-AUX`,
+            customerName: orderService.SCHOOL_NAME || '静安第一中学',
+            supplierName: orderService.SUPPLIER_NAME,
+            canteen: currentCanteen.name || '第一食堂',
+            canteenId: currentCanteen.id || '',
             orderTag: participant.orderTag,
             orderTagId: participant.tagId,
             orderTagName: participant.tagName,
             nutritious: participant.nutritious,
+            mealKey: batch.mealKey,
+            mealName: batch.mealName,
+            mealPeople,
             recipeDemandRecordId: record.id,
             recipeDemandRecordNo: record.recordNo,
-            recipeDemandDate: preview.dates.join('、'),
+            recipeDemandDate: batch.dates.join('、'),
             recipeParticipantType: participant.label,
+            expectedAt: batch.expectedAt,
+            deliveryAt: batch.deliveryAt,
+            supplement: '否',
+            source: '需求填报',
+            status: '待审核',
+            creator: currentOperator.name,
+            items: batch.items
+          });
+          order.items.forEach((line) => {
+            const key = String(line.productCode || '');
+            const product = products.find((item) => String(item.code) === key);
+            orderedQuantities.set(key, (orderedQuantities.get(key) || 0)
+              + purchaseBaseQuantity(line.orderQty || 0, product || {}));
+          });
+          let enterpriseOrder = null;
+          try {
+            enterpriseOrder = await window.OperationsService?.create?.('orders', {
+              orderId: order.id,
+              orderNo: order.orderNo,
+              sourceType: 'CUSTOMER',
+              source: '需求填报',
+              customerName: order.customerName,
+              customerType: '学校',
+              canteen: order.canteen,
+              canteenId: order.canteenId,
+              orderTag: participant.orderTag,
+              orderTagId: participant.tagId,
+              orderTagName: participant.tagName,
+              nutritious: participant.nutritious,
+              recipeDemandRecordId: record.id,
+              recipeDemandRecordNo: record.recordNo,
+              recipeDemandDate: batch.dates.join('、'),
+              recipeParticipantType: participant.label,
+              mealKey: order.mealKey,
+              mealName: order.mealName,
+              mealPeople: order.mealPeople,
+              expectedAt: order.expectedAt,
+              deliveryAt: order.deliveryAt,
+              items: order.items.map((line) => ({
+                productId: line.productCode,
+                goodsCode: line.productCode,
+                goodsName: line.productName,
+                productName: line.productName,
+                unit: line.unit,
+                unitPrice: line.orderPrice,
+                quantity: line.orderQty,
+                orderQty: line.orderQty,
+                subtotal: line.orderQty * line.orderPrice,
+                isNetVegetable: false,
+                isStandardProduct: line.isStandardProduct === true,
+                brand: line.brand,
+                spec: line.spec
+              })),
+              orderAmount: order.orderAmount,
+              productCount: order.productCount,
+              status: 'PENDING_CONFIRM',
+              creator: order.creator,
+              createdAt: order.createdAt
+            });
+          } catch (error) {
+            record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
+          }
+          record.orders.push({
+            orderId: order.id,
+            orderNo: order.orderNo,
+            enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
+            date: batch.dates.join('、'),
+            dates: [...batch.dates],
             mealKey: order.mealKey,
             mealName: order.mealName,
-            mealPeople: order.mealPeople,
-            expectedAt: order.expectedAt,
-            items: order.items.map((line) => ({
-              productId: line.productCode,
-              goodsCode: line.productCode,
-              goodsName: line.productName,
-              productName: line.productName,
-              unit: line.unit,
-              unitPrice: line.orderPrice,
-              quantity: line.orderQty,
-              orderQty: line.orderQty,
-              subtotal: line.orderQty * line.orderPrice,
-              isNetVegetable: false,
-              isStandardProduct: line.isStandardProduct === true,
-              brand: line.brand,
-              spec: line.spec
-            })),
-            orderAmount: order.orderAmount,
-            productCount: order.productCount,
-            status: 'PENDING_CONFIRM',
-            creator: order.creator,
-            createdAt: order.createdAt
+            mealPeople,
+            participantType: participant.label,
+            orderTag: participant.orderTag,
+            orderTagId: participant.tagId,
+            orderTagName: participant.tagName,
+            nutritious: participant.nutritious,
+            expectedAt: batch.expectedAt,
+            deliveryAt: order.deliveryAt
           });
-        } catch (error) {
-          record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
+          writeDemandRecords([...records, record]);
         }
-        record.orders.push({
-          orderId: order.id,
-          orderNo: order.orderNo,
-          enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
-          date: preview.dates.join('、'),
-          dates: [...preview.dates],
-          mealKey: order.mealKey,
-          mealName: order.mealName,
-          mealPeople,
-          participantType: participant.label,
-          orderTag: participant.orderTag,
-          orderTagId: participant.tagId,
-          orderTagName: participant.tagName,
-          nutritious: participant.nutritious,
-          expectedAt: record.expectedAt
-        });
-        writeDemandRecords([...records, record]);
       }
     }
     record.operationLogs.push({
@@ -593,6 +609,11 @@
         isStandardProduct: isStandardProduct(product)
       };
     });
+    if (window.RecipeDeliveryRule?.isMealBased() && record.orders.length) {
+      record.expectedAts = [...new Set(record.orders.map((order) => order.expectedAt))].sort();
+      record.expectedAt = record.expectedAts[0];
+      record.deliveryAts = [...new Set(record.orders.map((order) => order.deliveryAt || order.expectedAt))].sort();
+    }
     writeDemandRecords([...records, record]);
     return { record, orders: record.orders, preview };
   }

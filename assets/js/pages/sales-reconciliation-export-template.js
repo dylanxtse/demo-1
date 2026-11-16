@@ -36,7 +36,7 @@
     }
   }
 
-  const payload = readPayload();
+  const payload = window.PrototypePreview.sales(readPayload() || {});
   const rows = Array.isArray(payload?.rows) ? payload.rows : [];
   const customerGroups = Array.isArray(payload?.groups) ? payload.groups : [];
   const columnClasses = [

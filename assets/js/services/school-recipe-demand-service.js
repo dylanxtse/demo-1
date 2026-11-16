@@ -800,6 +800,7 @@
       mealName: order.mealName || '',
       mealPeople: order.mealPeople ?? '',
       expectedAt: order.expectedAt,
+      deliveryAt: order.deliveryAt || order.expectedAt,
       items: (order.items || []).map((line) => ({
         productId: line.productCode,
         goodsCode: line.productCode,
@@ -833,7 +834,8 @@
     const preview = buildPreview(dates, options);
     if (!preview.canSubmit) throw new Error(preview.message || '当前需求不能提交');
     const excludedProductKeys = toKeySet(options.excludedProductKeys);
-    const expectedAt = normalizeExpectedAt(options.expectedAt || options.expectedDeliveryAt);
+    const automaticExpectedAt = options.expectedAtAutomatic === true || !(options.expectedAt || options.expectedDeliveryAt);
+    const expectedAt = normalizeExpectedAt(options.expectedAt || options.expectedDeliveryAt || window.RecipeDeliveryRule.expectedAt(preview.dates));
     const earliestDate = preview.dates[0] || '';
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(expectedAt)) throw new Error('请选择期望送达时间');
     if (earliestDate && expectedAt.slice(0, 10) > earliestDate) throw new Error('期望送达时间不能晚于最早用料日期');
@@ -924,7 +926,7 @@
         name: mealDefinitions.map((meal) => meal.name || meal.key).join('、'),
         meals: mealDefinitions
       }];
-    // 订单按企业端配置决定是否按人员类型、餐次拆分；用料日期只用于汇总来源和留痕。
+    // 按人员类型、餐次配置生成采购总量，再按各来源的配送时间分批。
     for (const participant of orderParticipants) {
       for (const orderGroup of orderGroups) {
         const mealSources = orderGroup.meals.map((mealDefinition) => {
@@ -962,55 +964,74 @@
         const orderDates = [...new Set(activeSources.flatMap((source) => source.dates || []))];
         const items = mergeOrderItems(activeSources, orderDates, orderGroup.name, participant);
         if (!items.length) continue;
-        const mealPeople = activeSources.reduce((total, source) => total + source.people, 0);
-        const order = schoolOrderService.create({
-          id: `SCHOOL-ORDER-${datePart(createdAt)}-${record.recordNo}-${participant.key}-${orderGroup.key}`,
-          customerName: SCHOOL_NAME,
-          supplierName: schoolOrderService.SUPPLIER_NAME,
-          canteen: preview.canteen.name || CANTEEN_NAME,
-          canteenId: preview.canteen.id || '',
-          orderTag: participant.orderTag,
-          orderTagId: participant.tagId || participant.key,
-          orderTagName: participant.tagName || participant.label,
-          nutritious: participant.nutritious || '不区分',
-          mealKey: splitOrderByMeal ? orderGroup.key : '',
-          mealName: orderGroup.name,
-          mealPeople,
-          recipeDemandRecordId: record.id,
-          recipeDemandRecordNo: record.recordNo,
-          recipeDemandDate: orderDates.join('、'),
-          recipeParticipantType: participant.label,
-          expectedAt: record.expectedAt,
-          supplement: '否',
-          source: '需求填报',
-          status: '待审核',
-          creator: operator.name,
-          items
-        });
-        let enterpriseOrder = null;
-        try {
-          enterpriseOrder = await createCentralOrder(order, participant, record, orderDates);
-        } catch (error) {
-          record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
+        const deliverySources = preview.dateSummaries.flatMap((summary) => (summary.calculation?.mealRows || [])
+          .filter((meal) => orderGroup.meals.some((definition) => definition.key === String(meal.key || meal.name || '')))
+          .map((meal) => {
+            const peopleKeys = (splitOrderByPersonType ? [participant] : preview.participants).map((person) => person.key);
+            return { date: summary.date, key: meal.key, name: meal.name,
+              expectedAt: automaticExpectedAt ? window.RecipeDeliveryRule.expectedAt([summary.date]) : expectedAt,
+              people: peopleKeys.reduce((sum, key) => sum + number(meal.participantPeople?.[key]), 0),
+              rows: (meal.rows || []).map((row) => ({ ...row,
+                weight: peopleKeys.reduce((sum, key) => sum + number(row.participantQty?.[key]), 0) })) };
+          }));
+        const batches = window.RecipeDeliveryRule?.isMealBased()
+          ? window.RecipeDeliveryRule.splitItems(items, deliverySources, splitOrderByMeal)
+          : [{ key: orderGroup.key, mealKey: splitOrderByMeal ? orderGroup.key : '', mealName: orderGroup.name,
+            dates: orderDates, expectedAt: record.expectedAt, deliveryAt: record.expectedAt, items,
+            mealPeople: activeSources.reduce((total, source) => total + source.people, 0) }];
+        for (const batch of batches) {
+          const mealPeople = batch.mealPeople;
+          const order = schoolOrderService.create({
+            id: `SCHOOL-ORDER-${datePart(createdAt)}-${record.recordNo}-${participant.key}-${batch.key}`,
+            customerName: SCHOOL_NAME,
+            supplierName: schoolOrderService.SUPPLIER_NAME,
+            canteen: preview.canteen.name || CANTEEN_NAME,
+            canteenId: preview.canteen.id || '',
+            orderTag: participant.orderTag,
+            orderTagId: participant.tagId || participant.key,
+            orderTagName: participant.tagName || participant.label,
+            nutritious: participant.nutritious || '不区分',
+            mealKey: batch.mealKey,
+            mealName: batch.mealName,
+            mealPeople,
+            recipeDemandRecordId: record.id,
+            recipeDemandRecordNo: record.recordNo,
+            recipeDemandDate: batch.dates.join('、'),
+            recipeParticipantType: participant.label,
+            expectedAt: batch.expectedAt,
+            deliveryAt: batch.deliveryAt,
+            supplement: '否',
+            source: '需求填报',
+            status: '待审核',
+            creator: operator.name,
+            items: batch.items
+          });
+          let enterpriseOrder = null;
+          try {
+            enterpriseOrder = await createCentralOrder(order, participant, record, batch.dates);
+          } catch (error) {
+            record.enterpriseSyncWarnings.push(`${order.orderNo}：${error.message || '企业端同步失败'}`);
+          }
+          // 这里只保存已创建订单的关联索引，订单实体统一由 SchoolOrderService.create 产生。
+          record.orders.push({
+            orderId: order.id,
+            orderNo: order.orderNo,
+            enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
+            date: batch.dates.join('、'),
+            dates: clone(batch.dates),
+            mealKey: batch.mealKey,
+            mealName: batch.mealName,
+            mealPeople,
+            participantType: participant.label,
+            orderTag: participant.orderTag,
+            orderTagId: participant.tagId || participant.key,
+            orderTagName: participant.tagName || participant.label,
+            nutritious: participant.nutritious || '不区分',
+            expectedAt: batch.expectedAt,
+            deliveryAt: order.deliveryAt
+          });
+          writeAll([...records, record]);
         }
-        // 这里只保存已创建订单的关联索引，订单实体统一由 SchoolOrderService.create 产生。
-        record.orders.push({
-          orderId: order.id,
-          orderNo: order.orderNo,
-          enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
-          date: orderDates.join('、'),
-          dates: clone(orderDates),
-          mealKey: splitOrderByMeal ? orderGroup.key : '',
-          mealName: orderGroup.name,
-          mealPeople,
-          participantType: participant.label,
-          orderTag: participant.orderTag,
-          orderTagId: participant.tagId || participant.key,
-          orderTagName: participant.tagName || participant.label,
-          nutritious: participant.nutritious || '不区分',
-          expectedAt: record.expectedAt
-        });
-        writeAll([...records, record]);
       }
     }
     const completedAt = timestamp();
@@ -1021,13 +1042,7 @@
       result: `${record.orders.length} 笔`,
       time: completedAt,
       description: record.orders.length
-        ? splitOrderByMeal
-          ? splitOrderByPersonType
-            ? `已按订单标签及餐次生成订单（用料日期不参与拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
-            : `已按餐次生成订单（未按人员类型及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
-          : splitOrderByPersonType
-            ? `已按订单标签生成订单（未按餐次及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
-            : `已生成合并订单（未按人员类型、餐次及用料日期拆单）：${record.orders.map((item) => item.orderNo).join('、')}`
+        ? `已按配送时间及拆单配置生成订单：${record.orders.map((item) => item.orderNo).join('、')}`
         : '没有生成可下单商品'
     });
     if (record.enterpriseSyncWarnings.length) {
@@ -1038,6 +1053,11 @@
         time: completedAt,
         description: record.enterpriseSyncWarnings.join('；')
       });
+    }
+    if (window.RecipeDeliveryRule?.isMealBased() && record.orders.length) {
+      record.expectedAts = [...new Set(record.orders.map((order) => order.expectedAt))].sort();
+      record.expectedAt = record.expectedAts[0];
+      record.deliveryAts = [...new Set(record.orders.map((order) => order.deliveryAt || order.expectedAt))].sort();
     }
     writeAll([...records, record]);
     return { record: clone(record), orders: clone(record.orders), preview: clone(preview) };
@@ -1050,7 +1070,8 @@
   async function submitDirectDates(dates, quantitiesByDate, options = {}) {
     const preview = buildDirectDatesPreview(dates, quantitiesByDate, options);
     if (!preview.canSubmit) throw new Error(preview.message);
-    const expectedAt = normalizeExpectedAt(options.expectedAt);
+    const automaticExpectedAt = options.expectedAtAutomatic === true || !options.expectedAt;
+    const expectedAt = normalizeExpectedAt(options.expectedAt || window.RecipeDeliveryRule.expectedAt(preview.dates));
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(expectedAt)) throw new Error('期望送达时间配置无效');
     if (expectedAt.slice(0, 10) > preview.dates[0]) throw new Error('期望送达时间不能晚于最早用料日期');
     const productMap = getProductMap();
@@ -1122,11 +1143,32 @@
         result: '提交成功', time: createdAt, description: `提交 ${preview.dates.join('、')} 的食材需求` }]
     };
     writeAll([...records, record]);
-    const mealGroups = splitByMeal ? preview.meals.map((meal) => ({ key: meal.key, name: meal.name, meals: [meal] }))
+    const legacyMealGroups = splitByMeal ? preview.meals.map((meal) => ({ key: meal.key, name: meal.name, meals: [meal] }))
       : [{ key: 'all-meals', name: preview.meals.map((meal) => meal.name).join('、'), meals: preview.meals }];
     for (const participant of orderParticipants) {
-      for (const group of mealGroups) {
-        const groupRows = group.meals.flatMap((meal) => meal.rows.map((row) => ({ ...row, mealName: meal.name })));
+      const dailySources = preview.dateSummaries.flatMap((summary) => summary.meals.map((meal) => ({
+        date: summary.date, key: meal.key, name: meal.name,
+        expectedAt: automaticExpectedAt ? window.RecipeDeliveryRule.expectedAt([summary.date]) : expectedAt,
+        rows: meal.rows.map((row) => ({ ...row, weight: splitByPerson ? number(row.participantQty?.[participant.key]) : row.orderQty }))
+      })));
+      const deliveryGroups = new Map();
+      if (window.RecipeDeliveryRule?.isMealBased()) dailySources.forEach((source) => {
+        const selected = source.rows.filter((row) => row.weight > 0);
+        if (!selected.length) return;
+        const at = window.RecipeDeliveryRule.deliveryAt(source.expectedAt, source.key);
+        const key = `${at}::${source.expectedAt}::${splitByMeal ? source.key : 'all-meals'}`;
+        if (!deliveryGroups.has(key)) deliveryGroups.set(key, { key: key.replace(/[^a-zA-Z0-9-]/g, '_'),
+          mealKey: splitByMeal ? source.key : '', name: '', names: [], expectedAt: source.expectedAt, deliveryAt: at, rows: [] });
+        const group = deliveryGroups.get(key);
+        if (!group.names.includes(source.name)) group.names.push(source.name);
+        group.name = group.names.join('、');
+        group.rows.push(...selected.map((row) => ({ ...row,
+          sourceDates: [source.date], participantDates: { [participant.key]: [source.date] },
+          participantQty: { [participant.key]: row.weight }, orderQty: row.weight })));
+      });
+      const groups = window.RecipeDeliveryRule?.isMealBased() ? [...deliveryGroups.values()] : legacyMealGroups;
+      for (const group of groups) {
+        const groupRows = group.rows || group.meals.flatMap((meal) => meal.rows.map((row) => ({ ...row, mealName: meal.name })));
         const selected = groupRows.filter((row) => (splitByPerson ? number(row.participantQty?.[participant.key]) : row.orderQty) > 0);
         if (!selected.length) continue;
         const orderDates = [...new Set(selected.flatMap((row) => splitByPerson
@@ -1153,10 +1195,10 @@
           canteen: record.canteen, canteenId: record.canteenId,
           orderTag: participant.orderTag, orderTagId: participant.tagId || participant.key,
           orderTagName: participant.tagName || participant.label, nutritious: participant.nutritious || '不区分',
-          mealKey: splitByMeal ? group.key : '', mealName: group.name, mealPeople: '',
+          mealKey: group.mealKey ?? (splitByMeal ? group.key : ''), mealName: group.name, mealPeople: '',
           recipeDemandRecordId: record.id, recipeDemandRecordNo: record.recordNo,
           recipeDemandDate: orderDates.join('、'), recipeParticipantType: participant.label,
-          expectedAt, supplement: '否', source: '需求填报', status: '待审核', creator: operator.name,
+          expectedAt: group.expectedAt || expectedAt, deliveryAt: group.deliveryAt, supplement: '否', source: '需求填报', status: '待审核', creator: operator.name,
           items: [...merged.values()]
         });
         let enterpriseOrder = null;
@@ -1166,10 +1208,10 @@
           orderId: order.id, orderNo: order.orderNo,
           enterpriseOrderId: enterpriseOrder?.id || enterpriseOrder?.orderId || '',
           date: orderDates.join('、'), dates: orderDates,
-          mealKey: splitByMeal ? group.key : '', mealName: group.name, mealPeople: '',
+          mealKey: group.mealKey ?? (splitByMeal ? group.key : ''), mealName: group.name, mealPeople: '',
           participantType: participant.label, orderTag: participant.orderTag,
           orderTagId: participant.tagId || participant.key, orderTagName: participant.tagName || participant.label,
-          nutritious: participant.nutritious || '不区分', expectedAt
+          nutritious: participant.nutritious || '不区分', expectedAt: order.expectedAt, deliveryAt: order.deliveryAt
         });
         writeAll([...records, record]);
       }
@@ -1177,6 +1219,11 @@
     record.operationLogs.push({ action: '订单生成', operator: operator.name, operatorId: operator.id,
       result: `${record.orders.length} 笔`, time: timestamp(),
       description: `生成订单：${record.orders.map((order) => order.orderNo).join('、')}` });
+    if (window.RecipeDeliveryRule?.isMealBased() && record.orders.length) {
+      record.expectedAts = [...new Set(record.orders.map((order) => order.expectedAt))].sort();
+      record.expectedAt = record.expectedAts[0];
+      record.deliveryAts = [...new Set(record.orders.map((order) => order.deliveryAt || order.expectedAt))].sort();
+    }
     writeAll([...records, record]);
     return { record: clone(record), orders: clone(record.orders), preview: clone(preview) };
   }

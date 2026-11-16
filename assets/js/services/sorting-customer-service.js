@@ -20,18 +20,18 @@
     });
   }
 
-  async function getGroups() {
+  async function getGroups(condition = {}) {
     const items = await getItems();
     const orders = window.DemoStore.get('orders');
     const locations = window.DemoStore.get('customerLocations');
     const groups = new Map();
-    items.forEach((item) => {
-      const id = JSON.stringify([item.customerName, item.canteen, dateOf(item.expectedAt), item.route || '']);
+    items.filter((item) => Object.entries(condition).filter(([key]) => key !== 'status').every(([key, value]) => !value || matchesLine(item, key, value))).forEach((item) => {
+      const id = JSON.stringify([item.customerName, item.canteen, window.OrderDelivery.date(item), item.route || '']);
       if (!groups.has(id)) {
         const order = orders.find((entry) => entry.id === item.orderId) || {};
         const location = locations.find((entry) => (entry.customerId === item.customerId || entry.customerName === item.customerName) && entry.canteen === item.canteen) || {};
         groups.set(id, { id, customerName: item.customerName, canteen: item.canteen,
-          expectedAt: dateOf(item.expectedAt), route: item.route || '',
+          expectedAt: dateOf(item.expectedAt), deliveryDate: window.OrderDelivery.date(item), route: item.route || '',
           receiver: order.receiver || location.receiver || '', phone: order.phone || location.phone || '',
           address: order.address || location.address || '', items: [] });
       }
@@ -39,29 +39,24 @@
     });
     return [...groups.values()].map((group) => {
       const orderIds = new Set(group.items.map((item) => item.orderId));
-      return { ...group, status: statusOf(group.items), orders: orders.filter((order) => orderIds.has(order.id)).map((order) => {
+      return { ...group, expectedAt: [...new Set(group.items.map((item) => dateOf(item.expectedAt)))].sort().join('、'), status: statusOf(group.items), orders: orders.filter((order) => orderIds.has(order.id)).map((order) => {
         const lines = group.items.filter((item) => item.orderId === order.id);
         return { ...order, sortingStatus: statusOf(lines), shipped: lines.some((item) => item.shipped === '是'),
           goodsCount: new Set((order.items || lines).map((line) => [line.productId || line.goodsCode, line.unit].join('|'))).size,
           displayAmount: Number(order.orderAmount ?? order.amount ?? (order.items || []).reduce((sum, line) => sum + Number(line.quantity ?? line.orderQty ?? 0) * Number(line.unitPrice || 0), 0)) };
       }) };
-    }).sort((a, b) => b.expectedAt.localeCompare(a.expectedAt) || a.customerName.localeCompare(b.customerName, 'zh-CN'));
+    }).sort((a, b) => b.deliveryDate.localeCompare(a.deliveryDate) || a.customerName.localeCompare(b.customerName, 'zh-CN'));
   }
 
   const textMatches = (source, value) => String(source || '').toLowerCase().includes(String(value).toLowerCase());
   function matchesLine(item, key, value) {
+    if (key === 'deliveryDateRange') return window.OrderDelivery.inRange(window.OrderDelivery.date(item), value);
+    if (key === 'expectedAtRange') return window.OrderDelivery.inRange(item.expectedAt, value);
+    if (key === 'mealName') return textMatches(window.OrderMealNameByKey?.[item.mealKey] || item.mealName || item.mealKey, value);
     if (key === 'sortingStatus') return item.status === value;
     if (key === 'stockLevel') return value === '有库存' ? Number(item.stock) > 0 : Number(item.stock) < Number(item.orderQty);
     if (key === 'sortingThreshold') return value === '超出下单数量' ? Number(item.actualQty) > Number(item.orderQty) : Number(item.actualQty) < Number(item.orderQty);
     return textMatches(item[key], value);
-  }
-  function matchesGroup(group, condition) {
-    const fields = Object.entries(condition).filter(([, value]) => value !== '' && value != null);
-    const ownFields = new Set(['customerName', 'expectedAt', 'route', 'canteen', 'status']);
-    return fields.filter(([key]) => ownFields.has(key)).every(([key, value]) => key === 'status'
-      ? (Array.isArray(value) ? value : String(value).split(',')).includes(group.status)
-      : textMatches(group[key], value))
-      && group.items.some((item) => fields.filter(([key]) => !ownFields.has(key)).every(([key, value]) => matchesLine(item, key, value)));
   }
 
   function canMutate(item, action) {
@@ -127,14 +122,15 @@
       return [...new Set(items.map((item) => item[key]).filter(Boolean))];
     },
     async list(resource, query = {}) {
-      const groups = (await getGroups()).filter((group) => matchesGroup(group, query.condition || {}));
+      const condition = query.condition || {};
+      const groups = (await getGroups(condition)).filter((group) => !condition.status || (Array.isArray(condition.status) ? condition.status : String(condition.status).split(',')).includes(group.status));
       const page = Math.max(1, Number(query.page) || 1), pageSize = Math.max(1, Number(query.pageSize) || 20);
       return { items: groups.slice((page - 1) * pageSize, page * pageSize), total: groups.length, page, pageSize };
     },
-    async get(resource, id) { return (await getGroups()).find((group) => group.id === id) || null; },
-    async batch(resource, ids, action) {
-      const groups = (await getGroups()).filter((group) => ids.includes(group.id));
-      return runItems(groups.flatMap((group) => group.items.map((item) => item.id)), action);
+    async get(resource, id, condition = {}) { return (await getGroups(condition)).find((group) => group.id === id) || null; },
+    async batch(resource, ids, action, payload = {}, condition = {}) {
+      const groups = (await getGroups(condition)).filter((group) => ids.includes(group.id));
+      return runItems(groups.flatMap((group) => group.items.map((item) => item.id)), action, payload);
     },
     async export(resource, query, columns) {
       const result = await this.list(resource, { ...query, pageSize: Number.MAX_SAFE_INTEGER });

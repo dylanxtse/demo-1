@@ -7,7 +7,8 @@
   };
 
   const primaryFilters = [
-    { key: 'expectedAt', label: '期望送达时间', type: 'date', defaultValue: today() },
+    { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date', defaultValue: today() },
+
     { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓', '东南区域仓库', '公司市区仓库'] },
     { key: 'customerName', label: '客户名称', options: ['第一实验学校', '阳光幼儿园', '育才中学', '第三小学', '实验幼儿园', '机关第二食堂', '机关第一食堂'] }
   ];
@@ -105,12 +106,17 @@
   function openShippingPrintTemplate(records, templateHref = './shipping-print-template.html') {
     const printKey = `shipping-print-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const orders = window.DemoStore?.get?.('orders') || [];
-    const rows = (Array.isArray(records) ? records : []).flatMap((record) => {
+    const source = window.PrototypePreview.rows(records, 'shippingOrders');
+    const rows = source.flatMap((record) => {
       const order = orders.find((item) => item.id === record.orderId || item.orderNo === record.orderNo) || {};
-      const lines = Array.isArray(record.items) && record.items.length ? record.items : (order.items || []);
+      const lines = Array.isArray(record.items) && record.items.length ? record.items
+        : order.items?.length ? order.items : record.goodsName || record.goodsCode ? [record]
+          : window.PrototypePreview.defaults('sortingItems');
+      // 每行只携带自身商品，避免重复附带整张订单的商品数组。
+      const { items, orderLines, ...metadata } = record;
       return lines.map((line) => ({
         ...line,
-        ...record,
+        ...metadata,
         goodsName: line.goodsName || line.productName,
         goodsCode: line.goodsCode || line.productCode,
         orderQty: line.orderQty ?? line.quantity,
@@ -132,14 +138,20 @@
       rows
     };
     const serializedPayload = JSON.stringify(payload);
-    let query = `printData=${encodeURIComponent(serializedPayload)}`;
-    try {
-      if (window.sessionStorage?.setItem) {
-        window.sessionStorage.setItem(printKey, serializedPayload);
-        query = `printKey=${encodeURIComponent(printKey)}`;
-      }
-    } catch (error) { /* 临时缓存不可用时使用 URL 数据兜底。 */ }
-    window.AppNavigation?.navigate?.(`${templateHref}?${query}`);
+    let saved = false;
+    for (const name of ['sessionStorage', 'localStorage']) {
+      try {
+        const storage = window[name];
+        if (!storage?.setItem) continue;
+        storage.setItem(printKey, serializedPayload);
+        saved = storage.getItem(printKey) === serializedPayload;
+        if (saved) break;
+      } catch (error) { /* 当前缓存不可用时，继续尝试下一个缓存。 */ }
+    }
+    // 缓存均不可用时，打印页自行读取原型数据，始终使用短链接。
+    const href = saved ? `${templateHref}?printKey=${encodeURIComponent(printKey)}` : templateHref;
+    if (window.AppNavigation?.navigate) window.AppNavigation.navigate(href);
+    else window.location.href = href;
   }
 
   function openOrderShippingPrintTemplate(records) {
@@ -233,12 +245,12 @@
   const shippingToolbar = [
     { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
     { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './shipping-export-template.html' },
-    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openShippingPrintTemplate }
+    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, allFiltered: true, onClick: openShippingPrintTemplate }
   ];
   const orderShippingToolbar = [
     { key: 'batchShip', label: '一键发货', primary: true, batchTransition: 'ship', message: '是否确定发货？' },
     { key: 'export', label: '导出', icon: 'supplier-purchase-export', templateHref: './order-shipping-export-template.html' },
-    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, onClick: openOrderShippingPrintTemplate }
+    { key: 'print', label: '打印', icon: 'supplier-purchase-print', side: true, allFiltered: true, onClick: openOrderShippingPrintTemplate }
   ];
 
   const shippingColumns = [
@@ -276,6 +288,7 @@
   ];
 
   window.RecordPageConfig = {
+    deliveryDates: true,
     title: '发货管理',
     pageClass: 'order-module-page shipping-management-page',
     manualFilterLayout: true,

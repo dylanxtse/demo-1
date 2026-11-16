@@ -18,12 +18,14 @@
     : '<span class="operation-status danger">未生成</span>';
 
   window.RecordPageConfig = {
+    deliveryDates: true,
     title: '缺货商品',
     pageClass: 'sorting-module-page shortage-goods-page',
     usePagination: true,
     resource: 'shortageItems',
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', type: 'date' },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date' },
+
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'category', label: '商品分类', options: ['果蔬', '水产品', '蛋奶类', '主食'] },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入' },

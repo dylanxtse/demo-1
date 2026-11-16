@@ -241,6 +241,7 @@
             ${infoItem('餐次', order.mealName)}
             ${infoItem('订单标签', order.orderTag)}
             ${infoItem('期望送达时间', order.expectedAt)}
+            ${infoItem('配送日期', window.OrderSchema.deliveryDate(order))}
             ${infoItem('单据来源', recipeOrderSource(order))}
             ${infoItem('添加时间', order.createdAt)}
             ${infoItem('制单人', order.creator)}

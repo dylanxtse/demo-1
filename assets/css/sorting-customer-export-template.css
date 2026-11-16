@@ -17,16 +17,17 @@
 
 .sorting-customer-export-template-table {
   width: 100%;
-  min-width: 1700px;
+  min-width: 1900px;
   border-collapse: collapse;
   table-layout: fixed;
   color: #20242b;
   font-size: 14px;
 }
 
-.sorting-customer-export-template-table .customer-export-col-goods { width: 19%; }
-.sorting-customer-export-template-table .customer-export-col-order { width: 11%; }
-.sorting-customer-export-template-table .customer-export-col-unit { width: 7%; }
+.sorting-customer-export-template-table .customer-export-col-goods { width: 16%; }
+.sorting-customer-export-template-table .customer-export-col-order { width: 9%; }
+.sorting-customer-export-template-table .customer-export-col-date { width: 6%; }
+.sorting-customer-export-template-table .customer-export-col-unit { width: 5%; }
 .sorting-customer-export-template-table .customer-export-col-qty { width: 6%; }
 .sorting-customer-export-template-table .customer-export-col-actual { width: 6%; }
 .sorting-customer-export-template-table .customer-export-col-package-unit,
@@ -35,7 +36,7 @@
 .sorting-customer-export-template-table .customer-export-col-package-coefficient { width: 5%; }
 .sorting-customer-export-template-table .customer-export-col-shipped { width: 6%; }
 .sorting-customer-export-template-table .customer-export-col-progress { width: 7%; }
-.sorting-customer-export-template-table .customer-export-col-remark { width: 13%; }
+.sorting-customer-export-template-table .customer-export-col-remark { width: 8%; }
 .sorting-customer-export-template-table .customer-export-col-stock { width: 5%; }
 
 .sorting-customer-export-template-table th,

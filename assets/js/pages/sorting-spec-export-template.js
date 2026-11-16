@@ -100,7 +100,7 @@
   }
 
   const payload = readPayload() || { rows: fallbackRows(), exportedAt: new Date().toISOString() };
-  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  const rows = window.PrototypePreview.rows(payload.rows, 'specs');
   const exportTime = payload.exportedAt || new Date().toISOString();
   const body = rows.length
     ? rows.map(renderRow).join('')

@@ -88,6 +88,11 @@ for (const status of ['pending', 'shortage', 'done']) {
   test(`客户分拣打印按钮在${status}状态下按下单数量生成客户标签`, () => {
     const { context, elements } = setup(status);
     const grid = elements.get('sortingTerminalCustomerItemGrid');
+    if (status === 'done') {
+      assert.equal(grid.children.some((item) => item.dataset.id === '0'), false);
+      const option = { dataset: { filter: 'done' } };
+      elements.get('sortingTerminalCustomerItemFilterMenu').listeners.click({ target: { closest() { return option; } } });
+    }
     const card = grid.children.find((item) => item.dataset.id === '0');
     const printButton = card.children[1].children[1];
 

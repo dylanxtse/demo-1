@@ -688,10 +688,10 @@
     modal.querySelector('[data-modal-cancel]')?.setAttribute('disabled', 'disabled');
     const submission = isDirectMode
       ? demandService.submitDirectDates(preview.dates, directQuantitiesByDate(), {
-        expectedAt: calculatedExpectedAt(preview.dates), canteen: currentCanteenScope
+        expectedAt: calculatedExpectedAt(preview.dates), expectedAtAutomatic: true, canteen: currentCanteenScope
       })
       : demandService.submit([...state.selectedDates], {
-        expectedAt: state.expectedAt,
+        expectedAt: state.expectedAt, expectedAtAutomatic: true,
         canteen: currentCanteenScope,
         unitPriceOverrides: { ...state.unitPriceOverrides },
         purchaseQuantityOverrides: { ...state.purchaseQtyOverrides }

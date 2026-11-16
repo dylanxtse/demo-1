@@ -109,7 +109,7 @@
   }
 
   const payload = readPayload();
-  const groups = groupOrders(payload?.rows || []);
+  const groups = groupOrders(window.PrototypePreview.orders(payload?.rows));
   root.innerHTML = `<main class="order-merge-page">
     <div class="order-merge-table-wrap">
       <table class="order-merge-table" aria-label="商品归并导出模板">

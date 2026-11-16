@@ -259,7 +259,7 @@ body > #schoolOrderDateRangePanel {
 
 .school-order-table {
   width: 100%;
-  min-width: 2260px;
+  min-width: 2380px;
   table-layout: fixed;
   border-collapse: collapse;
   color: #333;
@@ -273,6 +273,7 @@ body > #schoolOrderDateRangePanel {
 .school-order-table col.col-tag { width: 132px; }
 .school-order-table col.col-money { width: 100px; }
 .school-order-table col.col-date { width: 154px; }
+.school-order-table col.col-delivery-date { width: 120px; }
 .school-order-table col.col-status { width: 92px; }
 .school-order-table col.col-receipt { width: 92px; }
 .school-order-table col.col-count { width: 92px; }

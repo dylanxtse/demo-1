@@ -151,7 +151,7 @@
     printedAt: new Date().toISOString(),
     rows: window.DemoStore?.get?.('sortingItems') || []
   };
-  const rows = normalizeRows(payload.rows);
+  const rows = normalizeRows(window.PrototypePreview.rows(payload.rows, 'sortingItems'));
   const pages = [];
   for (let index = 0; index < rows.length || index === 0; index += PAGE_SIZE) {
     pages.push(rows.slice(index, index + PAGE_SIZE));

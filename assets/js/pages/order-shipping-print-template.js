@@ -14,7 +14,13 @@
     if (queryData) { try { const payload = JSON.parse(queryData); if (payload?.version === PRINT_VERSION) return payload; } catch (error) { return null; } }
     const printKey = params.get('printKey');
     if (!printKey) return null;
-    try { const payload = JSON.parse(window.sessionStorage?.getItem(printKey) || window.localStorage?.getItem(printKey) || ''); return payload?.version === PRINT_VERSION ? payload : null; } catch (error) { return null; }
+    for (const name of ['sessionStorage', 'localStorage']) {
+      try {
+        const payload = JSON.parse(window[name]?.getItem(printKey) || 'null');
+        if (payload?.version === PRINT_VERSION) return payload;
+      } catch (error) { /* One unavailable cache must not prevent reading the other. */ }
+    }
+    return null;
   }
 
   function formatDateTime(value) {
@@ -45,7 +51,7 @@
     }).join('、');
   }
 
-  function productName(item) { return window.DomUtils?.formatProductDisplay?.(item) || item.goodsName || item.productName || '--'; }
+  function productName(item) { return window.DomUtils?.formatProductDisplay?.(item, window.PrototypePreview.stored('products')) || item.goodsName || item.productName || '--'; }
   function mealText(row) {
     const meals = row.mealCounts;
     if (typeof meals === 'string') return meals;
@@ -101,6 +107,7 @@
     const materialDates = formatMaterialDates(row.recipeDemandDates?.length ? row.recipeDemandDates : row.recipeDemandDate);
     return `<div class="shipping-print-info">
       <span>期望送达时间：${text(row.expectedAt || '--')}</span>
+      <span>配送日期：${text(window.OrderDelivery.date(row))}</span>
       <span>客户名称：${text(row.customerName)}</span>
       <span>学校编码：${text(row.customerCode)}</span>
       <span>食堂：${text(row.canteen)}</span>
@@ -120,14 +127,20 @@
     return `<table class="shipping-print-table"><colgroup><col class="col-code"><col class="col-name"><col class="col-unit"><col class="col-order-qty"><col class="col-price"><col class="col-shipping-qty"><col class="col-subtotal"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-unit"><col class="col-package-coefficient"><col class="col-accepted"><col class="col-date"></colgroup><thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead><tbody>${body}<tr class="shipping-print-summary"><td colspan="6">发货总金额：</td><td>${number(total, true)}</td><td colspan="6">大写总金额：零元整</td></tr></tbody></table>`;
   }
 
-  const fallback = { version: PRINT_VERSION, companyName: '赣州客家新源供应链有限公司', sourceUrl: 'https://gxyc.canantong.com:4403/shippingManagement', printedAt: new Date().toISOString(), rows: window.DemoStore?.get?.('shippingOrders') || [] };
+  const fallback = { version: PRINT_VERSION, companyName: '赣州客家新源供应链有限公司', sourceUrl: 'https://gxyc.canantong.com:4403/shippingManagement', printedAt: new Date().toISOString(), rows: window.PrototypePreview.stored('shippingOrders') };
   const payload = readPayload() || fallback;
-  const sortingItems = window.DemoStore?.get?.('sortingItems') || [];
-  const expandedRows = (payload.rows || []).flatMap((row) => {
+  const sortingItems = window.PrototypePreview.stored('sortingItems');
+  const expandedRows = window.PrototypePreview.rows(payload.rows, 'shippingOrders').flatMap((row) => {
     if (row.goodsName || row.goodsCode || row.productName) return [row];
+    if (row.items?.length) return row.items.map((line) => ({ ...row, ...line }));
     const date = String(row.expectedAt || '').slice(0, 10);
-    const matches = sortingItems.filter((item) => item.customerName === row.customerName && item.canteen === row.canteen && (!date || String(item.expectedAt || '').slice(0, 10) === date));
-    return (matches.length ? matches : [row]).map((item) => ({ ...item, ...row, goodsName: item.goodsName, goodsCode: item.goodsCode, unit: item.unit, orderQty: item.orderQty, shippingQty: row.shippingQty, unitPrice: row.unitPrice }));
+    const matches = sortingItems.filter((item) => {
+      if (row.orderId) return item.orderId === row.orderId;
+      if (row.orderNo) return item.orderNo === row.orderNo;
+      return item.customerName === row.customerName && item.canteen === row.canteen && (!date || String(item.expectedAt || '').slice(0, 10) === date)
+        && window.OrderDelivery.date(item) === window.OrderDelivery.date(row);
+    });
+    return (matches.length ? matches : window.PrototypePreview.defaults('sortingItems')).map((item) => ({ ...item, ...row, goodsName: item.goodsName, goodsCode: item.goodsCode, unit: item.unit, orderQty: item.orderQty, shippingQty: row.shippingQty ?? item.shippingQty ?? item.actualQty, unitPrice: row.unitPrice ?? item.unitPrice }));
   });
   const grouped = [];
   expandedRows.forEach((row) => { const key = `${row.customerName || ''}|${row.canteen || ''}|${row.orderNo || ''}`; let group = grouped.find((item) => item.key === key); if (!group) { group = { key, row, rows: [] }; grouped.push(group); } group.rows.push(row); });

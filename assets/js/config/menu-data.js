@@ -74,7 +74,7 @@
       { name: '仓库监控', href: './warehouse-monitor.html' },
       { name: '期初库存', href: './opening-inventory.html' }
     ] },
-    { name: '物流配送', icon: 'route', children: ['数据监测', '线路管理', '物流排线', '司机管理', '车辆管理', '配送地址'] },
+    { name: '物流配送', icon: 'route', children: ['数据监测', { name: '线路管理', href: './route-management.html' }, '物流排线', '司机管理', '车辆管理', '配送地址'] },
     { name: '客户信息', icon: 'users', children: [
       { name: '客户档案', href: './customer.html' },
       '客户类型'

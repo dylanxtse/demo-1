@@ -3,11 +3,12 @@
     title: '订单汇总',
     pageClass: 'order-module-page order-summary-page',
     usePagination: true,
+    deliveryDates: true,
     hideRowActions: true,
     selectable: false,
     resource: 'orders',
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', type: 'date' },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'dateRange', conditionKey: 'expectedAtRange' },
       { key: 'customerName', label: '客户名称', placeholder: '请输入' },
       { key: 'customerType', label: '客户类型', options: ['学校', '幼儿园', '机关单位'] },
       { key: 'orderTag', label: '订单标签', options: ['营养餐', '普通餐', '应急保供'] },

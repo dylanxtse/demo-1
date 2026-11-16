@@ -2,7 +2,7 @@
   const root = document.getElementById('orderShippingExportTemplateApp');
   if (!root) return;
   const params = new URLSearchParams(window.location.search);
-  const allShipping = window.DemoStore?.get?.('shippingOrders') || [];
+  const allShipping = window.PrototypePreview.rows(window.OrderDelivery?.readRows('shippingOrders', params), 'shippingOrders');
   const sortingItems = window.DemoStore?.get?.('sortingItems') || [];
   const products = window.DemoStore?.get?.('products') || [];
   const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -59,10 +59,8 @@
     return `<svg class="shipping-export-qrcode" viewBox="0 0 25 25" role="img" aria-label="订单二维码"><rect width="25" height="25" fill="#fff"/>${cells.join('')}</svg>`;
   }
   function matchesQuery(item) {
-    const expectedAt = params.get('expectedAt') || '';
     const warehouse = params.get('warehouse') || '';
     const customerName = params.get('customerName') || '';
-    if (expectedAt && dateOnly(item.expectedAt) !== expectedAt) return false;
     if (warehouse && warehouse !== '全部' && String(item.warehouse || '') !== warehouse) return false;
     if (customerName && !String(item.customerName || '').includes(customerName)) return false;
     return true;
@@ -70,8 +68,13 @@
   function lineRows(record) {
     if (Array.isArray(record.items) && record.items.length) return record.items.map((line) => ({ ...record, ...line }));
     const date = dateOnly(record.expectedAt);
-    const matches = sortingItems.filter((item) => item.customerName === record.customerName && item.canteen === record.canteen && dateOnly(item.expectedAt) === date);
-    return (matches.length ? matches : [record]).map((item) => ({ ...record, ...item, shippingQty: record.shippingQty, shippingAmount: record.shippingAmount }));
+    const matches = sortingItems.filter((item) => {
+      if (record.orderId) return item.orderId === record.orderId;
+      if (record.orderNo) return item.orderNo === record.orderNo;
+      return item.customerName === record.customerName && item.canteen === record.canteen && dateOnly(item.expectedAt) === date
+        && window.OrderDelivery.date(item) === window.OrderDelivery.date(record);
+    });
+    return (matches.length ? matches : window.PrototypePreview.defaults('sortingItems')).map((item) => ({ ...record, ...item, shippingQty: record.shippingQty, shippingAmount: record.shippingAmount }));
   }
   function getGroups() {
     const filtered = allShipping.filter(matchesQuery);
@@ -81,7 +84,7 @@
   function renderInfo(record) {
     const meal = record.mealCounts && typeof record.mealCounts === 'object' ? Object.entries(record.mealCounts).map(([key, value]) => `${key}：${value}`).join('　') : '教师-不区分：--　　学生-不区分：--';
     const exportTime = new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-');
-    return `<div class="shipping-export-info"><div>期望送达时间：${text(record.expectedAt || dateOnly(record.expectedAt))}</div><div>客户名称：${text(record.customerName)}${record.customerCode ? `　学校编码：${text(record.customerCode)}` : ''}</div><div>食堂名称：${text(record.canteen)}</div><div>收货人：${text(record.receiver || '--')}</div><div>收货地址：${text(record.address || '默认收货地址')}</div><div>收货手机：${text(record.phone || '--')}</div><div>订单号：${text(record.orderNo || '--')}</div><div>订单标签：${text(record.orderTag || record.tagName || '教师-不区分')}</div><div>就餐人次：${escapeHtml(meal)}</div><div>餐次：${text(record.mealName || record.meal || '早餐')}</div><div>单据打印时间：${escapeHtml(exportTime)}</div><div>发货时间：${text(record.shippingTime || '')}</div></div>`;
+    return `<div class="shipping-export-info"><div>期望送达时间：${text(record.expectedAt || dateOnly(record.expectedAt))}</div><div>配送日期：${text(window.OrderDelivery?.date(record) || String(record.deliveryAt || record.expectedAt || '').slice(0, 10))}</div><div>客户名称：${text(record.customerName)}${record.customerCode ? `　学校编码：${text(record.customerCode)}` : ''}</div><div>食堂名称：${text(record.canteen)}</div><div>收货人：${text(record.receiver || '--')}</div><div>收货地址：${text(record.address || '默认收货地址')}</div><div>收货手机：${text(record.phone || '--')}</div><div>订单号：${text(record.orderNo || '--')}</div><div>订单标签：${text(record.orderTag || record.tagName || '教师-不区分')}</div><div>就餐人次：${escapeHtml(meal)}</div><div>餐次：${text(record.mealName || record.meal || '早餐')}</div><div>单据打印时间：${escapeHtml(exportTime)}</div><div>发货时间：${text(record.shippingTime || '')}</div></div>`;
   }
   function renderTable(rows) {
     const total = rows.reduce((sum, row) => sum + Number(row.shippingQty || 0) * Number(row.unitPrice || 0), 0);
@@ -91,8 +94,8 @@
     }).join('');
     return `<table class="shipping-export-table"><colgroup><col class="col-index"><col class="col-product"><col class="col-remark"><col class="col-unit"><col class="col-order-qty"><col class="col-price"><col class="col-shipping-qty"><col class="col-subtotal"><col class="col-package-qty"><col class="col-package-remainder"><col class="col-package-unit"><col class="col-package-coefficient"><col class="col-sorting-status"><col class="col-shipping-status"><col class="col-date"><col class="col-report"></colgroup><thead><tr>${['序号','商品名称（计量单位/品牌/规格）','备注','计量单位','下单数量','下单单价','发货数量','发货小计','分包数量','分包尾数','分包单位','分包系数','分拣状态','发货状态','生产日期','质检报告'].map((header) => `<th>${header}</th>`).join('')}</tr></thead><tbody>${body || '<tr><td colspan="16">暂无商品明细</td></tr>'}<tr class="summary-row"><td colspan="7">发货总金额：</td><td>${number(total, true)}</td><td colspan="8">大写总金额：零元整</td></tr></tbody></table>`;
   }
-  const groups = getGroups().slice(0, 2);
-  root.innerHTML = `<main class="shipping-export-page">${groups.map(({ record, rows }) => `<section class="shipping-export-paper"><div class="shipping-export-heading"><h1 class="shipping-export-title">赣州客家新源供应链有限公司发货单</h1>${qrCode(record.orderNo || record.customerCode || record.customerName)}</div>${renderInfo(record)}${renderTable(rows)}<div class="shipping-export-signature"><span>经手人或单位：</span><span>送货人：</span><span>收货人或单位：</span><span>验收人：</span></div></section>`).join('')}<nav class="shipping-export-actions" aria-label="发货导出模板操作"><a href="./shipping-management.html">返回发货管理</a><span class="shipping-export-zoom-label">缩放</span><button type="button" data-action="zoom-out" aria-label="缩小模板">−</button><button type="button" class="shipping-export-zoom-value" data-action="zoom-reset" aria-label="恢复默认缩放">90%</button><button type="button" data-action="zoom-in" aria-label="放大模板">＋</button></nav></main>`;
+  const groups = getGroups();
+  root.innerHTML = `<main class="shipping-export-page">${groups.map(({ record, rows }) => `<section class="shipping-export-paper"><div class="shipping-export-heading"><h1 class="shipping-export-title">赣州客家新源供应链有限公司发货单</h1>${qrCode(record.orderNo || record.customerCode || record.customerName)}</div>${renderInfo(record)}${renderTable(rows)}<div class="shipping-export-signature"><span>经手人或单位：</span><span>送货人：</span><span>收货人或单位：</span><span>验收人：</span></div></section>`).join('')}${groups.length ? '' : '<div class="school-order-export-template-empty">暂无可导出数据</div>'}<nav class="shipping-export-actions" aria-label="发货导出模板操作"><a href="./shipping-management.html">返回发货管理</a><span class="shipping-export-zoom-label">缩放</span><button type="button" data-action="zoom-out" aria-label="缩小模板">−</button><button type="button" class="shipping-export-zoom-value" data-action="zoom-reset" aria-label="恢复默认缩放">90%</button><button type="button" data-action="zoom-in" aria-label="放大模板">＋</button></nav></main>`;
 
   const page = document.querySelector('.shipping-export-page');
   const zoomValue = document.querySelector('[data-action="zoom-reset"]');

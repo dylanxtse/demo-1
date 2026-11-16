@@ -54,7 +54,7 @@
   }
 
   const payload = readPayload();
-  const orders = Array.isArray(payload?.rows) ? payload.rows : [];
+  const orders = window.PrototypePreview.orders(payload?.rows);
   const companyName = payload?.companyName || '集采企业';
 
   const statusMap = {
@@ -82,7 +82,7 @@
       ? items.map((line, i) => renderItemRow(line, i)).join('')
       : `<tr class="school-order-export-item-row"><td colspan="${COL_SPAN}">暂无商品明细</td></tr>`;
     return `<tr class="school-order-export-meta-row"><td colspan="4">订单号：${display(order.orderNo)}</td><td colspan="4">供应平台：${display(companyName)}</td><td colspan="3">食堂：${display(order.canteen)}</td><td colspan="4">订单标签：${display(order.orderTag)}</td></tr>
-      <tr class="school-order-export-meta-row"><td colspan="4">期望送达时间：${display(order.expectedAt)}</td><td colspan="4">单据来源：${display(order.source)}</td><td colspan="3">添加时间：${display(order.createdAt)}</td><td colspan="4">制单人：${display(order.creator)}</td></tr>
+      <tr class="school-order-export-meta-row"><td colspan="3">期望送达时间：${display(order.expectedAt)}</td><td colspan="3">配送日期：${display(window.OrderDelivery.date(order))}</td><td colspan="3">单据来源：${display(order.source)}</td><td colspan="3">添加时间：${display(order.createdAt)}</td><td colspan="3">制单人：${display(order.creator)}</td></tr>
       <tr class="school-order-export-meta-row"><td colspan="4">发货时间：${display(order.shippingAt)}</td><td colspan="4">司机：${display(order.driver)}</td><td colspan="3">验收时间：${display(order.acceptedAt)}</td><td colspan="4"><span>单据状态：${display(statusLabel(order.status))}</span><span class="school-order-export-meta-inline">是否补单：${display(order.supplement)}</span></td></tr>
       <tr class="school-order-export-column-row"><th>序号</th><th>商品名称（计量单位/品牌/规格）</th><th>商品编码</th><th>计量单位</th><th>下单单价</th><th>下单数量</th><th>下单小计</th><th>验货数量</th><th>验货小计</th><th>退货数量</th><th>退货小计</th><th>对账数量</th><th>对账小计</th><th>备注</th><th>生产日期</th></tr>
       ${itemRows}

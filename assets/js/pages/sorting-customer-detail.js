@@ -5,6 +5,9 @@
   const canteen = params.get('canteen') || '';
   const expectedDate = params.get('date') || '';
   const groupId = params.get('group') || '';
+  const deliveryDate = params.get('deliveryDate') || '';
+  let queryCondition = {};
+  try { queryCondition = JSON.parse(params.get('condition') || '{}'); } catch (error) { /* 沿用空查询。 */ }
   const orderMealNames = window.OrderMealNames || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
   const orderMealOptions = orderMealNames.map((name) => `<option value="${name}">${name}</option>`).join('');
   const selected = new Set();
@@ -20,6 +23,7 @@
       </div>
       <div class="sorting-customer-info" aria-label="客户信息">
         <div class="sorting-customer-info-item"><span>期望送达日期：</span><strong id="detailDate"></strong></div>
+        <div class="sorting-customer-info-item"><span>配送日期：</span><strong id="detailDeliveryDate"></strong></div>
         <div class="sorting-customer-info-item"><span>客户名称</span><strong id="detailCustomer"></strong></div>
         <div class="sorting-customer-info-item"><span>食堂</span><strong id="detailCanteen"></strong></div>
         <div class="sorting-customer-info-item"><span>线路</span><strong id="detailRoute">--</strong></div>
@@ -150,12 +154,13 @@
   }
 
   async function load() {
-    const groups = await customerService.getGroups();
+    const groups = await customerService.getGroups(queryCondition);
     const matchingGroups = groups.filter((group) => groupId ? group.id === groupId : (
       customerName && group.customerName === customerName && (!canteen || group.canteen === canteen) && (!expectedDate || group.expectedAt === expectedDate)
     ));
     items = matchingGroups.flatMap((group) => group.items);
     root.querySelector('#detailDate').textContent = expectedDate || [...new Set(matchingGroups.map((group) => group.expectedAt))].join('、') || '--';
+    root.querySelector('#detailDeliveryDate').textContent = deliveryDate || window.OrderDelivery.rangeLabel(items);
     root.querySelector('#detailRoute').textContent = [...new Set(items.map((item) => item.route).filter(Boolean))].join('、') || '--';
     applyFilters();
   }

@@ -625,3 +625,28 @@ test('菜谱人数填报只展示食谱关联商品，不提供手动添加商�
   assert.deepEqual(Array.from(edit.removedProductKeys), [calculatedRow.key]);
   assert.equal(edit.addedProducts, undefined);
 });
+
+test('手机端菜谱人数提交后各餐次按企业配送配置生成订单', async () => {
+  const { context, dispatch } = mobileApp();
+  context.DemoStore.updateSettings({ splitOrderByMeal: true, recipeDeliveryByMeal: Object.fromEntries(
+    context.RecipeDeliveryRule.MEALS.map((meal) => [meal.key, { days: meal.key === 'breakfast' ? 1 : 0, time: '07:00' }])) });
+  dispatch('click', 'open-attendance');
+  dispatch('click', 'choose-entry-mode', { entryMode: 'people' });
+  dispatch('click', 'fill-defaults');
+  dispatch('click', 'continue');
+  const existing = new Set(context.SchoolRecipeDemandService.getAll().map((record) => record.id));
+  dispatch('click', 'submit-demand');
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+    const latest = context.DemoStore.get('recipeDemandRecords').find((record) => !existing.has(record.id));
+    if (latest?.operationLogs?.some((log) => log.action === '订单生成')) break;
+  }
+  const record = context.DemoStore.get('recipeDemandRecords').find((item) => !existing.has(item.id));
+  assert.ok(record?.orders?.length, JSON.stringify(record || '应生成新的学校需求订单'));
+  assert.ok(record.orders.some((order) => order.mealKey === 'breakfast'));
+  record.orders.forEach((order) => {
+    assert.equal(order.expectedAt, context.RecipeDeliveryRule.expectedAt(order.dates));
+    assert.equal(order.deliveryAt, context.RecipeDeliveryRule.deliveryAt(order.expectedAt, order.mealKey));
+  });
+  assert.deepEqual(Array.from(record.enterpriseSyncWarnings), []);
+});
