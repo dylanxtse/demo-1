@@ -1,10 +1,11 @@
 (function () {
   const params = new URLSearchParams(window.location.search);
-  const defaultDateType = params.has('deliveryDateRange') ? 'deliveryDate' : 'expectedAt';
-  const range = (params.get(`${defaultDateType}Range`) || '').split(',');
+  const expectedRange = (params.get('expectedAtRange') || '').split(',');
+  const deliveryRange = (params.get('deliveryDateRange') || '').split(',');
   const route = params.get('route') || '';
   const filters = [
-    { key: 'expectedAt', label: '期望送达时间', switchableDate: true, defaultDateType, type: 'dateRange', defaultStart: range[0] || '', defaultEnd: range[1] || '' },
+    { key: 'expectedAt', label: '期望送达时间', type: 'dateRange', conditionKey: 'expectedAtRange', defaultStart: expectedRange[0] || '', defaultEnd: expectedRange[1] || '' },
+    { key: 'deliveryDate', label: '配送时间', type: 'dateRange', conditionKey: 'deliveryDateRange', defaultStart: deliveryRange[0] || '', defaultEnd: deliveryRange[1] || '', placeholder: '请选择' },
     { key: 'route', label: '线路', placeholder: '请输入线路名称', defaultValue: route },
     { key: 'customerName', label: '客户名称', placeholder: '请输入', defaultValue: params.get('customerName') || '' },
     { key: 'driver', label: '司机', placeholder: '请输入', defaultValue: params.get('driver') || '' },
@@ -13,7 +14,6 @@
   const orderHref = (row, condition = {}) => {
     const query = new URLSearchParams({ view: 'orders', route: row.route, deliveryDateRange: `${row.deliveryDate},${row.deliveryDate}` });
     if (condition.expectedAtRange) {
-      query.delete('deliveryDateRange');
       query.set('expectedAtRange', condition.expectedAtRange.join(','));
     }
     if (row.orders?.length) query.set('orderIds', JSON.stringify(row.orders.map((order) => order.id)));

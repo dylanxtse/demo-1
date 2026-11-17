@@ -1,5 +1,9 @@
 (function () {
   const dateOf = (value) => String(value || '').slice(0, 10);
+  const daysOf = (value) => (Array.isArray(value) ? value : [value])
+    .flatMap((entry) => String(entry || '').split(/[、，,]/))
+    .map(dateOf)
+    .filter(Boolean);
   const orders = () => {
     try { return window.DemoStore?.get?.('orders') || []; }
     catch (error) { return []; }
@@ -33,9 +37,13 @@
 
   function inRange(value, range) {
     const [start, end] = Array.isArray(range) ? range : String(range || '').split(',');
-    const day = dateOf(value);
     if (!start && !end) return true;
-    return Boolean(day) && (!start || day >= start) && (!end || day <= end);
+    return daysOf(value).some((day) => (!start || day >= start) && (!end || day <= end));
+  }
+
+  function expectedDays(row = {}) {
+    const value = row.expectedAt || row.orders?.map((order) => order.expectedAt).filter(Boolean) || '';
+    return daysOf(value);
   }
 
   function rangeLabel(rows) {
@@ -48,8 +56,11 @@
     return Object.entries(condition || {}).every(([key, value]) => {
       if (value == null || value === '' || value === '全部') return true;
       if (key === 'deliveryDateRange') return inRange(date(row), value);
-      if (key === 'expectedAtRange') return inRange(row.expectedAt, value);
-      if (key === 'expectedAt') return dateOf(row.expectedAt) === dateOf(value);
+      if (key === 'deliveryAtRange') return inRange(row.deliveryAt, value);
+      if (key === 'expectedAtRange') return inRange(expectedDays(row), value);
+      if (key === 'expectedAt') return expectedDays(row).includes(dateOf(value));
+      if (key === 'deliveryDate') return date(row) === dateOf(value);
+      if (key === 'deliveryAt') return dateOf(row.deliveryAt) === dateOf(value);
       if (key === 'status') return (Array.isArray(value) ? value : String(value).split(',')).includes(row.status);
       if (key === 'isNetVegetable') return Boolean(row.isNetVegetable) === (value === true || value === 'true');
       if (Array.isArray(value)) return value.includes(row[key]);

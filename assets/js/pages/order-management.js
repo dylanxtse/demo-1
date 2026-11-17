@@ -63,7 +63,8 @@
       <div class="operations-filter filter-section">
         <div class="operations-filter-main">
           <div class="operations-filter-grid">
-          <div class="operations-field expected-at-field"><select class="filter-label order-date-filter-type" id="orderDateFilterType" aria-label="日期筛选类型"><option value="expectedAt">期望送达时间</option><option value="deliveryDate">配送日期</option></select><div class="date-range-picker operations-date-range" id="orderExpectedAtRange"><input class="filter-input date-range-display" id="expectedAt" type="text" placeholder="请选择" aria-label="期望送达时间范围" readonly><input id="expectedAtStart" type="hidden" data-date-start><input id="expectedAtEnd" type="hidden" data-date-end><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div></div>
+          <div class="operations-field expected-at-field"><label class="filter-label" for="expectedAt">期望送达时间</label><div class="date-range-picker operations-date-range" id="orderExpectedAtRange"><input class="filter-input date-range-display" id="expectedAt" type="text" placeholder="请选择" aria-label="期望送达时间范围" readonly><input id="expectedAtStart" type="hidden" data-date-start><input id="expectedAtEnd" type="hidden" data-date-end><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div></div>
+          <div class="operations-field delivery-date-field"><label class="filter-label" for="deliveryDate">配送时间</label><div class="date-range-picker operations-date-range" id="orderDeliveryDateRange"><input class="filter-input date-range-display" id="deliveryDate" type="text" placeholder="请选择" aria-label="配送时间范围" readonly><input id="deliveryDateStart" type="hidden" data-date-start><input id="deliveryDateEnd" type="hidden" data-date-end><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div></div>
           <div class="operations-field"><label class="filter-label" for="customerName">客户名称</label><input class="filter-input" id="customerName" placeholder="请输入"></div>
           <div class="operations-field"><label class="filter-label" for="orderNo">订单号</label><input class="filter-input" id="orderNo" maxlength="40" placeholder="请输入订单号"></div>
           </div>
@@ -118,18 +119,19 @@
   const root = window.AppShell.mount({ title: '订单管理', content });
   const $ = (selector) => root.querySelector(selector);
   const overlay = $('#operationsOverlay');
-  const initialDateRange = window.OrderDelivery?.defaultWeek() || ['', ''];
   const expectedAtPicker = window.DateRangePicker?.mount({
     container: '#orderExpectedAtRange',
     panelId: 'orderExpectedAtPickerPanel'
   });
+  const deliveryDatePicker = window.DateRangePicker?.mount({
+    container: '#orderDeliveryDateRange',
+    panelId: 'orderDeliveryDatePickerPanel'
+  });
 
   function restoreDateRange() {
-    const [start, end] = window.OrderDelivery?.defaultWeek() || ['', ''];
-    if (expectedAtPicker?.setValue) expectedAtPicker.setValue(start, end, false);
-    else expectedAtPicker?.clear(false);
+    expectedAtPicker?.clear(false);
+    deliveryDatePicker?.clear(false);
   }
-  if (initialDateRange[0]) expectedAtPicker?.setValue?.(...initialDateRange, false);
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -211,6 +213,10 @@
 
   function collectCondition() {
     const condition = {};
+    const expectedRange = expectedAtPicker?.getValue?.();
+    if (expectedRange?.startDate || expectedRange?.endDate) condition.expectedAtRange = [expectedRange.startDate, expectedRange.endDate];
+    const deliveryRange = deliveryDatePicker?.getValue?.();
+    if (deliveryRange?.startDate || deliveryRange?.endDate) condition.deliveryDateRange = [deliveryRange.startDate, deliveryRange.endDate];
     ['orderNo', 'customerName', 'customerType', 'status', 'orderTag', 'mealName', 'warehouse', 'source', 'receiptStatus', 'orderType', 'netVegetable']
       .forEach((key) => {
         const value = $(`#${key}`).value.trim();
@@ -439,7 +445,6 @@
       if (row) return handleRowAction(actionButton.dataset.action, row.dataset.id);
     }
     if (event.target.id === 'queryButton') {
-      // 日期条件仅用于原型交互展示。
       state.condition = collectCondition();
       state.page = 1;
       state.selected.clear();
@@ -447,8 +452,6 @@
     }
     if (event.target.id === 'resetButton') {
       root.querySelectorAll('.operations-filter input, .operations-filter select').forEach((field) => { field.value = ''; });
-      $('#orderDateFilterType').value = 'expectedAt';
-      $('#expectedAt').setAttribute('aria-label', '期望送达时间范围');
       root.querySelector('#mealName')?.classList.add('is-placeholder');
       restoreDateRange();
       state.condition = collectCondition();
@@ -494,11 +497,6 @@
   });
 
   root.addEventListener('change', (event) => {
-    if (event.target.id === 'orderDateFilterType') {
-      const label = event.target.value === 'deliveryDate' ? '配送日期' : '期望送达时间';
-      $('#expectedAt').setAttribute('aria-label', `${label}范围`);
-      return;
-    }
     if (event.target.id === 'selectAll') {
       state.items.forEach((item) => event.target.checked ? state.selected.add(item.id) : state.selected.delete(item.id));
       renderBody();
@@ -519,7 +517,6 @@
 
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && event.target.closest('.operations-filter')) {
-      // 日期条件仅用于原型交互展示。
       state.condition = collectCondition();
       state.page = 1;
       state.selected.clear();

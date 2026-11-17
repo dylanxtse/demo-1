@@ -37,7 +37,7 @@
     usePagination: true,
     selectable: false,
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date' },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'dateRange' },
 
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入' },

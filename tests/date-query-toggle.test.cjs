@@ -33,18 +33,19 @@ const records = () => [
 ];
 
 for (const type of ['date', 'dateRange']) {
-  test(`通用${type}查询共用一个控件，切换保留日期、日期仅展示样式、导出始终保留数据`, async () => {
+  test(`通用${type}配置转为日期区间并按两个区间取交集`, async () => {
     const h = harness();
     const { context, node, listeners } = h;
     const calls = [];
-    let selectedRange = { startDate: '2026-11-17', endDate: '2026-11-17' };
-    node('#filter-expectedAt').value = '2026-11-17';
+    const expectedRange = { startDate: '2026-11-17', endDate: '2026-11-18' };
+    const deliveryRange = { startDate: '2026-11-17', endDate: '2026-11-17' };
     context.DatePicker = { create() { return { destroy() {} }; } };
-    context.DateRangePicker = { create() { return { getValue: () => selectedRange, destroy() {} }; } };
+    context.DateRangePicker = { create({ container }) {
+      return { getValue: () => container.id.includes('expectedAt') ? expectedRange : deliveryRange, destroy() {} };
+    } };
     context.OperationsService = { async list(resource, query) {
       calls.push(JSON.parse(JSON.stringify(query)));
-      const items = records().filter((row) => context.OrderDelivery.matches(row, query.condition));
-      return { items, total: items.length };
+      return { items: records(), total: records().length };
     } };
     vm.runInContext(read('record-page'), context);
     const controller = context.RecordPage.mount({ title: '日期查询', resource: 'sortingItems', pageClass: 'operations-page', deliveryDates: true,
@@ -52,75 +53,70 @@ for (const type of ['date', 'dateRange']) {
         defaultValue: '2026-11-17', defaultStart: '2026-11-17', defaultEnd: '2026-11-17' }], columns: [],
       toolbar: [{ key: 'export', label: '导出', templateHref: './sorting-independent-export.html' }] });
     await flush();
-    assert.equal((h.markup().match(/data-record-date-type=/g) || []).length, 1);
-    assert.doesNotMatch(h.markup(), /id="filter-deliveryDate"/);
-    assert.deepEqual(Array.from(controller.state.items, (row) => row.id), ['A', 'B', 'C']);
-    const mode = { dataset: { recordDateType: 'expectedAt' }, value: 'deliveryDate' };
-    listeners.change({ target: mode });
-    assert.equal(calls.length, 1, '切换类型不擅自改变已查询结果');
-    assert.equal(node('#filter-expectedAt').value, '2026-11-17');
-    assert.equal(node('#filter-expectedAt').attributes['aria-label'], type === 'dateRange' ? '配送日期范围' : '配送日期');
-    controller.state.selected.add('C');
+    assert.match(h.markup(), /id="filter-expectedAt"/);
+    assert.match(h.markup(), /id="filter-deliveryDate"[^>]+placeholder="请选择"/);
+    assert.match(h.markup(), /期望送达时间[\s\S]*配送时间/);
+    assert.doesNotMatch(h.markup(), /data-record-date-type|filter-type-expectedAt/);
+    assert.deepEqual(Array.from(controller.state.items, (row) => row.id), ['A', 'B']);
+    assert.deepEqual(JSON.parse(JSON.stringify(controller.state.condition)),
+      { expectedAtRange: ['2026-11-17', '2026-11-18'], deliveryDateRange: ['2026-11-17', '2026-11-17'] });
+    controller.state.selected.add('A');
     await listeners.click({ target: { id: 'recordQuery', closest() { return null; } } });
-    assert.deepEqual(Array.from(controller.state.items, (row) => row.id), ['A', 'B', 'C']);
+    assert.deepEqual(Array.from(controller.state.items, (row) => row.id), ['A', 'B']);
     assert.equal(controller.state.selected.size, 0);
     assert.deepEqual(calls.at(-1).condition, {});
-    mode.value = 'expectedAt';
-    listeners.change({ target: mode });
     const exportButton = { dataset: { toolbarAction: 'export' }, closest(selector) { return selector === '[data-toolbar-action]' ? this : null; } };
     await listeners.click({ target: exportButton });
     const key = new URL(h.destination(), 'https://prototype.local').searchParams.get('deliveryExportKey');
-    assert.deepEqual(JSON.parse(context.sessionStorage.getItem(key)).map((row) => row.id), ['A', 'B', 'C']);
-    await listeners.click({ target: { id: 'recordReset', closest() { return null; } } });
-    assert.equal(controller.state.dateTypes.expectedAt, undefined);
-    assert.deepEqual(calls.at(-1).condition, {});
-    node('#filter-expectedAt').value = '';
-    selectedRange = { startDate: '', endDate: '' };
-    await listeners.click({ target: { id: 'recordQuery', closest() { return null; } } });
-    assert.deepEqual(calls.at(-1).condition, {});
+    assert.deepEqual(JSON.parse(context.sessionStorage.getItem(key)).map((row) => row.id), ['A', 'B']);
   });
 }
 
-test('订单商品只保留一个日期查询，切换后日期不筛掉列表或导出数据，重置恢复期望送达时间', async () => {
+test('订单商品分开筛选期望送达时间和配送时间，并按交集过滤列表及导出', async () => {
   const h = harness();
   const { context, node, listeners } = h;
-  const rows = records().map((order) => ({ ...order, items: [{ goodsName: order.id, quantity: 1, unitPrice: 1 }] }));
+  const rows = records().map((order) => ({ ...order, orderNo: `DD-${order.id}`, items: [{ goodsName: order.id, quantity: 1, unitPrice: 1 }] }));
   context.OperationsService = { async list() { return { items: rows }; } };
-  context.DatePicker = { mount() { return { clear() { node('#goodsExpectedAt').value = ''; } }; } };
-  node('#goodsExpectedAt').value = '2026-11-17';
+  const expectedRange = { startDate: '2026-11-17', endDate: '2026-11-18' };
+  const deliveryRange = { startDate: '2026-11-17', endDate: '2026-11-17' };
+  const rangePickers = [];
+  context.DateRangePicker = { mount({ container }) { let value = { ...(container.includes('Expected') ? expectedRange : deliveryRange) }; const picker = { getValue() { return value; }, clear() { value = { startDate: '', endDate: '' }; } }; rangePickers.push(picker); return picker; } };
   vm.runInContext(read('order-goods'), context);
   await flush();
-  assert.match(h.markup(), /id="goodsDateFilterType"/);
-  assert.doesNotMatch(h.markup(), /goodsDeliveryRange|goodsDeliveryStart|goodsDeliveryEnd/);
+  assert.match(h.markup(), /for="goodsExpectedAt">期望送达时间/);
+  assert.match(h.markup(), /for="goodsDeliveryDate">配送时间/);
+  assert.match(h.markup(), /id="goodsDeliveryDate"[^>]+placeholder="请选择"/);
+  assert.match(h.markup(), /id="goodsExpectedAtRange"/);
+  assert.match(h.markup(), /id="goodsDeliveryDateRange"/);
+  assert.doesNotMatch(h.markup(), /goodsDateFilterType/);
+  const body = node('#orderGoodsBody').innerHTML;
+  assert.match(body, /DD-A/);
+  assert.match(body, /DD-B/);
+  assert.doesNotMatch(body, /DD-C/);
   const click = async (id) => { listeners.click({ target: { closest(selector) { return selector === `#${id}` ? this : null; } } }); await flush(); };
-  node('#goodsDateFilterType').value = 'deliveryDate';
-  listeners.change({ target: node('#goodsDateFilterType') });
-  assert.equal(node('#goodsExpectedAt').value, '2026-11-17');
   await click('goodsQuery');
   await click('goodsExport');
   const params = new URL(h.destination(), 'https://prototype.local').searchParams;
   const payload = JSON.parse(context.sessionStorage.getItem(params.get('exportKey')));
-  assert.deepEqual(payload.rows.map((row) => row.id), ['A', 'B', 'C']);
+  assert.deepEqual(payload.rows.map((row) => row.id), ['A', 'B']);
   await click('goodsReset');
-  assert.equal(node('#goodsDateFilterType').value, 'expectedAt');
-  assert.equal(node('#goodsExpectedAt').attributes['aria-label'], '期望送达时间');
-  assert.equal(node('#goodsExpectedAt').value, '');
+  assert.deepEqual(rangePickers[0].getValue(), { startDate: '', endDate: '' });
+  assert.deepEqual(rangePickers[1].getValue(), { startDate: '', endDate: '' });
 });
 
-test('分拣、进度、缺货、发货和四类线路页签没有独立配送日期查询框', () => {
-  for (const name of ['sorting-management', 'sorting-progress', 'shortage-goods', 'shipping-management', 'route-management']) {
+test('分拣、进度、缺货、发货、汇总和线路页面均配置期望及配送日期条件', () => {
+  for (const name of ['sorting-management', 'sorting-progress', 'shortage-goods', 'shipping-management', 'order-summary', 'route-management']) {
     const { context } = loadApp();
     context.location = { search: '', hash: '' };
     context.SortingCustomerService = { filterOptions() { return []; } };
     vm.runInContext(read(name), context);
     const config = context.RecordPageConfig;
-    for (const fields of [config.filters, ...(config.tabs || []).map((tab) => tab.filters)].filter(Boolean)) {
-      assert.equal(fields.filter((field) => field.key === 'deliveryDate').length, 0, name);
-      const dateFields = fields.filter((field) => field.type === 'date' || field.type === 'dateRange');
-      assert.equal(dateFields.length, 1, name);
-      if (name !== 'shipping-management' || fields !== config.tabs?.find((tab) => tab.key === 'difference')?.filters) {
-        assert.equal(dateFields[0].switchableDate, true, name);
-      }
+    const filterSets = [config.filters, ...(config.tabs || []).map((tab) => tab.filters)].filter(Boolean);
+    for (const fields of filterSets) {
+      const expected = fields.find((field) => field.key === 'expectedAt');
+      assert.ok(expected, name);
+      if (expected.switchableDate) continue;
+      assert.ok(fields.some((field) => field.key === 'deliveryDate' && field.label === '配送时间'), name);
     }
   }
 });

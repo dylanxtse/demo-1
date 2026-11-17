@@ -994,28 +994,3 @@
 .order-management-page .operations-table :is(th, td):nth-child(19) { min-width: 180px; }
 .order-management-page .operations-table :is(th, td):nth-child(21) { min-width: 112px; }
 .order-management-page .operations-table :is(th, td):nth-child(26) { min-width: 190px; }
-
-.order-management-page .operations-field .order-date-filter-type {
-  height: 32px;
-  box-sizing: border-box;
-  padding: 0 16px 0 0;
-  border: 0;
-  border-radius: 0;
-  outline: none;
-  box-shadow: none;
-  appearance: none;
-  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23606666' stroke-width='1.2'/%3E%3C/svg%3E") no-repeat right center;
-  color: var(--text-secondary, #606266);
-  font: inherit;
-  text-align: right;
-  cursor: pointer;
-}
-.order-management-page .order-date-filter-type:hover { color: var(--primary, #165dff); }
-.order-management-page .operations-field .order-date-filter-type:focus,
-.order-management-page .operations-field .order-date-filter-type:focus-visible {
-  border: 0;
-  outline: none;
-  box-shadow: none;
-  color: var(--primary, #165dff);
-}
-.order-management-page .order-date-filter-type:focus-visible { text-decoration: underline; text-underline-offset: 3px; }

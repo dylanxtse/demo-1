@@ -48,15 +48,39 @@
       total: 0,
       items: [],
       selected: new Set(),
-      dateTypes: {},
       condition: { ...(config.initialCondition || {}) },
       pagination: null,
       activeTab: initialTab?.key,
       activeStatus: initialTab?.defaultStatus ?? initialTab?.statusTabs?.[0]?.value ?? config.statusTabs?.[0]?.value ?? ''
     };
-    const currentFilters = () => config.tabs?.find((tab) => tab.key === state.activeTab)?.filters || config.filters || [];
-    const dateType = (field) => state.dateTypes[field.key] || field.defaultDateType || 'expectedAt';
-    const dateLabel = (field) => dateType(field) === 'deliveryDate' ? '配送日期' : '期望送达时间';
+    const expandDeliveryDateFilters = (filters = []) => filters.flatMap((field) => {
+      if (!field.switchableDate) return [field];
+      const expectedDefault = field.defaultValue || '';
+      const rangeField = {
+        ...field,
+        type: 'dateRange',
+        switchableDate: false,
+        conditionKey: field.conditionKey || `${field.key}Range`,
+        defaultStart: field.defaultStart || expectedDefault,
+        defaultEnd: field.defaultEnd || expectedDefault,
+        defaultValue: '',
+        placeholder: field.placeholder || '请选择'
+      };
+      return [
+        rangeField,
+        {
+          ...rangeField,
+          key: 'deliveryDate',
+          label: '配送时间',
+          conditionKey: 'deliveryDateRange',
+          defaultValue: '',
+          defaultStart: '',
+          defaultEnd: '',
+          placeholder: '请选择'
+        }
+      ];
+    });
+    const currentFilters = () => expandDeliveryDateFilters(config.tabs?.find((tab) => tab.key === state.activeTab)?.filters || config.filters || []);
     const isPlaceholderOption = (value) => /^(请选择|请输入|选择)/.test(String(value ?? '').trim());
     const renderFilter = (field) => {
       const placeholderOnly = field.placeholderOnly === true || isPlaceholderOption(field.emptyLabel);
@@ -70,9 +94,7 @@
       });
       return `
       <div class="operations-field">
-        ${field.switchableDate
-          ? `<select class="filter-label date-filter-type" id="filter-type-${field.key}" data-record-date-type="${field.key}" aria-label="日期筛选类型"><option value="expectedAt"${dateType(field) === 'expectedAt' ? ' selected' : ''}>期望送达时间</option><option value="deliveryDate"${dateType(field) === 'deliveryDate' ? ' selected' : ''}>配送日期</option></select>`
-          : `<label class="filter-label" for="filter-${field.key}">${field.label}</label>`}
+        <label class="filter-label" for="filter-${field.key}">${field.label}</label>
         ${field.options
           ? `<select class="filter-select${placeholderOnly ? ' is-placeholder' : ''}" id="filter-${field.key}"${placeholderOnly ? ' data-placeholder-only' : ''}>${emptyOption}${options.map((option) => {
             const value = typeof option === 'string' ? option : option.value;
@@ -81,11 +103,11 @@
           }).join('')}</select>`
           : field.type === 'dateRange'
             ? `<div class="date-range-picker operations-date-range" id="filter-wrap-${field.key}">
-                <input class="filter-input date-range-display" id="filter-${field.key}" type="text" readonly${field.switchableDate ? ` aria-label="${dateLabel(field)}范围"` : ''} placeholder="${field.placeholder || '请选择日期范围'}">
+                <input class="filter-input date-range-display" id="filter-${field.key}" type="text" readonly aria-label="${escapeHtml(field.label)}范围" placeholder="${field.placeholder || '请选择日期范围'}">
                 <input type="hidden" data-date-start value="${escapeHtml(field.defaultStart || '')}"><input type="hidden" data-date-end value="${escapeHtml(field.defaultEnd || '')}">
               </div>`
             : field.type === 'date'
-              ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly${field.switchableDate ? ` aria-label="${dateLabel(field)}"` : ''} value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
+              ? `<div class="date-input-control operations-date-control"><input class="filter-input operations-date-input" id="filter-${field.key}" type="text" readonly aria-label="${escapeHtml(field.label)}" value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请选择日期'}"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div>`
               : `<input class="filter-input" id="filter-${field.key}" type="${field.type || 'text'}" value="${escapeHtml(field.defaultValue || '')}" placeholder="${field.placeholder || '请输入'}">`}
       </div>`;
     };
@@ -477,14 +499,13 @@
     function collectCondition() {
       const condition = {};
       currentFilters().forEach((field) => {
-        if (config.deliveryDates && (field.type === 'date' || field.type === 'dateRange')) return;
         if (field.type === 'dateRange') {
           const value = datePickers.get(field.key)?.getValue();
-          if (value?.startDate || value?.endDate) condition[field.switchableDate ? `${dateType(field)}Range` : field.conditionKey || field.key] = [value.startDate, value.endDate];
+          if (value?.startDate || value?.endDate) condition[field.conditionKey || field.key] = [value.startDate, value.endDate];
           return;
         }
         const value = $(`#filter-${field.key}`)?.value?.trim() || '';
-        if (value) condition[field.switchableDate ? dateType(field) : field.key] = value;
+        if (value) condition[field.conditionKey || field.key] = value;
       });
       return condition;
     }
@@ -877,7 +898,6 @@
         state.page = 1;
         state.selected.clear();
         state.condition = {};
-        state.dateTypes = {};
         renderFilterControls();
         if (config.deliveryDates) state.condition = collectCondition() || {};
         return load();
@@ -903,7 +923,6 @@
       }
       if (event.target.id === 'recordReset') {
         if (config.deliveryDates) {
-          state.dateTypes = {};
           renderFilterControls();
           state.condition = collectCondition() || {};
           state.page = 1;
@@ -950,14 +969,6 @@
     });
 
     root.addEventListener('change', (event) => {
-      const dateKey = event.target.dataset?.recordDateType;
-      if (dateKey) {
-        const field = currentFilters().find((item) => item.key === dateKey && item.switchableDate);
-        if (!field) return;
-        state.dateTypes[dateKey] = event.target.value === 'deliveryDate' ? 'deliveryDate' : 'expectedAt';
-        $(`#filter-${dateKey}`)?.setAttribute('aria-label', `${dateLabel(field)}${field.type === 'dateRange' ? '范围' : ''}`);
-        return;
-      }
       if (event.target.matches('select[data-placeholder-only]')) {
         event.target.classList.toggle('is-placeholder', event.target.value === '');
       }

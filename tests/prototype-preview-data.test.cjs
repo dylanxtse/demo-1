@@ -52,18 +52,30 @@ test('模板工具保留有数据的快照，默认补充不写回业务数据',
   assert.equal(snapshot[0].items, undefined);
   assert.equal(context.localStorage.getItem('procurement-demo-data-v1'), before);
 });
-test('原型列表剔除两种日期条件，零结果时也展示数据', async () => {
+test('原型列表同时应用期望送达和配送日期条件，未筛选时仍补充演示数据', async () => {
   const { context } = loadApp();
-  context.DemoStore = { get() { return []; } };
   const calls = [];
-  const service = { async list(resource, query) { calls.push(query); return { items: [], total: 0 }; } };
-  for (const resource of ['orders', 'sortingItems', 'sortingProgress', 'shortageItems', 'shippingOrders', 'routes', 'routeOrders', 'routeLoading', 'routeDepartures']) {
-    const result = await context.PrototypePreview.list(service, resource, { pageSize: 20,
-      condition: { expectedAt: '2099-01-01', expectedAtRange: ['2099-01-01', '2099-01-02'], deliveryDate: '2099-01-01', deliveryDateRange: ['2099-01-01', '2099-01-02'] } });
-    assert.ok(result.items.length > 0, resource);
-    assert.ok(result.total > 0, resource);
-  }
-  assert.ok(calls.every((call) => Object.keys(call.condition).length === 0));
+  const rows = [
+    { id: 'EXPECTED-ONLY', expectedAt: '2026-11-18 07:30:00', deliveryDate: '2026-11-17' },
+    { id: 'INTERSECTION', expectedAt: '2026-11-17 07:30:00', deliveryDate: '2026-11-17' },
+    { id: 'DELIVERY-ONLY', expectedAt: '2026-11-17 07:30:00', deliveryDate: '2026-11-16' }
+  ];
+  context.DemoStore.replace('orders', rows);
+  const service = { async list(resource, query) { calls.push(query); return { items: rows, total: rows.length }; } };
+  const result = await context.PrototypePreview.list(service, 'orders', { page: 1, pageSize: 20,
+    condition: { expectedAt: '2026-11-17', deliveryDate: '2026-11-17' } });
+  assert.deepEqual(Array.from(result.items, (row) => row.id), ['INTERSECTION']);
+  assert.equal(result.total, 1);
+  assert.equal(calls[0].page, 1);
+  assert.equal(calls[0].pageSize, Number.MAX_SAFE_INTEGER);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].condition)), {});
+
+  const noMatch = await context.PrototypePreview.list(service, 'orders', { page: 1, pageSize: 20,
+    condition: { expectedAt: '2026-11-17', deliveryDate: '2026-11-18' } });
+  assert.deepEqual(Array.from(noMatch.items, (row) => row.id), []);
+  const emptyService = { async list() { return { items: [], total: 0 }; } };
+  const fallback = await context.PrototypePreview.list(emptyService, 'orders', { pageSize: 20 });
+  assert.ok(fallback.items.length > 0);
 });
 test('实际页面先加载原型工具，日期标签共用无边框样式', () => {
   for (const name of names) {
@@ -72,5 +84,5 @@ test('实际页面先加载原型工具，日期标签共用无边框样式', ()
     assert.ok(html.indexOf('utils/prototype-preview.js') < html.indexOf(`pages/${name}.js`), name);
   }
   const css = fs.readFileSync(path.join(root, 'assets/css/operations.css'), 'utf8');
-  assert.match(css, /\.operations-field \.date-filter-type\s*\{[^}]*border: 0;/);
+  assert.doesNotMatch(css, /date-filter-type/);
 });

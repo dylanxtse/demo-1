@@ -9,7 +9,8 @@
     <div class="operations-filter filter-section">
       <div class="operations-filter-main">
         <div class="operations-filter-grid">
-          <div class="operations-field"><select class="filter-label date-filter-type" id="goodsDateFilterType" aria-label="日期筛选类型"><option value="expectedAt">期望送达时间</option><option value="deliveryDate">配送日期</option></select><div class="date-input-control"><input class="filter-input" id="goodsExpectedAt" readonly aria-label="期望送达时间" placeholder="请选择日期"><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div></div>
+          <div class="operations-field"><label class="filter-label" for="goodsExpectedAt">期望送达时间</label><div class="date-range-picker operations-date-range" id="goodsExpectedAtRange"><input class="filter-input date-range-display" id="goodsExpectedAt" type="text" readonly aria-label="期望送达时间范围" placeholder="请选择"><input id="goodsExpectedAtStart" type="hidden" data-date-start><input id="goodsExpectedAtEnd" type="hidden" data-date-end><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div></div>
+          <div class="operations-field"><label class="filter-label" for="goodsDeliveryDate">配送时间</label><div class="date-range-picker operations-date-range" id="goodsDeliveryDateRange"><input class="filter-input date-range-display" id="goodsDeliveryDate" type="text" readonly aria-label="配送时间范围" placeholder="请选择"><input id="goodsDeliveryDateStart" type="hidden" data-date-start><input id="goodsDeliveryDateEnd" type="hidden" data-date-end><span class="date-range-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></div></div>
           <div class="operations-field"><label class="filter-label" for="goodsCategory">商品分类</label><select class="filter-select" id="goodsCategory"><option value="" disabled hidden selected>请选择商品分类</option><option>果蔬</option><option>蛋奶类</option><option>粮食类</option><option>水产品</option></select></div>
           <div class="operations-field"><label class="filter-label" for="goodsKeyword">商品名称</label><input class="filter-input" id="goodsKeyword" placeholder="请输入"></div>
         </div>
@@ -45,7 +46,8 @@
     if (catalogProduct) return Boolean(catalogProduct.isNetVegetable);
     return Boolean(line.isNetVegetable);
   };
-  const datePicker = window.DatePicker?.mount({ input: '#goodsExpectedAt', panelId: 'orderGoodsExpectedPicker' });
+  const expectedAtPicker = window.DateRangePicker?.mount({ container: '#goodsExpectedAtRange', panelId: 'orderGoodsExpectedPicker' });
+  const deliveryDatePicker = window.DateRangePicker?.mount({ container: '#goodsDeliveryDateRange', panelId: 'orderGoodsDeliveryPicker' });
 
 
   function categoryFor(line) {
@@ -60,6 +62,12 @@
 
   async function load() {
     const result = await window.PrototypePreview.list(service, 'orders', { page: 1, pageSize: 10000 });
+    const expectedAt = expectedAtPicker?.getValue?.() || {};
+    const deliveryDate = deliveryDatePicker?.getValue?.() || {};
+    const expectedAtRange = [expectedAt.startDate || '', expectedAt.endDate || ''];
+    const deliveryDateRange = [deliveryDate.startDate || '', deliveryDate.endDate || ''];
+    const hasExpectedAtRange = expectedAtRange.some(Boolean);
+    const hasDeliveryDateRange = deliveryDateRange.some(Boolean);
     const keyword = document.getElementById('goodsKeyword').value.trim();
     const category = document.getElementById('goodsCategory').value;
     const customerType = document.getElementById('goodsCustomerType').value;
@@ -75,6 +83,8 @@
     const netVegetable = document.getElementById('goodsNetVegetable').value;
     rows = result.items.flatMap((order) => (order.items?.length ? order.items : [{ goodsName: '大白菜（斤/--/散装）', unit: '斤', quantity: order.productCount || 1, unitPrice: order.productCount ? order.orderAmount / order.productCount : order.orderAmount }]).map((line) => ({ ...line, order })))
       .filter(({ order, ...line }) =>
+        (!hasExpectedAtRange || window.OrderDelivery.inRange(order.expectedAt, expectedAtRange)) &&
+        (!hasDeliveryDateRange || window.OrderDelivery.inRange(window.OrderDelivery.date(order), deliveryDateRange)) &&
         (!keyword || String(line.goodsName || '').includes(keyword)) &&
         (!category || categoryFor(line) === category) &&
         (!customerType || order.customerType === customerType) &&
@@ -88,7 +98,7 @@
         (!receiptStatus || order.receiptStatus === receiptStatus) &&
         (!orderType || (order.orderType || '销售订单') === orderType) &&
         (!netVegetable || (netVegetable === 'net' ? productIsNetVegetable(line) : !productIsNetVegetable(line))));
-    if (!rows.length) rows = window.PrototypePreview.orders(result.items).flatMap((order) => order.items.map((line) => ({ ...line, order })));
+    if (!rows.length && !hasExpectedAtRange && !hasDeliveryDateRange) rows = window.PrototypePreview.orders(result.items).flatMap((order) => order.items.map((line) => ({ ...line, order })));
     document.getElementById('orderGoodsBody').innerHTML = rows.length ? rows.map(({ order, ...line }, index) => {
       const productDisplay = window.DomUtils.formatProductDisplay(line);
       const productTag = productIsNetVegetable(line) ? '<span class="net-vegetable-tag">净菜</span>' : '';
@@ -131,19 +141,13 @@
     if (event.target.closest('#goodsReset')) {
       root.querySelectorAll('.operations-filter input, .operations-filter select').forEach((control) => { control.value = ''; });
       root.querySelector('#goodsMealName')?.classList.add('is-placeholder');
-      datePicker?.clear(false);
-      document.getElementById('goodsDateFilterType').value = 'expectedAt';
-      document.getElementById('goodsExpectedAt').setAttribute('aria-label', '期望送达时间');
+      expectedAtPicker?.clear(false);
+      deliveryDatePicker?.clear(false);
       load();
     }
     if (event.target.closest('#goodsExport')) {
       const orders = buildOrdersFromRows();
       openExportTemplate(orders);
-    }
-  });
-  root.addEventListener('change', (event) => {
-    if (event.target.id === 'goodsDateFilterType') {
-      document.getElementById('goodsExpectedAt').setAttribute('aria-label', event.target.value === 'deliveryDate' ? '配送日期' : '期望送达时间');
     }
   });
   root.addEventListener('keydown', (event) => {

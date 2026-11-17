@@ -1,13 +1,8 @@
 (function () {
   const orderMealOptions = window.OrderMealOptions || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
-  const today = () => {
-    const now = new Date();
-    const pad = (value) => String(value).padStart(2, '0');
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  };
 
   const primaryFilters = [
-    { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date', defaultValue: today() },
+    { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'dateRange' },
 
     { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓', '东南区域仓库', '公司市区仓库'] },
     { key: 'customerName', label: '客户名称', options: ['第一实验学校', '阳光幼儿园', '育才中学', '第三小学', '实验幼儿园', '机关第二食堂', '机关第一食堂'] }

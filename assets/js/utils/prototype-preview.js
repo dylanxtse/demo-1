@@ -1,7 +1,8 @@
 (function () {
-  // 原型的日期查询只演示交互，展示数据不随日期改变，也不写回业务快照。
+  // 原型日期查询会过滤展示数据，不会写回业务快照。
   const dateKeys = new Set(['expectedAt', 'expectedAtRange', 'deliveryDate', 'deliveryDateRange', 'deliveryAt', 'deliveryAtRange']);
   const withoutDates = (condition = {}) => Object.fromEntries(Object.entries(condition).filter(([key]) => !dateKeys.has(key)));
+  const onlyDates = (condition = {}) => Object.fromEntries(Object.entries(condition).filter(([key]) => dateKeys.has(key)));
   const nonempty = (value) => Array.isArray(value) && value.length > 0;
   const today = () => {
     const now = new Date();
@@ -58,12 +59,29 @@
     return [...grouped.values()];
   }
   async function list(service, resource, query = {}) {
-    const condition = withoutDates(query.condition);
-    let result = await service.list(resource, { ...query, condition });
-    if (!nonempty(result.items)) result = await service.list(resource, { ...query, page: 1, condition: {} });
-    if (nonempty(result.items)) return result;
-    const items = rows(null, resource);
-    return { ...result, items: items.slice(0, query.pageSize || 20), total: items.length, page: 1 };
+    const condition = query.condition || {};
+    const dateCondition = onlyDates(condition);
+    const hasDateCondition = Object.keys(dateCondition).length > 0;
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.max(1, Number(query.pageSize) || 20);
+    const serviceQuery = {
+      ...query,
+      page: hasDateCondition ? 1 : page,
+      pageSize: hasDateCondition ? Number.MAX_SAFE_INTEGER : pageSize,
+      condition: withoutDates(condition)
+    };
+    let result = await service.list(resource, serviceQuery);
+    if (!nonempty(result.items)) result = await service.list(resource, { ...serviceQuery, page: 1, condition: {} });
+    const source = nonempty(result.items) ? result.items : rows(null, resource);
+    if (!hasDateCondition) {
+      if (nonempty(result.items)) return result;
+      return { ...result, items: source.slice(0, pageSize), total: source.length, page: 1 };
+    }
+    const matched = source
+      .map((row) => window.OrderDelivery?.enrich?.(row) || row)
+      .filter((row) => Object.entries(dateCondition).every(([key, value]) => window.OrderDelivery?.matches?.(row, { [key]: value }) !== false));
+    const start = (page - 1) * pageSize;
+    return { ...result, items: matched.slice(start, start + pageSize), total: matched.length, page, pageSize };
   }
   function sales(payload = {}) {
     const order = defaults('orders')[0];

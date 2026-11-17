@@ -24,7 +24,7 @@
     usePagination: true,
     resource: 'shortageItems',
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date' },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'dateRange' },
 
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'category', label: '商品分类', options: ['果蔬', '水产品', '蛋奶类', '主食'] },

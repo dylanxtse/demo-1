@@ -170,7 +170,7 @@ test('独立及客户导出保留配送日期，订单归并导出不展示日�
   }
 });
 
-test('实际列表日期只演示样式，导出保留全部页数据快照', async () => {
+test('日期筛选同步应用到实际列表和导出快照', async () => {
   const { context } = setup();
   const calls = [], nodes = new Map(), listeners = {};
   const makeNode = (key) => ({ id: key, value: '', dataset: {}, innerHTML: '', isConnected: true,
@@ -197,13 +197,13 @@ test('实际列表日期只演示样式，导出保留全部页数据快照', as
   await new Promise((resolve) => setImmediate(resolve));
   const button = { dataset: { toolbarAction: 'export' }, closest(selector) { return selector === '[data-toolbar-action]' ? this : null; } };
   await listeners.click({ target: button });
-  assert.equal(calls[0].pageSize, 20);
+  assert.equal(calls[0].pageSize, Number.MAX_SAFE_INTEGER);
   assert.equal(calls.at(-1).pageSize, Number.MAX_SAFE_INTEGER);
   const params = new URL(destination, 'https://prototype.local').searchParams;
   const exported = JSON.parse(context.sessionStorage.getItem(params.get('deliveryExportKey')));
-  assert.equal(exported.length, 24);
+  assert.equal(exported.length, 23);
   assert.ok(exported.some((row) => row.id === 'ROW-22'));
-  assert.ok(exported.some((row) => row.deliveryDate === '2026-11-19'));
+  assert.ok(exported.every((row) => row.deliveryDate === '2026-11-17'));
   assert.deepEqual(JSON.parse(JSON.stringify(calls.at(-1).condition)), {});
 });
 

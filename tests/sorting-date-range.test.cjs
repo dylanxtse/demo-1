@@ -17,12 +17,12 @@ function configFor(name) {
   return context.RecordPageConfig;
 }
 
-test('分拣和发货相关页签使用单天查询', () => {
+test('分拣和发货相关页签使用日期区间查询', () => {
   for (const name of ['sorting-management', 'sorting-progress', 'shortage-goods', 'shipping-management']) {
     const config = configFor(name);
     for (const filters of [config.filters, ...(config.tabs || []).map((tab) => tab.filters).filter(Boolean)]) {
       const field = filters.find((item) => item.key === 'expectedAt');
-      assert.equal(field.type, 'date', name);
+      assert.equal(field.type, 'dateRange', name);
       assert.equal(field.conditionKey, undefined, name);
     }
   }

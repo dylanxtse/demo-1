@@ -8,12 +8,6 @@
       .replace(/'/g, '&#039;');
   }
 
-  function todayStr() {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  }
-
-  const defaultDate = todayStr();
   const orderMealOptions = window.OrderMealOptions || ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'];
   const customerService = window.SortingCustomerService;
   const customerOptions = (resource, key) => [...new Set((window.DemoStore.get(resource) || []).map((item) => item[key]).filter(Boolean))];
@@ -245,9 +239,8 @@
     statusActionsInline: true,
     showSelectionSummary: false,
     resource: 'sortingItems',
-    defaultCondition: { expectedAt: defaultDate },
     filters: [
-      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date', defaultValue: defaultDate },
+      { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'dateRange' },
 
       { key: 'warehouse', label: '仓库', options: ['中心仓', '北区仓', '临时仓'] },
       { key: 'goodsName', label: '商品名称', placeholder: '请输入' },
@@ -331,7 +324,7 @@
         expandable: true,
         renderExpandedRow: renderCustomerOrders,
         filters: [
-          { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'date' },
+          { key: 'expectedAt', label: '期望送达时间', switchableDate: true, type: 'dateRange' },
 
           { key: 'warehouse', label: '仓库', options: customerOptions('sortingItems', 'warehouse') },
           { key: 'goodsName', label: '商品名称', placeholder: '请输入' },
