@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./assets/css/operations.css?v=20261116-preview-data-1">
   <link rel="stylesheet" href="./assets/css/order-lists.css?v=20261116-order-date-filter-19">
   <link rel="stylesheet" href="./assets/css/processing.css?v=20260731-7">
-  <link rel="stylesheet" href="./assets/css/order-form.css?v=20260907-product-picker-1">
+  <link rel="stylesheet" href="./assets/css/order-form.css?v=20261117-order-form-layout-1">
   <link rel="stylesheet" href="./assets/css/product-picker.css?v=20260919-order-price-1">
 </head>
 <body>
@@ -32,9 +32,6 @@
 
       <form class="order-form" id="orderAddForm" novalidate>
         <section class="order-form-section">
-          <div class="order-section-heading">
-            <h2 class="goods-title-marker">基本信息</h2>
-          </div>
           <div class="order-form-grid" id="orderBasicInfoGrid">
             <div class="order-form-field">
               <label class="field-label required" for="customerName">客户名称</label>
@@ -60,22 +57,19 @@
         </section>
 
         <section class="order-form-section goods-section">
-          <div class="order-section-heading">
-            <h2 class="goods-title-marker">商品信息</h2>
+          <div class="order-section-heading order-goods-toolbar">
             <button class="btn btn-primary btn-sm" id="batchAddGoods" type="button">批量添加商品</button>
           </div>
           <div class="order-goods-table-wrap">
             <table class="order-goods-table">
-              <thead><tr><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th class="required-head">下单数量</th><th class="required-head">下单单价</th><th>下单小计</th><th>协议价</th><th>近一次销售价</th><th>市场价</th><th>备注</th><th>操作</th></tr></thead>
+              <thead><tr><th>序号</th><th>图片</th><th>商品名称（计量单位/品牌/规格）</th><th>计量单位</th><th class="required-head">下单数量</th><th class="required-head">下单单价</th><th>下单小计</th><th>协议价</th><th>近一次销售价</th><th>市场价</th><th>备注</th></tr></thead>
               <tbody id="goodsTableBody"></tbody>
-              <tfoot><tr><td colspan="6">合计</td><td id="goodsTotal">0.00</td><td colspan="5"></td></tr></tfoot>
+              <tfoot><tr><td colspan="6">合计</td><td id="goodsTotal">0.00</td><td colspan="4"></td></tr></tfoot>
             </table>
           </div>
           <div class="goods-table-error" id="goodsTableError"></div>
           <div class="order-remark-section">
-            <div class="order-section-heading">
-              <h2 class="goods-title-marker">订单备注</h2>
-            </div>
+            <label class="order-remark-label" for="remark">订单备注</label>
             <div class="remark-input-wrap">
               <textarea class="form-control" id="remark" name="remark" rows="3" placeholder="请输入备注"></textarea>
             </div>
@@ -110,6 +104,6 @@
 
 
   <script src="./assets/js/services/operations-service.js?v=20261116-preview-data-1"></script>
-  <script src="./assets/js/pages/order-add.js?v=20261116-enterprise-delivery-2"></script>
+  <script src="./assets/js/pages/order-add.js?v=20261117-remove-goods-actions-1"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ button { cursor: pointer; }
 .sorting-terminal-product-back-icon, .sorting-terminal-product-search-icon { display: inline-block; flex: 0 0 auto; background-image: url("../images/sorting-terminal-product-reference.png"); background-size: 1385px 793px; background-repeat: no-repeat; }
 .sorting-terminal-product-back-icon { width: 23px; height: 24px; background-position: -20px -19px; }
 .sorting-terminal-product-header h1 { width: 136px; flex: 0 0 136px; margin: 0; font-size: 18px; font-weight: 500; white-space: nowrap; }
-.sorting-terminal-product-search { display: flex; width: min(647px, calc(100% - 212px)); align-items: center; gap: 9px; }
+.sorting-terminal-product-search { display: flex; min-width: 0; max-width: none; flex: 1 1 0; align-items: center; gap: 9px; margin-right: 16px; }
 .sorting-terminal-product-search label { flex: 0 0 auto; font-size: 17px; white-space: nowrap; }
 .sorting-terminal-product-search-box { display: flex; height: 39px; min-width: 0; flex: 1; align-items: center; border: 1px solid #cbd0da; border-radius: 9px; background: #fff; }
 .sorting-terminal-product-search-box:focus-within { outline: 2px solid #86baff; }
@@ -18,6 +18,22 @@ button { cursor: pointer; }
 .sorting-terminal-product-search-box input::-webkit-search-cancel-button { cursor: pointer; }
 .sorting-terminal-product-search-box button { display: grid; width: 48px; height: 100%; flex: 0 0 48px; place-items: center; padding: 0; border: 0; background: transparent; }
 .sorting-terminal-product-search-icon { width: 25px; height: 25px; background-position: -835px -20px; }
+.sorting-terminal-product-meal-filter { position: relative; display: flex; min-width: 0; flex: 1 1 0; align-items: center; gap: 8px; margin-right: 16px; font-size: 16px; white-space: nowrap; }
+.sorting-terminal-product-meal-label { flex: 0 0 auto; }
+.sorting-terminal-product-meal-trigger { display: flex; min-width: 0; height: 36px; flex: 1; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; border: 1px solid #cbd0da; border-radius: 7px; background: #fff; color: #15213c; font-size: 15px; text-align: left; }
+.sorting-terminal-product-meal-trigger > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.sorting-terminal-product-meal-arrow { width: 7px; height: 7px; flex: 0 0 7px; margin-top: -4px; border-right: 2px solid #78849a; border-bottom: 2px solid #78849a; transform: rotate(45deg); }
+.sorting-terminal-product-meal-trigger[aria-expanded="true"] .sorting-terminal-product-meal-arrow { margin-top: 4px; transform: rotate(225deg); }
+.sorting-terminal-product-meal-menu { position: absolute; z-index: 5; top: calc(100% + 7px); right: 0; width: 180px; padding: 6px; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; box-shadow: 0 6px 20px rgba(34, 69, 130, .16); }
+.sorting-terminal-product-meal-menu[hidden] { display: none; }
+.sorting-terminal-product-meal-option { display: flex; min-height: 34px; align-items: center; gap: 9px; padding: 5px 9px; border-radius: 5px; color: #15213c; font-size: 14px; cursor: pointer; }
+.sorting-terminal-product-meal-option:hover, .sorting-terminal-product-meal-option:focus-within { background: #eef4ff; }
+.sorting-terminal-product-meal-option.is-all { margin-bottom: 3px; border-bottom: 1px solid #e7ecf4; border-radius: 0; }
+.sorting-terminal-product-meal-option input { width: 16px; height: 16px; margin: 0; accent-color: #1679df; cursor: pointer; }
+.sorting-terminal-product-category-toggle { display: inline-flex; height: 34px; flex: 0 0 auto; align-items: center; gap: 6px; margin-left: auto; padding: 0 2px; border: 0; background: transparent; color: #0752cd; font-size: 16px; white-space: nowrap; }
+.sorting-terminal-product-category-toggle::after { content: ''; width: 18px; height: 18px; flex: 0 0 18px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230752cd' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4'/%3E%3C/svg%3E") center / contain no-repeat; }
+.sorting-terminal-product-category-toggle:hover { color: #1679df; }
+.sorting-terminal-product-category-toggle:focus-visible { outline: 3px solid #2484e7; outline-offset: 2px; }
 .sorting-terminal-product-layout { display: flex; min-height: 0; flex: 1; }
 .sorting-terminal-product-categories { width: 160px; flex: 0 0 160px; overflow-y: auto; background: #e8f0ff; scrollbar-width: thin; }
 .sorting-terminal-product-category { display: flex; width: 100%; min-height: 80px; align-items: center; padding: 0 16px; border: 0; border-right: 4px solid transparent; background: transparent; color: #15213c; font-size: 16px; text-align: left; }
@@ -51,7 +67,8 @@ button { cursor: pointer; }
 }
 @media (max-width: 850px) {
   .sorting-terminal-product-header h1 { width: 105px; flex-basis: 105px; }
-  .sorting-terminal-product-search { width: auto; min-width: 0; flex: 1; }
+  .sorting-terminal-product-search { min-width: 0; max-width: none; flex: 1 1 0; }
+  .sorting-terminal-product-meal-filter { flex: 1 1 0; margin-right: 10px; font-size: 14px; }
   .sorting-terminal-product-categories { width: 135px; flex-basis: 135px; }
   .sorting-terminal-product-category { padding: 0 10px; font-size: 14px; }
   .sorting-terminal-product-group-heading { grid-template-columns: minmax(0, 1fr) 105px; }
@@ -61,11 +78,14 @@ button { cursor: pointer; }
 @media (max-width: 600px) {
   body { padding: 0; }
   .sorting-terminal-product { height: 100vh; }
-  .sorting-terminal-product-header { gap: 5px; }
+  .sorting-terminal-product-header { height: auto; flex-basis: auto; min-height: 50px; flex-wrap: wrap; gap: 6px 5px; padding: 6px 12px; }
   .sorting-terminal-product-back { width: 58px; flex-basis: 58px; gap: 2px; font-size: 14px; }
   .sorting-terminal-product-back-icon { transform: scale(.8); transform-origin: left center; }
   .sorting-terminal-product-header h1 { width: 70px; flex-basis: 70px; font-size: 14px; }
-  .sorting-terminal-product-search { gap: 5px; }
+  .sorting-terminal-product-search { min-width: 0; flex: 1 1 0; gap: 5px; margin-right: 0; }
+  .sorting-terminal-product-meal-filter { flex: 1 0 100%; justify-content: flex-end; margin: 0; }
+  .sorting-terminal-product-meal-trigger { flex: 0 1 220px; }
+  .sorting-terminal-product-category-toggle { height: 32px; font-size: 14px; }
   .sorting-terminal-product-search label { display: none; }
   .sorting-terminal-product-search-box input { font-size: 13px; }
   .sorting-terminal-product-categories { width: 98px; flex-basis: 98px; }

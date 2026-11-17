@@ -4,14 +4,26 @@ body { display: grid; min-height: 100vh; place-items: center; padding: 20px; bac
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 .sorting-terminal-home { display: flex; width: min(1366px, 100%); height: 768px; flex-direction: column; background: #f5f6fa; box-shadow: 0 2px 7px rgba(20, 30, 50, .1); }
-.sorting-terminal-home-header { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 416px) minmax(0, 196px) minmax(0, 1fr); height: 88px; flex: 0 0 88px; align-items: center; padding: 0 56px; background: #c6d6fa; }
-.sorting-terminal-home-header h1 { margin: 0; color: #101a36; font-size: 25px; font-weight: 700; white-space: nowrap; }
+.sorting-terminal-home-header { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(275px, 1fr) minmax(210px, 240px) minmax(150px, 180px) minmax(170px, 185px) auto; gap: 16px; min-height: 88px; flex: 0 0 88px; align-items: center; padding: 0 28px; background: #c6d6fa; }
+.sorting-terminal-home-header h1 { margin: 0; color: #101a36; font-size: 22px; font-weight: 700; white-space: nowrap; }
 .sorting-terminal-home-field { display: flex; align-items: center; gap: 11px; min-width: 0; color: #101a36; font-size: 18px; white-space: nowrap; }
 .sorting-terminal-home-field input, .sorting-terminal-home-field select { height: 40px; border: 1px solid #cbd2dc; border-radius: 9px; background-color: #fff; color: #969ca8; font-size: 17px; }
-.sorting-terminal-date-field input { width: 324px; max-width: calc(100% - 122px); padding: 0 14px; }
+.sorting-terminal-date-field input { width: 0; min-width: 0; flex: 1; padding: 0 10px; }
 .sorting-terminal-date-field input::-webkit-calendar-picker-indicator { order: -1; margin: 0 10px 0 0; opacity: .45; }
 .sorting-terminal-warehouse-field { gap: 10px; }
 .sorting-terminal-warehouse-field select { width: 160px; padding: 0 8px; }
+.sorting-terminal-meal-field { position: relative; }
+.sorting-terminal-meal-trigger { display: flex; min-width: 0; height: 40px; flex: 1; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border: 1px solid #cbd2dc; border-radius: 9px; background: #fff; color: #101a36; font-size: 17px; text-align: left; }
+.sorting-terminal-meal-trigger > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.sorting-terminal-meal-trigger.is-placeholder { color: #969ca8; }
+.sorting-terminal-meal-arrow { width: 7px; height: 7px; flex: 0 0 7px; margin-top: -4px; border-right: 2px solid #969ca8; border-bottom: 2px solid #969ca8; transform: rotate(45deg); }
+.sorting-terminal-meal-trigger[aria-expanded="true"] .sorting-terminal-meal-arrow { margin-top: 4px; transform: rotate(225deg); }
+.sorting-terminal-meal-menu { position: absolute; top: calc(100% + 8px); right: 0; width: 180px; padding: 6px; border: 1px solid #d8dfeb; border-radius: 9px; background: #fff; box-shadow: 0 6px 20px rgba(34, 69, 130, .16); }
+.sorting-terminal-meal-menu[hidden] { display: none; }
+.sorting-terminal-meal-option { display: flex; min-height: 38px; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 5px; color: #101a36; font-size: 16px; cursor: pointer; }
+.sorting-terminal-meal-option:hover, .sorting-terminal-meal-option:focus-within { background: #eef4ff; }
+.sorting-terminal-meal-option.is-all { margin-bottom: 4px; border-bottom: 1px solid #e7ecf4; border-radius: 0; }
+.sorting-terminal-meal-option input { width: 17px; height: 17px; margin: 0; border-radius: 3px; accent-color: #1679df; cursor: pointer; }
 .sorting-terminal-home-account { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; font-size: 20px; white-space: nowrap; }
 .sorting-terminal-home-wifi, .sorting-terminal-home-user-icon, .sorting-terminal-home-logout-icon { display: inline-block; flex: 0 0 auto; background-image: url("../images/sorting-terminal-home-reference.png"); background-size: 1418px 803px; background-repeat: no-repeat; }
 .sorting-terminal-home-wifi { width: 27px; height: 25px; margin-right: 3px; background-position: -1120px -47px; }
@@ -32,30 +44,38 @@ button { cursor: pointer; }
 .sorting-terminal-home-card-icon.is-shortage { background-position: -1131px -350px; }
 .sorting-terminal-home-action-status { min-height: 24px; margin: 18px auto 0; color: #66758e; font-size: 15px; text-align: center; }
 @media (max-width: 1320px) {
-  .sorting-terminal-home-header { grid-template-columns: minmax(280px, 1fr) minmax(285px, 1fr) minmax(190px, auto) auto; gap: 14px; padding: 0 30px; }
+  .sorting-terminal-home-header { grid-template-columns: minmax(275px, 1fr) minmax(210px, 240px) minmax(150px, 180px) minmax(170px, 185px) auto; gap: 12px; padding: 0 24px; }
   .sorting-terminal-home-header h1 { font-size: 21px; }
-  .sorting-terminal-date-field input { width: 250px; }
   .sorting-terminal-home-account { font-size: 17px; }
   .sorting-terminal-home-logout { font-size: 17px; }
   .sorting-terminal-home-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; max-width: 1164px; }
   .sorting-terminal-home-card { width: 100%; }
+}
+@media (max-width: 1150px) {
+  .sorting-terminal-home-header { grid-template-columns: 1fr 1fr 1fr auto; min-height: 132px; flex-basis: 132px; gap: 14px 20px; padding: 16px 24px; }
+  .sorting-terminal-home-header h1 { grid-column: 1 / 4; }
+  .sorting-terminal-home-account { grid-column: 4; grid-row: 1; }
+  .sorting-terminal-warehouse-field { grid-column: 3 / 5; }
 }
 @media (max-width: 1100px) {
   body { padding: 0; }
   .sorting-terminal-home { width: 100%; min-height: 100vh; height: auto; }
 }
 @media (max-width: 950px) {
-  .sorting-terminal-home-header { grid-template-columns: 1fr 1fr; height: 120px; flex-basis: 120px; gap: 14px 20px; padding: 16px 24px; }
-  .sorting-terminal-home-header h1 { font-size: 21px; }
-  .sorting-terminal-home-account { justify-content: flex-end; }
+  .sorting-terminal-home-header { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 178px; flex-basis: 178px; }
+  .sorting-terminal-home-header h1 { grid-column: 1 / -1; font-size: 21px; }
+  .sorting-terminal-home-account { grid-column: 2; grid-row: 3; justify-content: flex-end; }
+  .sorting-terminal-warehouse-field { grid-column: 1; }
   .sorting-terminal-home-cards { grid-template-columns: repeat(2, minmax(0, 255px)); margin-top: 131px; }
 }
 @media (max-width: 600px) {
   body { padding: 0; }
   .sorting-terminal-home { min-height: 100vh; height: auto; }
-  .sorting-terminal-home-header { grid-template-columns: 1fr; height: auto; flex-basis: auto; gap: 12px; padding: 20px; }
-  .sorting-terminal-home-header h1 { font-size: 19px; }
-  .sorting-terminal-home-account { justify-content: flex-start; }
+  .sorting-terminal-home-header { grid-template-columns: minmax(0, 1fr); height: auto; flex-basis: auto; gap: 12px; padding: 20px; }
+  .sorting-terminal-home-header h1 { grid-column: auto; font-size: 19px; }
+  .sorting-terminal-home-account { grid-column: auto; grid-row: auto; justify-content: flex-start; }
+  .sorting-terminal-warehouse-field { grid-column: auto; }
+  .sorting-terminal-meal-menu { left: 47px; right: 0; width: auto; }
   .sorting-terminal-home-cards { grid-template-columns: minmax(0, 255px); gap: 20px; margin-top: 89px; }
   .sorting-terminal-home-card { height: 170px; padding-top: 18px; }
 }

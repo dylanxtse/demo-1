@@ -12,12 +12,28 @@
   const group = params.get('group');
   const taskId = params.get('task');
   const storageKey = taskId && /^[a-z-]+:\d+$/.test(taskId) ? `sorting-terminal-item:v1:${taskId}` : '';
+  const mealStorageKey = 'sorting-terminal-meal-filter:v1';
+  const meals = window.OrderMealOptions || [];
+  let requestedMealKeys = params.has('meal') ? params.getAll('meal') : null;
+  if (!requestedMealKeys) {
+    try {
+      const savedMeals = JSON.parse(sessionStorage.getItem(mealStorageKey));
+      if (Array.isArray(savedMeals)) requestedMealKeys = savedMeals;
+    } catch (_) { /* Direct access defaults to all meals. */ }
+  }
+  const selectedMealKeys = new Set(meals
+    .filter((meal) => requestedMealKeys === null || requestedMealKeys.includes(meal.key))
+    .map((meal) => meal.key));
+  const mealCycle = meals.map((meal) => meal.key);
   const back = document.getElementById('sortingTerminalItemBack');
-  if (group) {
+  function updateBackUrl() {
     const returnUrl = new URL('./sorting-terminal-product.html', window.location.href);
-    returnUrl.searchParams.set('expand', group);
+    if (group) returnUrl.searchParams.set('expand', group);
+    meals.filter((meal) => selectedMealKeys.has(meal.key))
+      .forEach((meal) => returnUrl.searchParams.append('meal', meal.key));
     back.href = returnUrl.href;
   }
+  updateBackUrl();
   document.getElementById('sortingTerminalItemProduct').textContent = productName
     ? `${productCode ? `${productCode} ` : ''}${productName}（库存：${stock.toFixed(2)} ${unit}）`
     : '请选择商品后查看分拣任务';
@@ -47,6 +63,7 @@
     id: index,
     name,
     canteen: '第一食堂',
+    mealKey: mealCycle.length ? mealCycle[index % mealCycle.length] : '',
     amount: 35,
     measured: Number.isFinite(Number(savedProgress?.measuredById?.[index]))
       ? Number(savedProgress.measuredById[index]) : doneIds.has(index) && index !== 3 ? 35 : 0,
@@ -57,6 +74,24 @@
   const grid = document.getElementById('sortingTerminalItemGrid');
   const empty = document.getElementById('sortingTerminalItemEmpty');
   const keywordInput = document.getElementById('sortingTerminalItemKeyword');
+  const mealFilter = document.getElementById('sortingTerminalItemMealFilter');
+  const mealTrigger = document.getElementById('sortingTerminalItemMealTrigger');
+  const mealSummary = document.getElementById('sortingTerminalItemMealSummary');
+  const mealMenu = document.getElementById('sortingTerminalItemMealMenu');
+  const mealAll = document.getElementById('sortingTerminalItemMealAll');
+  const mealOptionsRoot = document.getElementById('sortingTerminalItemMealOptions');
+  const mealCheckboxes = meals.map((meal) => {
+    const label = document.createElement('label');
+    label.className = 'sorting-terminal-item-meal-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = meal.key;
+    const name = document.createElement('span');
+    name.textContent = meal.label;
+    label.append(input, name);
+    mealOptionsRoot.append(label);
+    return input;
+  });
   const filterButton = document.getElementById('sortingTerminalItemFilterButton');
   const filterMenu = document.getElementById('sortingTerminalItemFilterMenu');
   const dialog = document.getElementById('sortingTerminalItemDialog');
@@ -80,6 +115,31 @@
   let activeTask = null;
   let grossWeight = 0;
   let accumulatedWeight = 0;
+
+  function updateMealSummary() {
+    const selected = meals.filter((meal) => selectedMealKeys.has(meal.key));
+    const allSelected = selected.length === meals.length;
+    mealAll.checked = allSelected;
+    mealAll.indeterminate = selected.length > 0 && !allSelected;
+    mealCheckboxes.forEach((input) => { input.checked = selectedMealKeys.has(input.value); });
+    mealSummary.textContent = allSelected ? '全部餐次'
+      : selected.length ? selected.map((meal) => meal.label).join('、') : '请选择餐次';
+    mealTrigger.title = mealSummary.textContent;
+  }
+
+  function persistMealSelection() {
+    const selected = meals.filter((meal) => selectedMealKeys.has(meal.key));
+    try {
+      sessionStorage.setItem(mealStorageKey, JSON.stringify(selected.map((meal) => meal.key)));
+    } catch (_) { /* The current page keeps the selection in memory. */ }
+    try {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete('meal');
+      selected.forEach((meal) => nextUrl.searchParams.append('meal', meal.key));
+      window.history?.replaceState?.(null, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+    } catch (_) { /* The current selection still filters this page. */ }
+    updateBackUrl();
+  }
 
   function saveProgress() {
     if (!storageKey) return;
@@ -201,16 +261,17 @@
   function render() {
     const keyword = keywordInput.value.trim().toLocaleLowerCase('zh-CN');
     const visible = tasks.filter((task) => {
+      const matchesMeal = selectedMealKeys.has(task.mealKey);
       const matchesFilter = filter === 'all' || (filter === 'done' && task.done)
         || (filter === 'pending' && !task.done) || (filter === 'shortage' && task.shortage);
       const matchesKeyword = !keyword || `${task.name}${task.canteen}`.toLocaleLowerCase('zh-CN').includes(keyword);
-      return matchesFilter && matchesKeyword;
+      return matchesMeal && matchesFilter && matchesKeyword;
     }).sort((a, b) => {
       const progressRank = (task) => task.done ? 2 : task.measured > 0 ? 1 : 0;
       return progressRank(a) - progressRank(b) || a.id - b.id;
     });
     grid.replaceChildren(...visible.map(taskCard));
-    empty.textContent = productName ? '暂无匹配的分拣任务' : '请返回商品列表选择商品';
+    empty.textContent = selectedMealKeys.size ? productName ? '暂无匹配的分拣任务' : '请返回商品列表选择商品' : '请选择至少一个餐次';
     empty.hidden = visible.length > 0;
   }
 
@@ -219,6 +280,35 @@
     render();
   });
   keywordInput.addEventListener('input', render);
+  mealTrigger.addEventListener('click', () => {
+    mealMenu.hidden = !mealMenu.hidden;
+    mealTrigger.setAttribute('aria-expanded', String(!mealMenu.hidden));
+  });
+  mealMenu.addEventListener('change', (event) => {
+    if (event.target === mealAll) {
+      selectedMealKeys.clear();
+      if (mealAll.checked) meals.forEach((meal) => selectedMealKeys.add(meal.key));
+    } else if (mealCheckboxes.includes(event.target)) {
+      if (event.target.checked) selectedMealKeys.add(event.target.value);
+      else selectedMealKeys.delete(event.target.value);
+    } else return;
+    updateMealSummary();
+    persistMealSelection();
+    render();
+  });
+  document.addEventListener('click', (event) => {
+    if (!mealFilter.contains(event.target)) {
+      mealMenu.hidden = true;
+      mealTrigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+  mealFilter.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      mealMenu.hidden = true;
+      mealTrigger.setAttribute('aria-expanded', 'false');
+      mealTrigger.focus();
+    }
+  });
   filterButton.addEventListener('click', () => {
     const open = filterMenu.hidden;
     filterMenu.hidden = !open;
@@ -237,7 +327,7 @@
   });
   document.getElementById('sortingTerminalItemSortAll').addEventListener('click', () => {
     let count = 0;
-    tasks.forEach((task) => {
+    tasks.filter((task) => selectedMealKeys.has(task.mealKey)).forEach((task) => {
       if (task.done || task.shortage) return;
       task.done = true;
       task.measured = task.amount;
@@ -247,7 +337,7 @@
     render();
   });
   document.getElementById('sortingTerminalItemPrintAll').addEventListener('click', () => {
-    if (!tasks.some((task) => task.done)) return;
+    if (!tasks.some((task) => task.done && selectedMealKeys.has(task.mealKey))) return;
     window.print();
   });
   document.getElementById('sortingTerminalItemDialogClose').addEventListener('click', () => dialog.close());
@@ -389,6 +479,8 @@
     if (!button) return;
     openTaskDialog(task);
   });
+  updateMealSummary();
+  persistMealSelection();
   render();
   const returnDialogParam = params.get('returnDialog');
   if (returnDialogParam) {

@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>客户分拣任务 - 分拣终端</title>
   <link rel="stylesheet" href="./assets/css/sorting-terminal-item.css?v=20261024-order-labels-1">
-  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer-item.css?v=20261024-order-labels-1">
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer-item.css?v=20261118-meal-filter-1">
 </head>
 <body>
   <main class="sorting-terminal-customer-item" data-user-end="sorting-terminal">
     <header class="sorting-terminal-customer-item-header">
-      <a class="sorting-terminal-customer-item-back" href="./sorting-terminal-customer.html"><span class="sorting-terminal-customer-item-back-icon" aria-hidden="true"></span>返回</a>
+      <a class="sorting-terminal-customer-item-back" id="sortingTerminalCustomerItemBack" href="./sorting-terminal-customer.html"><span class="sorting-terminal-customer-item-back-icon" aria-hidden="true"></span>返回</a>
       <h1>客户分拣</h1>
       <form class="sorting-terminal-customer-item-search" id="sortingTerminalCustomerItemSearch" role="search">
         <label for="sortingTerminalCustomerItemKeyword">商品名称</label>
@@ -19,6 +19,17 @@
           <button type="submit" aria-label="搜索商品"><span class="sorting-terminal-customer-item-search-icon" aria-hidden="true"></span></button>
         </div>
       </form>
+      <div class="sorting-terminal-customer-item-meal-filter" id="sortingTerminalCustomerItemMealFilter">
+        <span class="sorting-terminal-customer-item-meal-label" id="sortingTerminalCustomerItemMealLabel">餐次</span>
+        <button type="button" class="sorting-terminal-customer-item-meal-trigger" id="sortingTerminalCustomerItemMealTrigger" aria-labelledby="sortingTerminalCustomerItemMealLabel sortingTerminalCustomerItemMealSummary" aria-expanded="false" aria-controls="sortingTerminalCustomerItemMealMenu">
+          <span id="sortingTerminalCustomerItemMealSummary">全部餐次</span>
+          <span class="sorting-terminal-customer-item-meal-arrow" aria-hidden="true"></span>
+        </button>
+        <div class="sorting-terminal-customer-item-meal-menu" id="sortingTerminalCustomerItemMealMenu" role="group" aria-labelledby="sortingTerminalCustomerItemMealLabel" hidden>
+          <label class="sorting-terminal-customer-item-meal-option is-all"><input type="checkbox" id="sortingTerminalCustomerItemMealAll" checked><span>全选</span></label>
+          <div id="sortingTerminalCustomerItemMealOptions"></div>
+        </div>
+      </div>
       <button class="sorting-terminal-customer-item-header-action is-teal" id="sortingTerminalCustomerItemSortAll" type="button">一键分拣</button>
       <button class="sorting-terminal-customer-item-header-action is-blue" id="sortingTerminalCustomerItemPrintAll" type="button">一键打印</button>
       <div class="sorting-terminal-customer-item-filter-wrap">
@@ -107,7 +118,8 @@
     </dialog>
   </main>
   <script src="./assets/js/utils/storage.js?v=20261116-delivery-days-only-17"></script>
-  <script src="./assets/js/pages/sorting-terminal-customer-item.js?v=20261116-default-pending-2"></script>
+  <script src="./assets/js/config/order-meal-options.js"></script>
+  <script src="./assets/js/pages/sorting-terminal-customer-item.js?v=20261118-meal-filter-1"></script>
   <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
 </body>
 </html>

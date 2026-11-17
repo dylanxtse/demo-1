@@ -1,4 +1,18 @@
 (function () {
+  const params = new URLSearchParams(window.location.search);
+  const mealStorageKey = 'sorting-terminal-meal-filter:v1';
+  const meals = window.OrderMealOptions || [];
+  const mealCycle = meals.map((meal) => meal.key);
+  let requestedMealKeys = params.has('meal') ? params.getAll('meal') : null;
+  if (!requestedMealKeys) {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(mealStorageKey));
+      if (Array.isArray(saved)) requestedMealKeys = saved;
+    } catch (_) { /* Direct access defaults to all meals. */ }
+  }
+  const selectedMealKeys = new Set(meals
+    .filter((meal) => requestedMealKeys === null || requestedMealKeys.includes(meal.key))
+    .map((meal) => meal.key));
   const customers = [
     { code: 'YF001', name: '宜丰县十一中', canteen: '第一食堂', sorted: 0, total: 5 },
     { code: 'YF002', name: '宜丰一中', canteen: '第一食堂', sorted: 2, total: 5 },
@@ -19,13 +33,39 @@
     ['芹菜', 'SP000005'], ['蒜薹', 'SP000014'], ['蒜苗', 'SP000016'], ['空心菜', 'SP000011'], ['白菜', 'SP000018'],
     ['娃娃菜', 'SP000019'], ['生菜', 'SP000020'], ['蒿子杆', 'SP000022']
   ];
-  const selectedCode = new URLSearchParams(window.location.search).get('customer');
+  const selectedCode = params.get('customer');
   const selected = customers.find((customer) => customer.code === selectedCode) || customers[0];
   const storageKey = `sorting-terminal-customer:v1:${selected.code}`;
+  const back = document.getElementById('sortingTerminalCustomerItemBack');
+  function updateBackUrl() {
+    const returnUrl = new URL('./sorting-terminal-customer.html', window.location.href);
+    meals.filter((meal) => selectedMealKeys.has(meal.key))
+      .forEach((meal) => returnUrl.searchParams.append('meal', meal.key));
+    back.href = returnUrl.href;
+  }
+  updateBackUrl();
   const sidebar = document.getElementById('sortingTerminalCustomerItemSidebar');
   const grid = document.getElementById('sortingTerminalCustomerItemGrid');
   const empty = document.getElementById('sortingTerminalCustomerItemEmpty');
   const keywordInput = document.getElementById('sortingTerminalCustomerItemKeyword');
+  const mealFilter = document.getElementById('sortingTerminalCustomerItemMealFilter');
+  const mealTrigger = document.getElementById('sortingTerminalCustomerItemMealTrigger');
+  const mealSummary = document.getElementById('sortingTerminalCustomerItemMealSummary');
+  const mealMenu = document.getElementById('sortingTerminalCustomerItemMealMenu');
+  const mealAll = document.getElementById('sortingTerminalCustomerItemMealAll');
+  const mealOptionsRoot = document.getElementById('sortingTerminalCustomerItemMealOptions');
+  const mealCheckboxes = meals.map((meal) => {
+    const label = document.createElement('label');
+    label.className = 'sorting-terminal-customer-item-meal-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = meal.key;
+    const name = document.createElement('span');
+    name.textContent = meal.label;
+    label.append(input, name);
+    mealOptionsRoot.append(label);
+    return input;
+  });
   const filterButton = document.getElementById('sortingTerminalCustomerItemFilterButton');
   const filterMenu = document.getElementById('sortingTerminalCustomerItemFilterMenu');
   const dialog = document.getElementById('sortingTerminalItemDialog');
@@ -69,10 +109,12 @@
   let savedState = null;
   try { savedState = JSON.parse(localStorage.getItem(storageKey)); } catch (_) { /* Use sample values. */ }
   const shortageIds = new Set(Array.isArray(savedState?.shortageIds) ? savedState.shortageIds : []);
+  // Local demo products rotate meal assignments until the customer order feed exposes them.
   const tasks = products.map(([name, code], index) => ({
     id: index,
     name,
     code,
+    mealKey: mealCycle.length ? mealCycle[index % mealCycle.length] : '',
     amount: 35,
     measured: Number.isFinite(Number(savedState?.measuredById?.[index])) && savedState?.measuredById?.[index] !== undefined
       ? Number(savedState.measuredById[index]) : doneIds.has(index) && index !== 2 ? 35 : 0,
@@ -84,6 +126,32 @@
   let activeTask = null;
   let grossWeight = 0;
   let accumulatedWeight = 0;
+
+  function updateMealSummary() {
+    const selectedMeals = meals.filter((meal) => selectedMealKeys.has(meal.key));
+    const allSelected = selectedMeals.length === meals.length;
+    mealAll.checked = allSelected;
+    mealAll.indeterminate = selectedMeals.length > 0 && !allSelected;
+    mealCheckboxes.forEach((input) => { input.checked = selectedMealKeys.has(input.value); });
+    mealSummary.textContent = allSelected ? '全部餐次'
+      : selectedMeals.length ? selectedMeals.map((meal) => meal.label).join('、') : '请选择餐次';
+    mealTrigger.title = mealSummary.textContent;
+  }
+
+  function persistMealSelection() {
+    const selectedMeals = meals.filter((meal) => selectedMealKeys.has(meal.key));
+    try {
+      sessionStorage.setItem(mealStorageKey, JSON.stringify(selectedMeals.map((meal) => meal.key)));
+    } catch (_) { /* The current page keeps the selection in memory. */ }
+    try {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete('meal');
+      selectedMeals.forEach((meal) => nextUrl.searchParams.append('meal', meal.key));
+      window.history?.replaceState?.(null, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+    } catch (_) { /* The current selection still filters this page. */ }
+    updateBackUrl();
+    renderSidebar();
+  }
 
   function progress(customer) {
     const saved = savedDoneIds(customer);
@@ -100,7 +168,11 @@
       const label = state === 'pending' ? '未分拣' : state === 'done' ? '已分拣' : '部分分拣';
       const link = document.createElement('a');
       link.className = `sorting-terminal-customer-item-sidebar-link is-${state}${customer.code === selected.code ? ' is-active' : ''}`;
-      link.href = `./sorting-terminal-customer-item.html?customer=${encodeURIComponent(customer.code)}`;
+      const customerUrl = new URL('./sorting-terminal-customer-item.html', window.location.href);
+      customerUrl.searchParams.set('customer', customer.code);
+      meals.filter((meal) => selectedMealKeys.has(meal.key))
+        .forEach((meal) => customerUrl.searchParams.append('meal', meal.key));
+      link.href = customerUrl.href;
       if (customer.code === selected.code) link.setAttribute('aria-current', 'page');
       const name = document.createElement('span');
       name.className = 'sorting-terminal-customer-item-sidebar-name';
@@ -230,12 +302,14 @@
   function render() {
     const keyword = keywordInput.value.trim().toLocaleLowerCase('zh-CN');
     const visible = tasks.filter((task) => {
+      const matchesMeal = selectedMealKeys.has(task.mealKey);
       const matchesFilter = filter === 'all' || (filter === 'done' && task.done)
         || (filter === 'pending' && !task.done) || (filter === 'shortage' && task.shortage);
       const matchesKeyword = !keyword || `${task.name}${task.code}`.toLocaleLowerCase('zh-CN').includes(keyword);
-      return matchesFilter && matchesKeyword;
+      return matchesMeal && matchesFilter && matchesKeyword;
     }).sort((a, b) => Number(a.done) - Number(b.done) || a.id - b.id);
     grid.replaceChildren(...visible.map(taskCard));
+    empty.textContent = selectedMealKeys.size ? '暂无匹配的分拣任务' : '请选择至少一个餐次';
     empty.hidden = visible.length > 0;
   }
 
@@ -244,6 +318,35 @@
     render();
   });
   keywordInput.addEventListener('input', render);
+  mealTrigger.addEventListener('click', () => {
+    mealMenu.hidden = !mealMenu.hidden;
+    mealTrigger.setAttribute('aria-expanded', String(!mealMenu.hidden));
+  });
+  mealMenu.addEventListener('change', (event) => {
+    if (event.target === mealAll) {
+      selectedMealKeys.clear();
+      if (mealAll.checked) meals.forEach((meal) => selectedMealKeys.add(meal.key));
+    } else if (mealCheckboxes.includes(event.target)) {
+      if (event.target.checked) selectedMealKeys.add(event.target.value);
+      else selectedMealKeys.delete(event.target.value);
+    } else return;
+    updateMealSummary();
+    persistMealSelection();
+    render();
+  });
+  document.addEventListener('click', (event) => {
+    if (!mealFilter.contains(event.target)) {
+      mealMenu.hidden = true;
+      mealTrigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+  mealFilter.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      mealMenu.hidden = true;
+      mealTrigger.setAttribute('aria-expanded', 'false');
+      mealTrigger.focus();
+    }
+  });
   filterButton.addEventListener('click', () => {
     const open = filterMenu.hidden;
     filterMenu.hidden = !open;
@@ -260,7 +363,7 @@
   });
   document.getElementById('sortingTerminalCustomerItemSortAll').addEventListener('click', () => {
     let count = 0;
-    tasks.forEach((task) => {
+    tasks.filter((task) => selectedMealKeys.has(task.mealKey)).forEach((task) => {
       if (task.done || task.shortage) return;
       task.done = true;
       task.measured = task.amount;
@@ -270,7 +373,7 @@
     render();
   });
   document.getElementById('sortingTerminalCustomerItemPrintAll').addEventListener('click', () => {
-    if (!tasks.some((task) => task.done)) return;
+    if (!tasks.some((task) => task.done && selectedMealKeys.has(task.mealKey))) return;
     window.print();
   });
   document.getElementById('sortingTerminalItemDialogClose').addEventListener('click', () => dialog.close());
@@ -312,6 +415,7 @@
       mode: 'customer',
       source: 'sorting-terminal-customer-item',
       customerCode: selected.code,
+      returnSearch: window.location.search,
       returnDialog: {
         taskId: task.id,
         gross: grossWeight,
@@ -391,6 +495,7 @@
         mode: 'customer',
         source: 'sorting-terminal-customer-item-order',
         customerCode: selected.code,
+        returnSearch: window.location.search,
         printedAt: new Date().toISOString(),
         rows: [{
           id: `SORT-TERMINAL-${selected.code}-${task.id}-ORDER`,
@@ -407,7 +512,8 @@
     }
     if (task.done || button?.dataset.action === 'sort') openTaskDialog(task);
   });
-  renderSidebar();
+  updateMealSummary();
+  persistMealSelection();
   render();
   const returnDialogParam = new URLSearchParams(window.location.search).get('returnDialog');
   if (returnDialogParam) {

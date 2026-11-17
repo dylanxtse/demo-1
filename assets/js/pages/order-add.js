@@ -238,7 +238,6 @@
         <td>${item.lastPrice ? money(item.lastPrice) : '--'}</td>
         <td>${item.marketPrice ? money(item.marketPrice) : '--'}</td>
         <td><input class="table-input remark-input" data-field="remark" value="${escapeHtml(item.remark)}" placeholder="请输入备注" ${readonlyMode ? 'disabled' : ''}></td>
-        <td>${readonlyMode ? '--' : '<button class="btn-text danger" type="button" data-remove-line>删除</button>'}</td>
       </tr>
     `;
     }).join('');
@@ -740,13 +739,6 @@
       goodsItems = [...goodsItems, ...newItems];
       goodsItems.push(createEmptyGoodsItem());
       closeOverlay();
-      return renderGoods();
-    }
-    const remove = event.target.closest('[data-remove-line]');
-    if (remove) {
-      const id = remove.closest('[data-line-id]').dataset.lineId;
-      if (goodsItems.length === 1) return toast('至少保留一个商品', true);
-      goodsItems = goodsItems.filter((item) => item.id !== id);
       return renderGoods();
     }
     const action = event.target.closest('[data-action]')?.dataset.action;

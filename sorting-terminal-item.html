@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商品分拣任务 - 分拣终端</title>
-  <link rel="stylesheet" href="./assets/css/sorting-terminal-item.css?v=20261024-order-labels-1">
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-item.css?v=20261118-meal-filter-1">
 </head>
 <body>
   <main class="sorting-terminal-item" data-user-end="sorting-terminal">
@@ -18,6 +18,17 @@
           <button type="submit" aria-label="搜索"><span class="sorting-terminal-item-search-icon" aria-hidden="true"></span></button>
         </div>
       </form>
+      <div class="sorting-terminal-item-meal-filter" id="sortingTerminalItemMealFilter">
+        <span class="sorting-terminal-item-meal-label" id="sortingTerminalItemMealLabel">餐次</span>
+        <button type="button" class="sorting-terminal-item-meal-trigger" id="sortingTerminalItemMealTrigger" aria-labelledby="sortingTerminalItemMealLabel sortingTerminalItemMealSummary" aria-expanded="false" aria-controls="sortingTerminalItemMealMenu">
+          <span id="sortingTerminalItemMealSummary">全部餐次</span>
+          <span class="sorting-terminal-item-meal-arrow" aria-hidden="true"></span>
+        </button>
+        <div class="sorting-terminal-item-meal-menu" id="sortingTerminalItemMealMenu" role="group" aria-labelledby="sortingTerminalItemMealLabel" hidden>
+          <label class="sorting-terminal-item-meal-option is-all"><input type="checkbox" id="sortingTerminalItemMealAll" checked><span>全选</span></label>
+          <div id="sortingTerminalItemMealOptions"></div>
+        </div>
+      </div>
       <button class="sorting-terminal-item-header-action is-teal" id="sortingTerminalItemSortAll" type="button">一键分拣</button>
       <button class="sorting-terminal-item-header-action is-blue" id="sortingTerminalItemPrintAll" type="button">一键打印</button>
       <div class="sorting-terminal-item-filter-wrap">
@@ -103,7 +114,8 @@
     </dialog>
   </main>
   <script src="./assets/js/utils/storage.js?v=20261116-delivery-days-only-17"></script>
-  <script src="./assets/js/pages/sorting-terminal-item.js?v=20261116-default-pending-2"></script>
+  <script src="./assets/js/config/order-meal-options.js"></script>
+  <script src="./assets/js/pages/sorting-terminal-item.js?v=20261118-meal-filter-1"></script>
   <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
 </body>
 </html>

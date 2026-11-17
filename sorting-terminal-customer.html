@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>客户分拣 - 分拣终端</title>
-  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer.css">
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-customer.css?v=20261118-meal-filter-1">
 </head>
 <body>
   <main class="sorting-terminal-customer" data-user-end="sorting-terminal">
     <header class="sorting-terminal-customer-header">
-      <a class="sorting-terminal-customer-back" href="./sorting-terminal-home.html"><span class="sorting-terminal-customer-back-icon" aria-hidden="true"></span>返回</a>
+      <a class="sorting-terminal-customer-back" id="sortingTerminalCustomerBack" href="./sorting-terminal-home.html"><span class="sorting-terminal-customer-back-icon" aria-hidden="true"></span>返回</a>
       <h1>客户分拣</h1>
       <form class="sorting-terminal-customer-filters" id="sortingTerminalCustomerFilters" role="search">
         <label for="sortingTerminalCustomerKeyword">客户名称</label>
@@ -23,6 +23,17 @@
           <option value="east">东区线路</option>
           <option value="west">西区线路</option>
         </select>
+        <span class="sorting-terminal-customer-meal-label" id="sortingTerminalCustomerMealLabel">餐次</span>
+        <div class="sorting-terminal-customer-meal-filter" id="sortingTerminalCustomerMealFilter">
+          <button type="button" class="sorting-terminal-customer-meal-trigger" id="sortingTerminalCustomerMealTrigger" aria-labelledby="sortingTerminalCustomerMealLabel sortingTerminalCustomerMealSummary" aria-expanded="false" aria-controls="sortingTerminalCustomerMealMenu">
+            <span id="sortingTerminalCustomerMealSummary">全部餐次</span>
+            <span class="sorting-terminal-customer-meal-arrow" aria-hidden="true"></span>
+          </button>
+          <div class="sorting-terminal-customer-meal-menu" id="sortingTerminalCustomerMealMenu" role="group" aria-labelledby="sortingTerminalCustomerMealLabel" hidden>
+            <label class="sorting-terminal-customer-meal-option is-all"><input type="checkbox" id="sortingTerminalCustomerMealAll" checked><span>全选</span></label>
+            <div id="sortingTerminalCustomerMealOptions"></div>
+          </div>
+        </div>
       </form>
     </header>
     <section class="sorting-terminal-customer-main" aria-label="客户分拣列表">
@@ -33,7 +44,8 @@
       </div>
     </section>
   </main>
-  <script src="./assets/js/pages/sorting-terminal-customer.js"></script>
+  <script src="./assets/js/config/order-meal-options.js"></script>
+  <script src="./assets/js/pages/sorting-terminal-customer.js?v=20261118-meal-filter-1"></script>
   <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
 </body>
 </html>

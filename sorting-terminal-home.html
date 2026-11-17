@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>分拣终端</title>
-  <link rel="stylesheet" href="./assets/css/sorting-terminal-home.css">
+  <link rel="stylesheet" href="./assets/css/sorting-terminal-home.css?v=20261117-meal-filter-1">
 </head>
 <body>
   <main class="sorting-terminal-home" data-user-end="sorting-terminal">
@@ -14,6 +14,17 @@
         <span>配送时间</span>
         <input id="sortingTerminalShippingDate" type="date" value="2025-09-05" aria-label="配送时间">
       </label>
+      <div class="sorting-terminal-home-field sorting-terminal-meal-field" id="sortingTerminalMealField">
+        <span id="sortingTerminalMealLabel">餐次</span>
+        <button type="button" class="sorting-terminal-meal-trigger" id="sortingTerminalMealTrigger" aria-labelledby="sortingTerminalMealLabel sortingTerminalMealSummary" aria-expanded="false" aria-controls="sortingTerminalMealMenu">
+          <span id="sortingTerminalMealSummary">全部餐次</span>
+          <span class="sorting-terminal-meal-arrow" aria-hidden="true"></span>
+        </button>
+        <div class="sorting-terminal-meal-menu" id="sortingTerminalMealMenu" role="group" aria-labelledby="sortingTerminalMealLabel" hidden>
+          <label class="sorting-terminal-meal-option is-all"><input type="checkbox" id="sortingTerminalMealAll" checked><span>全选</span></label>
+          <div id="sortingTerminalMealOptions"></div>
+        </div>
+      </div>
       <label class="sorting-terminal-home-field sorting-terminal-warehouse-field">
         <span>仓库</span>
         <select id="sortingTerminalWarehouse" aria-label="仓库">
@@ -52,7 +63,8 @@
       <p class="sorting-terminal-home-action-status" id="sortingTerminalActionStatus" role="status" aria-live="polite"></p>
     </section>
   </main>
-  <script src="./assets/js/pages/sorting-terminal-home.js"></script>
+  <script src="./assets/js/config/order-meal-options.js"></script>
+  <script src="./assets/js/pages/sorting-terminal-home.js?v=20261118-customer-meal-return-1"></script>
   <script src="./assets/js/components/platform-switch.js" data-platform-switch></script>
 </body>
 </html>

@@ -35,7 +35,8 @@
         productByCode.set(String(code), {
           ...product,
           storageCondition: product.storageCondition && product.storageCondition !== '--'
-            ? product.storageCondition : previous?.storageCondition || ''
+            ? product.storageCondition : previous?.storageCondition || '',
+          shelfLife: product.shelfLife || previous?.shelfLife || ''
         });
       });
     });
@@ -47,10 +48,17 @@
         || productByCode.get(String(row.goodsCode || row.productCode || ''));
       const order = orderById.get(String(row.orderId || '')) || orderByNo.get(String(row.orderNo || ''));
       const meal = order?.mealName || order?.mealKey || row.mealName || row.mealKey || '';
+      const materialDate = row.materialDate || row.usageDate || row.recipeDemandDates || row.recipeDemandDate
+        || order?.materialDate || order?.usageDate || order?.recipeDemandDates || order?.recipeDemandDate;
+      const deliveryDate = row.deliveryDate || row.deliveryAt || order?.deliveryDate || order?.deliveryAt
+        || order?.expectedAt || row.expectedAt;
       return {
         ...row,
         storageCondition: product?.storageCondition || row.storageCondition || '',
-        mealName: window.OrderMealNameByKey?.[meal] || mealNames[meal] || meal
+        shelfLife: product?.shelfLife || row.shelfLife || '',
+        mealName: window.OrderMealNameByKey?.[meal] || mealNames[meal] || meal,
+        materialDate: formatMaterialDates(materialDate),
+        deliveryDate: formatDate(deliveryDate)
       };
     });
   }
@@ -81,11 +89,20 @@
   }
 
   function formatDate(value) {
+    if (value == null || value === '') return '--';
     const matched = !String(value || '').includes('T') && String(value || '').match(/^(\d{4}-\d{2}-\d{2})/);
     if (matched) return matched[1];
-    const date = value ? new Date(value) : new Date();
+    const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '--';
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function formatMaterialDates(value) {
+    const rawDates = Array.isArray(value)
+      ? value
+      : String(value || '').match(/\d{4}-\d{2}-\d{2}/g) || [];
+    const dates = [...new Set(rawDates.map(formatDate).filter((date) => date !== '--'))];
+    return dates.length ? dates.join('、') : '--';
   }
 
   function renderLabel(label) {
@@ -103,9 +120,12 @@
         <div class="sorting-label-field sorting-label-field-meal"><dt>餐次</dt><dd>${text(row.mealName)}</dd></div>
         <div class="sorting-label-field sorting-label-field-goods"><dt class="sorting-label-sr-only">商品名称</dt><dd>${text(goodsName)}</dd>${sortingQr}</div>
         <div class="sorting-label-field sorting-label-field-storage"><dt>储存条件</dt><dd>${text(row.storageCondition)}</dd></div>
-        <div class="sorting-label-field"><dt>下单数量</dt><dd>${quantityText(orderQty)} ${unit}</dd></div>
-        <div class="sorting-label-field sorting-label-field-package"><dt>本包数量</dt><dd>${quantityText(quantity)} ${unit}</dd></div>
-        <div class="sorting-label-field"><dt>分拣日期</dt><dd>${text(formatDate(row.sortingAt || payload?.printedAt))}</dd></div>
+        <div class="sorting-label-field"><dt>保质期：</dt><dd>${text(row.shelfLife, '--')}</dd></div>
+        <div class="sorting-label-field-quantities">
+          <div class="sorting-label-field sorting-label-field-package"><dt>本包数量：</dt><dd><span class="sorting-label-package-quantity">${quantityText(quantity)}${unit}</span></dd></div>
+          <div class="sorting-label-field sorting-label-field-order-quantity"><dt>下单数量：</dt><dd>${quantityText(orderQty)}${unit}</dd></div>
+        </div>
+        <div class="sorting-label-field sorting-label-date-pair"><dt>用料日期</dt><dd>${text(row.materialDate)}</dd><dt>配送日期</dt><dd>${text(row.deliveryDate)}</dd></div>
       </dl>
     </section>`;
   }
@@ -121,8 +141,10 @@
   const terminalSource = payload?.source === 'sorting-terminal-customer-item'
     || payload?.source === 'sorting-terminal-item' || orderLabelSource;
   const customerTerminalSource = payload?.source === 'sorting-terminal-customer-item' || customerOrderLabelSource;
+  const customerReturnSearch = String(payload.returnSearch || '').startsWith('?')
+    ? payload.returnSearch : `?customer=${encodeURIComponent(payload.customerCode || '')}`;
   const returnHref = customerTerminalSource
-    ? `./sorting-terminal-customer-item.html?customer=${encodeURIComponent(payload.customerCode || '')}`
+    ? `./sorting-terminal-customer-item.html${customerReturnSearch}`
     : payload?.source === 'sorting-terminal-item' || productOrderLabelSource
       ? `./sorting-terminal-item.html${String(payload.returnSearch || '').startsWith('?') ? payload.returnSearch : ''}`
       : './sorting-management.html';

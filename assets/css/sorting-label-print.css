@@ -44,8 +44,8 @@ body {
 
 .sorting-label-fields {
   display: grid;
-  grid-template-rows: 5.7mm repeat(3, 4mm) 7.5mm repeat(2, 4mm) 6.4mm 4mm;
-  row-gap: 1.2mm;
+  grid-template-rows: 5.7mm repeat(3, 3.8mm) 7.5mm 3.8mm 3.3mm 6.4mm 4mm;
+  row-gap: 1.1mm;
   align-content: center;
   flex: 1;
   min-height: 0;
@@ -142,13 +142,35 @@ body {
 
 .sorting-label-field-package dt { font-weight: 700; }
 
-.sorting-label-field-package dd {
+.sorting-label-field-quantities {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 2mm;
+  min-width: 0;
+}
+
+.sorting-label-field-quantities > .sorting-label-field {
+  grid-template-columns: max-content minmax(0, 1fr);
+  min-width: 0;
+  padding: 0 .5mm;
+  column-gap: 1mm;
+}
+
+.sorting-label-package-quantity {
   font-size: 20px;
   font-weight: 800;
   line-height: 1;
 }
 
-.sorting-label-field:last-child dd { font-size: 10px; font-weight: 500; }
+.sorting-label-date-pair {
+  grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr);
+  column-gap: .8mm;
+}
+
+.sorting-label-date-pair dd { font-size: 10px; font-weight: 500; }
+
+.sorting-label-date-pair dt { font-size: 8px; }
 
 .sorting-label-empty { margin: 20vh 0 0; color: #687486; }
 

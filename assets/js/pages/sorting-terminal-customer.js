@@ -1,4 +1,19 @@
 (function () {
+  const params = new URLSearchParams(window.location.search);
+  const mealStorageKey = 'sorting-terminal-meal-filter:v1';
+  const meals = window.OrderMealOptions || [];
+  const mealCycle = meals.map((meal) => meal.key);
+  let requestedMealKeys = params.has('meal') ? params.getAll('meal') : null;
+  if (!requestedMealKeys) {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(mealStorageKey));
+      if (Array.isArray(saved)) requestedMealKeys = saved;
+    } catch (_) { /* Direct access defaults to all meals. */ }
+  }
+  const selectedMealKeys = new Set(meals
+    .filter((meal) => requestedMealKeys === null || requestedMealKeys.includes(meal.key))
+    .map((meal) => meal.key));
+  // Local demo customers rotate meal assignments until the live order feed exposes them.
   const customers = [
     { code: 'YF001', name: '宜丰县十一中', canteen: '第一食堂', sorted: 0, total: 5, route: 'east' },
     { code: 'YF002', name: '宜丰一中', canteen: '第一食堂', sorted: 2, total: 5, route: 'east' },
@@ -13,13 +28,67 @@
     { code: 'YF011', name: '宜丰一幼', canteen: '第一食堂', sorted: 5, total: 5, route: 'west' },
     { code: 'YF012', name: '宜丰二幼', canteen: '第一食堂', sorted: 0, total: 5, route: 'west' },
     { code: 'YF013', name: '宜丰九中', canteen: '第一食堂', sorted: 2, total: 5, route: 'west' }
-  ];
+  ].map((customer, index) => ({
+    ...customer,
+    mealKey: mealCycle.length ? mealCycle[index % mealCycle.length] : ''
+  }));
 
   const keywordInput = document.getElementById('sortingTerminalCustomerKeyword');
   const routeInput = document.getElementById('sortingTerminalCustomerRoute');
+  const mealFilter = document.getElementById('sortingTerminalCustomerMealFilter');
+  const mealTrigger = document.getElementById('sortingTerminalCustomerMealTrigger');
+  const mealSummary = document.getElementById('sortingTerminalCustomerMealSummary');
+  const mealMenu = document.getElementById('sortingTerminalCustomerMealMenu');
+  const mealAll = document.getElementById('sortingTerminalCustomerMealAll');
+  const mealOptionsRoot = document.getElementById('sortingTerminalCustomerMealOptions');
+  const mealCheckboxes = meals.map((meal) => {
+    const label = document.createElement('label');
+    label.className = 'sorting-terminal-customer-meal-option';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = meal.key;
+    const name = document.createElement('span');
+    name.textContent = meal.label;
+    label.append(input, name);
+    mealOptionsRoot.append(label);
+    return input;
+  });
   const grid = document.getElementById('sortingTerminalCustomerGrid');
   const feedback = document.getElementById('sortingTerminalCustomerFeedback');
+  const back = document.getElementById('sortingTerminalCustomerBack');
   let selectedCode = '';
+
+  function updateMealSummary() {
+    const selected = meals.filter((meal) => selectedMealKeys.has(meal.key));
+    const allSelected = selected.length === meals.length;
+    mealAll.checked = allSelected;
+    mealAll.indeterminate = selected.length > 0 && !allSelected;
+    mealCheckboxes.forEach((input) => { input.checked = selectedMealKeys.has(input.value); });
+    mealSummary.textContent = allSelected ? '全部餐次'
+      : selected.length ? selected.map((meal) => meal.label).join('、') : '请选择餐次';
+    mealTrigger.title = mealSummary.textContent;
+  }
+
+  function updateBackUrl() {
+    const target = new URL('./sorting-terminal-home.html', window.location.href);
+    meals.filter((meal) => selectedMealKeys.has(meal.key))
+      .forEach((meal) => target.searchParams.append('meal', meal.key));
+    back.href = target.href;
+  }
+
+  function persistMealSelection() {
+    const selected = meals.filter((meal) => selectedMealKeys.has(meal.key));
+    try {
+      sessionStorage.setItem(mealStorageKey, JSON.stringify(selected.map((meal) => meal.key)));
+    } catch (_) { /* The current page keeps the selection in memory. */ }
+    try {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete('meal');
+      selected.forEach((meal) => nextUrl.searchParams.append('meal', meal.key));
+      window.history?.replaceState?.(null, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+    } catch (_) { /* The current selection still filters this page. */ }
+    updateBackUrl();
+  }
 
   function currentSorted(customer) {
     try {
@@ -37,7 +106,8 @@
     const keyword = keywordInput.value.trim().toLocaleLowerCase('zh-CN');
     const route = routeInput.value;
     const visible = customers.filter((customer) =>
-      (route === 'all' || customer.route === route)
+      selectedMealKeys.has(customer.mealKey)
+      && (route === 'all' || customer.route === route)
       && (!keyword || `${customer.name} ${customer.code}`.toLocaleLowerCase('zh-CN').includes(keyword))
     );
 
@@ -45,7 +115,7 @@
     if (!visible.length) {
       const empty = document.createElement('p');
       empty.className = 'sorting-terminal-customer-empty';
-      empty.textContent = '暂无匹配的客户';
+      empty.textContent = selectedMealKeys.size ? '暂无匹配的客户' : '请选择至少一个餐次';
       grid.append(empty);
       return;
     }
@@ -85,14 +155,47 @@
   });
   keywordInput.addEventListener('input', render);
   routeInput.addEventListener('change', render);
+  mealTrigger.addEventListener('click', () => {
+    mealMenu.hidden = !mealMenu.hidden;
+    mealTrigger.setAttribute('aria-expanded', String(!mealMenu.hidden));
+  });
+  mealMenu.addEventListener('change', (event) => {
+    if (event.target === mealAll) {
+      selectedMealKeys.clear();
+      if (mealAll.checked) meals.forEach((meal) => selectedMealKeys.add(meal.key));
+    } else if (mealCheckboxes.includes(event.target)) {
+      if (event.target.checked) selectedMealKeys.add(event.target.value);
+      else selectedMealKeys.delete(event.target.value);
+    } else return;
+    persistMealSelection();
+    updateMealSummary();
+    render();
+  });
+  document.addEventListener('click', (event) => {
+    if (!mealFilter.contains(event.target)) {
+      mealMenu.hidden = true;
+      mealTrigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+  mealFilter.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      mealMenu.hidden = true;
+      mealTrigger.setAttribute('aria-expanded', 'false');
+      mealTrigger.focus();
+    }
+  });
   grid.addEventListener('click', (event) => {
     const card = event.target.closest('[data-code]');
     if (!card) return;
     const customer = customers.find((item) => item.code === card.dataset.code);
     const detailUrl = new URL('./sorting-terminal-customer-item.html', window.location.href);
     detailUrl.searchParams.set('customer', customer.code);
+    meals.filter((meal) => selectedMealKeys.has(meal.key))
+      .forEach((meal) => detailUrl.searchParams.append('meal', meal.key));
     window.location.href = detailUrl.href;
   });
 
+  updateMealSummary();
+  persistMealSelection();
   render();
 })();

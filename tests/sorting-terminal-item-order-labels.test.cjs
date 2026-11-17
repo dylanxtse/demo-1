@@ -35,6 +35,13 @@ class Element {
   }
   querySelector() { return new Element(); }
   querySelectorAll() { return []; }
+  contains(target) {
+    for (let current = target; current; current = current.parentElement) {
+      if (current === this) return true;
+    }
+    return false;
+  }
+  focus() {}
   showModal() {}
   close() {}
   closest(selector) {
@@ -46,27 +53,43 @@ class Element {
   }
 }
 
-function setup(status) {
+function setup(status, extraSearch = '') {
   const elements = new Map();
   const document = {
     body: { dataset: {} },
+    listeners: {},
+    addEventListener(type, handler) { this.listeners[type] = handler; },
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, new Element());
       return elements.get(id);
     },
     createElement() { return new Element(); }
   };
-  const search = '?name=%E5%9C%9F%E8%B1%86&code=SP0300040&stock=102&unit=%E6%96%A4&sorted=0&total=5&group=root&task=root%3A0';
+  const search = `?name=%E5%9C%9F%E8%B1%86&code=SP0300040&stock=102&unit=%E6%96%A4&sorted=0&total=5&group=root&task=root%3A0${extraSearch}`;
   const progress = status === 'done'
     ? { doneIds: [0], shortageIds: [], measuredById: { 0: 29 } }
     : { doneIds: [], shortageIds: status === 'shortage' ? [0] : [], measuredById: { 0: 12 } };
   const storageKey = 'sorting-terminal-item:v1:root:0';
   const location = { search, href: `file:///sorting-terminal-item.html${search}` };
+  const session = new Map();
   const context = {
     document,
     location,
-    history: { replaceState() {} },
+    history: { replaceState(_state, _title, nextUrl) {
+      const url = new URL(nextUrl, location.href);
+      location.href = url.href;
+      location.search = url.search;
+    } },
+    sessionStorage: {
+      getItem: (key) => session.has(key) ? session.get(key) : null,
+      setItem: (key, value) => session.set(key, String(value))
+    },
     localStorage: { getItem: (key) => key === storageKey ? JSON.stringify(progress) : null },
+    OrderMealOptions: [
+      { key: 'breakfast', label: '早餐' }, { key: 'lunch', label: '午餐' },
+      { key: 'dinner', label: '晚餐' }, { key: 'morningSnack', label: '早点' },
+      { key: 'afternoonSnack', label: '午点' }, { key: 'eveningSnack', label: '晚点' }
+    ],
     URL,
     URLSearchParams,
     Date,
@@ -83,6 +106,52 @@ function setup(status) {
   vm.runInNewContext(source, context, { filename: 'sorting-terminal-item.js' });
   return { context, elements };
 }
+
+test('商品详情返回列表保留选中餐次和展开分类', () => {
+  const { elements } = setup('pending', '&meal=lunch&meal=morningSnack&meal=eveningSnack');
+  const target = new URL(elements.get('sortingTerminalItemBack').href);
+  assert.equal(target.pathname, '/sorting-terminal-product.html');
+  assert.equal(target.searchParams.get('expand'), 'root');
+  assert.deepEqual(target.searchParams.getAll('meal'), ['lunch', 'morningSnack', 'eveningSnack']);
+});
+
+test('餐次筛选继承外层选择并更新任务、摘要和返回链接', () => {
+  const { elements } = setup('pending', '&meal=lunch&meal=morningSnack&meal=eveningSnack');
+  const grid = elements.get('sortingTerminalItemGrid');
+  const mealOptions = elements.get('sortingTerminalItemMealOptions').children;
+  const mealAll = elements.get('sortingTerminalItemMealAll');
+  const lunch = mealOptions.find((label) => label.children[0].value === 'lunch').children[0];
+  const morningSnack = mealOptions.find((label) => label.children[0].value === 'morningSnack').children[0];
+
+  assert.equal(grid.children.length, 12);
+  assert.equal(elements.get('sortingTerminalItemMealSummary').textContent, '午餐、早点、晚点');
+  assert.equal(morningSnack.checked, true);
+  assert.equal(mealAll.indeterminate, true);
+
+  morningSnack.checked = false;
+  elements.get('sortingTerminalItemMealMenu').listeners.change({ target: morningSnack });
+
+  assert.equal(grid.children.length, 8);
+  assert.equal(elements.get('sortingTerminalItemMealSummary').textContent, '午餐、晚点');
+  assert.deepEqual(new URL(elements.get('sortingTerminalItemBack').href).searchParams.getAll('meal'), ['lunch', 'eveningSnack']);
+
+  mealAll.checked = false;
+  elements.get('sortingTerminalItemMealMenu').listeners.change({ target: mealAll });
+  assert.equal(grid.children.length, 0);
+  assert.equal(elements.get('sortingTerminalItemMealSummary').textContent, '请选择餐次');
+
+  mealAll.checked = true;
+  elements.get('sortingTerminalItemMealMenu').listeners.change({ target: mealAll });
+  assert.equal(grid.children.length, 24);
+  assert.equal(elements.get('sortingTerminalItemMealSummary').textContent, '全部餐次');
+
+  mealAll.checked = false;
+  elements.get('sortingTerminalItemMealMenu').listeners.change({ target: mealAll });
+  lunch.checked = true;
+  elements.get('sortingTerminalItemMealMenu').listeners.change({ target: lunch });
+  assert.equal(grid.children.length, 4);
+  assert.equal(elements.get('sortingTerminalItemMealSummary').textContent, '午餐');
+});
 
 for (const status of ['pending', 'shortage', 'done']) {
   test(`客户打印按钮在${status}状态下按下单数量打开分包标签`, () => {
