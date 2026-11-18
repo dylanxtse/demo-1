@@ -4,7 +4,7 @@
   const deliveryDate = params.get('deliveryDate') || (params.get('deliveryDateRange') || '').split(',')[0] || '';
   const route = params.get('route') || '';
   const filters = [
-    { key: 'expectedAt', label: '期望送达时间', type: 'date', defaultValue: expectedAt, placeholder: '请选择' },
+    { key: 'expectedAt', label: '发货时间', type: 'date', defaultValue: expectedAt, placeholder: '请选择' },
     { key: 'deliveryDate', label: '配送日期', type: 'date', defaultValue: deliveryDate, placeholder: '请选择' },
     { key: 'route', label: '线路', placeholder: '请输入线路名称', defaultValue: route },
     { key: 'customerName', label: '客户名称', placeholder: '请输入', defaultValue: params.get('customerName') || '' },

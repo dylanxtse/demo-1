@@ -111,6 +111,7 @@ test('分拣、进度、缺货、发货、汇总和线路页面均配置期望�
     for (const fields of filterSets) {
       const expected = fields.find((field) => field.key === 'expectedAt');
       assert.ok(expected, name);
+      if (name === 'route-management') assert.equal(expected.label, '发货时间');
       if (expected.switchableDate) continue;
       const delivery = fields.find((field) => field.key === 'deliveryDate');
       assert.equal(expected.type, 'date', name);
