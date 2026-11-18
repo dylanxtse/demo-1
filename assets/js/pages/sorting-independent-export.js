@@ -72,7 +72,6 @@
       <td>${escapeHtml(item.customerName || '--')}</td>
       <td>${escapeHtml(item.canteen || '--')}</td>
       <td>${escapeHtml(expectedAt)}</td>
-      <td>${escapeHtml(window.OrderDelivery.date(item))}</td>
       <td>${formatNumber(item.orderQty)}</td>
       <td>${item.actualQty ? formatNumber(item.actualQty) : ''}</td>
       <td>${escapeHtml(item.unit || '--')}</td>
@@ -93,7 +92,7 @@
   const items = getItems();
   document.getElementById('independentExportBody').innerHTML = items.length
     ? items.map(renderRow).join('')
-    : '<tr><td colspan="19">暂无可导出数据</td></tr>';
+    : '<tr><td colspan="18">暂无可导出数据</td></tr>';
 
   const page = document.querySelector('.sorting-independent-export-page');
   const zoomValue = document.querySelector('[data-action="zoom-reset"]');

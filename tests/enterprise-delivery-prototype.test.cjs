@@ -145,7 +145,10 @@ test('分拣及发货导出读取完整查询快照，空快照仍展示默认�
     assertTablesAlign(html, name);
     assert.match(html, /配送导出学校22/, name);
     if (name === 'shipping-export-template') assert.doesNotMatch(html, /配送日期：/, name);
-    else assert.match(html, /2026-11-17/, name);
+    else if (name === 'sorting-independent-export') {
+      assert.match(html, /2026-11-18/, name);
+      assert.doesNotMatch(html, /配送日期|2026-11-17/, name);
+    } else assert.match(html, /2026-11-17/, name);
     context.location.search = `?deliveryExportKey=${context.OrderDelivery.saveRows([])}`;
     const emptyHtml = renderPage(name, context);
     assert.doesNotMatch(emptyHtml, /配送导出学校/, name);
@@ -169,12 +172,12 @@ test('商品归并导出顶部日期摘要只显示首条记录的一天', () =>
   assert.match(html, /<td>2026-11-07 07:30:00<\/td><td>2026-11-07<\/td>/);
 });
 
-test('独立及客户导出保留配送日期，订单归并导出不展示日期和导出时间信息行', () => {
+test('客户分拣和独立导出隐藏配送日期，订单归并导出不展示日期和导出时间信息行', () => {
   const versions = {
     'order-export-template': ['20260920-order-export-1', 'rows'],
     'order-export-order-template': ['20260920-order-export-order-1', 'rows'],
     'order-export-merged-template': ['20261019-order-merged-export-1', 'rows'],
-    'sorting-customer-export-template': ['20260929-sorting-customer-export-template-1', 'groups']
+    'sorting-customer-export-template': ['20261118-sorting-customer-export-template-2', 'groups']
   };
   for (const [name, [version, key]] of Object.entries(versions)) {
     const { context } = setup();
@@ -185,12 +188,26 @@ test('独立及客户导出保留配送日期，订单归并导出不展示日�
     assertTablesAlign(html, name);
     if (name === 'order-export-merged-template') {
       assert.doesNotMatch(html, /order-merge-meta|配送日期：|导出时间：/);
+    } else if (name === 'sorting-customer-export-template') {
+      assert.match(html, /期望送达时间：2026-11-18 07:30:00/, name);
+      assert.doesNotMatch(html, /<th>期望送达时间<\/th>|<th>配送日期<\/th>|配送日期：|2026-11-17/, name);
     } else {
       assert.match(html, /配送日期/, name);
       assert.match(html, /2026-11-17/, name);
       assert.match(html, /2026-11-18/, name);
     }
   }
+
+  const { context } = setup();
+  const row = { id: 'INDEPENDENT-EXPORT', customerName: '导出客户', canteen: '第一食堂',
+    expectedAt: '2026-11-18 07:30:00', deliveryAt: '2026-11-17 07:30:00', deliveryDate: '2026-11-17',
+    goodsName: '白菜', unit: '斤', orderQty: 2, actualQty: 1, status: 'PENDING' };
+  context.location = { search: `?deliveryExportKey=${context.OrderDelivery.saveRows([row])}` };
+  const independentHtml = renderPage('sorting-independent-export', context);
+  assertTablesAlign(independentHtml, 'sorting-independent-export');
+  assert.match(independentHtml, /<th>期望送达时间<\/th>/);
+  assert.doesNotMatch(independentHtml, /<th>配送日期<\/th>|2026-11-17/);
+  assert.match(independentHtml, /2026-11-18/);
 });
 
 test('日期筛选同步应用到实际列表和导出快照', async () => {

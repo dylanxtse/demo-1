@@ -120,7 +120,7 @@
   function openSortingCustomerExportTemplate(groups) {
     const exportKey = `sorting-customer-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const payload = {
-      version: '20260929-sorting-customer-export-template-1',
+      version: '20261118-sorting-customer-export-template-2',
       exportedAt: new Date().toISOString(),
       groups: Array.isArray(groups) ? groups : []
     };

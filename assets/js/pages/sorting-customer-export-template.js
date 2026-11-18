@@ -2,9 +2,9 @@
   const root = document.getElementById('sortingCustomerExportTemplateApp');
   if (!root) return;
 
-  const EXPORT_VERSION = '20260929-sorting-customer-export-template-1';
+  const EXPORT_VERSION = '20261118-sorting-customer-export-template-2';
   const params = new URLSearchParams(window.location.search);
-  const headers = ['商品名称（计量单位/品牌/规格）', '所属订单号', '期望送达时间', '配送日期', '计量单位', '下单数量', '实际数量', '分包单位', '分包数量', '分包尾数', '分包系数', '是否发货', '分拣进度', '备注', '库存'];
+  const headers = ['商品名称（计量单位/品牌/规格）', '所属订单号', '计量单位', '下单数量', '实际数量', '分包单位', '分包数量', '分包尾数', '分包系数', '是否发货', '分拣进度', '备注', '库存'];
   const statusMap = { PENDING: '未分拣', PARTIAL: '部分分拣', SORTED: '已分拣', SHORTAGE: '缺货' };
 
   const escapeHtml = (value) => String(value ?? '')
@@ -98,7 +98,6 @@
     return `<tr class="customer-export-item-row">
       <td title="${escapeHtml(item.goodsName || item.productName || '--')}">${productDisplay(item)}</td>
       <td>${display(item.orderNo)}</td>
-      <td>${display(item.expectedAt)}</td><td>${display(window.OrderDelivery.date(item))}</td>
       <td>${display(item.unit)}</td>
       <td>${quantity(item.orderQty)}</td>
       <td>${quantity(item.actualQty, true)}</td>
@@ -120,20 +119,19 @@
     const address = group.address || group.consigneeAddress || '默认收货地址';
     const itemRows = items.length
       ? items.map(renderItemRow).join('')
-      : '<tr class="customer-export-item-row"><td colspan="15">暂无商品明细</td></tr>';
-    const spacer = index < total - 1 ? '<tr class="customer-export-spacer-row"><td colspan="15"></td></tr>' : '';
+      : '<tr class="customer-export-item-row"><td colspan="13">暂无商品明细</td></tr>';
+    const spacer = index < total - 1 ? '<tr class="customer-export-spacer-row"><td colspan="13"></td></tr>' : '';
     return `<tbody class="customer-export-group">
       <tr class="customer-export-meta-row">
         <td colspan="4">客户名称：${display(group.customerName)}</td>
         <td colspan="3">食堂：${display(group.canteen)}</td>
         <td colspan="3">期望送达时间：${display(group.expectedAt)}</td>
-        <td colspan="2">配送日期：${display(group.deliveryDate || window.OrderDelivery.rangeLabel(items))}</td>
         <td colspan="3">收货人：${display(receiver)}</td>
       </tr>
       <tr class="customer-export-meta-row">
         <td colspan="4">收货手机：${display(phone)}</td>
         <td colspan="5">收货地址：${display(address)}</td>
-        <td colspan="3"></td>
+        <td colspan="1"></td>
         <td colspan="3">单据状态：${escapeHtml(statusLabel(group))}</td>
       </tr>
       <tr class="customer-export-column-row">${headers.map((header) => `<th>${header}</th>`).join('')}</tr>
@@ -146,7 +144,7 @@
   const groups = window.PrototypePreview.groups(payload.groups);
   const body = groups.length
     ? groups.map((group, index) => renderGroup(group, index, groups.length)).join('')
-    : '<tbody><tr class="customer-export-empty-row"><td colspan="15">暂无可导出的客户分拣数据</td></tr></tbody>';
+    : '<tbody><tr class="customer-export-empty-row"><td colspan="13">暂无可导出的客户分拣数据</td></tr></tbody>';
 
   root.innerHTML = `<main class="school-order-export-template-page sorting-customer-export-template-page">
     <section class="school-order-export-template-section">
@@ -154,9 +152,9 @@
         <div class="school-order-export-template-table-wrap sorting-customer-export-template-table-wrap">
           <table class="school-order-export-template-table sorting-customer-export-template-table">
             <colgroup>
-              <col class="customer-export-col-goods"><col class="customer-export-col-order"><col class="customer-export-col-date"><col class="customer-export-col-date"><col class="customer-export-col-unit"><col class="customer-export-col-qty"><col class="customer-export-col-actual"><col class="customer-export-col-package-unit"><col class="customer-export-col-package-qty"><col class="customer-export-col-package-remainder"><col class="customer-export-col-package-coefficient"><col class="customer-export-col-shipped"><col class="customer-export-col-progress"><col class="customer-export-col-remark"><col class="customer-export-col-stock">
+              <col class="customer-export-col-goods"><col class="customer-export-col-order"><col class="customer-export-col-unit"><col class="customer-export-col-qty"><col class="customer-export-col-actual"><col class="customer-export-col-package-unit"><col class="customer-export-col-package-qty"><col class="customer-export-col-package-remainder"><col class="customer-export-col-package-coefficient"><col class="customer-export-col-shipped"><col class="customer-export-col-progress"><col class="customer-export-col-remark"><col class="customer-export-col-stock">
             </colgroup>
-            <thead><tr class="customer-export-title-row"><th colspan="15">客户分拣</th></tr></thead>
+            <thead><tr class="customer-export-title-row"><th colspan="13">客户分拣</th></tr></thead>
             ${body}
           </table>
         </div>
