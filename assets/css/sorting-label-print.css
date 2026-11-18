@@ -118,8 +118,7 @@ body {
 .sorting-label-field-storage-shelf-life { padding-right: 16mm; }
 
 .sorting-label-field-storage-shelf-life {
-  grid-template-columns: 17mm minmax(0, 1fr) max-content max-content;
-  column-gap: 1mm;
+  padding: 0;
 }
 
 .sorting-label-field-goods {
@@ -140,9 +139,9 @@ body {
 .sorting-label-qrcode {
   display: block;
   position: absolute;
-  top: 50%;
+  top: auto;
+  bottom: 1mm;
   right: .5mm;
-  transform: translateY(-50%);
   width: 15mm;
   height: 15mm;
   shape-rendering: crispEdges;
@@ -150,7 +149,7 @@ body {
 
 .sorting-label-field-package dt { font-weight: 700; }
 
-.sorting-label-field-quantities {
+.sorting-label-pair-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
@@ -158,8 +157,15 @@ body {
   min-width: 0;
 }
 
-.sorting-label-field-quantities > .sorting-label-field {
+.sorting-label-pair-row > .sorting-label-field:first-child {
+  grid-template-columns: 17mm minmax(0, 1fr);
+}
+
+.sorting-label-pair-row > .sorting-label-field:last-child {
   grid-template-columns: 13mm minmax(0, 1fr);
+}
+
+.sorting-label-field-quantities > .sorting-label-field {
   min-width: 0;
   padding: 0 .5mm;
   column-gap: 1mm;
@@ -172,8 +178,7 @@ body {
 }
 
 .sorting-label-date-pair {
-  grid-template-columns: 13mm minmax(0, 1fr) 13mm minmax(0, 1fr);
-  column-gap: 1mm;
+  padding: 0;
 }
 
 .sorting-label-date-pair dd { font-size: 10px; font-weight: 500; }

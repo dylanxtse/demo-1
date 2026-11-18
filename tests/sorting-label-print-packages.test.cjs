@@ -13,9 +13,11 @@ test('分拣标签学校名称支持换行并为两行预留高度', () => {
   assert.match(printStyles, /\.sorting-label-field-customer dd\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s);
 });
 
-test('分拣标签数量和日期的左右字段使用相同标签宽度对齐', () => {
-  assert.match(printStyles, /\.sorting-label-field-quantities > \.sorting-label-field\s*\{[^}]*grid-template-columns:\s*13mm minmax\(0,\s*1fr\);/s);
-  assert.match(printStyles, /\.sorting-label-date-pair\s*\{[^}]*grid-template-columns:\s*13mm minmax\(0,\s*1fr\) 13mm minmax\(0,\s*1fr\);/s);
+test('储存、数量和日期字段共用左右两列对齐网格', () => {
+  assert.match(printStyles, /\.sorting-label-pair-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) minmax\(0,\s*1fr\);/s);
+  assert.match(printStyles, /\.sorting-label-pair-row > \.sorting-label-field:first-child\s*\{[^}]*grid-template-columns:\s*17mm minmax\(0,\s*1fr\);/s);
+  assert.match(printStyles, /\.sorting-label-pair-row > \.sorting-label-field:last-child\s*\{[^}]*grid-template-columns:\s*13mm minmax\(0,\s*1fr\);/s);
+  assert.match(printStyles, /\.sorting-label-qrcode\s*\{[^}]*bottom:\s*1mm;[^}]*width:\s*15mm;/s);
 });
 
 function renderLabels(row, options = {}) {
@@ -62,7 +64,7 @@ function getOrderQuantities(html) {
 }
 
 function getQuantityBlock(html) {
-  return html.match(/<div class="sorting-label-field-quantities">([\s\S]*?)<\/div>\s*<div class="sorting-label-field sorting-label-date-pair">/)?.[1] || '';
+  return html.match(/<div class="sorting-label-field-quantities sorting-label-pair-row">([\s\S]*?)<\/div>\s*<div class="sorting-label-field sorting-label-date-pair sorting-label-pair-row">/)?.[1] || '';
 }
 
 test('称重数量按土豆分包规格拆成多张标签并保留原下单数量', () => {
@@ -102,7 +104,7 @@ test('没有可用分包规格时仍按称重数量打印单张标签', () => {
   assert.deepEqual(getOrderQuantities(html), ['12个']);
   assert.ok(getQuantityBlock(html).indexOf('sorting-label-field-package') < getQuantityBlock(html).indexOf('sorting-label-field-order-quantity'));
   assert.match(html, /<dt>保质期<\/dt><dd>2天<\/dd>/);
-  assert.match(html, /class="sorting-label-field sorting-label-date-pair"><dt>用料日期<\/dt><dd>2026-10-20、2026-10-21<\/dd><dt>配送日期<\/dt><dd>2026-10-22<\/dd>/);
+  assert.match(html, /class="sorting-label-field sorting-label-date-pair sorting-label-pair-row">\s*<div class="sorting-label-field sorting-label-field-material-date"><dt>用料日期<\/dt><dd>2026-10-20、2026-10-21<\/dd><\/div>\s*<div class="sorting-label-field sorting-label-field-delivery-date"><dt>配送日期<\/dt><dd>2026-10-22<\/dd><\/div>/);
   assert.doesNotMatch(html, /分拣日期/);
 });
 
@@ -119,8 +121,8 @@ test('标签从关联订单读取用料日期和配送日期，并显示商品�
     }
   });
 
-  assert.match(html, /class="sorting-label-field sorting-label-date-pair"><dt>用料日期<\/dt><dd>2026-11-17、2026-11-18<\/dd><dt>配送日期<\/dt><dd>2026-11-19<\/dd>/);
-  assert.match(html, /class="sorting-label-field sorting-label-field-storage-shelf-life"><dt>储存条件<\/dt><dd>常温<\/dd><dt>保质期<\/dt><dd>15天<\/dd>/);
+  assert.match(html, /class="sorting-label-field sorting-label-date-pair sorting-label-pair-row">\s*<div class="sorting-label-field sorting-label-field-material-date"><dt>用料日期<\/dt><dd>2026-11-17、2026-11-18<\/dd><\/div>\s*<div class="sorting-label-field sorting-label-field-delivery-date"><dt>配送日期<\/dt><dd>2026-11-19<\/dd><\/div>/);
+  assert.match(html, /class="sorting-label-field-storage-shelf-life sorting-label-pair-row">\s*<div class="sorting-label-field sorting-label-field-storage-condition"><dt>储存条件<\/dt><dd>常温<\/dd><\/div>\s*<div class="sorting-label-field sorting-label-field-shelf-life"><dt>保质期<\/dt><dd>15天<\/dd><\/div>/);
   assert.ok(html.indexOf('sorting-label-field-storage-shelf-life') < html.indexOf('sorting-label-field-quantities'));
 });
 
