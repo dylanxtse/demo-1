@@ -55,7 +55,7 @@ for (const type of ['date', 'dateRange']) {
     await flush();
     assert.match(h.markup(), /id="filter-expectedAt"/);
     assert.match(h.markup(), /id="filter-deliveryDate"[^>]+placeholder="请选择"/);
-    assert.match(h.markup(), /期望送达时间[\s\S]*配送时间/);
+    assert.match(h.markup(), /期望送达时间[\s\S]*配送日期/);
     assert.doesNotMatch(h.markup(), /data-record-date-type|filter-type-expectedAt/);
     assert.deepEqual(Array.from(controller.state.items, (row) => row.id), ['A', 'B']);
     assert.deepEqual(JSON.parse(JSON.stringify(controller.state.condition)),
@@ -72,7 +72,7 @@ for (const type of ['date', 'dateRange']) {
   });
 }
 
-test('订单商品分开筛选期望送达时间和配送时间，并按交集过滤列表及导出', async () => {
+test('订单商品分开筛选期望送达时间和配送日期，并按交集过滤列表及导出', async () => {
   const h = harness();
   const { context, node, listeners } = h;
   const rows = records().map((order) => ({ ...order, orderNo: `DD-${order.id}`, items: [{ goodsName: order.id, quantity: 1, unitPrice: 1 }] }));
@@ -84,7 +84,7 @@ test('订单商品分开筛选期望送达时间和配送时间，并按交集�
   vm.runInContext(read('order-goods'), context);
   await flush();
   assert.match(h.markup(), /for="goodsExpectedAt">期望送达时间/);
-  assert.match(h.markup(), /for="goodsDeliveryDate">配送时间/);
+  assert.match(h.markup(), /for="goodsDeliveryDate">配送日期/);
   assert.match(h.markup(), /id="goodsDeliveryDate"[^>]+placeholder="请选择"/);
   assert.match(h.markup(), /id="goodsExpectedAtRange"/);
   assert.match(h.markup(), /id="goodsDeliveryDateRange"/);
@@ -116,7 +116,7 @@ test('分拣、进度、缺货、发货、汇总和线路页面均配置期望�
       const expected = fields.find((field) => field.key === 'expectedAt');
       assert.ok(expected, name);
       if (expected.switchableDate) continue;
-      assert.ok(fields.some((field) => field.key === 'deliveryDate' && field.label === '配送时间'), name);
+      assert.ok(fields.some((field) => field.key === 'deliveryDate' && field.label === '配送日期'), name);
     }
   }
 });

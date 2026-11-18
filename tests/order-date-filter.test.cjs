@@ -5,7 +5,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { loadApp, root } = require('./helpers/app-context.cjs');
 
-test('订单查询分别按期望送达时间和配送时间取交集，兼容旧订单', async () => {
+test('订单查询分别按期望送达时间和配送日期取交集，兼容旧订单', async () => {
   const { context } = loadApp({ services: ['assets/js/services/operations-service.js'] });
   const templates = context.DemoStore.get('orders').slice(0, 4);
   context.DemoStore.updateSettings({ recipeDeliveryByMeal: { breakfast: { days: 1 }, lunch: { days: 0 } } });
@@ -28,7 +28,7 @@ test('订单查询分别按期望送达时间和配送时间取交集，兼容�
   assert.deepEqual(await query({ expectedAtRange: ['2026-11-17', '2026-11-17'], deliveryDateRange: ['2026-11-17', '2026-11-17'] }), ['date-filter-1', 'date-filter-3']);
 });
 
-test('订单日期筛选拆成两个独立区间并同时过滤结果，配送时间默认空', async () => {
+test('订单日期筛选拆成两个独立区间并同时过滤结果，配送日期默认空', async () => {
   const { context } = loadApp();
   const nodes = new Map();
   const listeners = {};
@@ -76,8 +76,8 @@ test('订单日期筛选拆成两个独立区间并同时过滤结果，配送�
   await new Promise((resolve) => setImmediate(resolve));
   assert.match(node('tableBody').innerHTML, />A[\s\S]*>B[\s\S]*>C/);
   assert.match(markup, /for="expectedAt">期望送达时间/);
-  assert.match(markup, /for="deliveryDate">配送时间/);
-  assert.match(markup, /id="deliveryDate" type="text" placeholder="请选择"/);
+  assert.match(markup, /for="deliveryDate">配送日期/);
+  assert.match(markup, /id="deliveryDate" type="text" placeholder="请选择" aria-label="配送日期范围"/);
   assert.doesNotMatch(markup, /orderDateFilterType|<option value="deliveryDate">配送日期/);
   node('expectedAtStart').value = '2026-11-17';
   node('expectedAtEnd').value = '2026-11-17';

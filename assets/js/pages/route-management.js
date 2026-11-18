@@ -5,7 +5,7 @@
   const route = params.get('route') || '';
   const filters = [
     { key: 'expectedAt', label: '期望送达时间', type: 'dateRange', conditionKey: 'expectedAtRange', defaultStart: expectedRange[0] || '', defaultEnd: expectedRange[1] || '' },
-    { key: 'deliveryDate', label: '配送时间', type: 'dateRange', conditionKey: 'deliveryDateRange', defaultStart: deliveryRange[0] || '', defaultEnd: deliveryRange[1] || '', placeholder: '请选择' },
+    { key: 'deliveryDate', label: '配送日期', type: 'dateRange', conditionKey: 'deliveryDateRange', defaultStart: deliveryRange[0] || '', defaultEnd: deliveryRange[1] || '', placeholder: '请选择' },
     { key: 'route', label: '线路', placeholder: '请输入线路名称', defaultValue: route },
     { key: 'customerName', label: '客户名称', placeholder: '请输入', defaultValue: params.get('customerName') || '' },
     { key: 'driver', label: '司机', placeholder: '请输入', defaultValue: params.get('driver') || '' },

@@ -71,7 +71,7 @@
         {
           ...rangeField,
           key: 'deliveryDate',
-          label: '配送时间',
+          label: '配送日期',
           conditionKey: 'deliveryDateRange',
           defaultValue: '',
           defaultStart: '',
