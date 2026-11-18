@@ -13,6 +13,11 @@ test('分拣标签学校名称支持换行并为两行预留高度', () => {
   assert.match(printStyles, /\.sorting-label-field-customer dd\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s);
 });
 
+test('分拣标签数量和日期的左右字段使用相同标签宽度对齐', () => {
+  assert.match(printStyles, /\.sorting-label-field-quantities > \.sorting-label-field\s*\{[^}]*grid-template-columns:\s*13mm minmax\(0,\s*1fr\);/s);
+  assert.match(printStyles, /\.sorting-label-date-pair\s*\{[^}]*grid-template-columns:\s*13mm minmax\(0,\s*1fr\) 13mm minmax\(0,\s*1fr\);/s);
+});
+
 function renderLabels(row, options = {}) {
   const { context } = loadApp();
   const dataRow = { ...row };

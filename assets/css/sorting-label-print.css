@@ -159,7 +159,7 @@ body {
 }
 
 .sorting-label-field-quantities > .sorting-label-field {
-  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-columns: 13mm minmax(0, 1fr);
   min-width: 0;
   padding: 0 .5mm;
   column-gap: 1mm;
@@ -172,8 +172,8 @@ body {
 }
 
 .sorting-label-date-pair {
-  grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr);
-  column-gap: .8mm;
+  grid-template-columns: 13mm minmax(0, 1fr) 13mm minmax(0, 1fr);
+  column-gap: 1mm;
 }
 
 .sorting-label-date-pair dd { font-size: 10px; font-weight: 500; }
