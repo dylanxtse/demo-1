@@ -44,7 +44,7 @@ body {
 
 .sorting-label-fields {
   display: grid;
-  grid-template-rows: 5.7mm repeat(3, 3.8mm) 7.5mm 3.8mm 3.3mm 6.4mm 4mm;
+  grid-template-rows: 10mm repeat(3, 3.8mm) 7.5mm 3.8mm 6.4mm 4mm;
   row-gap: 1.1mm;
   align-content: center;
   flex: 1;
@@ -107,12 +107,20 @@ body {
   font-size: 16px;
   font-weight: 800;
   letter-spacing: .15px;
+  line-height: 1.05;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .sorting-label-field-customer { padding-right: 16mm; }
 
 .sorting-label-field-meal,
-.sorting-label-field-storage { padding-right: 16mm; }
+.sorting-label-field-storage-shelf-life { padding-right: 16mm; }
+
+.sorting-label-field-storage-shelf-life {
+  grid-template-columns: 17mm minmax(0, 1fr) max-content max-content;
+  column-gap: 1mm;
+}
 
 .sorting-label-field-goods {
   position: relative;

@@ -6,7 +6,7 @@ body { margin: 0; background: #eef0f3; color: var(--shipping-print-ink); font-fa
 .shipping-print-paper { width: 297mm; min-height: 210mm; margin: 0 auto 24px; padding: 8mm 10mm 12mm; position: relative; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(26,34,50,.18); page-break-after: always; }
 .shipping-print-paper:last-of-type { page-break-after: auto; }
 .shipping-print-title { margin: 0 0 3mm; text-align: center; font-size: 20px; line-height: 1.2; font-weight: 700; }
-.shipping-print-info { display: grid; grid-template-columns: 1fr 1.45fr 1fr; column-gap: 5mm; row-gap: 1.5mm; margin-bottom: 2mm; font-size: 12px; line-height: 1.25; font-weight: 600; }
+.shipping-print-info { display: grid; grid-template-columns: 1.35fr .9fr .85fr 1fr; column-gap: 5mm; row-gap: 1.5mm; margin-bottom: 2mm; font-size: 12px; line-height: 1.25; font-weight: 600; }
 .shipping-print-info .wide,
 .shipping-print-info .shipping-print-meals { grid-column: 1 / -1; }
 .shipping-print-meals { min-height: 8mm; white-space: pre-line; }

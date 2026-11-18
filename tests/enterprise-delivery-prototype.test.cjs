@@ -137,7 +137,8 @@ test('分拣及发货导出读取完整查询快照，空快照仍展示默认�
     const html = renderPage(name, context);
     assertTablesAlign(html, name);
     assert.match(html, /配送导出学校22/, name);
-    assert.match(html, /2026-11-17/, name);
+    if (name === 'shipping-export-template') assert.doesNotMatch(html, /配送日期：/, name);
+    else assert.match(html, /2026-11-17/, name);
     context.location.search = `?deliveryExportKey=${context.OrderDelivery.saveRows([])}`;
     const emptyHtml = renderPage(name, context);
     assert.doesNotMatch(emptyHtml, /配送导出学校/, name);
@@ -207,15 +208,36 @@ test('日期筛选同步应用到实际列表和导出快照', async () => {
   assert.deepEqual(JSON.parse(JSON.stringify(calls.at(-1).condition)), {});
 });
 
-test('发货和订单发货打印保留期望送达时刻，并显示订单配送快照', () => {
+test('发货打印隐藏配送日期并保留线路，订单发货打印保留配送日期', () => {
   for (const name of ['shipping-print-template', 'order-shipping-print-template']) {
     const { context } = setup();
     context.location = { search: `?printData=${encodeURIComponent(JSON.stringify({ version: '20260929-shipping-print-template-1', rows: [{
-      orderNo: 'PRINT-ORDER', customerName: '打印学校', goodsName: '白菜', expectedAt: '2026-11-18 07:30:00', deliveryAt: '2026-11-17 07:30:00'
+      orderNo: 'PRINT-ORDER', customerName: '打印学校', customerCode: '07', route: '东城一线', goodsName: '白菜', expectedAt: '2026-11-18 07:30:00', deliveryAt: '2026-11-17 07:30:00'
     }] }))}` };
     const html = renderPage(name, context);
     assert.match(html, /期望送达时间：2026-11-18 07:30:00/);
-    assert.match(html, /配送日期：2026-11-17/);
+    if (name === 'shipping-print-template') {
+      assert.doesNotMatch(html, /配送日期：/);
+      assert.match(html, /期望送达时间：2026-11-18 07:30:00<\/span>\s*<span>配送线路：东城一线<\/span>/);
+      assert.match(html, /<span>客户名称：打印学校<\/span>\s*<span>客户编码：07<\/span>/);
+    } else {
+      assert.match(html, /配送日期：2026-11-17<\/span>\s*<span>配送线路：东城一线<\/span>/);
+    }
+  }
+});
+
+test('普通发货导出仅显示线路；订单发货导出同时显示配送日期和线路', () => {
+  for (const [name, withDeliveryDate] of [['shipping-export-template', false], ['order-shipping-export-template', true]]) {
+    const { context } = setup();
+    const key = context.OrderDelivery.saveRows([{
+      id: `EXPORT-${name}`, customerName: '打印学校', canteen: '第一食堂', expectedAt: '2026-11-18 07:30:00', route: '东城一线',
+      deliveryAt: '2026-11-17 07:30:00', deliveryDate: '2026-11-17', items: [{ goodsName: '白菜', unit: '斤', orderQty: 1, shippingQty: 1 }]
+    }]);
+    context.location = { search: `?deliveryExportKey=${encodeURIComponent(key)}` };
+    const html = renderPage(name, context);
+    assert.match(html, /配送线路：东城一线/);
+    if (withDeliveryDate) assert.match(html, /配送日期：2026-11-17/);
+    else assert.doesNotMatch(html, /配送日期：/);
   }
 });
 

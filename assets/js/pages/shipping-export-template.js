@@ -68,7 +68,7 @@
   }
   function renderInfo(record) {
     const meal = record.mealCounts && typeof record.mealCounts === 'object' ? Object.entries(record.mealCounts).map(([key, value]) => `${key}：${value}`).join('　') : '教师-不区分：--　　学生-不区分：--';
-    return `<div class="shipping-export-info"><div>期望送达时间：${text(dateOnly(record.expectedAt))}</div><div>配送日期：${text(window.OrderDelivery?.date(record) || String(record.deliveryAt || record.expectedAt || '').slice(0, 10))}</div><div>客户名称：${text(record.customerName)}</div><div>食堂名称：${text(record.canteen)}</div><div>收货人：${text(record.receiver || '--')}</div><div>收货地址：${text(record.address || '默认收货地址')}</div><div>收货手机：${text(record.phone || '--')}</div><div class="meal-cell">就餐人数：　${escapeHtml(meal)}</div><div class="export-time">导出时间：${escapeHtml(new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'))}</div></div>`;
+    return `<div class="shipping-export-info"><div>期望送达时间：${text(dateOnly(record.expectedAt))}</div><div>配送线路：${text(record.route || record.deliveryRoute || '--')}</div><div>客户名称：${text(record.customerName)}</div><div>食堂名称：${text(record.canteen)}</div><div>收货人：${text(record.receiver || '--')}</div><div>收货地址：${text(record.address || '默认收货地址')}</div><div>收货手机：${text(record.phone || '--')}</div><div class="meal-cell">就餐人数：　${escapeHtml(meal)}</div><div class="export-time">导出时间：${escapeHtml(new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'))}</div></div>`;
   }
   function renderTable(rows) {
     const total = rows.reduce((sum, row) => sum + Number(row.shippingQty || 0) * Number(row.unitPrice || 0), 0);

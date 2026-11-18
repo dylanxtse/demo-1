@@ -6,6 +6,12 @@ const vm = require('node:vm');
 const { root: projectRoot, loadApp } = require('./helpers/app-context.cjs');
 
 const source = fs.readFileSync(path.join(projectRoot, 'assets/js/pages/sorting-label-print.js'), 'utf8');
+const printStyles = fs.readFileSync(path.join(projectRoot, 'assets/css/sorting-label-print.css'), 'utf8');
+
+test('分拣标签学校名称支持换行并为两行预留高度', () => {
+  assert.match(printStyles, /grid-template-rows:\s*10mm/);
+  assert.match(printStyles, /\.sorting-label-field-customer dd\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s);
+});
 
 function renderLabels(row, options = {}) {
   const { context } = loadApp();
@@ -109,9 +115,8 @@ test('标签从关联订单读取用料日期和配送日期，并显示商品�
   });
 
   assert.match(html, /class="sorting-label-field sorting-label-date-pair"><dt>用料日期<\/dt><dd>2026-11-17、2026-11-18<\/dd><dt>配送日期<\/dt><dd>2026-11-19<\/dd>/);
-  assert.match(html, /<dt>保质期：<\/dt><dd>15天<\/dd>/);
-  assert.ok(html.indexOf('<dt>储存条件</dt>') < html.indexOf('<dt>保质期：</dt>'));
-  assert.ok(html.indexOf('<dt>保质期：</dt>') < html.indexOf('<dt>本包数量：</dt>'));
+  assert.match(html, /class="sorting-label-field sorting-label-field-storage-shelf-life"><dt>储存条件<\/dt><dd>常温<\/dd><dt>保质期：<\/dt><dd>15天<\/dd>/);
+  assert.ok(html.indexOf('sorting-label-field-storage-shelf-life') < html.indexOf('sorting-label-field-quantities'));
 });
 
 test('按下单数量生成的标签可返回商品分拣任务且不打开称重弹窗', () => {

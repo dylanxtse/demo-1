@@ -69,12 +69,12 @@
   function renderInfo(row) {
     return `<div class="shipping-print-info">
       <span>期望送达时间：${text(row.expectedAt || '--')}</span>
-      <span>配送日期：${text(window.OrderDelivery.date(row))}</span>
-      <span>客户名称：${text(row.customerName)}${row.customerCode ? `　客户编码：${text(row.customerCode)}` : ''}</span>
+      <span>配送线路：${text(row.route || row.deliveryRoute || '--')}</span>
+      <span>客户名称：${text(row.customerName)}</span>
+      <span>客户编码：${text(row.customerCode || row.customerNo || '--')}</span>
       <span>食堂：${text(row.canteen)}</span>
       <span>收货人：${text(row.receiver || '--')}（${text(row.phone || '00000000000')}）</span>
       <span>配送人：${text(row.deliveryPerson || '--')}</span>
-      <span></span>
       <span class="shipping-print-meals">就餐人数：${escapeHtml(mealText(row))}</span>
       <span class="wide">收货地址：${text(row.address || '默认收货地址')}</span>
     </div>`;

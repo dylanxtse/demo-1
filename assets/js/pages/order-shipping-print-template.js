@@ -108,6 +108,7 @@
     return `<div class="shipping-print-info">
       <span>期望送达时间：${text(row.expectedAt || '--')}</span>
       <span>配送日期：${text(window.OrderDelivery.date(row))}</span>
+      <span>配送线路：${text(row.route || row.deliveryRoute || '--')}</span>
       <span>客户名称：${text(row.customerName)}</span>
       <span>学校编码：${text(row.customerCode)}</span>
       <span>食堂：${text(row.canteen)}</span>
