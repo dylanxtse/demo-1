@@ -52,12 +52,12 @@ function renderLabels(row, options = {}) {
 }
 
 function getPackageQuantities(html) {
-  return [...html.matchAll(/class="sorting-label-field sorting-label-field-package"><dt>本包数量：<\/dt><dd>([\s\S]*?)<\/dd>/g)]
+  return [...html.matchAll(/class="sorting-label-field sorting-label-field-package"><dt>本包数量<\/dt><dd>([\s\S]*?)<\/dd>/g)]
     .map((match) => match[1].replace(/<[^>]+>/g, ''));
 }
 
 function getOrderQuantities(html) {
-  return [...html.matchAll(/class="sorting-label-field sorting-label-field-order-quantity"><dt>下单数量：<\/dt><dd>([^<]+)<\/dd>/g)]
+  return [...html.matchAll(/class="sorting-label-field sorting-label-field-order-quantity"><dt>下单数量<\/dt><dd>([^<]+)<\/dd>/g)]
     .map((match) => match[1]);
 }
 
@@ -101,7 +101,7 @@ test('没有可用分包规格时仍按称重数量打印单张标签', () => {
   assert.deepEqual(getPackageQuantities(html), ['7个']);
   assert.deepEqual(getOrderQuantities(html), ['12个']);
   assert.ok(getQuantityBlock(html).indexOf('sorting-label-field-package') < getQuantityBlock(html).indexOf('sorting-label-field-order-quantity'));
-  assert.match(html, /<dt>保质期：<\/dt><dd>2天<\/dd>/);
+  assert.match(html, /<dt>保质期<\/dt><dd>2天<\/dd>/);
   assert.match(html, /class="sorting-label-field sorting-label-date-pair"><dt>用料日期<\/dt><dd>2026-10-20、2026-10-21<\/dd><dt>配送日期<\/dt><dd>2026-10-22<\/dd>/);
   assert.doesNotMatch(html, /分拣日期/);
 });
@@ -120,7 +120,7 @@ test('标签从关联订单读取用料日期和配送日期，并显示商品�
   });
 
   assert.match(html, /class="sorting-label-field sorting-label-date-pair"><dt>用料日期<\/dt><dd>2026-11-17、2026-11-18<\/dd><dt>配送日期<\/dt><dd>2026-11-19<\/dd>/);
-  assert.match(html, /class="sorting-label-field sorting-label-field-storage-shelf-life"><dt>储存条件<\/dt><dd>常温<\/dd><dt>保质期：<\/dt><dd>15天<\/dd>/);
+  assert.match(html, /class="sorting-label-field sorting-label-field-storage-shelf-life"><dt>储存条件<\/dt><dd>常温<\/dd><dt>保质期<\/dt><dd>15天<\/dd>/);
   assert.ok(html.indexOf('sorting-label-field-storage-shelf-life') < html.indexOf('sorting-label-field-quantities'));
 });
 

@@ -118,10 +118,10 @@
         <div class="sorting-label-field"><dt>线路</dt><dd>${text(row.route)}</dd></div>
         <div class="sorting-label-field sorting-label-field-meal"><dt>餐次</dt><dd>${text(row.mealName)}</dd></div>
         <div class="sorting-label-field sorting-label-field-goods"><dt class="sorting-label-sr-only">商品名称</dt><dd>${text(goodsName)}</dd>${sortingQr}</div>
-        <div class="sorting-label-field sorting-label-field-storage-shelf-life"><dt>储存条件</dt><dd>${text(row.storageCondition)}</dd><dt>保质期：</dt><dd>${text(row.shelfLife, '--')}</dd></div>
+        <div class="sorting-label-field sorting-label-field-storage-shelf-life"><dt>储存条件</dt><dd>${text(row.storageCondition)}</dd><dt>保质期</dt><dd>${text(row.shelfLife, '--')}</dd></div>
         <div class="sorting-label-field-quantities">
-          <div class="sorting-label-field sorting-label-field-package"><dt>本包数量：</dt><dd><span class="sorting-label-package-quantity">${quantityText(quantity)}${unit}</span></dd></div>
-          <div class="sorting-label-field sorting-label-field-order-quantity"><dt>下单数量：</dt><dd>${quantityText(orderQty)}${unit}</dd></div>
+          <div class="sorting-label-field sorting-label-field-package"><dt>本包数量</dt><dd><span class="sorting-label-package-quantity">${quantityText(quantity)}${unit}</span></dd></div>
+          <div class="sorting-label-field sorting-label-field-order-quantity"><dt>下单数量</dt><dd>${quantityText(orderQty)}${unit}</dd></div>
         </div>
         <div class="sorting-label-field sorting-label-date-pair"><dt>用料日期</dt><dd>${text(row.materialDate)}</dd><dt>配送日期</dt><dd>${text(row.deliveryDate)}</dd></div>
       </dl>
