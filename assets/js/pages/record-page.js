@@ -56,26 +56,22 @@
     const expandDeliveryDateFilters = (filters = []) => filters.flatMap((field) => {
       if (!field.switchableDate) return [field];
       const expectedDefault = field.defaultValue || '';
-      const rangeField = {
+      const dateField = {
         ...field,
-        type: 'dateRange',
+        type: 'date',
         switchableDate: false,
-        conditionKey: field.conditionKey || `${field.key}Range`,
-        defaultStart: field.defaultStart || expectedDefault,
-        defaultEnd: field.defaultEnd || expectedDefault,
-        defaultValue: '',
+        conditionKey: field.key,
+        defaultValue: expectedDefault,
         placeholder: field.placeholder || '请选择'
       };
       return [
-        rangeField,
+        dateField,
         {
-          ...rangeField,
+          ...dateField,
           key: 'deliveryDate',
           label: '配送日期',
-          conditionKey: 'deliveryDateRange',
+          conditionKey: 'deliveryDate',
           defaultValue: '',
-          defaultStart: '',
-          defaultEnd: '',
           placeholder: '请选择'
         }
       ];

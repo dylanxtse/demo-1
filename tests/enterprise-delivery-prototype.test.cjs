@@ -58,7 +58,7 @@ test('配送日期贯通商品分拣、客户分拣、进度、缺货、发货�
   const href = context.RecordPageConfig.tabs[0].rowActions[0].href(batch, condition);
   const query = new URL(href, 'https://prototype.local').searchParams;
   assert.equal(query.get('customerName'), condition.customerName);
-  assert.equal(query.get('deliveryDateRange'), '2026-11-17,2026-11-17');
+  assert.equal(query.get('deliveryDate'), '2026-11-17');
 });
 
 test('同日配送客户的批量分拣只处理当前查询命中的订单，不扩大到被期望日期排除的早餐', async () => {
@@ -97,7 +97,14 @@ function renderPage(name, context) {
   vm.runInContext(fs.readFileSync(path.join(root, `assets/js/pages/${name}.js`), 'utf8'), context);
   if (['sorting-independent-export', 'sorting-merge-export'].includes(name)) {
     const id = name === 'sorting-independent-export' ? 'independentExportBody' : 'mergeExportBody';
-    return fs.readFileSync(path.join(root, `${name}.html`), 'utf8').replace(`<tbody id="${id}"></tbody>`, `<tbody>${node(id).innerHTML}</tbody>`);
+    let html = fs.readFileSync(path.join(root, `${name}.html`), 'utf8')
+      .replace(`<tbody id="${id}"></tbody>`, `<tbody>${node(id).innerHTML}</tbody>`);
+    if (name === 'sorting-merge-export') {
+      html = html
+        .replace(/(<th id="mergeExportDate"[^>]*>)[\s\S]*?(<\/th>)/, `$1${node('mergeExportDate').textContent}$2`)
+        .replace(/(<th id="mergeExportDeliveryDate"[^>]*>)[\s\S]*?(<\/th>)/, `$1${node('mergeExportDeliveryDate').textContent}$2`);
+    }
+    return html;
   }
   return [...nodes.values()].map((item) => item.innerHTML).join('');
 }
@@ -145,6 +152,21 @@ test('分拣及发货导出读取完整查询快照，空快照仍展示默认�
     assert.doesNotMatch(emptyHtml, /暂无/, name);
     assert.match(emptyHtml, /<td[^>]*>[^<]+<\/td>/, name);
   }
+});
+
+test('商品归并导出顶部日期摘要只显示首条记录的一天', () => {
+  const { context } = setup();
+  const rows = [
+    { id: 'MERGE-DATE-1', goodsCode: 'SP0300040', goodsName: '土豆', unit: '斤', customerName: '学校甲', canteen: '第一食堂',
+      expectedAt: '2026-09-06 07:30:00', deliveryDate: '2026-09-06', orderQty: 2 },
+    { id: 'MERGE-DATE-2', goodsCode: 'SP0300040', goodsName: '土豆', unit: '斤', customerName: '学校乙', canteen: '第一食堂',
+      expectedAt: '2026-11-07 07:30:00', deliveryDate: '2026-11-07', orderQty: 3 }
+  ];
+  context.location = { search: `?deliveryExportKey=${context.OrderDelivery.saveRows(rows)}` };
+  const html = renderPage('sorting-merge-export', context);
+  assert.match(html, /id="mergeExportDate" colspan="5">期望送达时间：2026-09-06<\/th>/);
+  assert.match(html, /id="mergeExportDeliveryDate" colspan="5">配送日期：2026-09-06<\/th>/);
+  assert.match(html, /<td>2026-11-07 07:30:00<\/td><td>2026-11-07<\/td>/);
 });
 
 test('独立及客户导出保留配送日期，订单归并导出不展示日期和导出时间信息行', () => {

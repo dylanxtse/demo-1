@@ -71,11 +71,12 @@
   const items = getItems();
   const groups = groupItems(items);
   const warehouse = params.get('warehouse') || items[0]?.warehouse || items[0]?.warehouseName || '赣县中心仓';
-  const expectedAt = params.get('expectedAt') || items[0]?.expectedAt?.slice(0, 10) || currentDate();
+  const expectedAt = (params.get('expectedAt') || items[0]?.expectedAt || currentDate()).slice(0, 10);
+  const deliveryDate = params.get('deliveryDate') || (items[0] ? window.OrderDelivery.date(items[0]) : '--');
 
   document.getElementById('mergeExportWarehouse').textContent = `仓库：${warehouse === '中心仓' ? '赣县中心仓' : warehouse}`;
-  document.getElementById('mergeExportDate').textContent = `期望送达时间：${[...new Set(items.map((item) => item.expectedAt))].join('、') || '--'}`;
-  document.getElementById('mergeExportDeliveryDate').textContent = `配送日期：${window.OrderDelivery.rangeLabel(items)}`;
+  document.getElementById('mergeExportDate').textContent = `期望送达时间：${expectedAt || '--'}`;
+  document.getElementById('mergeExportDeliveryDate').textContent = `配送日期：${deliveryDate}`;
   document.getElementById('mergeExportBody').innerHTML = groups.length
     ? groups.map(renderGroup).join('')
     : '<tr><td colspan="15" style="text-align:center">暂无可归并数据</td></tr>';

@@ -650,20 +650,22 @@
 .sorting-module-page .operations-field .filter-label { width: 104px; flex: 0 0 104px; margin-right: 8px; white-space: nowrap; }
 .sorting-module-page .operations-field > .filter-input,
 .sorting-module-page .operations-field > .filter-select { width: 0; min-width: 0; flex: 1 1 0; }
-.sorting-module-page .operations-field > .date-range-picker {
+.sorting-module-page .operations-field > .date-range-picker,
+.sorting-module-page .operations-field > .date-input-control {
   position: relative;
   width: 0;
   min-width: 0;
   flex: 1 1 0;
 }
-.sorting-module-page .operations-field .date-range-display {
+.sorting-module-page .operations-field .date-range-display,
+.sorting-module-page .operations-field .operations-date-input {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
   padding-right: 30px;
   cursor: pointer;
 }
-.sorting-module-page .operations-date-input { padding-right: 30px; background: #fff; cursor: pointer; }
+.sorting-module-page .operations-date-input { background: #fff; }
 .sorting-module-page .operations-filter-actions { width: 100%; align-items: center; justify-content: flex-end; gap: 8px; padding: 0; }
 .sorting-module-page .operations-filter-actions .btn { width: var(--query-action-width); justify-content: center; }
 .sorting-module-page .operations-filter-toggle {
