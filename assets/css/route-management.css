@@ -1,0 +1,41 @@
+.route-management-page {
+  --sorting-filter-actions-width: 136px;
+  min-height: 100%;
+  padding: 24px 32px;
+  border-radius: 16px;
+  background: #fff;
+}
+.route-management-page .operations-tabs { gap: 0; height: 48px; margin: 0 0 20px; }
+.route-management-page .operations-tab { padding: 0 18px; }
+.route-management-page .operations-tab.active { font-weight: 600; }
+.route-management-page .operations-filter { margin-bottom: 10px; }
+.route-management-page .operations-filter-main { gap: 24px; }
+.route-management-page .operations-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; }
+.route-management-page .operations-field .filter-label { flex-basis: 104px; width: 104px; text-align: right; }
+.route-management-page .operations-filter-actions .btn { width: 60px; min-width: 60px; }
+.route-management-page .operations-toolbar { min-height: 0; margin-bottom: 8px; }
+.route-management-page .operations-toolbar:has(.operations-toolbar-main:empty):has(.operations-toolbar-side:empty) { display: none; }
+.route-management-page .operations-toolbar-main .btn { min-width: 88px; }
+.route-management-page .operations-table { width: 100%; min-width: 1180px; table-layout: auto; }
+.route-management-page .operations-table th,
+.route-management-page .operations-table td { text-align: center; white-space: nowrap; }
+.route-management-page .operations-table th { height: 48px; background: #f3f4f8; color: #858da3; font-weight: 500; }
+.route-management-page .operations-table td { height: 56px; }
+.route-management-page .operations-table .empty-cell { height: 120px; color: #b7b7b7; }
+.route-management-page[data-active-tab="orders"] .operations-table th:last-child,
+.route-management-page[data-active-tab="orders"] .operations-table td:last-child { position: static; min-width: 0; box-shadow: none; }
+.route-management-page .operations-table-container[hidden],
+.route-management-page #recordSummary[hidden] { display: none; }
+.route-management-page .route-departure-summary { display: flex; flex-wrap: wrap; gap: 20px 44px; margin-top: 20px; line-height: 32px; }
+.route-management-page .pagination { flex-shrink: 0; margin-top: 16px; }
+@media (max-width: 1150px) {
+  .route-management-page { padding: 20px; }
+  .route-management-page .operations-filter-main { display: grid; grid-template-columns: minmax(0, 1fr) 136px; }
+  .route-management-page .operations-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .route-management-page .operations-filter-main { grid-template-columns: minmax(0, 1fr); }
+  .route-management-page .operations-filter-grid { grid-template-columns: minmax(0, 1fr); }
+  .route-management-page .operations-tabs { overflow-x: auto; flex-shrink: 0; white-space: nowrap; }
+  .route-management-page .operations-tab { flex-shrink: 0; padding: 0 12px; }
+}

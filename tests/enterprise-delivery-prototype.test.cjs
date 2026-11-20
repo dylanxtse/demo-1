@@ -48,14 +48,15 @@ test('配送日期贯通商品分拣、客户分拣、进度、缺货、发货�
   assert.equal((await context.OperationsService.list('shortageItems', { condition })).total, 2);
   for (const resource of ['routes', 'routeOrders', 'routeLoading', 'routeDepartures']) {
     const result = await context.RouteService.list(resource, { condition });
-    assert.equal(result.total, resource === 'routeOrders' ? 2 : 1, resource);
-    if (resource !== 'routeOrders') assert.equal(result.items[0].orderCount, 2);
+    const perOrder = ['routeOrders', 'routeLoading'].includes(resource);
+    assert.equal(result.total, perOrder ? 2 : 1, resource);
+    if (!perOrder) assert.equal(result.items[0].orderCount, 2);
     assert.equal((await context.RouteService.get(resource, result.items[0].id)).id, result.items[0].id);
   }
   context.location = { search: '' };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/route-management.js'), 'utf8'), context);
   const [batch] = (await context.RouteService.list('routes', { condition })).items;
-  const href = context.RecordPageConfig.tabs[0].rowActions[0].href(batch, condition);
+  const href = context.RecordPageConfig.tabs[0].columns.find((column) => column.key === 'customerCount').href(batch, condition);
   const query = new URL(href, 'https://prototype.local').searchParams;
   assert.equal(query.get('customerName'), condition.customerName);
   assert.equal(query.get('deliveryDate'), '2026-11-17');

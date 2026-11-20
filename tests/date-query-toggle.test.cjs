@@ -108,10 +108,10 @@ test('分拣、进度、缺货、发货、汇总和线路页面均配置期望�
     vm.runInContext(read(name), context);
     const config = context.RecordPageConfig;
     const filterSets = [config.filters, ...(config.tabs || []).map((tab) => tab.filters)].filter(Boolean);
-    for (const fields of filterSets) {
-      const expected = fields.find((field) => field.key === 'expectedAt');
+    for (const fields of filterSets.filter((fields) => fields.length)) {
+      const expected = fields.find((field) => field.key === 'expectedAt' || (name === 'route-management' && field.key === 'shippingAt'));
       assert.ok(expected, name);
-      if (name === 'route-management') assert.equal(expected.label, '发货时间');
+      if (name === 'route-management') assert.equal(expected.label, expected.key === 'shippingAt' ? '发货日期' : '期望送达时间');
       if (expected.switchableDate) continue;
       const delivery = fields.find((field) => field.key === 'deliveryDate');
       assert.equal(expected.type, 'date', name);

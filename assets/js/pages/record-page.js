@@ -82,7 +82,7 @@
       const placeholderOnly = field.placeholderOnly === true || isPlaceholderOption(field.emptyLabel);
       const emptyLabel = field.placeholderOnly ? (field.emptyLabel || '请选择') : (field.emptyLabel || '全部');
       const emptyOption = placeholderOnly
-        ? `<option value="" disabled hidden selected>${escapeHtml(emptyLabel)}</option>`
+        ? `<option value="" disabled hidden${field.defaultValue ? '' : ' selected'}>${escapeHtml(emptyLabel)}</option>`
         : `<option value="">${escapeHtml(emptyLabel)}</option>`;
       const options = (field.options || []).filter((option) => {
         const label = typeof option === 'string' ? option : option?.label;
@@ -92,10 +92,10 @@
       <div class="operations-field">
         <label class="filter-label" for="filter-${field.key}">${field.label}</label>
         ${field.options
-          ? `<select class="filter-select${placeholderOnly ? ' is-placeholder' : ''}" id="filter-${field.key}"${placeholderOnly ? ' data-placeholder-only' : ''}>${emptyOption}${options.map((option) => {
+          ? `<select class="filter-select${placeholderOnly && !field.defaultValue ? ' is-placeholder' : ''}" id="filter-${field.key}"${placeholderOnly ? ' data-placeholder-only' : ''}>${emptyOption}${options.map((option) => {
             const value = typeof option === 'string' ? option : option.value;
             const label = typeof option === 'string' ? option : option.label;
-            return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
+            return `<option value="${escapeHtml(value)}"${String(value) === String(field.defaultValue ?? '') ? ' selected' : ''}>${escapeHtml(label)}</option>`;
           }).join('')}</select>`
           : field.type === 'dateRange'
             ? `<div class="date-range-picker operations-date-range" id="filter-wrap-${field.key}">
@@ -168,6 +168,7 @@
           <div class="operations-toolbar-main">${toolbarHtml}</div>
           <div class="operations-toolbar-side">${toolbarSideHtml}</div>
         </div>
+        ${config.tabs?.some((tab) => tab.renderSummary) ? '<div id="recordSummary" hidden></div>' : ''}
         <div class="operations-table-container">
           <div class="operations-table-wrap"><table class="operations-table"><thead id="recordHead"></thead><tbody id="recordBody"></tbody></table></div>
           <div class="pagination" id="recordPagination"></div>
@@ -288,13 +289,17 @@
     function currentService() { return currentTab()?.service || service; }
 
     function listRows(resource, query) {
-      return config.deliveryDates
+      return config.deliveryDates && config.previewData !== false
         ? window.PrototypePreview.list(currentService(), resource, query)
         : currentService().list(resource, query);
     }
 
     function currentTab() {
       return config.tabs?.find((tab) => tab.key === state.activeTab);
+    }
+
+    function hasSelection() {
+      return (currentTab()?.selectable ?? config.selectable) !== false;
     }
 
     function currentStatusTabs() {
@@ -381,7 +386,7 @@
       const expandable = currentTab()?.expandable ?? config.expandable === true;
       const showActions = (currentTab()?.hideRowActions ?? config.hideRowActions) !== true;
       const expandHeader = expandable ? '<th class="record-expand-cell" aria-label="展开"></th>' : '';
-      const selectionHeader = config.selectable === false
+      const selectionHeader = !hasSelection()
         ? ''
         : '<th><input type="checkbox" id="recordSelectAll" aria-label="选择全部"></th>';
       if (Array.isArray(config.headerRows) && config.headerRows.length) {
@@ -418,7 +423,7 @@
       const expandable = currentTab()?.expandable ?? config.expandable === true;
       const showActions = (currentTab()?.hideRowActions ?? config.hideRowActions) !== true;
       if (!state.items.length) {
-        const extraColumns = (expandable ? 1 : 0) + (config.selectable === false ? 0 : 1) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
+        const extraColumns = (expandable ? 1 : 0) + (hasSelection() ? 1 : 0) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
         $('#recordBody').innerHTML = `<tr><td class="empty-cell" colspan="${columns.length + extraColumns}">暂无数据</td></tr>`;
         return;
       }
@@ -426,12 +431,12 @@
         const actions = showActions ? currentActions(item) : [];
         const row = `<tr data-id="${escapeHtml(item.id)}">
           ${expandable ? `<td class="record-expand-cell"><button class="record-expand-button" type="button" data-record-expand aria-expanded="false" aria-label="展开${escapeHtml(item.orderNo || item.customerName || '记录')}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m10 8 4 4-4 4"></path></svg></button></td>` : ''}
-          ${config.selectable !== false ? `<td><input type="checkbox" class="record-row-select" aria-label="选择数据" ${state.selected.has(item.id) ? 'checked' : ''} ${isSelectable(item) ? '' : 'disabled'}></td>` : ''}
+          ${hasSelection() ? `<td><input type="checkbox" class="record-row-select" aria-label="选择数据" ${state.selected.has(item.id) ? 'checked' : ''} ${isSelectable(item) ? '' : 'disabled'}></td>` : ''}
           ${showSequence ? `<td>${(state.page - 1) * state.pageSize + index + 1}</td>` : ''}
           ${columns.map((column) => {
             const cell = formatCell(item, column);
             if (column.href) {
-              const href = typeof column.href === 'function' ? column.href(item) : column.href;
+              const href = typeof column.href === 'function' ? column.href(item, state.condition) : column.href;
               return `<td><button class="cell-link" type="button" data-cell-href="${escapeHtml(href)}" onclick="window.AppNavigation.navigate(this.dataset.cellHref)">${cell}</button></td>`;
             }
             return `<td>${column.link ? `<button class="cell-link" data-row-action="view">${cell}</button>` : cell}</td>`;
@@ -445,7 +450,7 @@
         if (!expandable || typeof expandedRenderer !== 'function') return row;
         const expandedContent = expandedRenderer(item);
         if (!expandedContent) return row;
-        const colspan = columns.length + (expandable ? 1 : 0) + (config.selectable === false ? 0 : 1) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
+        const colspan = columns.length + (expandable ? 1 : 0) + (hasSelection() ? 1 : 0) + (showSequence ? 1 : 0) + (showActions ? 1 : 0);
         return `${row}<tr class="record-expanded-row" data-expanded-for="${escapeHtml(item.id)}" hidden><td colspan="${colspan}">${expandedContent}</td></tr>`;
       }).join('');
     }
@@ -506,7 +511,9 @@
       return condition;
     }
 
+    let loadVersion = 0;
     async function load() {
+      const version = ++loadVersion;
       try {
         const condition = { ...state.condition };
         if (currentStatusTabs().length) {
@@ -516,17 +523,28 @@
           } else delete condition.status;
         }
         const result = await listRows(currentResource(), { page: state.page, pageSize: state.pageSize, condition });
+        if (version !== loadVersion) return;
         state.items = result.items;
         state.total = result.total;
+        state.summary = result.summary;
       } catch (error) {
+        if (version !== loadVersion) return;
         state.items = [];
         state.total = 0;
+        state.summary = null;
         toast(error.message || '数据加载失败', 'error');
       }
       if (!root.isConnected) return;
       renderHead();
       renderStatusTabs();
       renderBody();
+      const summary = $('#recordSummary');
+      if (summary) {
+        summary.hidden = !currentTab()?.renderSummary;
+        summary.innerHTML = currentTab()?.renderSummary?.(state.summary, state.items) || '';
+      }
+      const tableContainer = root.querySelector('.operations-table-container');
+      if (tableContainer) tableContainer.hidden = currentTab()?.hideTable === true;
       bindDatePickers();
       renderToolbar();
       renderPagination();
@@ -642,8 +660,8 @@
           return;
         }
         try {
-          if (item) await service.update(currentResource(), item.id, data);
-          else await service.create(currentResource(), { ...currentCreateDefaults(), ...data });
+          if (item) await currentService().update(currentResource(), item.id, data);
+          else await currentService().create(currentResource(), { ...currentCreateDefaults(), ...data });
           closeModal();
           toast('操作成功');
           state.page = 1;
@@ -742,7 +760,7 @@
         }
         return showForm(item);
       }
-      if (actionKey === 'delete') return confirm(`删除${currentEntityTitle()}`, config.deleteMessage || '删除之后将不能恢复，确认删除吗？', () => service.remove(currentResource(), id));
+      if (actionKey === 'delete') return confirm(`删除${currentEntityTitle()}`, config.deleteMessage || '删除之后将不能恢复，确认删除吗？', () => currentService().remove(currentResource(), id));
       const action = currentActions(item).find((entry) => entry.key === actionKey);
       if (!action) return;
       if (action.onClick) return action.onClick(item);
@@ -763,7 +781,7 @@
       if (action.formFields) return showForm(item, action.formFields, action.formTitle);
       if (action.transition) {
         return confirm(action.confirmTitle || action.label, action.message || `确定执行“${action.label}”操作吗？`,
-          () => service.transition(currentResource(), id, action.transition, action.payload || {}));
+          () => currentService().transition(currentResource(), id, action.transition, action.payload || {}));
       }
       if (action.toast) return toast(action.toast);
     }

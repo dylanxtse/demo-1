@@ -1,53 +1,89 @@
 (function () {
   const params = new URLSearchParams(window.location.search);
-  const expectedAt = params.get('expectedAt') || (params.get('expectedAtRange') || '').split(',')[0] || '';
-  const deliveryDate = params.get('deliveryDate') || (params.get('deliveryDateRange') || '').split(',')[0] || '';
-  const route = params.get('route') || '';
-  const filters = [
-    { key: 'expectedAt', label: '发货时间', type: 'date', defaultValue: expectedAt, placeholder: '请选择' },
-    { key: 'deliveryDate', label: '配送日期', type: 'date', defaultValue: deliveryDate, placeholder: '请选择' },
-    { key: 'route', label: '线路', placeholder: '请输入线路名称', defaultValue: route },
-    { key: 'customerName', label: '客户名称', placeholder: '请输入', defaultValue: params.get('customerName') || '' },
-    { key: 'driver', label: '司机', placeholder: '请输入', defaultValue: params.get('driver') || '' },
-    { key: 'vehicle', label: '车辆', placeholder: '请输入车牌号', defaultValue: params.get('vehicle') || '' }
+  const service = window.RouteService;
+  const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+  const options = (key) => service?.filterOptions?.(key) || [];
+  const defaultDate = (key) => params.get(key) || (params.get(`${key}Range`) || '').split(',')[0] || '';
+  const dateFilters = (shipping = false) => [
+    { key: shipping ? 'shippingAt' : 'expectedAt', label: shipping ? '发货日期' : '期望送达时间', type: 'date',
+      defaultValue: defaultDate(shipping ? 'shippingAt' : 'expectedAt'), placeholder: '请选择' },
+    { key: 'deliveryDate', label: '配送日期', type: 'date', defaultValue: defaultDate('deliveryDate'), placeholder: '请选择' }
   ];
+  const warehouseFilter = { key: 'warehouse', label: '仓库', options: options('warehouse'), defaultValue: params.get('warehouse') || '' };
+  const routeFilter = { key: 'route', label: '线路', get options() { return options('route'); }, defaultValue: params.get('route') || '' };
+  const customerFilter = { key: 'customerName', label: '客户名称', options: options('customerName'), emptyLabel: '请选择', defaultValue: params.get('customerName') || '' };
   const orderHref = (row, condition = {}) => {
-    const query = new URLSearchParams({ view: 'orders', route: row.route, deliveryDate: row.deliveryDate || '' });
-    if (condition.expectedAt) query.set('expectedAt', condition.expectedAt);
+    const query = new URLSearchParams({ view: 'orders', route: row.route });
+    ['expectedAt', 'deliveryDate', 'warehouse', 'customerName'].forEach((key) => { if (condition[key]) query.set(key, condition[key]); });
+    if (!condition.deliveryDate && row.deliveryDate && !row.deliveryDate.includes('、')) query.set('deliveryDate', row.deliveryDate);
     if (row.orders?.length) query.set('orderIds', JSON.stringify(row.orders.map((order) => order.id)));
-    ['customerName', 'driver', 'vehicle'].forEach((key) => { if (condition[key]) query.set(key, condition[key]); });
     return `./route-management.html?${query}`;
   };
-  const batchColumns = [
-    { key: 'route', label: '线路名称' }, { key: 'deliveryDate', label: '配送日期' },
-    { key: 'driver', label: '司机' }, { key: 'vehicle', label: '车辆' },
-    { key: 'customerCount', label: '客户数量' }, { key: 'orderCount', label: '订单数量' }
+  const orderStatus = { key: 'orderStatus', label: '订单状态', format: 'status' };
+  const orderColumns = [
+    { key: 'orderNo', label: '订单号', href: (row) => `./order-detail.html?id=${encodeURIComponent(row.id)}` },
+    { key: 'customerName', label: '客户名称' }, { key: 'canteen', label: '食堂' },
+    { key: 'route', label: '线路' }, { key: 'warehouse', label: '仓库' }, { key: 'address', label: '配送地址' }
+  ];
+  const routeForm = [
+    { key: 'route', label: '线路名称', required: true },
+    { key: 'warehouse', label: '仓库', options: options('warehouse'), required: true },
+    { key: 'vehicle', label: '关联车辆' }, { key: 'driver', label: '关联司机' }
   ];
   const view = params.get('view');
   window.RecordPageConfig = {
-    title: '线路管理', pageClass: 'sorting-module-page route-management-page', deliveryDates: true,
-    usePagination: true, selectable: false, initialTab: ['routes', 'orders', 'loading', 'departures'].includes(view) ? view : 'routes',
-    filters, columns: [], toolbar: [],
+    title: '线路管理', pageClass: 'sorting-module-page route-management-page', deliveryDates: true, previewData: false,
+    useDemoListLayout: true, manualFilterLayout: true, usePagination: true, selectable: false,
+    initialTab: ['routes', 'orders', 'loading', 'departures'].includes(view) ? view : 'routes',
+    filters: [], columns: [], toolbar: [],
+    statusMap: { ENABLE: ['已开启', 'success'], DISABLE: ['已禁用', 'danger'] },
     tabs: [
-      { key: 'routes', label: '线路列表', resource: 'routes', service: window.RouteService, columns: batchColumns,
-        rowActions: [{ key: 'orders', label: '查看订单', href: orderHref }] },
-      { key: 'orders', label: '线路订单列表', resource: 'routeOrders', service: window.RouteService,
-        filters: [...filters, { key: 'canteen', label: '食堂', placeholder: '请输入' },
-          { key: 'mealName', label: '餐次', options: ['早餐', '午餐', '晚餐', '早点', '午点', '晚点'] },
-          { key: 'status', label: '订单状态', options: [{ value: 'PENDING_CONFIRM', label: '待确认' }, { value: 'PENDING_AUDIT', label: '待审核' }, { value: 'READY_FOR_SHIPPING', label: '待发货' }, { value: 'COMPLETED', label: '已完成' }, { value: 'CLOSED', label: '已关闭' }] }],
-        columns: [{ key: 'route', label: '线路名称' }, { key: 'orderNo', label: '订单号' },
-          { key: 'customerName', label: '客户名称' }, { key: 'canteen', label: '食堂' },
-          { key: 'mealName', label: '餐次' }, { key: 'expectedAt', label: '期望送达时间' },
-          { key: 'deliveryDate', label: '配送日期' }, { key: 'orderAmount', label: '下单金额', format: 'money' }, { key: 'status', label: '订单状态', format: 'status' }],
-        rowActions: [{ key: 'detail', label: '查看', href: (row) => `./order-detail.html?id=${encodeURIComponent(row.id)}` }] },
-      { key: 'loading', label: '线路装车列表', resource: 'routeLoading', service: window.RouteService,
-        filters: [...filters, { key: 'loadingStatus', label: '装车状态', options: ['待装车', '已装车'] }],
-        columns: [...batchColumns, { key: 'loadingStatus', label: '装车状态' }, { key: 'loadingAt', label: '实际装车时间' }],
-        rowActions: [{ key: 'orders', label: '查看订单', href: orderHref }] },
-      { key: 'departures', label: '线路发车列表', resource: 'routeDepartures', service: window.RouteService,
-        filters: [...filters, { key: 'departureStatus', label: '发车状态', options: ['待发车', '已发车'] }],
-        columns: [...batchColumns, { key: 'departureStatus', label: '发车状态' }, { key: 'departureAt', label: '实际发车时间' }],
-        rowActions: [{ key: 'orders', label: '查看订单', href: orderHref }] }
+      { key: 'routes', label: '线路列表', entityTitle: '线路', resource: 'routes', service,
+        filters: [...dateFilters(), warehouseFilter, { key: 'route', label: '线路名称', placeholder: '请输入', defaultValue: params.get('route') || '' }],
+        columns: [
+          { key: 'route', label: '线路名称' }, { key: 'customerCount', label: '客户数', href: orderHref },
+          { key: 'orderingCustomerCount', label: '下单客户数' }, { key: 'orderCount', label: '下单数' },
+          { key: 'orderAmount', label: '下单金额', render: (row) => row.orderCount ? Number(row.orderAmount || 0).toFixed(2) : '--' },
+          { key: 'warehouse', label: '仓库' }, { key: 'vehicle', label: '关联车辆' },
+          { key: 'driver', label: '关联司机', link: true }, { key: 'status', label: '状态', format: 'status' }
+        ],
+        formFields: routeForm,
+        toolbar: [{ key: 'add', label: '添加线路', primary: true }],
+        rowActions: [
+          { key: 'edit', label: '编辑' },
+          { key: 'disable', label: '禁用', visible: ['ENABLE'], transition: 'disable' },
+          { key: 'enable', label: '启用', visible: ['DISABLE'], transition: 'enable' },
+          { key: 'delete', label: '删除', danger: true }
+        ] },
+      { key: 'orders', label: '线路订单列表', resource: 'routeOrders', service,
+        filters: [...dateFilters(), { ...warehouseFilter, emptyLabel: '请选择' }, routeFilter, customerFilter,
+          { key: 'status', label: '状态', options: ['已分配', '未分配'], emptyLabel: '请选择' }],
+        columns: [...orderColumns, { key: 'routeStatus', label: '状态' }, orderStatus,
+          { key: 'orderAmount', label: '下单金额', format: 'money' }],
+        hideRowActions: true },
+      { key: 'loading', label: '线路装车列表', resource: 'routeLoading', service,
+        filters: [...dateFilters(true), { ...warehouseFilter, emptyLabel: '请选择' }, routeFilter, customerFilter,
+          { key: 'status', label: '状态', options: ['待装车', '已装车'], emptyLabel: '请选择' }],
+        selectable: true, hideSequence: true, selectableWhen: (row) => row.loadingStatus === '待装车',
+        columns: [...orderColumns,
+          { key: 'loadingPhotos', label: '装车拍照', render: (row) => {
+            const photos = (Array.isArray(row.loadingPhotos) ? row.loadingPhotos : []).map((photo) => typeof photo === 'string' ? photo : photo.url || photo.src).filter((url) => /^(https?:\/\/|data:image\/(png|jpeg|webp);base64,|\.\/assets\/)/i.test(url));
+            return photos.length ? photos.map((url, index) => `<a class="cell-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer">照片${index + 1}</a>`).join(' ') : '--';
+          } },
+          { key: 'deliveryAmount', label: '配送金额', format: 'money' }, { key: 'loadingStatus', label: '状态' }, orderStatus],
+        toolbar: [{ key: 'batch-load', label: '批量装车', primary: true, requiresSelection: true, batchTransition: 'load' }],
+        rowActions: [{ key: 'load', label: '装车', visibleFn: (row) => row.loadingStatus === '待装车', transition: 'load' }] },
+      { key: 'departures', label: '线路发车列表', resource: 'routeDepartures', service,
+        filters: [...dateFilters(true), warehouseFilter, routeFilter],
+        columns: [], hideTable: true, hideRowActions: true,
+        renderSummary: (summary) => {
+          const value = (key) => summary ? escape(summary[key]) : '--';
+          return `<div class="route-departure-summary" aria-label="线路发车汇总">
+            <span>配送车辆：${value('vehicleCount')}</span><span>配送客户总数：${value('customerCount')}</span>
+            <span>总配送金额：${summary ? Number(summary.deliveryAmount || 0).toFixed(2) : '--'}</span>
+            <span>已发车：${value('departedCount')}辆</span><span>待发车：${value('pendingCount')}辆</span>
+          </div>`;
+        } }
     ]
   };
 })();
