@@ -627,9 +627,10 @@
 
     function showForm(item, overrideFields, overrideTitle) {
       const fields = overrideFields || currentFormFields();
+      const submitLabel = currentTab()?.formSubmitLabel || config.formSubmitLabel || '保存';
       modal(overrideTitle || (item ? `编辑${currentEntityTitle()}` : `添加${currentEntityTitle()}`),
         `<form id="recordForm"><div class="operations-form-grid">${fields.map((field) => formControl(field, item)).join('')}</div></form>`,
-        '<button class="btn" data-record-close>取消</button><button class="btn btn-primary" id="recordSave">保存</button>'
+        `<button class="btn" data-record-close>取消</button><button class="btn btn-primary" id="recordSave">${escapeHtml(submitLabel)}</button>`
       );
       $('#recordSave').onclick = async () => {
         const form = $('#recordForm');
@@ -763,6 +764,7 @@
       if (actionKey === 'delete') return confirm(`删除${currentEntityTitle()}`, config.deleteMessage || '删除之后将不能恢复，确认删除吗？', () => currentService().remove(currentResource(), id));
       const action = currentActions(item).find((entry) => entry.key === actionKey);
       if (!action) return;
+      if (action.disabled?.(item)) return;
       if (action.onClick) return action.onClick(item);
       if (action.href) {
         const target = typeof action.href === 'function' ? action.href(item, state.condition) : action.href;

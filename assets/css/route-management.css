@@ -16,12 +16,26 @@
 .route-management-page .operations-toolbar { min-height: 0; margin-bottom: 8px; }
 .route-management-page .operations-toolbar:has(.operations-toolbar-main:empty):has(.operations-toolbar-side:empty) { display: none; }
 .route-management-page .operations-toolbar-main .btn { min-width: 88px; }
+.route-management-page [data-toolbar-action="batch-load"]:disabled,
+.route-management-page [data-toolbar-action="batch-load"]:disabled:hover {
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 .route-management-page .operations-table { width: 100%; min-width: 1180px; table-layout: auto; }
 .route-management-page .operations-table th,
 .route-management-page .operations-table td { text-align: center; white-space: nowrap; }
 .route-management-page .operations-table th { height: 48px; background: #f3f4f8; color: #858da3; font-weight: 500; }
 .route-management-page .operations-table td { height: 56px; }
 .route-management-page .operations-table .empty-cell { height: 120px; color: #b7b7b7; }
+.route-management-page .operations-table .btn-text:disabled,
+.route-management-page .operations-table .btn-text:disabled:hover {
+  color: #b9bec8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
 .route-management-page[data-active-tab="orders"] .operations-table th:last-child,
 .route-management-page[data-active-tab="orders"] .operations-table td:last-child { position: static; min-width: 0; box-shadow: none; }
 .route-management-page .operations-table-container[hidden],

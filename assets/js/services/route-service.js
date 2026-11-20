@@ -34,7 +34,7 @@
         vehicle: order.vehicle || order.vehicleNo || shipment.vehicle || shipment.vehicleNo || route?.vehicle || '',
         routeStatus: routeName ? '已分配' : '未分配', orderStatus: order.status,
         loadingStatus: loading.loadingStatus || shipment.loadingStatus || order.loadingStatus || '待装车',
-        loadingAt: loading.loadingAt || shipment.loadingAt || order.loadingAt || '',
+        loadingAt: loading.orderId ? (loading.loadingAt || '') : (shipment.loadingAt || order.loadingAt || ''),
         loadingPhotos: loading.loadingPhotos || shipment.loadingPhotos || order.loadingPhotos || [],
         departureStatus: shipment.departureStatus || order.departureStatus || '待发车',
         shippingAt: shipment.shippingAt || shipment.shippedAt || order.shippingAt || '',
@@ -148,9 +148,9 @@
         const row = rows.find((entry) => entry.id === id);
         if (!row) throw new Error('线路不存在');
         const previous = row.route;
-        Object.assign(row, { route: name, warehouse: data.warehouse, vehicle: data.vehicle, driver: data.driver });
+        Object.assign(row, { route: name, warehouse: data.warehouse, vehicle: data.vehicle });
         ['orders', 'shippingOrders'].forEach((key) => (state[key] || []).filter((order) => order.route === previous).forEach((order) =>
-          Object.assign(order, { route: row.route, warehouse: row.warehouse, vehicle: row.vehicle, driver: row.driver })));
+          Object.assign(order, { route: row.route, warehouse: row.warehouse, vehicle: row.vehicle })));
         return row;
       });
     },
@@ -164,26 +164,33 @@
         return removed;
       });
     },
-    async transition(resource, id, action) {
+    async transition(resource, id, action, payload = {}) {
       if (resource === 'routes' && ['enable', 'disable'].includes(action)) return persistDefinition((rows) => {
         const row = rows.find((entry) => entry.id === id);
         if (!row) throw new Error('线路不存在');
         row.status = action === 'enable' ? 'ENABLE' : 'DISABLE';
         return row;
       });
-      return this.batch(resource, [id], action);
+      return this.batch(resource, [id], action, payload);
     },
     async batch(resource, ids, action, payload = {}, condition = {}) {
-      if (resource !== 'routeLoading' || action !== 'load') throw new Error('不支持的装车操作');
+      if (resource !== 'routeLoading' || !['load', 'return-loading'].includes(action)) throw new Error('不支持的装车操作');
       const result = await this.list(resource, { condition, pageSize: Number.MAX_SAFE_INTEGER });
       const selected = result.items.filter((row) => ids.includes(row.id));
       if (!ids.length || selected.length !== new Set(ids).size) throw new Error('所选订单不在当前查询范围');
-      if (selected.some((row) => row.loadingStatus !== '待装车')) throw new Error('请选择待装车订单');
+      if (action === 'load' && selected.some((row) => !['待装车', '部分装车'].includes(row.loadingStatus))) {
+        throw new Error('请选择待装车或部分装车订单');
+      }
+      if (action === 'return-loading' && selected.some((row) => !['部分装车', '已装车'].includes(row.loadingStatus))) {
+        throw new Error('尚未装车的订单不能打回');
+      }
       return window.DemoStore.transact((state) => {
         if (!Array.isArray(state.routeLoadingRecords)) state.routeLoadingRecords = [];
         return selected.map((order) => {
           const row = state.routeLoadingRecords.find((entry) => entry.orderId === order.id);
-          const value = { orderId: order.id, loadingStatus: '已装车', loadingAt: delivery.moment(), loadingPhotos: order.loadingPhotos };
+          const returned = action === 'return-loading';
+          const value = { orderId: order.id, loadingStatus: returned ? '待装车' : '已装车',
+            loadingAt: returned ? '' : delivery.moment(), loadingPhotos: returned ? [] : order.loadingPhotos };
           if (row) Object.assign(row, value); else state.routeLoadingRecords.push(value);
           return value;
         });

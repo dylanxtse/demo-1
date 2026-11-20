@@ -110,12 +110,66 @@ test('批量装车只处理当前条件内的待装车订单，并能持久化�
   assert.equal((await reloaded.RouteService.get('routeLoading', 'B')).loadingPhotos.length, 1);
 });
 
+test('未装、部分装和全部装车时始终显示两个按钮，并按装车状态禁用', async () => {
+  const { context: c } = setup();
+  const tab = c.RecordPageConfig.tabs.find((tab) => tab.key === 'loading');
+  assert.deepEqual(Array.from(tab.rowActions, (action) => action.label), ['去装车', '打回']);
+  const [load, returned] = tab.rowActions;
+  for (const [loadingStatus, loadDisabled, returnDisabled] of [
+    ['待装车', false, true], ['部分装车', false, false], ['已装车', true, false]
+  ]) {
+    const row = { loadingStatus };
+    assert.equal(load.disabled(row), loadDisabled, loadingStatus);
+    assert.equal(returned.disabled(row), returnDisabled, loadingStatus);
+    assert.equal(tab.selectableWhen(row), !loadDisabled, loadingStatus);
+  }
+  const { node, clickTab } = mountPage(c);
+  await flush();
+  await clickTab('loading');
+  const html = node('#recordBody').innerHTML;
+  const pendingRow = html.match(/<tr data-id="A">([\s\S]*?)<\/tr>/)[1];
+  const loadedRow = html.match(/<tr data-id="B">([\s\S]*?)<\/tr>/)[1];
+  assert.match(pendingRow, /data-row-action="load">去装车/);
+  assert.match(pendingRow, /data-row-action="return-loading" disabled>打回/);
+  assert.match(loadedRow, /data-row-action="load" disabled>去装车/);
+  assert.match(loadedRow, /data-row-action="return-loading">打回/);
+});
+
+test('部分装车可继续装车或打回，已装车打回后清除装车状态并持久化', async () => {
+  const { context: c, values } = setup();
+  c.DemoStore.transact((state) => {
+    const shipment = state.shippingOrders.find((row) => row.orderId === 'A');
+    shipment.loadingStatus = '部分装车';
+    shipment.loadingAt = '2026-11-20 06:00:00';
+    shipment.loadingPhotos = ['https://example.com/partial.jpg'];
+  });
+  assert.equal((await c.RouteService.list('routeLoading', { condition: { status: '部分装车' } })).items[0].id, 'A');
+  await c.RouteService.transition('routeLoading', 'A', 'return-loading');
+  const returned = await c.RouteService.get('routeLoading', 'A');
+  assert.equal(returned.loadingStatus, '待装车');
+  assert.equal(returned.loadingAt, '');
+  assert.equal(returned.loadingPhotos.length, 0);
+  await assert.rejects(c.RouteService.transition('routeLoading', 'A', 'return-loading'), /尚未装车/);
+  c.DemoStore.transact((state) => { state.routeLoadingRecords.find((row) => row.orderId === 'A').loadingStatus = '部分装车'; });
+  await c.RouteService.batch('routeLoading', ['A'], 'load');
+  assert.equal((await c.RouteService.get('routeLoading', 'A')).loadingStatus, '已装车');
+  await assert.rejects(c.RouteService.transition('routeLoading', 'A', 'load'), /待装车或部分装车/);
+  await c.RouteService.transition('routeLoading', 'B', 'return-loading');
+  const reloaded = loadApp({ storage: Object.fromEntries(values), services: ['assets/js/services/route-service.js'] }).context;
+  assert.equal((await reloaded.RouteService.get('routeLoading', 'A')).loadingStatus, '已装车');
+  const originalLoaded = await reloaded.RouteService.get('routeLoading', 'B');
+  assert.equal(originalLoaded.loadingStatus, '待装车');
+  assert.equal(originalLoaded.loadingAt, '');
+  assert.equal(originalLoaded.orderStatus, 'COMPLETED');
+});
+
 test('线路新增、编辑、启停和删除可持久化，空线路仍可管理', async () => {
   const { context: c } = setup();
   const created = await c.RouteService.create('routes', { route: '三线', warehouse: '中心仓', vehicle: '沪C12345', driver: '司机三' });
   assert.equal((await c.RouteService.get('routes', created.id)).orderCount, 0);
   await assert.rejects(c.RouteService.create('routes', { route: '三线' }), /已存在/);
-  await c.RouteService.update('routes', created.id, { route: '新三线', warehouse: '北区仓', vehicle: '沪C12345', driver: '司机三' });
+  await c.RouteService.update('routes', created.id, { route: '新三线', warehouse: '北区仓', vehicle: '沪C12345' });
+  assert.equal((await c.RouteService.get('routes', created.id)).driver, '司机三');
   await c.RouteService.transition('routes', created.id, 'disable');
   assert.equal((await c.RouteService.get('routes', created.id)).status, 'DISABLE');
   await c.RouteService.transition('routes', created.id, 'enable');
@@ -129,7 +183,15 @@ function mountPage(c) {
   const node = (key) => {
     if (!nodes.has(key)) nodes.set(key, { value: '', innerHTML: '', dataset: {}, isConnected: true,
       classList: { add() {}, remove() {}, toggle() {} },
-      querySelector: node, querySelectorAll() { return []; },
+      querySelector: node, querySelectorAll(selector) {
+        if (selector === '[data-toolbar-action]' && node('.operations-toolbar-main').innerHTML.includes('data-toolbar-action="batch-load"')) {
+          const button = node('batchLoadButton');
+          button.dataset.toolbarAction = 'batch-load';
+          return [button];
+        }
+        return [];
+      },
+      closest() { return null; },
       setAttribute() {}, remove() {}, appendChild() {},
       addEventListener(type, callback) { listeners[type] = callback; } });
     return nodes.get(key);
@@ -139,13 +201,13 @@ function mountPage(c) {
   vm.runInContext(read('assets/js/pages/record-page.js'), c);
   const clickTab = (key) => listeners.click({ target: { dataset: { viewTab: key },
     closest(selector) { return selector === '[data-view-tab]' ? this : null; } } });
-  return { node, clickTab };
+  return { node, clickTab, listeners };
 }
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 test('实际列表组件切换四页时同步列头、选择框及汇总区域', async () => {
   const { context: c } = setup();
-  const { node, clickTab } = mountPage(c);
+  const { node, clickTab, listeners } = mountPage(c);
   await flush();
   assert.match(node('#recordHead').innerHTML, /下单客户数/);
   assert.doesNotMatch(node('#recordHead').innerHTML, /recordSelectAll/);
@@ -157,6 +219,17 @@ test('实际列表组件切换四页时同步列头、选择框及汇总区域',
   assert.match(node('#recordHead').innerHTML, /装车拍照/);
   assert.doesNotMatch(node('#recordHead').innerHTML, /<th>序号<\/th>/);
   assert.match(node('#recordBody').innerHTML, /checked.*disabled|disabled/);
+  const batchButton = node('batchLoadButton');
+  assert.equal(batchButton.disabled, true, '未勾选时禁用批量装车');
+  const selectRow = (checked) => listeners.change({ target: {
+    checked, matches() { return false; },
+    classList: { contains(name) { return name === 'record-row-select'; } },
+    closest() { return { dataset: { id: 'A' } }; }
+  } });
+  selectRow(true);
+  assert.equal(batchButton.disabled, false, '勾选待装车项后启用');
+  selectRow(false);
+  assert.equal(batchButton.disabled, true, '取消全部勾选后恢复禁用');
   await clickTab('departures');
   assert.equal(node('.operations-table-container').hidden, true);
   assert.equal(node('#recordSummary').hidden, false);

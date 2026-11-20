@@ -26,9 +26,9 @@
     { key: 'route', label: '线路' }, { key: 'warehouse', label: '仓库' }, { key: 'address', label: '配送地址' }
   ];
   const routeForm = [
-    { key: 'route', label: '线路名称', required: true },
-    { key: 'warehouse', label: '仓库', options: options('warehouse'), required: true },
-    { key: 'vehicle', label: '关联车辆' }, { key: 'driver', label: '关联司机' }
+    { key: 'route', label: '线路名称', required: true, fullRow: true },
+    { key: 'warehouse', label: '绑定仓库', options: options('warehouse'), required: true, fullRow: true },
+    { key: 'vehicle', label: '绑定车辆', fullRow: true }
   ];
   const view = params.get('view');
   window.RecordPageConfig = {
@@ -47,7 +47,7 @@
           { key: 'warehouse', label: '仓库' }, { key: 'vehicle', label: '关联车辆' },
           { key: 'driver', label: '关联司机', link: true }, { key: 'status', label: '状态', format: 'status' }
         ],
-        formFields: routeForm,
+        formFields: routeForm, formSubmitLabel: '确定',
         toolbar: [{ key: 'add', label: '添加线路', primary: true }],
         rowActions: [
           { key: 'edit', label: '编辑' },
@@ -63,8 +63,8 @@
         hideRowActions: true },
       { key: 'loading', label: '线路装车列表', resource: 'routeLoading', service,
         filters: [...dateFilters(true), { ...warehouseFilter, emptyLabel: '请选择' }, routeFilter, customerFilter,
-          { key: 'status', label: '状态', options: ['待装车', '已装车'], emptyLabel: '请选择' }],
-        selectable: true, hideSequence: true, selectableWhen: (row) => row.loadingStatus === '待装车',
+          { key: 'status', label: '状态', options: ['待装车', '部分装车', '已装车'], emptyLabel: '请选择' }],
+        selectable: true, hideSequence: true, selectableWhen: (row) => ['待装车', '部分装车'].includes(row.loadingStatus),
         columns: [...orderColumns,
           { key: 'loadingPhotos', label: '装车拍照', render: (row) => {
             const photos = (Array.isArray(row.loadingPhotos) ? row.loadingPhotos : []).map((photo) => typeof photo === 'string' ? photo : photo.url || photo.src).filter((url) => /^(https?:\/\/|data:image\/(png|jpeg|webp);base64,|\.\/assets\/)/i.test(url));
@@ -72,7 +72,11 @@
           } },
           { key: 'deliveryAmount', label: '配送金额', format: 'money' }, { key: 'loadingStatus', label: '状态' }, orderStatus],
         toolbar: [{ key: 'batch-load', label: '批量装车', primary: true, requiresSelection: true, batchTransition: 'load' }],
-        rowActions: [{ key: 'load', label: '装车', visibleFn: (row) => row.loadingStatus === '待装车', transition: 'load' }] },
+        rowActions: [
+          { key: 'load', label: '去装车', disabled: (row) => row.loadingStatus === '已装车', transition: 'load' },
+          { key: 'return-loading', label: '打回', disabled: (row) => row.loadingStatus === '待装车', transition: 'return-loading',
+            message: '确定打回该订单？打回后将恢复为待装车状态。' }
+        ] },
       { key: 'departures', label: '线路发车列表', resource: 'routeDepartures', service,
         filters: [...dateFilters(true), warehouseFilter, routeFilter],
         columns: [], hideTable: true, hideRowActions: true,
