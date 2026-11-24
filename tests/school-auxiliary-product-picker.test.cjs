@@ -114,7 +114,7 @@ test('没有实际就餐人数时禁用批量添加商品，有人数后启用',
 
   const page = { outerHTML: '' };
   const modal = { outerHTML: '' };
-  const button = { disabled: false, classList: { toggle(_name, disabled) { button.disabled = disabled; } } };
+  const button = { disabled: true, classList: { toggle(_name, disabled) { button.disabled = disabled; } } };
   const listeners = {};
   const focusTarget = { focus() {} };
   context.AppShell = { mount({ content }) {
@@ -141,7 +141,8 @@ test('没有实际就餐人数时禁用批量添加商品，有人数后启用',
   assert.doesNotMatch(page.outerHTML, /role="dialog" aria-modal="true" aria-label="添加商品"/);
 
   const participant = participants[0];
-  const meal = menu.meals[0];
+  const meal = menu.meals.find((item) => item.key === 'lunch');
+  assert.ok(meal);
   const count = { innerHTML: '0' };
   const input = {
     value: '1',
@@ -151,6 +152,16 @@ test('没有实际就餐人数时禁用批量添加商品，有人数后启用',
     toggleAttribute() {},
     setAttribute() {}
   };
+  const savedDraft = JSON.stringify(context.AppStorage.read('school-recipe-auxiliary-attendance-drafts-v1', {}));
+  input.dataset.mealKey = 'breakfast';
+  assert.doesNotThrow(() => listeners.input({ target: target('[data-person-type]', input) }));
+  assert.equal(JSON.stringify(context.AppStorage.read('school-recipe-auxiliary-attendance-drafts-v1', {})), savedDraft);
+  assert.equal(button.disabled, true);
+  input.dataset.mealKey = meal.key;
+  input.dataset.personType = 'unknown-participant';
+  assert.doesNotThrow(() => listeners.input({ target: target('[data-person-type]', input) }));
+  assert.equal(JSON.stringify(context.AppStorage.read('school-recipe-auxiliary-attendance-drafts-v1', {})), savedDraft);
+  input.dataset.personType = participant.key;
   listeners.input({ target: target('[data-person-type]', input) });
   assert.equal(button.disabled, false);
   listeners.click({ target: target('[data-aux-product-open]') });

@@ -48,15 +48,46 @@ test('商品数量填报可在无食谱日期独立记录各餐次采购量', ()
   assert.equal(service.buildPreview('2026-11-08', canteen).meals.some((meal) => meal.key === 'snack'), false);
   const firstKey = empty.meals[0].rows[0].key;
   const secondKey = empty.meals[1].rows[0].key;
-  service.writeDraft(date, canteen, { [firstKey]: '2.5', [secondKey]: '3' });
+  service.writeDraft(date, canteen, { [firstKey]: '2', [secondKey]: '3' });
   const preview = service.buildPreview(date, canteen);
   assert.equal(preview.canSubmit, true);
   assert.equal(preview.selectedRows.length, 2);
-  assert.equal(preview.selectedRows[0].orderQty, 2.5);
+  assert.equal(preview.selectedRows[0].orderQty, 2);
   assert.equal(service.buildPreview(date, canteen, { [firstKey]: '-1' }).canSubmit, false);
   service.writeDraft(date, canteen, { [secondKey]: '3' });
   assert.equal(service.readDraft(date, canteen)[firstKey], undefined);
   assert.equal(service.readDraft(date, canteen)[secondKey], '3');
+});
+
+test('干调所有填量方式拒绝标品小数且不生成订单或需求记录', async () => {
+  const context = app();
+  const service = context.SchoolRecipeAuxiliaryDirectService;
+  const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
+  const row = service.buildPreview(date, canteen).meals[0].rows[0];
+  assert.equal(row.isStandardProduct, true);
+  const quantities = { [row.productCode]: '2.5' };
+  const mealQuantities = { [row.key]: '2.5' };
+  const combined = { dates: [date], quantities };
+  for (const preview of [service.buildPreview(date, canteen, mealQuantities),
+    service.buildNoMealPreview(date, canteen, quantities), service.buildCombinedPreview(canteen, combined),
+    service.buildSimpleDraftPreview(canteen, quantities)]) {
+    assert.equal(preview.canSubmit, false);
+    assert.match(preview.message, /标品数量需为整数/);
+  }
+  const before = JSON.stringify(context.DemoStore.snapshot());
+  await assert.rejects(() => service.submit(date, canteen, mealQuantities, `${date} 07:30:00`), /标品数量需为整数/);
+  await assert.rejects(() => service.submitDates([date], canteen, { [date]: quantities }, `${date} 07:30:00`, 'no-meal'), /标品数量需为整数/);
+  await assert.rejects(() => service.submitDates([date], canteen, combined, `${date} 07:30:00`, 'combined'), /标品数量需为整数/);
+  await assert.rejects(() => service.submitSimple(canteen, quantities, `${date} 07:30:00`), /标品数量需为整数/);
+  assert.equal(JSON.stringify(context.DemoStore.snapshot()), before);
+  context.DemoStore.updateSettings({ splitOrderByPersonType: true });
+  const people = service.participantsFor(canteen);
+  assert.ok(people.length >= 2);
+  const preview = service.buildPreview(date, canteen, {
+    [`${row.key}::${people[0].key}`]: 1.5, [`${row.key}::${people[1].key}`]: 0.5
+  });
+  assert.equal(preview.selectedRows[0].orderQty, 2);
+  assert.equal(preview.canSubmit, false, '总量为整数时，各人员类型的标品数量仍必须为整数');
 });
 
 test('手机端干调旧餐次草稿合并为每日商品总量，并生成无餐次订单', async () => {
@@ -65,14 +96,14 @@ test('手机端干调旧餐次草稿合并为每日商品总量，并生成无�
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const meals = service.buildPreview(date, canteen).meals;
   const code = meals[0].rows[0].productCode;
-  service.writeDraft(date, canteen, { [meals[0].rows[0].key]: '2.5', [meals[1].rows[0].key]: '3' });
+  service.writeDraft(date, canteen, { [meals[0].rows[0].key]: '2', [meals[1].rows[0].key]: '3' });
   const draft = service.readNoMealDraft(date, canteen);
-  assert.equal(draft[code], '5.5');
+  assert.equal(draft[code], '5');
   assert.deepEqual(Array.from(service.readNoMealFilledDates(canteen)), [date]);
   const preview = service.buildNoMealPreview(date, canteen, draft);
   assert.equal(preview.rows.length, 3);
   assert.equal(preview.meals.length, 0);
-  assert.equal(preview.selectedRows[0].orderQty, 5.5);
+  assert.equal(preview.selectedRows[0].orderQty, 5);
 
   const result = await service.submitDates([date], canteen, { [date]: draft }, `${date} 07:30:00`, 'no-meal');
   assert.equal(result.record.orderMode, 'no-meal');
@@ -80,7 +111,7 @@ test('手机端干调旧餐次草稿合并为每日商品总量，并生成无�
   assert.equal(result.orders.length, 1);
   assert.ok(!result.orders[0].mealKey);
   const order = context.SchoolOrderService.get(result.orders[0].orderId);
-  assert.equal(order.items[0].orderQty, 5.5);
+  assert.equal(order.items[0].orderQty, 5);
 });
 
 test('手机端干调按人员类型填写多日总量，订单仍不带餐次', async () => {
@@ -110,14 +141,14 @@ test('商品数量填报生成独立需求记录和订单', async () => {
   const service = context.SchoolRecipeAuxiliaryDirectService;
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const meal = service.buildPreview(date, canteen).meals[0];
-  const result = await service.submit(date, canteen, { [meal.rows[0].key]: '2.5' }, `${date} 07:30:00`);
+  const result = await service.submit(date, canteen, { [meal.rows[0].key]: '2' }, `${date} 07:30:00`);
   assert.equal(result.record.entryMode, 'quantity');
   assert.equal(result.record.auxiliary, true);
   assert.equal(result.record.totalPersonTimes, 0);
   assert.equal(result.record.productCount, 1);
   assert.equal(result.orders.length, 1);
   const order = context.SchoolOrderService.get(result.orders[0].orderId);
-  assert.equal(order.items[0].orderQty, 2.5);
+  assert.equal(order.items[0].orderQty, 2);
   assert.equal(order.recipeDemandRecordId, result.record.id);
   assert.equal(context.DemoStore.get('recipeDemandRecords').find((record) => record.id === result.record.id).orders.length, 1);
 });
@@ -129,15 +160,15 @@ test('关闭按餐次拆单时，同一商品的数量合并下单', async () =>
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const meals = service.buildPreview(date, canteen).meals;
   const result = await service.submit(date, canteen, {
-    [meals[0].rows[0].key]: '2.5',
+    [meals[0].rows[0].key]: '2',
     [meals[1].rows[0].key]: '3'
   }, `${date} 07:30:00`);
   assert.equal(result.orders.length, 1);
   assert.equal(result.record.items.length, 1);
-  assert.equal(result.record.items[0].totalQty, 5.5);
+  assert.equal(result.record.items[0].totalQty, 5);
   const order = context.SchoolOrderService.get(result.orders[0].orderId);
   assert.equal(order.items.length, 1);
-  assert.equal(order.items[0].orderQty, 5.5);
+  assert.equal(order.items[0].orderQty, 5);
 });
 
 test('干调数量填报只显示商品和确认入口，送达时间在确认页选择', () => {
@@ -250,7 +281,9 @@ test('人数填报保留原有页面，两种方式可相互切换', () => {
   const context = app();
   const listeners = {};
   let html = '';
-  context.location = { search: '?mode=people' };
+  const menu = context.SchoolRecipeService.getAll().find((item) => item.meals.some((meal) => meal.key === 'lunch'));
+  assert.ok(menu);
+  context.location = { search: `?mode=people&date=${menu.date}` };
   context.AppShell = { mount({ content }) {
     html = content;
     return {
@@ -259,7 +292,7 @@ test('人数填报保留原有页面，两种方式可相互切换', () => {
     };
   } };
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/pages/school-recipe-auxiliary-attendance-people.js'), 'utf8'), context);
-  assert.match(html, /data-person-type="[^\"]+" data-meal-key="breakfast"/);
+  assert.match(html, /data-person-type="[^\"]+" data-meal-key="lunch"/);
   assert.doesNotMatch(html, /school-recipe-entry-default-mark/);
   assert.match(html, /school-auxiliary-recipe-date-panel/);
   assert.doesNotMatch(html, /school-recipe-entry-set-default|data-aux-entry-set-default|>设为默认</);
@@ -302,7 +335,7 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   const input = (selector, value, dataset = {}) => listeners.input({ target: {
     value, dataset, closest(candidate) { return candidate === selector ? this : null; }
   } });
-  input('[data-aux-simple-quantity]', '2.5', { auxSimpleQuantity: 'SP0300030' });
+  input('[data-aux-simple-quantity]', '2', { auxSimpleQuantity: 'SP0300030' });
   assert.equal(button.disabled, false);
   const recordsBeforeConfirm = context.DemoStore.get('recipeDemandRecords').length;
   await listeners.click({ target: { closest(selector) {
@@ -311,7 +344,7 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   assert.equal(context.location.href, `./school-recipe-auxiliary-demand-confirm.html?mode=quantity&orderMode=simple&canteen=${canteen.id}`);
   assert.equal(context.DemoStore.get('recipeDemandRecords').length, recordsBeforeConfirm);
-  assert.equal(context.AppStorage.read('school-recipe-auxiliary-simple-drafts-v1', {})[canteen.id].quantities.SP0300030, '2.5');
+  assert.equal(context.AppStorage.read('school-recipe-auxiliary-simple-drafts-v1', {})[canteen.id].quantities.SP0300030, '2');
 
   context.location = { search: `?mode=quantity&orderMode=simple&canteen=${canteen.id}` };
   let confirmHtml = '';
@@ -358,7 +391,7 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   assert.match(confirmHtml, /请选择/);
   assert.match(confirmHtml, /data-aux-simple-submit disabled/);
   assert.match(confirmHtml, /SP0300030/);
-  assert.match(confirmHtml, /<td class="is-number school-recipe-direct-confirm-quantity-cell"><span[^>]*>2\.5<\/span><\/td>/);
+  assert.match(confirmHtml, /<td class="is-number school-recipe-direct-confirm-quantity-cell"><span[^>]*>2<\/span><\/td>/);
   assert.doesNotMatch(confirmHtml, /data-aux-simple-confirm-quantity/);
   assert.match(confirmHtml, /data-aux-simple-remove="SP0300030"[^>]*>移除<\/button>/);
   assert.match(confirmHtml, /data-aux-simple-remove="SP0300030"[^>]*title="至少保留一项商品" disabled/);
@@ -394,10 +427,10 @@ test('商品数量模式先进入需求确认页，提交后生成需求与订�
   const record = context.DemoStore.get('recipeDemandRecords').at(-1);
   assert.equal(record.orderMode, 'simple');
   assert.deepEqual(Array.from(record.dates), [date]);
-  assert.equal(record.items[0].totalQty, 2.5);
+  assert.equal(record.items[0].totalQty, 2);
   const order = context.SchoolOrderService.get(record.orders[0].orderId);
   assert.equal(order.expectedAt, `${date} 07:30:00`);
-  assert.equal(order.items[0].orderQty, 2.5);
+  assert.equal(order.items[0].orderQty, 2);
   let detailRecord = record;
   context.SchoolRecipeDemandService = { get: () => detailRecord, participantsFor: () => [] };
   context.location = { search: `?id=${record.id}` };
@@ -499,13 +532,13 @@ test('商品数量确认页带入多个已填日期，同餐次相同商品合�
   const canteen = context.SchoolCanteenConfigService.getCanteen('第一食堂');
   const secondDate = '2026-09-17';
   const row = service.buildPreview(date, canteen).meals[0].rows[0];
-  service.writeDraft(date, canteen, { [row.key]: '2.5' });
+  service.writeDraft(date, canteen, { [row.key]: '2' });
   service.writeDraft(secondDate, canteen, { [row.key]: '3' });
   assert.deepEqual(Array.from(service.readFilledDates(canteen)), [date, secondDate]);
   const drafts = { [date]: service.readDraft(date, canteen), [secondDate]: service.readDraft(secondDate, canteen) };
   const preview = service.buildDatesPreview([date, secondDate], canteen, drafts);
   assert.equal(preview.meals.find((meal) => meal.key === 'breakfast').rows.length, 1);
-  assert.equal(preview.meals.find((meal) => meal.key === 'breakfast').rows[0].orderQty, 5.5);
+  assert.equal(preview.meals.find((meal) => meal.key === 'breakfast').rows[0].orderQty, 5);
 
   vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/utils/recipe-delivery-rule.js'), 'utf8'), context);
   context.location = { search: `?mode=quantity&date=${secondDate}&canteen=${canteen.id}` };
@@ -521,14 +554,14 @@ test('商品数量确认页带入多个已填日期，同餐次相同商品合�
   assert.match(confirmHtml, new RegExp(`<td>${date}</td><td class="is-number">1</td>`));
   assert.match(confirmHtml, new RegExp(`<td>${secondDate}</td><td class="is-number">1</td>`));
   assert.match(confirmHtml, /填报天数：<strong>2<\/strong>/);
-  assert.match(confirmHtml, /<td class="is-number">5\.5<\/td>/);
+  assert.match(confirmHtml, /<td class="is-number">5<\/td>/);
 
   const result = await service.submitDates([date, secondDate], canteen, drafts, `${date} 07:30:00`);
   assert.deepEqual(Array.from(result.record.dates), [date, secondDate]);
   assert.equal(result.record.dateSummaries.length, 2);
   const breakfastOrder = result.orders.find((order) => order.mealKey === 'breakfast');
   assert.deepEqual(Array.from(breakfastOrder.dates), [date, secondDate]);
-  assert.equal(context.SchoolOrderService.get(breakfastOrder.orderId).items[0].orderQty, 5.5);
+  assert.equal(context.SchoolOrderService.get(breakfastOrder.orderId).items[0].orderQty, 5);
 });
 
 test('商品数量确认页按表格展示三个以上已填日期', () => {
@@ -747,13 +780,13 @@ test('新增演示干调商品可在数量模式汇总并提交订单', async ()
   context.AppStorage.write('school-recipe-auxiliary-selected-products-v1', { [canteen.id]: ['aux-oil'] });
   const product = service.catalogProducts(canteen, true).at(-1);
   assert.equal(product.code, 'SP0390047');
-  const quantities = { [product.code]: '2.5' };
+  const quantities = { [product.code]: '2' };
   const preview = service.buildSimpleDraftPreview(canteen, quantities);
   assert.equal(preview.canSubmit, true);
   assert.deepEqual(Array.from(preview.selectedRows, (row) => row.productCode), [product.code]);
   const result = await service.submitSimple(canteen, quantities, `${date} 07:30:00`);
   assert.equal(result.record.items[0].productCode, product.code);
-  assert.equal(context.SchoolOrderService.get(result.orders[0].orderId).items[0].orderQty, 2.5);
+  assert.equal(context.SchoolOrderService.get(result.orders[0].orderId).items[0].orderQty, 2);
 });
 
 test('分天分餐次确认只读取当前日期，不混入其他日期的草稿', () => {

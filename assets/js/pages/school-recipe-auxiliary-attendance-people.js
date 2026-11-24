@@ -1025,6 +1025,8 @@
     const input = event.target.closest('[data-person-type]');
     if (!input) return;
     const meal = meals[input.dataset.mealKey || state.meal];
+    if (!meal || !configuredGroups.some((participant) => input.dataset.personType === participant.key
+      || input.dataset.personType === `nonDining_${participant.key}`)) return;
     const value = input.value === '' ? '' : Math.min(100000, Math.max(0, Math.floor(Number(input.value || 0))));
     meal[input.dataset.personType] = value;
     input.value = value;

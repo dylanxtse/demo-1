@@ -17,13 +17,15 @@ function configFor(name) {
   return context.RecordPageConfig;
 }
 
-test('分拣和发货相关页签使用日期区间查询', () => {
+test('分拣采用单日期配置，进度、缺货和发货保留可切换的日期查询配置', () => {
   for (const name of ['sorting-management', 'sorting-progress', 'shortage-goods', 'shipping-management']) {
     const config = configFor(name);
     for (const filters of [config.filters, ...(config.tabs || []).map((tab) => tab.filters).filter(Boolean)]) {
       const field = filters.find((item) => item.key === 'expectedAt');
-      assert.equal(field.type, 'dateRange', name);
+      assert.equal(field.type, name === 'sorting-management' ? 'date' : 'dateRange', name);
       assert.equal(field.conditionKey, undefined, name);
+      if (name === 'sorting-management') assert.equal(filters.find((item) => item.key === 'deliveryDate')?.type, 'date');
+      else assert.equal(field.switchableDate, true, name);
     }
   }
   assert.equal(configFor('order-summary').filters.find((item) => item.key === 'expectedAt').type, 'dateRange');

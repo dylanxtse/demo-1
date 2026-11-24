@@ -275,7 +275,7 @@
       || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key])
         || row.participantQty[person.key] < 0 || (row.isStandardProduct && !Number.isInteger(row.participantQty[person.key])))));
     const selectedRows = rows.filter((row) => row.orderQty > 0);
-    const message = invalid ? '采购量需为非负整数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
+    const message = invalid ? '采购量需为非负数，标品数量需为整数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
     return { date, canteen: canteenFor(canteen), participants, meals, rows, selectedRows, canSubmit: !message, message };
   }
 
@@ -332,7 +332,7 @@
       || (splitByPerson() && participants.some((person) => !Number.isFinite(row.participantQty[person.key])
         || row.participantQty[person.key] < 0 || (row.isStandardProduct && !Number.isInteger(row.participantQty[person.key])))));
     const selectedRows = rows.filter((row) => row.orderQty > 0);
-    const message = invalid ? '采购量需为非负整数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
+    const message = invalid ? '采购量需为非负数，标品数量需为整数' : selectedRows.length ? '' : '请至少填写一项大于 0 的采购量';
     return { date, canteen: canteenFor(canteen), participants, meals: [], rows, selectedRows, canSubmit: !message, message };
   }
 
