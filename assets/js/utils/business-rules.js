@@ -123,7 +123,7 @@
     inboundOrders: ['id', 'entryTime', 'supplierPurchaserCustomerName', 'warehouseName', 'entryAmt', 'status', 'items'],
     outboundOrders: ['id', 'outboundTime', 'supplierPurchaserCustomerName', 'warehouseName', 'outboundAmt', 'status', 'items'],
     processingOrders: ['id', 'processingDate', 'warehouse', 'status', 'materials', 'outputs'],
-    warehouses: ['warehouseCode', 'warehouseName', 'operatingCompanyIds', 'address'],
+    warehouses: ['warehouseCode', 'warehouseName'],
     returns: ['returnNo', 'customerName', 'canteen', 'reason', 'status', 'items'],
     receiptChanges: ['changeNo', 'customerName', 'canteen', 'orderNo', 'status', 'items']
   });

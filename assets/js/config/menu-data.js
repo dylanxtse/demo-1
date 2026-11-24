@@ -44,7 +44,7 @@
       { name: '采购任务', href: './purchase-task.html' },
       { name: '采购单', href: './purchase-order.html' },
       '采购退货',
-      { name: '供应商档案', available: false },
+      { name: '供应商档案', href: './purchase-supplier-archive.html' },
       '采购员'
     ] },
     { name: '分拣管理', icon: 'layers', children: [

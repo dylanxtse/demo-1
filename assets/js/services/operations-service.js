@@ -337,7 +337,7 @@
     const requiredByResource = {
       tags: ['tagName'],
       sorters: ['sorterName', 'username', 'phone', 'warehouse'],
-      warehouses: ['warehouseCode', 'warehouseName', 'operatingCompanyIds', 'address'],
+      warehouses: ['warehouseCode', 'warehouseName'],
       orders: ['customerName', 'canteen', 'expectedAt', 'orderTag', 'items'],
       returns: ['returnMode', 'customerName', 'canteen', 'reason', 'items'],
       receiptChanges: ['customerName', 'canteen', 'orderNo', 'changeReason', 'items'],

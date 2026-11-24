@@ -1,6 +1,8 @@
 (function () {
   const root = document.getElementById('marketPriceImportTemplateApp');
   if (!root) return;
+  const title = '市场价导入模板';
+  const columnCount = 8;
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -11,8 +13,9 @@
 
   const display = (value, fallback = '') => value === '' || value == null ? fallback : escapeHtml(value);
 
-  const products = Array.isArray(window.MockProducts) ? window.MockProducts : [];
   const params = new URLSearchParams(window.location.search);
+  const storedProducts = params.get('type') === 'sorting-spec' ? null : window.DemoStore?.get('products');
+  const products = Array.isArray(storedProducts) ? storedProducts : Array.isArray(window.MockProducts) ? window.MockProducts : [];
 
   function isStandardProduct(product) {
     const value = product?.isStandardProduct ?? product?.isStandard;
@@ -65,6 +68,7 @@
   function renderRow(product, index) {
     return `<tr class="school-order-export-item-row">
       <td>${index + 1}</td>
+      <td>${display(product.kingdeeProductId)}</td>
       <td>${display(product.code)}</td>
       <td>${display(product.name)}</td>
       <td>${display(product.unit)}</td>
@@ -75,6 +79,7 @@
   }
 
   const rows = products.map((product, i) => renderRow(product, i)).join('');
+  document.title = title;
 
   root.innerHTML = `<main class="school-order-export-template-page market-price-import-template-page">
     <section class="school-order-export-template-section">
@@ -82,14 +87,15 @@
         <div class="school-order-export-template-table-wrap">
           <table class="school-order-export-template-table">
             <colgroup>
-              <col style="width:60px"><col style="width:140px"><col style="width:200px"><col style="width:100px"><col style="width:120px"><col style="width:120px"><col style="width:120px">
+              <col style="width:60px"><col style="width:180px">
+              <col style="width:140px"><col style="width:200px"><col style="width:100px"><col style="width:120px"><col style="width:120px"><col style="width:120px">
             </colgroup>
             <thead>
-              <tr class="school-order-export-title-row"><th colspan="7">市场价导入模板</th></tr>
-              <tr class="school-order-export-column-row"><th>序号</th><th>商品编号</th><th>商品名称</th><th>计量单位</th><th>品牌</th><th>规格</th><th>市场价</th></tr>
+              <tr class="school-order-export-title-row"><th colspan="${columnCount}">${title}</th></tr>
+              <tr class="school-order-export-column-row"><th>序号</th><th>金蝶商品ID</th><th>商品编号</th><th>商品名称</th><th>计量单位</th><th>品牌</th><th>规格</th><th>市场价</th></tr>
             </thead>
             <tbody>
-              ${rows || '<tr class="school-order-export-item-row"><td colspan="7">暂无商品数据</td></tr>'}
+              ${rows || `<tr class="school-order-export-item-row"><td colspan="${columnCount}">暂无商品数据</td></tr>`}
             </tbody>
           </table>
         </div>

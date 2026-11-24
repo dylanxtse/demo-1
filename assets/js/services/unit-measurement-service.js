@@ -70,10 +70,13 @@
 
     async create(data) {
       const items = load();
+      const kingdeeId = String(data.kingdeeUnitId ?? '').trim();
+      if (kingdeeId && items.some((item) => String(item.kingdeeUnitId ?? '').trim() === kingdeeId)) throw serviceError('DUPLICATE_KINGDEE_UNIT', '金蝶计量单位id已存在');
       const created = {
         id: nextId(items),
         unitName: validateName(items, data.unitName),
         conversionRate: normalizeRate(data.conversionRate),
+        kingdeeUnitId: kingdeeId,
         status: 'ENABLE',
         linkedProductCount: 0
       };

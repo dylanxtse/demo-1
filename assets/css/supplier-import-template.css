@@ -1,0 +1,22 @@
+.supplier-import-template-page .school-order-export-template-table {
+  width: 100%;
+  min-width: 1800px;
+}
+.supplier-import-boolean-select {
+  display: block;
+  width: calc(100% + 24px);
+  height: 36px;
+  margin: 0 -12px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+}
+.supplier-import-boolean-select:focus-visible { outline: 1px solid var(--register-primary); outline-offset: -1px; }

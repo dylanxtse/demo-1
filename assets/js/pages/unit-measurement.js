@@ -92,21 +92,11 @@
       <div class="unit-modal" id="unitImportModal" aria-hidden="true">
         <div class="unit-modal-dialog unit-import-dialog" role="dialog" aria-modal="true" aria-labelledby="unitImportTitle">
           <div class="unit-modal-header">
-            <h2 id="unitImportTitle">批量导入计量单位</h2>
+            <h2 id="unitImportTitle">导入计量单位</h2>
             <button class="unit-modal-close" type="button" data-action="close-import" aria-label="关闭">×</button>
           </div>
-          <div class="unit-modal-body">
-            <div class="unit-import-help">
-              请选择 CSV 文件，表头为“计量单位,与KG换算率”。<br>
-              <button class="btn-text" type="button" data-action="download-template">下载计量单位模板</button>
-            </div>
-            <input class="unit-import-file" id="unitImportFile" type="file" accept=".csv,text/csv">
-            <div class="unit-import-result" id="unitImportResult" role="status"></div>
-          </div>
-          <div class="unit-modal-actions">
-            <button class="btn" type="button" data-action="close-import">取消</button>
-            <button class="btn btn-primary" type="button" data-action="confirm-import">开始导入</button>
-          </div>
+          <div class="unit-modal-body" id="unitImportBody"></div>
+          <div class="unit-modal-actions" id="unitImportActions"></div>
         </div>
       </div>
 
@@ -124,7 +114,12 @@
     editingId: null,
     deletingId: null,
     totalPages: 1,
-    toastTimer: null
+    toastTimer: null,
+    importFile: null,
+    importPhase: '',
+    importBusy: false,
+    importVersion: 0,
+    importUrls: []
   };
 
   function escapeHtml(value) {
@@ -356,56 +351,97 @@
   }
 
   function openImport() {
-    document.getElementById('unitImportFile').value = '';
-    document.getElementById('unitImportResult').textContent = '';
+    state.importVersion++;
+    state.importFile = null;
+    renderImportUpload();
     setModalVisibility('unitImportModal', true);
   }
 
   function closeImport() {
+    state.importVersion++;
+    state.importPhase = '';
+    state.importFile = null;
+    clearImportUrls();
     setModalVisibility('unitImportModal', false);
   }
 
-  function downloadText(filename, text) {
-    const blob = new Blob([`\uFEFF${text}`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+  function clearImportUrls() {
+    state.importUrls.forEach((url) => URL.revokeObjectURL(url));
+    state.importUrls = [];
   }
 
-  function parseCsv(text) {
-    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim());
-    if (lines.length < 2) return [];
-    return lines.slice(1).map((line) => {
-      const columns = line.split(',').map((value) => value.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
-      return { unitName: columns[0] || '', conversionRate: columns[1] || '' };
-    });
+  function workbookUrl(book) {
+    const bytes = window.XLSX.write(book, { type: 'array', bookType: 'xlsx', compression: true });
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    state.importUrls.push(url);
+    return url;
+  }
+
+  function renderImportUpload() {
+    clearImportUrls();
+    state.importPhase = 'upload';
+    document.getElementById('unitImportTitle').textContent = '导入计量单位';
+    document.querySelector('#unitImportModal .unit-import-dialog').classList.remove('is-result');
+    document.getElementById('unitImportBody').innerHTML = `
+      <div class="unit-import-section"><span class="unit-import-label">下载模板</span>
+        <div class="unit-import-template-links"><a class="unit-import-link" href="./unit-import-template.html">计量单位模版.xlsx</a>
+          <a class="unit-import-link" href="./unit-import-kingdee-template.html">金蝶计量单位模版.xlsx</a></div></div>
+      <div class="unit-import-section"><label class="unit-import-label" for="unitImportFile">上传文件</label>
+        <div class="unit-import-upload"><button class="btn btn-sm btn-blue" type="button" data-action="import-upload">上传</button>
+          <input id="unitImportFile" type="file" accept=".xlsx" hidden><span class="unit-import-hint">只能上传xlsx文件，且不超过10M</span></div>
+        <span class="unit-import-filename" id="unitImportFileName">${escapeHtml(state.importFile?.name || '')}</span></div>
+      <p class="unit-import-message" id="unitImportMessage" role="alert" hidden></p>`;
+    document.getElementById('unitImportActions').innerHTML = '<button class="btn" type="button" data-action="close-import">取消</button><button class="btn btn-primary" type="button" id="unitImportConfirm" data-action="confirm-import">导入</button>';
+  }
+
+  function renderImportResult(result) {
+    clearImportUrls();
+    const url = result.errors.length ? workbookUrl(window.UnitImportService.errorWorkbook(result)) : '';
+    state.importPhase = 'result';
+    document.querySelector('#unitImportModal .unit-import-dialog').classList.add('is-result');
+    document.getElementById('unitImportBody').innerHTML = `<dl class="unit-import-stats" aria-live="polite">
+      <div><dt>新增条数</dt><dd>${result.added}条</dd></div>
+      <div><dt>错误条数</dt><dd><span class="unit-import-error-count">${result.errors.length}条</span>
+        ${url ? `<a class="unit-import-link" href="${escapeHtml(url)}" download="计量单位错误数据.xlsx">下载错误数据.xlsx</a>` : ''}</dd></div></dl>`;
+    document.getElementById('unitImportActions').innerHTML = '<button class="btn" type="button" data-action="close-import">关闭</button><button class="btn btn-primary" type="button" data-action="import-previous">上一步</button>';
+  }
+
+  function importMessage(message) {
+    const element = document.getElementById('unitImportMessage');
+    element.textContent = message;
+    element.hidden = !message;
+  }
+
+  function validateImportFile(file) {
+    if (!file) throw new Error('请先上传文件');
+    if (!/\.xlsx$/i.test(file.name)) throw new Error('只能上传xlsx文件');
+    if (file.size > 10 * 1024 * 1024) throw new Error('文件大小不能超过10M');
+    if (!file.size) throw new Error('不能上传空文件');
   }
 
   async function confirmImport() {
-    const file = document.getElementById('unitImportFile').files[0];
-    const resultElement = document.getElementById('unitImportResult');
-    if (!file) {
-      resultElement.textContent = '请选择需要导入的CSV文件';
-      return;
-    }
+    if (state.importBusy || state.importPhase !== 'upload') return;
+    try { validateImportFile(state.importFile); }
+    catch (error) { importMessage(error.message); return; }
+    const version = state.importVersion, file = state.importFile;
+    const button = document.getElementById('unitImportConfirm');
+    state.importBusy = true;
+    button.disabled = true;
+    button.textContent = '导入中…';
+    importMessage('');
     try {
-      const rows = parseCsv(await file.text());
-      if (!rows.length) {
-        resultElement.textContent = '文件中没有可导入的数据';
-        return;
-      }
-      const result = await window.UnitMeasurementService.import(rows);
-      const failures = result.failList.length ? `\n${result.failList.join('\n')}` : '';
-      resultElement.textContent = `成功导入 ${result.successCount} 条，失败 ${result.failCount} 条${failures}`;
+      const bytes = await file.arrayBuffer();
+      if (version !== state.importVersion) return;
+      const result = await window.UnitImportService.importData(bytes);
+      if (version !== state.importVersion) return;
+      renderImportResult(result);
       await loadPage();
-      if (result.successCount > 0) showToast('导入完成');
     } catch (error) {
-      resultElement.textContent = error.message || '文件读取失败';
+      if (version === state.importVersion) importMessage(error.message || '导入失败，请检查文件');
+    } finally {
+      state.importBusy = false;
+      button.disabled = false;
+      button.textContent = '导入';
     }
   }
 
@@ -420,8 +456,9 @@
       if (action === 'close-form') closeForm();
       if (action === 'open-import') openImport();
       if (action === 'close-import') closeImport();
-      if (action === 'download-template') downloadText('计量单位模板.csv', '计量单位,与KG换算率\n示例单位,1');
-      if (action === 'confirm-import') confirmImport();
+      if (action === 'import-upload') document.getElementById('unitImportFile').click();
+      if (action === 'confirm-import') await confirmImport();
+      if (action === 'import-previous') renderImportUpload();
       if (action === 'close-confirm') closeConfirm();
       if (action === 'confirm-delete') confirmDelete();
 
@@ -432,6 +469,23 @@
       if (type === 'enable' || type === 'disable') await transition(id, type);
       if (type === 'edit') openForm(await window.UnitMeasurementService.get(id));
       if (type === 'delete') openDelete(id);
+    });
+
+    root.addEventListener('change', (event) => {
+      if (event.target.id !== 'unitImportFile' || state.importBusy) return;
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        validateImportFile(file);
+        state.importFile = file;
+        document.getElementById('unitImportFileName').textContent = file.name;
+        importMessage('');
+      } catch (error) {
+        state.importFile = null;
+        event.target.value = '';
+        document.getElementById('unitImportFileName').textContent = '';
+        importMessage(error.message);
+      }
     });
 
     document.getElementById('unitForm').addEventListener('submit', submitForm);

@@ -193,7 +193,10 @@
           <div class="unshelf-modal-body">
             <div class="market-price-import-section">
               <label class="unshelf-reason-label">下载模板</label>
-              <a href="./product-info-import-template.html" class="market-price-import-template-link">商品模版.xlsx</a>
+              <div class="product-info-import-template-links">
+                <a href="./product-info-import-template.html" class="market-price-import-template-link">商品模版.xlsx</a>
+                <a href="./product-info-import-kingdee-template.html" class="market-price-import-template-link">金蝶商品模版.xlsx</a>
+              </div>
             </div>
             <div class="market-price-import-section">
               <label class="unshelf-reason-label">上传文件</label>
@@ -208,6 +211,26 @@
           <div class="unshelf-modal-actions">
             <button class="btn" type="button" data-action="cancel-product-info-import">取消</button>
             <button class="btn btn-primary" type="button" data-action="confirm-product-info-import">导入</button>
+          </div>
+        </div>
+      </div>
+      <div class="unshelf-modal product-info-import-result-modal" id="productInfoImportResultModal" aria-hidden="true">
+        <div class="unshelf-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="productInfoImportResultTitle">
+          <div class="unshelf-modal-header">
+            <h2 id="productInfoImportResultTitle">导入商品信息</h2>
+            <button class="unshelf-modal-close" type="button" data-action="close-product-info-import-result" aria-label="关闭">×</button>
+          </div>
+          <div class="unshelf-modal-body">
+            <dl class="product-info-import-result-stats" aria-live="polite">
+              <div><dt>新增条数</dt><dd><span id="productInfoImportAddedCount">0条</span></dd></div>
+              <div><dt>错误条数</dt><dd><span class="product-info-import-error-count" id="productInfoImportErrorCount">0条</span>
+                <a class="market-price-import-template-link" id="productInfoImportErrorDownload" download="下载错误数据.xlsx" hidden>下载错误数据.xlsx</a>
+              </dd></div>
+            </dl>
+          </div>
+          <div class="unshelf-modal-actions">
+            <button class="btn" type="button" data-action="close-product-info-import-result">关闭</button>
+            <button class="btn btn-primary" type="button" data-action="previous-product-info-import">上一步</button>
           </div>
         </div>
       </div>
@@ -240,7 +263,9 @@
     total: 0,
     pagination: null,
     tree: JSON.parse(JSON.stringify(treeData)),
-    treeSearch: ''
+    treeSearch: '',
+    productInfoImportBusy: false,
+    productInfoErrorDownloadUrl: ''
   };
 
   function getNodeByPath(path) {
@@ -651,7 +676,16 @@
         return;
       }
       if (action === 'confirm-product-info-import') {
-        confirmProductInfoImport();
+        return confirmProductInfoImport();
+      }
+      if (action === 'close-product-info-import-result') {
+        closeProductInfoImportResult();
+        closeProductInfoImportModal();
+        return;
+      }
+      if (action === 'previous-product-info-import') {
+        closeProductInfoImportResult();
+        openProductInfoImportModal();
         return;
       }
       if (event.target.id === 'productInfoImportModal') {
@@ -776,6 +810,7 @@
   }
 
   function closeProductInfoImportModal() {
+    if (state.productInfoImportBusy) return;
     const modal = document.getElementById('productInfoImportModal');
     modal.classList.remove('is-visible');
     modal.setAttribute('aria-hidden', 'true');
@@ -783,14 +818,65 @@
     document.getElementById('productInfoFileName').textContent = '';
   }
 
-  function confirmProductInfoImport() {
+  function closeProductInfoImportResult() {
+    const modal = document.getElementById('productInfoImportResultModal');
+    modal.classList.remove('is-visible');
+    modal.setAttribute('aria-hidden', 'true');
+    if (state.productInfoErrorDownloadUrl) URL.revokeObjectURL(state.productInfoErrorDownloadUrl);
+    state.productInfoErrorDownloadUrl = '';
+    document.getElementById('productInfoImportErrorDownload').removeAttribute('href');
+  }
+
+  function showProductInfoImportResult(result) {
+    closeProductInfoImportResult();
+    document.getElementById('productInfoImportAddedCount').textContent = `${result.added}条`;
+    document.getElementById('productInfoImportErrorCount').textContent = `${result.errors.length}条`;
+    const download = document.getElementById('productInfoImportErrorDownload');
+    download.hidden = result.errors.length === 0;
+    if (result.errors.length) {
+      const book = window.ProductImportService.errorWorkbook(result);
+      const bytes = window.XLSX.write(book, { bookType: 'xlsx', type: 'array', compression: true });
+      state.productInfoErrorDownloadUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      download.href = state.productInfoErrorDownloadUrl;
+    }
+    const uploadModal = document.getElementById('productInfoImportModal');
+    uploadModal.classList.remove('is-visible');
+    uploadModal.setAttribute('aria-hidden', 'true');
+    const resultModal = document.getElementById('productInfoImportResultModal');
+    resultModal.classList.add('is-visible');
+    resultModal.setAttribute('aria-hidden', 'false');
+  }
+
+  async function confirmProductInfoImport() {
+    if (state.productInfoImportBusy) return;
     const fileInput = document.getElementById('productInfoFileInput');
     if (!fileInput.files.length) {
       window.alert('请先上传文件');
       return;
     }
-    closeProductInfoImportModal();
-    showOperationToast('导入成功');
+    const file = fileInput.files[0];
+    if (!file.name.toLowerCase().endsWith('.xlsx') || file.size > 10 * 1024 * 1024) {
+      window.alert('请上传不超过10M的xlsx文件');
+      return;
+    }
+    const button = document.querySelector('[data-action="confirm-product-info-import"]');
+    state.productInfoImportBusy = true;
+    button.disabled = true;
+    button.classList.add('btn-disabled');
+    button.textContent = '导入中…';
+    try {
+      const result = window.ProductImportService.importData(await file.arrayBuffer());
+      state.products = window.ProductService.getList();
+      filterProducts(true);
+      showProductInfoImportResult(result);
+    } catch (error) {
+      window.alert(error.message || '导入失败，请检查文件');
+    } finally {
+      state.productInfoImportBusy = false;
+      button.disabled = false;
+      button.classList.remove('btn-disabled');
+      button.textContent = '导入';
+    }
   }
 
   function closeMarketPriceModal() {

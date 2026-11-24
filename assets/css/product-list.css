@@ -460,6 +460,17 @@
   cursor: pointer;
 }
 .market-price-import-template-link:hover { text-decoration: underline; }
+.product-info-import-template-links { display: grid; gap: 8px; justify-items: start; }
+.product-info-import-result-modal .unshelf-modal-dialog { width: 600px; max-width: calc(100vw - 32px); }
+.product-info-import-result-modal .unshelf-modal-header { border-bottom: 0; }
+.product-info-import-result-modal .unshelf-modal-header h2 { font-weight: 600; }
+.product-info-import-result-modal .unshelf-modal-body { padding: 14px 40px 22px; }
+.product-info-import-result-stats { display: grid; gap: 30px; margin: 0; }
+.product-info-import-result-stats > div { display: flex; align-items: baseline; gap: 16px; min-height: 24px; }
+.product-info-import-result-stats dt { flex: 0 0 64px; }
+.product-info-import-result-stats dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 20px; margin: 0; }
+.product-info-import-error-count { color: var(--danger); }
+.product-info-import-result-modal .unshelf-modal-actions .btn { min-width: 60px; }
 .market-price-import-upload { display: flex; align-items: center; gap: 8px; }
 .market-price-import-upload-hint { color: var(--text-tertiary); font-size: 12px; }
 .market-price-import-filename { display: block; margin-top: 6px; color: var(--text-secondary); font-size: 13px; }

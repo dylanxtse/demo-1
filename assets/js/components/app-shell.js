@@ -93,6 +93,7 @@
       'purchase-order-detail.html',
       'purchase-order-form.html',
       'purchase-order-receipt.html',
+      'purchase-supplier-archive.html',
       'settlement-price-change.html',
       'receipt-change.html',
       'receipt-change-form.html',
